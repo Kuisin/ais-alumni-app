@@ -17,7 +17,7 @@ import { Alert, Badge, Card, PageHeader } from "@/components/ui/card";
 import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { isCurrentTeacher } from "@/lib/authz";
-import { loadCohortOptions } from "@/lib/cohorts-db";
+import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
 import { namePartsOf } from "@/lib/names";
@@ -100,7 +100,8 @@ export default async function AdminMemberPage({
           r.role === RoleKey.CURRENT_STUDENT) &&
         r.cohortId,
     )?.cohortId ?? null;
-  const cohorts = await loadCohortOptions(locale === "en" ? "en" : "ja");
+  const cohortChoices = await loadCohortChoices(locale === "en" ? "en" : "ja");
+  const cohortNumbers = await cohortNumbersById();
   const lineStatus = !user.lineUserId
     ? t("line.notLinked")
     : user.lineFollowing
@@ -219,10 +220,12 @@ export default async function AdminMemberPage({
                 ) : null}
                 <MemberRoleForm
                   userId={user.id}
-                  cohorts={cohorts}
+                  cohorts={cohortChoices}
                   values={{
                     role: r.role,
-                    cohortId: r.cohortId,
+                    cohortNumber: r.cohortId
+                      ? (cohortNumbers.get(r.cohortId) ?? null)
+                      : null,
                     teacherStatus: r.teacherStatus,
                     yearsFrom: r.yearsFrom,
                     yearsTo: r.yearsTo,
@@ -250,7 +253,7 @@ export default async function AdminMemberPage({
                 <AddRoleForm
                   userId={user.id}
                   available={available}
-                  cohorts={cohorts}
+                  cohorts={cohortChoices}
                 />
               </div>
             </details>
@@ -286,9 +289,17 @@ export default async function AdminMemberPage({
                 userId={user.id}
                 position={p}
                 held={Boolean(held)}
-                cohortId={held?.cohortId ?? null}
-                defaultCohortId={defaultCohort}
-                cohorts={cohorts}
+                cohortNumber={
+                  held?.cohortId
+                    ? (cohortNumbers.get(held.cohortId) ?? null)
+                    : null
+                }
+                defaultCohortNumber={
+                  defaultCohort
+                    ? (cohortNumbers.get(defaultCohort) ?? null)
+                    : null
+                }
+                cohorts={cohortChoices}
                 eligible={positionEligible(
                   p,
                   roleKeys,

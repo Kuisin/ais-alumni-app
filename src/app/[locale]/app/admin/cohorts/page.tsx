@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import {
-  createMissingCohortsAction,
   deleteCohortAction,
   setCohortGraduatedAction,
 } from "@/app/actions/admin-cohorts";
-import {
-  CohortCreateForm,
-  CohortEditForm,
-} from "@/components/cohorts/cohort-forms";
+import { CohortEditForm } from "@/components/cohorts/cohort-forms";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { elementaryEndFor, latestCohortNumber } from "@/lib/cohorts";
 import { db } from "@/lib/db";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,38 +23,9 @@ export default async function CohortsPage() {
       _count: { select: { roles: true, positions: true, broadcasts: true } },
     },
   });
-  const latest = latestCohortNumber();
-  const missing = latest - cohorts.filter((c) => c.number <= latest).length;
-  // Suggest the newest class that doesn't exist yet.
-  const taken = new Set(cohorts.map((c) => c.number));
-  let nextNumber = latest;
-  while (nextNumber > 1 && taken.has(nextNumber)) nextNumber--;
-  if (taken.has(nextNumber)) nextNumber = latest + 1;
-
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} description={t("description")} />
-
-      <Card className="space-y-3">
-        <h2 className="text-lg font-semibold">{t("bulk.title")}</h2>
-        <p className="text-sm text-slate-600">
-          {t("bulk.description", { latest })}
-        </p>
-        {missing > 0 ? (
-          <form action={createMissingCohortsAction}>
-            <SubmitButton variant="secondary">
-              {t("bulk.button", { count: missing, latest })}
-            </SubmitButton>
-          </form>
-        ) : (
-          <p className="text-sm text-green-800">{t("bulk.none")}</p>
-        )}
-      </Card>
-
-      <Card className="space-y-4">
-        <h2 className="text-lg font-semibold">{t("addTitle")}</h2>
-        <CohortCreateForm suggestedEnd={elementaryEndFor(nextNumber)} />
-      </Card>
 
       {cohorts.length === 0 ? <EmptyState>{t("empty")}</EmptyState> : null}
       <ul className="space-y-3">

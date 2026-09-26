@@ -7,12 +7,7 @@
  */
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import {
-  defaultGraduated,
-  elementaryEndFor,
-  latestCohortNumber,
-  suggestedStartYear,
-} from "../src/lib/cohorts";
+import { defaultCohort } from "../src/lib/cohorts";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -44,22 +39,15 @@ async function main() {
   if (process.env.NODE_ENV === "production")
     throw new Error("Refusing to seed demo data in production");
 
-  // 学年 第1期 … current 1st graders (same as the admin "create missing" button).
-  for (let n = 1; n <= latestCohortNumber(); n++) {
-    const end = elementaryEndFor(n);
-    await db.cohort.upsert({
-      where: { number: n },
-      update: {},
-      create: {
-        number: n,
-        elementaryEndYear: end,
-        elementaryStartYear: suggestedStartYear(end),
-        graduated: defaultGraduated(end),
-      },
-    });
-  }
+  // 学年 are created on first use, as in the app (ensureCohort).
   const cohortId = async (n: number) =>
-    (await db.cohort.findUniqueOrThrow({ where: { number: n } })).id;
+    (
+      await db.cohort.upsert({
+        where: { number: n },
+        update: {},
+        create: defaultCohort(n),
+      })
+    ).id;
 
   const demo: {
     email: string;

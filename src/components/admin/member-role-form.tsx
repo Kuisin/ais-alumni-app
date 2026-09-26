@@ -16,12 +16,13 @@ import {
   RoleKey,
   TeacherStatus,
 } from "@/generated/prisma/enums";
-import type { CohortOption } from "@/lib/cohorts";
+import type { CohortChoice } from "@/lib/cohorts";
 import { AdminFormResult } from "./form-result";
 
 export type RoleValues = {
   role: RoleKey;
-  cohortId: string | null;
+  /** 学年 as its 第N期 number */
+  cohortNumber: number | null;
   teacherStatus: TeacherStatus | null;
   yearsFrom: number | null;
   yearsTo: number | null;
@@ -52,19 +53,23 @@ function RoleFields({
   role: RoleKey;
   values?: RoleValues;
   idPrefix: string;
-  cohorts: CohortOption[];
+  cohorts: CohortChoice[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tr = useTranslations("roles");
   const id = (k: string) => `${idPrefix}-${k}`;
   // 学年 (student roles) and the member's own years at AIS (kept separate).
   const cohortField = (
-    <Field id={id("cohortId")} label={t("cohort")}>
+    <Field id={id("cohortNumber")} label={t("cohort")}>
       {(a) => (
-        <Select {...a} name="cohortId" defaultValue={s(values?.cohortId)}>
+        <Select
+          {...a}
+          name="cohortNumber"
+          defaultValue={s(values?.cohortNumber)}
+        >
           <option value="">{t("unknown")}</option>
           {cohorts.map((c) => (
-            <option key={c.id} value={c.id}>
+            <option key={c.value} value={c.value}>
               {c.label}
             </option>
           ))}
@@ -205,11 +210,34 @@ function RoleFields({
     return (
       <div className="space-y-4">
         {cohortField}
-        {yearsFields}
-        <fieldset className="grid gap-4 sm:grid-cols-3">
+        <fieldset className="grid gap-4 sm:grid-cols-2">
           <legend className="mb-2 text-sm font-semibold text-slate-700">
             {t("aisRecord")}
           </legend>
+          {/* One pair of years: joined, and graduated / left. */}
+          <Field id={id("yearsFrom")} label={t("yearsFromAny")}>
+            {(a) => (
+              <Input
+                {...a}
+                name="yearsFrom"
+                inputMode="numeric"
+                defaultValue={s(values?.yearsFrom)}
+              />
+            )}
+          </Field>
+          <Field
+            id={id("graduationOrLeaveYear")}
+            label={t("graduationOrLeaveYear")}
+          >
+            {(a) => (
+              <Input
+                {...a}
+                name="graduationOrLeaveYear"
+                inputMode="numeric"
+                defaultValue={s(values?.graduationOrLeaveYear)}
+              />
+            )}
+          </Field>
           <Field id={id("lastDivision")} label={t("lastDivision")}>
             {(a) => (
               <Select
@@ -224,19 +252,6 @@ function RoleFields({
                   </option>
                 ))}
               </Select>
-            )}
-          </Field>
-          <Field
-            id={id("graduationOrLeaveYear")}
-            label={t("graduationOrLeaveYear")}
-          >
-            {(a) => (
-              <Input
-                {...a}
-                name="graduationOrLeaveYear"
-                inputMode="numeric"
-                defaultValue={s(values?.graduationOrLeaveYear)}
-              />
             )}
           </Field>
           <Field id={id("didGraduate")} label={t("didGraduate")}>
@@ -305,7 +320,7 @@ export function MemberRoleForm({
 }: {
   userId: string;
   values: RoleValues;
-  cohorts: CohortOption[];
+  cohorts: CohortChoice[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tc = useTranslations("common");
@@ -372,7 +387,7 @@ export function AddRoleForm({
 }: {
   userId: string;
   available: RoleKey[];
-  cohorts: CohortOption[];
+  cohorts: CohortChoice[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tr = useTranslations("roles");

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
+import { parseCohortNumber } from "@/lib/cohorts";
 import { nameColumns } from "@/lib/names";
 
 /**
@@ -139,17 +140,26 @@ export const teacherSchema = z
   })
   .superRefine(yearsOrdered);
 
-/** 学年 (Cohort id); optional — "not listed / not sure" is allowed. */
-const cohortId = () =>
+/**
+ * 学年 as its 第N期 number; optional ("not listed / not sure"). The class
+ * row is created on first use (ensureCohort).
+ */
+const cohortNumber = () =>
   z
     .string()
     .trim()
-    .max(40)
     .optional()
-    .transform((v) => v || null);
+    .transform((v, ctx) => {
+      const n = parseCohortNumber(v ?? "");
+      if (n === undefined) {
+        ctx.addIssue({ code: "custom", message: "invalid" });
+        return z.NEVER;
+      }
+      return n;
+    });
 
 export const currentStudentSchema = z.object({
-  cohortId: cohortId(),
+  cohortNumber: cohortNumber(),
   grade: grade(),
   homeroomTeacher: requiredText(),
   studentIdNo: optionalText(50),
@@ -170,9 +180,9 @@ export const currentParentSchema = z.object({
 
 export const formerStudentSchema = z
   .object({
-    cohortId: cohortId(),
+    cohortNumber: cohortNumber(),
+    // Joined AIS; the end of their time at AIS is graduationOrLeaveYear.
     yearsFrom: year(),
-    yearsTo: year(),
     lastDivision: z.enum(Division, { error: "required" }),
     graduationOrLeaveYear: year(),
     didGraduate: z
@@ -186,7 +196,15 @@ export const formerStudentSchema = z
       .refine((a) => a.length >= 1, "classmateRequired"),
     currentStage: z.enum(LifeStage, { error: "required" }),
   })
-  .superRefine(yearsOrdered);
+  .superRefine((v, ctx) => {
+    if (v.graduationOrLeaveYear < v.yearsFrom) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["graduationOrLeaveYear"],
+        message: "yearsOrder",
+      });
+    }
+  });
 
 export const formerChildSchema = z
   .object({
@@ -308,16 +326,15 @@ export type VerifyFormState = {
     schoolEmail: string;
   };
   currentStudent: {
-    cohortId: string;
+    cohortNumber: string;
     grade: string;
     homeroomTeacher: string;
     studentIdNo: string;
   };
   currentParent: { children: CurrentChildState[] };
   formerStudent: {
-    cohortId: string;
+    cohortNumber: string;
     yearsFrom: string;
-    yearsTo: string;
     lastDivision: string;
     graduationOrLeaveYear: string;
     didGraduate: "" | "yes" | "no";
@@ -359,16 +376,15 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
       schoolEmail: "",
     },
     currentStudent: {
-      cohortId: "",
+      cohortNumber: "",
       grade: "",
       homeroomTeacher: "",
       studentIdNo: "",
     },
     currentParent: { children: [emptyCurrentChild()] },
     formerStudent: {
-      cohortId: "",
+      cohortNumber: "",
       yearsFrom: "",
-      yearsTo: "",
       lastDivision: "",
       graduationOrLeaveYear: "",
       didGraduate: "",
@@ -465,7 +481,7 @@ export function answersToFormState(
         }
       : base.teacher,
     currentStudent: {
-      cohortId: s(cs.cohortId),
+      cohortNumber: s(cs.cohortNumber),
       grade: s(cs.grade),
       homeroomTeacher: s(cs.homeroomTeacher),
       studentIdNo: s(cs.studentIdNo),
@@ -480,9 +496,8 @@ export function answersToFormState(
         : base.currentParent.children,
     },
     formerStudent: {
-      cohortId: s(fs.cohortId),
+      cohortNumber: s(fs.cohortNumber),
       yearsFrom: s(fs.yearsFrom),
-      yearsTo: s(fs.yearsTo),
       lastDivision: s(fs.lastDivision),
       graduationOrLeaveYear: s(fs.graduationOrLeaveYear),
       didGraduate:

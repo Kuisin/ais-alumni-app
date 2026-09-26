@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  cohortChoices,
   cohortLabel,
   cohortNumberFor,
   cohortOptions,
   defaultGraduated,
   elementaryEndFor,
   latestCohortNumber,
+  parseCohortNumber,
   schoolYearEnd,
   suggestedStartYear,
 } from "./cohorts";
@@ -42,5 +44,42 @@ describe("学年 numbering", () => {
     expect(
       cohortOptions([{ ...c, id: "b", number: 7 }, c], "en").map((o) => o.id),
     ).toEqual(["a", "b"]);
+  });
+});
+
+describe("学年 choices (created on first use)", () => {
+  const now = new Date("2026-09-27T00:00:00Z");
+  it("offers 第1期 … current 1st graders, newest first, with defaults", () => {
+    const choices = cohortChoices([], "ja", now);
+    expect(choices).toHaveLength(21);
+    expect(choices[0]).toMatchObject({ value: "21", graduated: false });
+    expect(choices.at(-1)).toMatchObject({
+      value: "1",
+      label: "第1期（小学校 2006–2012）",
+      graduated: true,
+    });
+  });
+  it("uses an existing row's years and status", () => {
+    const edited = {
+      id: "x",
+      number: 5,
+      elementaryStartYear: 2009,
+      elementaryEndYear: 2016,
+      graduated: false,
+    };
+    const five = cohortChoices([edited], "en", now).find(
+      (c) => c.value === "5",
+    );
+    expect(five).toEqual({
+      value: "5",
+      label: "Class 5 (elementary 2009–2016)",
+      graduated: false,
+    });
+  });
+  it("parses form values", () => {
+    expect(parseCohortNumber("5")).toBe(5);
+    expect(parseCohortNumber("")).toBeNull();
+    expect(parseCohortNumber("0")).toBeUndefined();
+    expect(parseCohortNumber("abc")).toBeUndefined();
   });
 });

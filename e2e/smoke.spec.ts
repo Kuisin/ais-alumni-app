@@ -81,13 +81,15 @@ test("email sign-up → verification → admin approval → member dashboard", a
     .getByRole("checkbox", { name: "Former student / Alumni" })
     .check();
   await member.getByRole("button", { name: "Next" }).click();
-  // 学年: the 卒業済み / 在校中 toggle filters the list; 第5期 finished 6th grade in 2016.
+  // 学年: every class is offered (created on first use); the 卒業済み /
+  // 在校中 toggle filters the list. 第3期 finished 6th grade in 2014.
   await member.getByText("Graduated", { exact: true }).click();
   await member
     .getByRole("combobox", { name: /学年/ })
-    .selectOption({ label: "Class 5 (elementary 2010–2016)" });
+    .selectOption({ label: "Class 3 (elementary 2008–2014)" });
+  // One pair of years: joined, and graduated / left.
+  await expect(member.getByLabel("To (year)")).toHaveCount(0);
   await member.getByLabel("From (year)").fill("2008");
-  await member.getByLabel("To (year)").fill("2014");
   await member.getByLabel("Last division attended").selectOption("HIGH_SCHOOL");
   await member.getByLabel("Graduation / leaving year").fill("2014");
   await member.getByRole("radio", { name: "Yes, I graduated" }).check();
@@ -114,6 +116,10 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(
     admin.getByText("This application has been decided."),
   ).toBeVisible();
+
+  // The member's 学年 was created automatically.
+  await admin.goto("/en/app/admin/cohorts");
+  await expect(admin.getByText("第3期").first()).toBeVisible();
 
   // 5. Member now reaches the dashboard and directory.
   await member.goto("/en/app/dashboard");

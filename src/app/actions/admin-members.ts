@@ -16,6 +16,8 @@ import { getTranslatorFor } from "@/i18n/translator";
 import { canRevokeAdmin } from "@/lib/account";
 import { audit } from "@/lib/audit";
 import { normalizeEmail } from "@/lib/auth/otp";
+import { parseCohortNumber } from "@/lib/cohorts";
+import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { mergeUsers } from "@/lib/merge";
 import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
@@ -189,11 +191,14 @@ export async function updateMemberProfileAction(
 const roleSchema = z.object({
   userId: id,
   role: z.enum(RoleKey),
-  cohortId: z
-    .string()
-    .trim()
-    .max(40)
-    .transform((v) => v || null),
+  cohortNumber: z.string().transform((v, ctx) => {
+    const n = parseCohortNumber(v);
+    if (n === undefined) {
+      ctx.addIssue({ code: "custom", message: "invalid" });
+      return z.NEVER;
+    }
+    return n;
+  }),
   teacherStatus: optEnum(TeacherStatus),
   yearsFrom: optInt(1950, 2100),
   yearsTo: optInt(1950, 2100),
@@ -227,7 +232,7 @@ export async function saveMemberRoleAction(
     const parsed = roleSchema.safeParse({
       userId: str(fd, "userId"),
       role: str(fd, "role"),
-      cohortId: raw("cohortId"),
+      cohortNumber: raw("cohortNumber"),
       teacherStatus: raw("teacherStatus"),
       yearsFrom: raw("yearsFrom"),
       yearsTo: raw("yearsTo"),
@@ -260,26 +265,26 @@ export async function saveMemberRoleAction(
       d.role === RoleKey.TEACHER ||
       d.role === RoleKey.FORMER_STUDENT ||
       d.role === RoleKey.FORMER_PARENT;
-    if (isStudent && d.cohortId) {
-      const cohort = await db.cohort.findUnique({
-        where: { id: d.cohortId },
-        select: { id: true },
-      });
-      if (!cohort)
-        return {
-          error: tc("errors.validation"),
-          fieldErrors: { cohortId: "invalid" },
-        };
-    }
+    // 学年 rows are created the first time someone is assigned to them.
+    const cohortId =
+      isStudent && d.cohortNumber !== null
+        ? await ensureCohort(d.cohortNumber)
+        : null;
     // Only the fields relevant to the role are written; others are cleared.
     const data = {
-      cohortId: isStudent ? d.cohortId : null,
+      cohortId,
       teacherStatus:
         d.role === RoleKey.TEACHER
           ? (d.teacherStatus ?? TeacherStatus.CURRENT)
           : null,
       yearsFrom: hasYears ? d.yearsFrom : null,
-      yearsTo: hasYears ? d.yearsTo : null,
+      // Former students have one end year: graduation / leaving year.
+      yearsTo:
+        d.role === RoleKey.FORMER_STUDENT
+          ? d.graduationOrLeaveYear
+          : hasYears
+            ? d.yearsTo
+            : null,
       subjects: d.role === RoleKey.TEACHER ? d.subjects : null,
       schoolEmail: d.role === RoleKey.TEACHER ? d.schoolEmail : null,
       currentGrade: d.role === RoleKey.CURRENT_STUDENT ? d.currentGrade : null,

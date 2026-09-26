@@ -82,3 +82,56 @@ export function cohortOptions(
       graduated: c.graduated,
     }));
 }
+
+/** Upper bound for a 学年 number accepted from forms. */
+export const MAX_COHORT_NUMBER = 200;
+
+/** Parse a 学年 number from a form value ("" → null; invalid → undefined). */
+export function parseCohortNumber(v: unknown): number | null | undefined {
+  const s = typeof v === "string" ? v.trim() : v == null ? "" : String(v);
+  if (s === "") return null;
+  const n = Number(s);
+  return Number.isInteger(n) && n >= 1 && n <= MAX_COHORT_NUMBER
+    ? n
+    : undefined;
+}
+
+/** Defaults for a 学年 created on first use. */
+export function defaultCohort(number: number, now: Date = new Date()) {
+  const end = elementaryEndFor(number);
+  return {
+    number,
+    elementaryEndYear: end,
+    elementaryStartYear: suggestedStartYear(end),
+    graduated: defaultGraduated(end, now),
+  };
+}
+
+export type CohortChoice = { value: string; label: string; graduated: boolean };
+
+/**
+ * Every selectable 学年 (第1期 … this year's 1st graders, plus any created
+ * later), newest first. Existing rows supply their own years/status; others
+ * use the defaults they'd be created with.
+ */
+export function cohortChoices(
+  existing: CohortLike[],
+  locale: "ja" | "en",
+  now: Date = new Date(),
+): CohortChoice[] {
+  const byNumber = new Map(existing.map((c) => [c.number, c]));
+  const max = Math.max(
+    latestCohortNumber(now),
+    ...existing.map((c) => c.number),
+  );
+  const out: CohortChoice[] = [];
+  for (let n = max; n >= 1; n--) {
+    const c = byNumber.get(n) ?? { id: "", ...defaultCohort(n, now) };
+    out.push({
+      value: String(n),
+      label: cohortLabel(c, locale),
+      graduated: c.graduated,
+    });
+  }
+  return out;
+}

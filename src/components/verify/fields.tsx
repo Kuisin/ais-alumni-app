@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Field, Input, Select } from "@/components/ui/field";
-import type { CohortOption } from "@/lib/cohorts";
+import type { CohortChoice } from "@/lib/cohorts";
 import { MIN_YEAR, maxYear } from "@/lib/verification/schema";
 
 /** Stable DOM id for a form path, e.g. "formerStudent.yearsTo" → "f-formerStudent-yearsTo". */
@@ -224,12 +224,12 @@ export function CohortPicker({
   value: string;
   onChange: (v: string) => void;
   errors: Errors;
-  cohorts: CohortOption[];
+  cohorts: CohortChoice[];
   defaultFilter: "graduated" | "current" | "all";
 }) {
   const t = useTranslations("verify");
   const error = useError(errors, path);
-  const selected = cohorts.find((c) => c.id === value);
+  const selected = cohorts.find((c) => c.value === value);
   const [filter, setFilter] = useState<"graduated" | "current" | "all">(
     selected ? (selected.graduated ? "graduated" : "current") : defaultFilter,
   );
@@ -237,7 +237,7 @@ export function CohortPicker({
     (c) =>
       filter === "all" ||
       (filter === "graduated") === c.graduated ||
-      c.id === value,
+      c.value === value,
   );
   return (
     <div className="space-y-2">
@@ -277,7 +277,7 @@ export function CohortPicker({
           >
             <option value="">{t("cohortNotListed")}</option>
             {shown.map((c) => (
-              <option key={c.id} value={c.id}>
+              <option key={c.value} value={c.value}>
                 {c.label}
               </option>
             ))}

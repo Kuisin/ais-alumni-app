@@ -5,6 +5,8 @@ import { z } from "zod";
 import { PositionKey } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { isCurrentTeacher } from "@/lib/authz";
+import { parseCohortNumber } from "@/lib/cohorts";
+import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { positionEligible } from "@/lib/permissions";
 import { AuthError, actionAdmin } from "@/lib/session";
@@ -15,7 +17,7 @@ const schema = z.object({
   userId: z.string().min(1).max(64),
   position: z.enum(PositionKey),
   grant: z.enum(["yes", "no"]),
-  cohortId: z.string().trim(),
+  cohortNumber: z.string().trim(),
 });
 
 /** Admin: grant or remove a position (message = key in adminMembers.positions). */
@@ -35,7 +37,7 @@ export async function setMemberPositionAction(
     userId: fd.get("userId"),
     position: fd.get("position"),
     grant: fd.get("grant"),
-    cohortId: String(fd.get("cohortId") ?? ""),
+    cohortNumber: String(fd.get("cohortNumber") ?? ""),
   });
   if (!parsed.success) return { ok: false, message: "errors.invalid" };
   const { userId, position } = parsed.data;
@@ -67,14 +69,10 @@ export async function setMemberPositionAction(
   }
   let cohortId: string | null = null;
   if (position === PositionKey.STUDENT_LEADER) {
-    const cohort = parsed.data.cohortId
-      ? await db.cohort.findUnique({
-          where: { id: parsed.data.cohortId },
-          select: { id: true },
-        })
-      : null;
-    if (!cohort) return { ok: false, message: "errors.cohort" };
-    cohortId = cohort.id;
+    const n = parseCohortNumber(parsed.data.cohortNumber);
+    if (n == null) return { ok: false, message: "errors.cohort" };
+    // Created on first use, like any 学年 assignment.
+    cohortId = await ensureCohort(n);
   }
   await db.userPosition.upsert({
     where: { userId_position: { userId, position } },

@@ -15,9 +15,8 @@ function filled() {
   s.dateOfBirth = "2000-04-02";
   s.roles = ["FORMER_STUDENT", "TEACHER"];
   s.formerStudent = {
-    cohortId: "",
+    cohortNumber: "5",
     yearsFrom: "2006",
-    yearsTo: "2018",
     lastDivision: "HIGH_SCHOOL",
     graduationOrLeaveYear: "2018",
     didGraduate: "yes",
@@ -73,7 +72,7 @@ describe("verification schema (§6)", () => {
 
   it("validates year ordering and teacher end year", () => {
     const s = filled();
-    s.formerStudent.yearsTo = "2001";
+    s.formerStudent.graduationOrLeaveYear = "2001";
     s.teacher.present = false;
     const r = verificationSchema({ requireKanji: false }).safeParse(
       toPayload(s),
@@ -81,7 +80,7 @@ describe("verification schema (§6)", () => {
     expect(r.success).toBe(false);
     if (r.success) return;
     const errors = issuesToErrors(r.error.issues);
-    expect(errors["formerStudent.yearsTo"]).toBe("yearsOrder");
+    expect(errors["formerStudent.graduationOrLeaveYear"]).toBe("yearsOrder");
     expect(errors["teacher.yearsTo"]).toBe("required");
   });
 
@@ -93,6 +92,7 @@ describe("verification schema (§6)", () => {
     const state = answersToFormState(JSON.parse(JSON.stringify(r.data)), "ja");
     expect(state.formerStudent.yearsFrom).toBe("2006");
     expect(state.formerStudent.didGraduate).toBe("yes");
+    expect(state.formerStudent.cohortNumber).toBe("5");
     expect(state.teacher.present).toBe(true);
     expect(state.locale).toBe("en");
     expect(answersToFormState("garbage", "ja").roles).toEqual([]);

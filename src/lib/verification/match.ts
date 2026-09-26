@@ -25,7 +25,7 @@ export async function computeRosterMatch(
       applicants[role] = {
         ...base,
         yearsFrom: data.formerStudent.yearsFrom,
-        yearsTo: data.formerStudent.yearsTo,
+        yearsTo: data.formerStudent.graduationOrLeaveYear,
       };
     } else if (role === RoleKey.TEACHER && data.teacher) {
       applicants[role] = {

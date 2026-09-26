@@ -1,5 +1,12 @@
 import { cache } from "react";
-import { type CohortLike, cohortOptions, cohortShort } from "@/lib/cohorts";
+import type { Prisma } from "@/generated/prisma/client";
+import {
+  type CohortLike,
+  cohortChoices,
+  cohortOptions,
+  cohortShort,
+  defaultCohort,
+} from "@/lib/cohorts";
 import { db } from "@/lib/db";
 
 /** All 学年 (a small table: one row per class); cached per request. */
@@ -26,4 +33,31 @@ export async function cohortShortLabels(
 ): Promise<Record<string, string>> {
   const all = await listCohorts();
   return Object.fromEntries(all.map((c) => [c.id, cohortShort(c, locale)]));
+}
+
+/** Choices for 学年 pickers (value = 第N期 number). */
+export async function loadCohortChoices(locale: "ja" | "en") {
+  return cohortChoices(await listCohorts(), locale);
+}
+
+/**
+ * The 学年 row for a number, created with default years/status the first
+ * time anyone is assigned to it.
+ */
+export async function ensureCohort(
+  number: number,
+  client: Prisma.TransactionClient | typeof db = db,
+): Promise<string> {
+  const row = await client.cohort.upsert({
+    where: { number },
+    update: {},
+    create: defaultCohort(number),
+    select: { id: true },
+  });
+  return row.id;
+}
+
+/** id → 第N期 number, for converting stored ids back to form values. */
+export async function cohortNumbersById(): Promise<Map<string, number>> {
+  return new Map((await listCohorts()).map((c) => [c.id, c.number]));
 }

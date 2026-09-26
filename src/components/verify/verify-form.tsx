@@ -17,7 +17,7 @@ import { Alert } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { RoleKey } from "@/generated/prisma/enums";
-import type { CohortOption } from "@/lib/cohorts";
+import type { CohortChoice } from "@/lib/cohorts";
 import { composeKanji, composeRomaji } from "@/lib/names";
 import {
   issuesToErrors,
@@ -77,7 +77,7 @@ export function VerifyForm({
   initialVerifiedSchoolEmail,
   cohorts,
 }: {
-  cohorts: CohortOption[];
+  cohorts: CohortChoice[];
   initial: VerifyFormState;
   uiLocale: "ja" | "en";
   userId: string;

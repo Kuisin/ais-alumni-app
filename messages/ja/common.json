@@ -76,5 +76,6 @@
     "middleNameRomaji": "ミドルネーム（任意）",
     "lastNameKanji": "姓",
     "firstNameKanji": "名"
-  }
+  },
+  "cohortNumber": "第{number}期"
 }

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Division, LifeStage } from "@/generated/prisma/enums";
-import type { CohortOption } from "@/lib/cohorts";
+import type { CohortChoice } from "@/lib/cohorts";
 import {
   emptyCurrentChild,
   emptyFormerChild,
@@ -123,7 +123,7 @@ export function CurrentStudentSection({
   onChange,
   errors,
   cohorts,
-}: SectionProps<"currentStudent"> & { cohorts: CohortOption[] }) {
+}: SectionProps<"currentStudent"> & { cohorts: CohortChoice[] }) {
   const t = useTranslations("verify");
   const tr = useTranslations("roles");
   const set = (patch: Partial<VerifyFormState["currentStudent"]>) =>
@@ -132,9 +132,9 @@ export function CurrentStudentSection({
     <Section title={tr("role.CURRENT_STUDENT")}>
       <Alert tone="info">{t("hints.parentConfirmation")}</Alert>
       <CohortPicker
-        path="currentStudent.cohortId"
-        value={value.cohortId}
-        onChange={(v) => set({ cohortId: v })}
+        path="currentStudent.cohortNumber"
+        value={value.cohortNumber}
+        onChange={(v) => set({ cohortNumber: v })}
         errors={errors}
         cohorts={cohorts}
         defaultFilter="current"
@@ -323,7 +323,7 @@ export function FormerStudentSection({
   onChange,
   errors,
   cohorts,
-}: SectionProps<"formerStudent"> & { cohorts: CohortOption[] }) {
+}: SectionProps<"formerStudent"> & { cohorts: CohortChoice[] }) {
   const t = useTranslations("verify");
   const tr = useTranslations("roles");
   const set = (patch: Partial<VerifyFormState["formerStudent"]>) =>
@@ -331,9 +331,9 @@ export function FormerStudentSection({
   return (
     <Section title={tr("role.FORMER_STUDENT")}>
       <CohortPicker
-        path="formerStudent.cohortId"
-        value={value.cohortId}
-        onChange={(v) => set({ cohortId: v })}
+        path="formerStudent.cohortNumber"
+        value={value.cohortNumber}
+        onChange={(v) => set({ cohortNumber: v })}
         errors={errors}
         cohorts={cohorts}
         defaultFilter="graduated"
@@ -370,10 +370,10 @@ export function FormerStudentSection({
           errors={errors}
         />
         <YearInput
-          path="formerStudent.yearsTo"
-          label={t("fields.yearsTo")}
-          value={value.yearsTo}
-          onChange={(v) => set({ yearsTo: v })}
+          path="formerStudent.graduationOrLeaveYear"
+          label={t("fields.graduationOrLeaveYear")}
+          value={value.graduationOrLeaveYear}
+          onChange={(v) => set({ graduationOrLeaveYear: v })}
           errors={errors}
         />
       </YearsRow>
@@ -387,13 +387,6 @@ export function FormerStudentSection({
           value: d,
           label: tr(`division.${d}`),
         }))}
-      />
-      <YearInput
-        path="formerStudent.graduationOrLeaveYear"
-        label={t("fields.graduationOrLeaveYear")}
-        value={value.graduationOrLeaveYear}
-        onChange={(v) => set({ graduationOrLeaveYear: v })}
-        errors={errors}
       />
       <TextInput
         path="formerStudent.homeroomTeacher"

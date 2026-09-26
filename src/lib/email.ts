@@ -10,7 +10,7 @@ export type EmailMessage = {
   url?: string;
 };
 
-const FROM = process.env.EMAIL_FROM ?? "AIS Alumni <noreply@ais.kai-lab.net>";
+const FROM = process.env.EMAIL_FROM ?? "AIS Alumni <ais-alumni@kai-lab.net>";
 
 let client: Resend | null = null;
 function resend(): Resend | null {

@@ -49,19 +49,17 @@ export default async function ProfileEditPage() {
         />
       </Card>
 
-      <Card>
-        <ProfileForm
-          showAutoAccept={Boolean(former)}
-          values={{
-            ...namePartsOf(me),
-            nameAtAis: me.nameAtAis ?? "",
-            bio: me.bio ?? "",
-            phone: me.phone ?? "",
-            autoAcceptSameYear: me.autoAcceptSameYear,
-            social,
-          }}
-        />
-      </Card>
+      <ProfileForm
+        showAutoAccept={Boolean(former)}
+        values={{
+          ...namePartsOf(me),
+          nameAtAis: me.nameAtAis ?? "",
+          bio: me.bio ?? "",
+          phone: me.phone ?? "",
+          autoAcceptSameYear: me.autoAcceptSameYear,
+          social,
+        }}
+      />
 
       {former ? (
         <Card id="stage" className="scroll-mt-20">

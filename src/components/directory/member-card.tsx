@@ -41,7 +41,7 @@ export async function MemberCard({
     <span className="font-semibold text-slate-900">{name}</span>
   );
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div className="flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       <Avatar
         src={showPhoto ? avatarSrc(member.avatarUrl) : null}
         name={name}

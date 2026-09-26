@@ -7,6 +7,7 @@ import {
   ChevronDown,
   FilePen,
   GraduationCap,
+  HeartHandshake,
   House,
   Layers,
   LogOut,
@@ -21,23 +22,44 @@ import {
   UserPlus,
   UserRound,
   Users,
-  UsersRound,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { signOutAction } from "@/app/actions/common";
+import {
+  ChangeRequestStatus,
+  FollowStatus,
+  VerificationStatus,
+} from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { getStaffAccess } from "@/lib/broadcasts";
+import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { hasStaffAccess, type StaffAccess } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/session";
 import { LocaleSwitcher } from "./locale-switcher";
 import { Dropdown, NavLink } from "./nav-link";
 
-type NavItem = { href: string; label: string; icon: ReactNode };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: ReactNode;
+  count?: number;
+};
 type NavGroup = { label: string; items: NavItem[] };
 
 const ICON = "size-4 shrink-0";
+
+/** Small count of waiting items after a nav label. */
+function CountBadge({ n, label }: { n?: number; label: string }) {
+  if (!n) return null;
+  return (
+    <span className="ml-auto rounded-full bg-amber-400 px-1.5 text-xs font-semibold text-slate-900 tabular-nums">
+      <span aria-hidden="true">{n > 99 ? "99+" : n}</span>
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
 
 /**
  * Page chrome. Member mode: top nav (bottom tab bar on phones) and an account
@@ -59,6 +81,24 @@ export async function AppShell({
     user && variant !== "onboarding" ? await getStaffAccess(user) : null;
   const isStaff = access ? hasStaffAccess(access) : false;
   const admin = variant === "admin";
+  // Badges: work waiting for this person.
+  const [pendingVerify, pendingRecords, followRequests] = await Promise.all([
+    admin && access?.admin
+      ? db.verificationRequest.count({
+          where: { status: VerificationStatus.PENDING },
+        })
+      : 0,
+    admin && access?.admin
+      ? db.recordChangeRequest.count({
+          where: { status: ChangeRequestStatus.PENDING },
+        })
+      : 0,
+    variant === "member" && user
+      ? db.follow.count({
+          where: { followeeId: user.id, status: FollowStatus.REQUESTED },
+        })
+      : 0,
+  ]);
 
   const primary: NavItem[] = [
     {
@@ -84,7 +124,7 @@ export async function AppShell({
     {
       href: "/app/family",
       label: t("nav.family"),
-      icon: <UsersRound className={ICON} />,
+      icon: <HeartHandshake className={ICON} />,
     },
   ];
   const accountItems: NavItem[] = [
@@ -96,6 +136,7 @@ export async function AppShell({
     {
       href: "/app/follows",
       label: t("nav.follows"),
+      count: followRequests,
       icon: <UserPlus className={ICON} />,
     },
     {
@@ -114,11 +155,13 @@ export async function AppShell({
             {
               href: "/app/admin/verification",
               label: t("adminNav.verification"),
+              count: pendingVerify,
               icon: <BadgeCheck className={ICON} />,
             },
             {
               href: "/app/admin/record-requests",
               label: t("adminNav.recordRequests"),
+              count: pendingRecords,
               icon: <FilePen className={ICON} />,
             },
           ]
@@ -221,26 +264,32 @@ export async function AppShell({
   const switchLink = admin ? (
     <Link
       href="/app/dashboard"
+      aria-label={t("nav.memberMode")}
       className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-white hover:bg-white/10"
     >
       <ArrowLeftRight aria-hidden="true" className={ICON} />
+      <span className="whitespace-nowrap sm:hidden">
+        {t("nav.memberModeShort")}
+      </span>
       <span className="hidden sm:inline">{t("nav.memberMode")}</span>
-      <span className="sr-only sm:hidden">{t("nav.memberMode")}</span>
     </Link>
   ) : isStaff ? (
     <Link
       href="/app/admin"
-      className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-brand-800 hover:bg-brand-50"
+      aria-label={t("nav.adminMode")}
+      className="flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-brand-800 sm:gap-2 sm:px-3 hover:bg-brand-50"
     >
       <ShieldCheck aria-hidden="true" className={ICON} />
+      <span className="whitespace-nowrap sm:hidden">
+        {t("nav.adminModeShort")}
+      </span>
       <span className="hidden sm:inline">{t("nav.adminMode")}</span>
-      <span className="sr-only sm:hidden">{t("nav.adminMode")}</span>
     </Link>
   ) : null;
 
   const accountMenu = user ? (
     <Dropdown
-      summaryClassName={`flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium ${admin ? "text-white hover:bg-white/10" : "text-slate-700 hover:bg-slate-100"}`}
+      summaryClassName={`relative flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium ${admin ? "text-white hover:bg-white/10" : "text-slate-700 hover:bg-slate-100"}`}
       summary={
         <>
           <span
@@ -249,7 +298,18 @@ export async function AppShell({
           >
             <UserRound className={ICON} />
           </span>
-          <span className="sr-only">{t("nav.account")}</span>
+          {followRequests > 0 ? (
+            <span
+              aria-hidden="true"
+              className="absolute top-2 left-8 size-2.5 rounded-full bg-red-600 ring-2 ring-white"
+            />
+          ) : null}
+          <span className="sr-only">
+            {t("nav.account")}
+            {followRequests > 0
+              ? ` (${t("nav.pending", { count: followRequests })})`
+              : ""}
+          </span>
           <ChevronDown aria-hidden="true" className="size-4" />
         </>
       }
@@ -276,6 +336,10 @@ export async function AppShell({
               >
                 <span aria-hidden="true">{item.icon}</span>
                 {item.label}
+                <CountBadge
+                  n={item.count}
+                  label={t("nav.pending", { count: item.count ?? 0 })}
+                />
               </NavLink>
             </li>
           ))}
@@ -308,12 +372,15 @@ export async function AppShell({
   ) : null;
 
   const footer = (
-    <footer className="border-t border-slate-200 py-6 pb-24 text-center text-xs text-slate-500 lg:pb-6">
-      <Link href="/privacy" className="underline">
-        {t("privacy")}
-      </Link>
-      <span className="mx-2">·</span>
-      {t("footer")}
+    <footer
+      className={`border-t border-slate-200 px-4 py-4 text-xs text-slate-500 ${variant === "member" ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4" : ""}`}
+    >
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-balance">
+        <Link href="/privacy" className="inline-block py-2 underline">
+          {t("privacy")}
+        </Link>
+        <span>{t("footer")}</span>
+      </div>
     </footer>
   );
 
@@ -332,7 +399,9 @@ export async function AppShell({
               >
                 <ShieldCheck className="size-5" />
               </span>
-              <span>{t("nav.adminMode")}</span>
+              <span className="whitespace-nowrap max-sm:sr-only">
+                {t("nav.adminMode")}
+              </span>
             </Link>
             <div className="flex items-center gap-1">
               {switchLink}
@@ -345,7 +414,7 @@ export async function AppShell({
         </header>
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:flex-row">
           <nav aria-label={t("nav.adminLabel")} className="lg:w-56 lg:shrink-0">
-            <div className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:sticky lg:top-20 lg:mx-0 lg:block lg:space-y-5 lg:overflow-visible lg:px-0">
+            <div className="-mx-4 flex snap-x gap-1 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_88%,transparent)] lg:sticky lg:[mask-image:none] lg:top-20 lg:mx-0 lg:block lg:space-y-5 lg:overflow-visible lg:px-0">
               {adminGroups.map((g) => (
                 <div key={g.label} className="contents lg:block">
                   <p className="hidden px-3 pb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase lg:block">
@@ -353,14 +422,19 @@ export async function AppShell({
                   </p>
                   <ul className="contents lg:block lg:space-y-0.5">
                     {g.items.map((item) => (
-                      <li key={item.href} className="shrink-0">
+                      <li key={item.href} className="shrink-0 snap-start">
                         <NavLink
                           href={item.href}
-                          className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-100"
+                          scrollIntoViewIfActive
+                          className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-100 lg:min-h-9"
                           activeClassName="bg-slate-900 text-white hover:bg-slate-800"
                         >
                           <span aria-hidden="true">{item.icon}</span>
                           {item.label}
+                          <CountBadge
+                            n={item.count}
+                            label={t("nav.pending", { count: item.count ?? 0 })}
+                          />
                         </NavLink>
                       </li>
                     ))}

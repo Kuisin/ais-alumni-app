@@ -14,15 +14,31 @@ export function NavLink({
   children,
   className,
   activeClassName,
+  scrollIntoViewIfActive = false,
 }: {
   href: string;
   children: ReactNode;
   className?: string;
   activeClassName?: string;
+  /** keep the current item visible in a horizontally scrolling nav */
+  scrollIntoViewIfActive?: boolean;
 }) {
   const active = isActive(usePathname(), href);
+  const ref = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    if (!active || !scrollIntoViewIfActive) return;
+    const el = ref.current;
+    const row = el?.closest<HTMLElement>(".overflow-x-auto");
+    // Only when the row actually scrolls (phones), never the page.
+    if (el && row && row.scrollWidth > row.clientWidth) {
+      const offset =
+        el.getBoundingClientRect().left - row.getBoundingClientRect().left;
+      row.scrollLeft += offset - (row.clientWidth - el.offsetWidth) / 2;
+    }
+  }, [active, scrollIntoViewIfActive]);
   return (
     <Link
+      ref={ref}
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(className, active && activeClassName)}

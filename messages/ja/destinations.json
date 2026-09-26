@@ -18,6 +18,15 @@
     "name": "名前",
     "now": "現在",
     "noHistory": "未登録",
-    "empty": "該当する会員はいません。"
-  }
+    "empty": "該当する会員はいません。",
+    "count": "{total}人中 {shown}人を表示",
+    "showAll": "すべて表示（{count}人）"
+  },
+  "filterLabel": "進路の絞り込み",
+  "onlyHistory": "未登録を除く",
+  "rate": "登録率 {percent}%",
+  "chartsLabel": "主な進学先・勤務先",
+  "noHistory": "まだ学歴・職歴を登録した会員がいません。",
+  "noHistoryHint": "会員が学歴・職歴を登録すると、ここに進学先や勤務先が表示されます。お知らせで登録をお願いしてみましょう。",
+  "askMembers": "会員に登録をお願いする"
 }

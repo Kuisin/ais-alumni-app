@@ -21,7 +21,8 @@
     "yearsTo": "Left (year)",
     "subjects": "Subjects / grades taught",
     "studentIdNo": "Student ID",
-    "cohort": "学年 (class)"
+    "cohort": "学年 (class)",
+    "employment": "Status"
   },
   "diff": {
     "field": "Item",
@@ -87,7 +88,13 @@
     "submit": {
       "APPROVE": "Approve and apply",
       "REJECT": "Reject"
-    }
+    },
+    "emptyPending": "No requests waiting for review.",
+    "emptyPendingHint": "When a member asks to correct their school record (years, class and so on) from their profile, the request arrives here.",
+    "emptyDecidedHint": "Approved and rejected requests appear here, newest first (up to 50)."
   },
-  "cohortCurrent": "at AIS"
+  "cohortCurrent": "at AIS",
+  "stillTeaching": "Still at AIS",
+  "close": "Close",
+  "yearPlaceholder": "e.g. 2015"
 }

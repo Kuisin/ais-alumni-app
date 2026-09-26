@@ -1,5 +1,7 @@
+import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
+import { formatCompactDate } from "@/components/admin/admin-format";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/field";
@@ -7,7 +9,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
-import { displayName, formatDate } from "@/lib/format";
+import { displayName } from "@/lib/format";
 
 export async function generateMetadata({
   params,
@@ -105,6 +107,7 @@ export default async function AdminMembersPage({
   if (line) baseQuery.line = line;
   if (adminOnly) baseQuery.admin = "1";
   const filtered = Object.keys(baseQuery).length > 0;
+  const secondaryCount = [state, role, line, adminOnly].filter(Boolean).length;
 
   const lineLabel = (u: (typeof page)[number]) =>
     !u.lineUserId
@@ -112,6 +115,18 @@ export default async function AdminMembersPage({
       : u.lineFollowing
         ? t("line.following")
         : t("line.linkedNotFollowing");
+  const lineDot = (u: (typeof page)[number]) =>
+    !u.lineUserId
+      ? "bg-slate-300"
+      : u.lineFollowing
+        ? "bg-green-600"
+        : "bg-amber-500";
+  const lineShort = (u: (typeof page)[number]) =>
+    !u.lineUserId
+      ? t("line.short.notLinked")
+      : u.lineFollowing
+        ? t("line.short.following")
+        : t("line.short.linkedNotFollowing");
   const stateTone = (s: AccountState) =>
     s === "ACTIVE"
       ? "green"
@@ -129,79 +144,115 @@ export default async function AdminMembersPage({
       <form
         method="get"
         aria-label={t("filters.label")}
-        className="mb-6 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-6"
+        className="mb-6 space-y-3 rounded-xl border border-slate-200 bg-white p-4"
       >
-        <div className="sm:col-span-2">
-          <label htmlFor="f-q" className="mb-1 block text-sm font-medium">
-            {t("filters.search")}
-          </label>
-          <Input
-            id="f-q"
-            name="q"
-            type="search"
-            defaultValue={q}
-            placeholder={t("filters.searchPlaceholder")}
-          />
-        </div>
-        <div>
-          <label htmlFor="f-state" className="mb-1 block text-sm font-medium">
-            {t("filters.state")}
-          </label>
-          <Select id="f-state" name="state" defaultValue={state ?? ""}>
-            <option value="">{t("filters.any")}</option>
-            {Object.values(AccountState).map((s) => (
-              <option key={s} value={s}>
-                {tr(`state.${s}`)}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <label htmlFor="f-role" className="mb-1 block text-sm font-medium">
-            {t("filters.role")}
-          </label>
-          <Select id="f-role" name="role" defaultValue={role ?? ""}>
-            <option value="">{t("filters.any")}</option>
-            {Object.values(RoleKey).map((r) => (
-              <option key={r} value={r}>
-                {tr(`role.${r}`)}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <label htmlFor="f-line" className="mb-1 block text-sm font-medium">
-            {t("filters.line")}
-          </label>
-          <Select id="f-line" name="line" defaultValue={line ?? ""}>
-            <option value="">{t("filters.any")}</option>
-            <option value="linked">{t("filters.lineLinked")}</option>
-            <option value="following">{t("filters.lineFollowing")}</option>
-            <option value="unlinked">{t("filters.lineUnlinked")}</option>
-          </Select>
-        </div>
-        <div className="flex items-end">
-          <label className="flex min-h-11 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="admin"
-              value="1"
-              defaultChecked={adminOnly}
-              className="size-5"
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <label htmlFor="f-q" className="mb-1 block text-sm font-medium">
+              {t("filters.search")}
+            </label>
+            <Input
+              id="f-q"
+              name="q"
+              type="search"
+              defaultValue={q}
+              placeholder={t("filters.searchPlaceholder")}
             />
-            {t("filters.adminOnly")}
-          </label>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="submit"
+              className={buttonClass("primary", "whitespace-nowrap")}
+            >
+              <Search aria-hidden="true" className="size-4" />
+              {tc("search")}
+            </button>
+            {filtered ? (
+              <Link
+                href="/app/admin/members"
+                className={buttonClass("ghost", "whitespace-nowrap")}
+              >
+                {tc("clear")}
+              </Link>
+            ) : null}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-6">
-          <button type="submit" className={buttonClass("primary")}>
-            {tc("search")}
-          </button>
-          {filtered ? (
-            <Link href="/app/admin/members" className={buttonClass("ghost")}>
-              {tc("clear")}
-            </Link>
-          ) : null}
-        </div>
+        {/* Secondary filters fold away; open when one of them is in use. */}
+        <details open={secondaryCount > 0} className="group">
+          <summary className="-mx-2 inline-flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-lg px-2 text-sm font-medium text-brand-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+            <SlidersHorizontal aria-hidden="true" className="size-4" />
+            {t("filters.more")}
+            {secondaryCount > 0 ? (
+              <Badge tone="brand">
+                {t("filters.activeCount", { count: secondaryCount })}
+              </Badge>
+            ) : null}
+            <ChevronDown
+              aria-hidden="true"
+              className="size-4 transition-transform group-open:rotate-180"
+            />
+          </summary>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label
+                htmlFor="f-state"
+                className="mb-1 block text-sm font-medium"
+              >
+                {t("filters.state")}
+              </label>
+              <Select id="f-state" name="state" defaultValue={state ?? ""}>
+                <option value="">{t("filters.any")}</option>
+                {Object.values(AccountState).map((s) => (
+                  <option key={s} value={s}>
+                    {tr(`state.${s}`)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <label
+                htmlFor="f-role"
+                className="mb-1 block text-sm font-medium"
+              >
+                {t("filters.role")}
+              </label>
+              <Select id="f-role" name="role" defaultValue={role ?? ""}>
+                <option value="">{t("filters.any")}</option>
+                {Object.values(RoleKey).map((r) => (
+                  <option key={r} value={r}>
+                    {tr(`role.${r}`)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <label
+                htmlFor="f-line"
+                className="mb-1 block text-sm font-medium"
+              >
+                {t("filters.line")}
+              </label>
+              <Select id="f-line" name="line" defaultValue={line ?? ""}>
+                <option value="">{t("filters.any")}</option>
+                <option value="linked">{t("filters.lineLinked")}</option>
+                <option value="following">{t("filters.lineFollowing")}</option>
+                <option value="unlinked">{t("filters.lineUnlinked")}</option>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <label className="flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="admin"
+                  value="1"
+                  defaultChecked={adminOnly}
+                  className="size-5"
+                />
+                {t("filters.adminOnly")}
+              </label>
+            </div>
+          </div>
+        </details>
       </form>
 
       <p className="mb-3 text-sm text-slate-600" aria-live="polite">
@@ -226,10 +277,13 @@ export default async function AdminMembersPage({
                       <Badge tone="brand">{t("badge.admin")}</Badge>
                     ) : null}
                   </p>
-                  <p className="text-sm break-all text-slate-600">
+                  <p
+                    className="truncate text-sm text-slate-600"
+                    title={u.primaryEmail ?? undefined}
+                  >
                     {u.primaryEmail ?? "—"}
                   </p>
-                  <p className="mt-2 flex flex-wrap gap-1">
+                  <p className="mt-2 flex flex-wrap gap-1 [&>span]:whitespace-nowrap">
                     <Badge tone={stateTone(u.state)}>
                       {tr(`state.${u.state}`)}
                     </Badge>
@@ -237,9 +291,18 @@ export default async function AdminMembersPage({
                       <Badge key={r.role}>{roleLabel(r)}</Badge>
                     ))}
                   </p>
-                  <p className="mt-2 text-xs text-slate-500">
-                    {t("columns.line")}: {lineLabel(u)} · {t("columns.created")}
-                    : {formatDate(u.createdAt, locale)}
+                  <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                      <span
+                        aria-hidden="true"
+                        className={`size-2 rounded-full ${lineDot(u)}`}
+                      />
+                      {t("columns.line")}: {lineLabel(u)}
+                    </span>
+                    <span className="whitespace-nowrap tabular-nums">
+                      {t("columns.created")}:{" "}
+                      {formatCompactDate(u.createdAt, locale)}
+                    </span>
                   </p>
                 </Link>
               </li>
@@ -252,22 +315,40 @@ export default async function AdminMembersPage({
               <caption className="sr-only">{t("title")}</caption>
               <thead className="bg-slate-50 text-left text-xs text-slate-600">
                 <tr>
-                  <th scope="col" className="px-3 py-2 font-medium">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 font-medium whitespace-nowrap"
+                  >
                     {t("columns.name")}
                   </th>
-                  <th scope="col" className="px-3 py-2 font-medium">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 font-medium whitespace-nowrap"
+                  >
                     {t("columns.email")}
                   </th>
-                  <th scope="col" className="px-3 py-2 font-medium">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 font-medium whitespace-nowrap"
+                  >
                     {t("columns.state")}
                   </th>
-                  <th scope="col" className="px-3 py-2 font-medium">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 font-medium whitespace-nowrap"
+                  >
                     {t("columns.roles")}
                   </th>
-                  <th scope="col" className="px-3 py-2 font-medium">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 font-medium whitespace-nowrap"
+                  >
                     {t("columns.line")}
                   </th>
-                  <th scope="col" className="px-3 py-2 font-medium">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 font-medium whitespace-nowrap"
+                  >
                     {t("columns.created")}
                   </th>
                 </tr>
@@ -276,7 +357,7 @@ export default async function AdminMembersPage({
                 {page.map((u) => (
                   <tr
                     key={u.id}
-                    className="border-t border-slate-100 align-top hover:bg-slate-50"
+                    className="border-t border-slate-100 align-middle hover:bg-slate-50"
                   >
                     <th scope="row" className="px-3 py-2 text-left font-medium">
                       <Link
@@ -286,25 +367,52 @@ export default async function AdminMembersPage({
                         {name(u)}
                       </Link>
                       {u.isAdmin ? (
-                        <span className="ml-2">
+                        <span className="ml-2 whitespace-nowrap">
                           <Badge tone="brand">{t("badge.admin")}</Badge>
                         </span>
                       ) : null}
                     </th>
-                    <td className="px-3 py-2 break-all">
-                      {u.primaryEmail ?? "—"}
-                    </td>
                     <td className="px-3 py-2">
+                      <span
+                        className="block max-w-[16rem] truncate"
+                        title={u.primaryEmail ?? undefined}
+                      >
+                        {u.primaryEmail ?? "—"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <Badge tone={stateTone(u.state)}>
                         {tr(`state.${u.state}`)}
                       </Badge>
                     </td>
                     <td className="px-3 py-2">
-                      {u.roles.map(roleLabel).join(", ") || "—"}
+                      {u.roles.length ? (
+                        <span className="flex flex-wrap gap-1 [&>span]:whitespace-nowrap">
+                          {u.roles.map((r) => (
+                            <Badge key={r.role}>{roleLabel(r)}</Badge>
+                          ))}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
                     </td>
-                    <td className="px-3 py-2">{lineLabel(u)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      {formatDate(u.createdAt, locale)}
+                      <span
+                        className="inline-flex items-center gap-1.5"
+                        title={lineLabel(u)}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`size-2 shrink-0 rounded-full ${lineDot(u)}`}
+                        />
+                        <span aria-hidden="true">{lineShort(u)}</span>
+                        <span className="sr-only">{lineLabel(u)}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                      <time dateTime={u.createdAt.toISOString()}>
+                        {formatCompactDate(u.createdAt, locale)}
+                      </time>
                     </td>
                   </tr>
                 ))}

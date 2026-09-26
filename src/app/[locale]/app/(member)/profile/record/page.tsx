@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cancelRecordRequestAction } from "@/app/actions/record-requests";
-import { RecordRequestForm } from "@/components/records/record-request-form";
+import { CorrectionPanel } from "@/components/records/correction-panel";
 import { RecordDiff, RecordValue } from "@/components/records/record-value";
+import { BackLink } from "@/components/ui/back-link";
 import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { ChangeRequestStatus } from "@/generated/prisma/enums";
-import { Link } from "@/i18n/navigation";
+import { ChangeRequestStatus, RoleKey } from "@/generated/prisma/enums";
 import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
@@ -53,18 +53,10 @@ export default async function RecordPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t("title")}
-        description={t("description")}
-        actions={
-          <Link
-            href="/app/profile/edit"
-            className="text-sm text-brand-700 underline"
-          >
-            {t("backToProfile")}
-          </Link>
-        }
-      />
+      <div>
+        <BackLink href="/app/profile/edit">{t("backToProfile")}</BackLink>
+        <PageHeader title={t("title")} description={t("description")} />
+      </div>
 
       {roles.length === 0 ? <Card>{t("noRecord")}</Card> : null}
 
@@ -80,19 +72,32 @@ export default async function RecordPage() {
           <Card key={r.role} className="space-y-4">
             <h2 className="text-lg font-semibold">{tr(`role.${r.role}`)}</h2>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-              {fieldsFor(r.role).map((f) => (
-                <div key={f} className="contents">
-                  <dt className="text-slate-600">{t(`fields.${f}`)}</dt>
-                  <dd>
-                    <RecordValue
-                      field={f}
-                      value={current[f]}
-                      role={r.role}
-                      cohortLabels={cohortLabels}
-                    />
-                  </dd>
-                </div>
-              ))}
+              {fieldsFor(r.role).map((f) =>
+                // A teacher with no end year is still at AIS: say so plainly
+                // rather than "Left: present".
+                f === "yearsTo" &&
+                r.role === RoleKey.TEACHER &&
+                (current[f] === null || current[f] === undefined) ? (
+                  <div key={f} className="contents">
+                    <dt className="text-slate-600">{t("fields.employment")}</dt>
+                    <dd>
+                      <Badge tone="green">{t("stillTeaching")}</Badge>
+                    </dd>
+                  </div>
+                ) : (
+                  <div key={f} className="contents">
+                    <dt className="text-slate-600">{t(`fields.${f}`)}</dt>
+                    <dd>
+                      <RecordValue
+                        field={f}
+                        value={current[f]}
+                        role={r.role}
+                        cohortLabels={cohortLabels}
+                      />
+                    </dd>
+                  </div>
+                ),
+              )}
             </dl>
 
             {pending ? (
@@ -117,19 +122,12 @@ export default async function RecordPage() {
                 </form>
               </div>
             ) : (
-              <details className="rounded-lg border border-slate-200 p-4">
-                <summary className="cursor-pointer font-medium text-brand-700">
-                  {t("requestCorrection")}
-                </summary>
-                <div className="mt-4">
-                  <RecordRequestForm
-                    cohorts={cohorts}
-                    role={r.role}
-                    fields={fieldsFor(r.role)}
-                    values={toFormValues(r.role, current)}
-                  />
-                </div>
-              </details>
+              <CorrectionPanel
+                cohorts={cohorts}
+                role={r.role}
+                fields={fieldsFor(r.role)}
+                values={toFormValues(r.role, current)}
+              />
             )}
           </Card>
         );

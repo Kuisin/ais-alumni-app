@@ -73,7 +73,7 @@ export default async function LandingPage({
           <p className="text-sm text-slate-600">{t("operatedBy")}</p>
         </section>
 
-        <Card className="space-y-5">
+        <Card className="order-first space-y-5 md:order-none">
           <div>
             <h2 className="text-xl font-bold">{t("signIn.title")}</h2>
             <p className="mt-1 text-sm text-slate-600">

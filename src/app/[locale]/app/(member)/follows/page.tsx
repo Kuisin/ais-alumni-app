@@ -1,3 +1,4 @@
+import { Search, ShieldOff, Users } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
@@ -9,6 +10,7 @@ import {
   unfollowAction,
 } from "@/app/actions/follows";
 import { MemberCard } from "@/components/directory/member-card";
+import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -194,25 +196,29 @@ export default async function FollowsPage({ searchParams }: Props) {
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <nav
-        aria-label={t("tabsLabel")}
-        className="-mx-4 mb-4 overflow-x-auto px-4"
-      >
-        <ul className="flex gap-1 border-b border-slate-200">
+      <nav aria-label={t("tabsLabel")} className="mb-4">
+        <ul className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           {TABS.map((key) => (
             <li key={key}>
               <Link
                 href={`/app/follows?tab=${key}`}
                 aria-current={key === tab ? "page" : undefined}
                 className={cn(
-                  "flex min-h-11 items-center gap-1 whitespace-nowrap border-b-2 px-3 text-sm font-medium",
+                  "flex min-h-11 items-center justify-between gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-colors sm:justify-center",
                   key === tab
-                    ? "border-brand-700 text-brand-800"
-                    : "border-transparent text-slate-600 hover:text-slate-900",
+                    ? "border-brand-700 bg-brand-50 text-brand-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900",
                 )}
               >
                 {t(`tabs.${key}`)}
-                <span className="rounded-full bg-slate-100 px-1.5 text-xs text-slate-700">
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 text-xs",
+                    key === tab
+                      ? "bg-brand-100 text-brand-800"
+                      : "bg-slate-100 text-slate-700",
+                  )}
+                >
                   {counts[key]}
                 </span>
               </Link>
@@ -225,7 +231,19 @@ export default async function FollowsPage({ searchParams }: Props) {
           {t(`tabs.${tab}`)}
         </h2>
         {content.length === 0 ? (
-          <EmptyState>{t(`empty.${tab}`)}</EmptyState>
+          <EmptyState
+            icon={tab === "blocked" ? <ShieldOff /> : <Users />}
+            action={
+              tab === "blocked" ? undefined : (
+                <Link href="/app/directory" className={buttonClass("primary")}>
+                  <Search aria-hidden="true" className="size-4" />
+                  {t("findInDirectory")}
+                </Link>
+              )
+            }
+          >
+            <span className="text-balance">{t(`empty.${tab}`)}</span>
+          </EmptyState>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">{content}</ul>
         )}

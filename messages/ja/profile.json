@@ -88,5 +88,13 @@
   },
   "requestRecordCorrection": "在籍情報の修正を依頼",
   "historyIntro": "AIS以降の学校や勤務先を登録すると、同級生が見つけやすくなります。",
-  "editHistory": "学歴・職歴を編集"
+  "editHistory": "学歴・職歴を編集",
+  "photoChoose": "写真を選択",
+  "photoSelected": "選択中: {name}",
+  "emptyPrompt": {
+    "bio": "自己紹介はまだありません。近況をひとこと書いてみましょう。",
+    "bioAction": "自己紹介を書く",
+    "history": "学歴・職歴はまだ登録されていません。",
+    "historyAction": "学歴・職歴を追加"
+  }
 }

@@ -1,11 +1,12 @@
 import { expect, type Page, test } from "@playwright/test";
 import { signInWithEmail } from "./helpers";
 
+// The add forms are collapsed behind a "＋ Add a school / job" button.
 async function openAdd(page: Page, title: string) {
-  const d = page.locator("details", { hasText: title }).first();
-  if ((await d.getAttribute("open")) === null)
-    await d.locator("summary").click();
-  return d;
+  await page.getByRole("button", { name: title }).click();
+  const form = page.getByRole("region", { name: title });
+  await expect(form).toBeVisible();
+  return form;
 }
 
 // Seeded demo members: ken and emma (not following each other), admin.

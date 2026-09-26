@@ -1,14 +1,24 @@
+import { ArrowDown, FileSpreadsheet } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { RosterImportForm } from "@/components/admin/roster-import-form";
+import { buttonClass } from "@/components/ui/button";
 import { Card, EmptyState, PageHeader } from "@/components/ui/card";
-import {
-  RosterDeleteForm,
-  RosterImportForm,
-} from "@/components/verify/roster-forms";
+import { RosterDeleteForm } from "@/components/verify/roster-forms";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 
 type Props = { params: Promise<{ locale: string }> };
+
+/** CSV columns in order, with whether each is required. */
+const COLUMNS = [
+  { key: "nameRomaji", required: true },
+  { key: "nameKanji", required: false },
+  { key: "dateOfBirth", required: false },
+  { key: "yearsFrom", required: false },
+  { key: "yearsTo", required: false },
+  { key: "kind", required: false },
+] as const;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -45,7 +55,18 @@ export default async function RosterPage() {
       <Card className="space-y-3">
         <h2 className="text-lg font-semibold">{t("roster.current")}</h2>
         {total === 0 ? (
-          <EmptyState>{t("roster.empty")}</EmptyState>
+          <EmptyState
+            icon={<FileSpreadsheet />}
+            hint={t("roster.emptyHint")}
+            action={
+              <a href="#roster-import" className={buttonClass("secondary")}>
+                <ArrowDown aria-hidden="true" className="size-4" />
+                {t("roster.goToImport")}
+              </a>
+            }
+          >
+            {t("roster.empty")}
+          </EmptyState>
         ) : (
           <>
             <table className="w-full text-left text-sm">
@@ -88,8 +109,48 @@ export default async function RosterPage() {
         )}
       </Card>
 
-      <Card className="space-y-3">
+      <Card className="space-y-4" id="roster-import">
         <h2 className="text-lg font-semibold">{t("roster.importTitle")}</h2>
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <table className="w-full text-left text-sm">
+            <caption className="bg-slate-50 px-3 py-2 text-left text-sm font-medium text-slate-800">
+              {t("roster.spec.title")}
+            </caption>
+            <thead className="bg-slate-50 text-xs text-slate-600">
+              <tr>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  {t("roster.spec.column")}
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  {t("roster.spec.meaning")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {COLUMNS.map((c) => (
+                <tr key={c.key} className="border-t border-slate-100 align-top">
+                  <th
+                    scope="row"
+                    className="px-3 py-2 font-mono text-xs font-medium whitespace-nowrap"
+                  >
+                    {c.key}
+                    {c.required ? (
+                      <span className="ml-1 font-sans text-red-700">
+                        {t("roster.spec.required")}
+                      </span>
+                    ) : null}
+                  </th>
+                  <td className="px-3 py-2 text-slate-700">
+                    {t(`roster.spec.cols.${c.key}`)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="border-t border-slate-100 px-3 py-2 text-xs text-slate-600">
+            {t("roster.spec.note")}
+          </p>
+        </div>
         <RosterImportForm />
       </Card>
 

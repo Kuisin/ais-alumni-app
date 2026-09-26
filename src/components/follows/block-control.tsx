@@ -26,7 +26,7 @@ export async function BlockControl({
   }
   return (
     <details className="group">
-      <summary className="inline-flex min-h-11 cursor-pointer list-none items-center rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50">
+      <summary className="flex min-h-11 w-full cursor-pointer list-none items-center rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 [&::-webkit-details-marker]:hidden">
         {t("actions.block")}
       </summary>
       <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">

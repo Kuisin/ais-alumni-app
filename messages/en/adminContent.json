@@ -66,7 +66,15 @@
     "deleted": "The event has been deleted.",
     "deleteTitle": "Delete event",
     "deleteHint": "All RSVPs for this event are deleted too. This cannot be undone.",
-    "deleteConfirm": "Delete this event and all its RSVPs?"
+    "deleteConfirm": "Delete this event and all its RSVPs?",
+    "description": "Create and edit member events and check who is coming.",
+    "emptyHint": "Once you create an event, it appears in the events list of the members it targets and they can RSVP.",
+    "emptyPast": "No past events.",
+    "status": {
+      "open": "Open",
+      "closed": "RSVP closed",
+      "full": "Full"
+    }
   },
   "attendees": {
     "title": "Attendees",
@@ -98,7 +106,9 @@
       "published": "Published",
       "notified": "Notified",
       "pinned": "Pinned"
-    }
+    },
+    "description": "Write, publish and notify members about news. Drafts are not visible to members.",
+    "emptyHint": "Create a post and publish it to show it in members' news list."
   },
   "notify": {
     "title": "Publish & notify",

@@ -23,12 +23,14 @@ export function RecordValue({
   /** 学年 number → label */
   cohortLabels?: Record<string, string>;
 }) {
-  const _tr = useTranslations("roles");
+  const t = useTranslations("records");
   const tc = useTranslations("common");
   if (value === null || value === undefined || value === "") {
     // A teacher with no end year is still at AIS.
     return (
-      <>{field === "yearsTo" && role === "TEACHER" ? tc("present") : "—"}</>
+      <>
+        {field === "yearsTo" && role === "TEACHER" ? t("stillTeaching") : "—"}
+      </>
     );
   }
   // 学年 number; label from the choices list, else "第N期".

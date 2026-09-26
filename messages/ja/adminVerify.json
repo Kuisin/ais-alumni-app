@@ -9,7 +9,15 @@
       "needsInfo": "申請者の対応待ち"
     },
     "empty": "該当する申請はありません。",
-    "submitted": "{date} 申請"
+    "submitted": "{date} 申請",
+    "emptyHint": "新しい入会申請が届くと、ここに古い順に表示されます。",
+    "emptyNeedsInfoHint": "「追加情報を依頼」した申請は、申請者が回答するまでここに表示されます。",
+    "pagination": "ページ",
+    "prev": "前へ",
+    "next": "次へ",
+    "pageOf": "{page} / {pages} ページ",
+    "search": "検索",
+    "searchPlaceholder": "名前で検索（ローマ字・漢字）"
   },
   "badges": {
     "noRoster": "名簿データなし",
@@ -19,7 +27,10 @@
     "schoolEmail": "学校メール確認済み",
     "minor": "未成年",
     "parentConfirmed": "保護者確認済み",
-    "parentUnconfirmed": "保護者未確認"
+    "parentUnconfirmed": "保護者未確認",
+    "rosterMatch": "名簿一致 {score}",
+    "vouchCounts": "推薦 承認{yes}・否認{no}・不明{unsure}・未回答{pending}",
+    "noVouches": "推薦なし"
   },
   "status": {
     "PENDING": "審査待ち",
@@ -76,7 +87,6 @@
     "file": "CSVファイル",
     "fileTooLarge": "ファイルが大きすぎます（最大5MB）。",
     "paste": "またはCSVを貼り付け",
-    "columns": "列：nameRomaji, nameKanji, dateOfBirth（YYYY-MM-DD）, yearsFrom, yearsTo, kind（TEACHER, CURRENT_STUDENT, CURRENT_PARENT, FORMER_STUDENT, FORMER_PARENT。空欄の場合は FORMER_STUDENT）。見出し行は任意です。",
     "preview": "プレビュー",
     "import": "取り込む",
     "lineError": "{line} 行目：{error}",
@@ -109,7 +119,27 @@
     "deleteTitle": "名簿の削除",
     "deleteDescription": "名簿のすべての行を削除します。既存の会員には影響しません。",
     "deleteConfirm": "名簿のすべての行が削除されることを理解しました。",
-    "deleteAll": "すべて削除"
+    "deleteAll": "すべて削除",
+    "chooseFile": "ファイルを選択",
+    "noFile": "ファイルが選択されていません",
+    "columnsHint": "列の順番は上の表のとおりです。",
+    "emptyHint": "名簿を取り込むと、入会申請と照合して一致度を表示できます。下の「CSVの取り込み」から追加してください。",
+    "goToImport": "CSVを取り込む",
+    "spec": {
+      "title": "CSVの列（この順番）",
+      "column": "列名",
+      "meaning": "内容",
+      "required": "必須",
+      "note": "見出し行は任意です。文字コードはUTF-8を使ってください。",
+      "cols": {
+        "nameRomaji": "氏名（ローマ字）",
+        "nameKanji": "氏名（漢字・かな）",
+        "dateOfBirth": "生年月日（YYYY-MM-DD）",
+        "yearsFrom": "在籍開始年（西暦4桁）",
+        "yearsTo": "在籍終了年（西暦4桁）",
+        "kind": "区分：TEACHER, CURRENT_STUDENT, CURRENT_PARENT, FORMER_STUDENT, FORMER_PARENT（空欄 = FORMER_STUDENT）"
+      }
+    }
   },
   "vouches": {
     "pending": "未回答",

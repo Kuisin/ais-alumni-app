@@ -5,7 +5,7 @@
   "edit": "Edit",
   "delete": "Delete class",
   "cannotDelete": "Classes with members, representatives or sent notifications can't be deleted.",
-  "empty": "No classes yet. They appear when members choose their 学年.",
+  "empty": "No classes yet.",
   "numberValue": "第{number}期",
   "elementary": "Elementary {start}–{end}",
   "members": "{count, plural, =0 {No members} one {1 member} other {# members}}",
@@ -31,5 +31,6 @@
     "yearsOrder": "The end year must be after the start year.",
     "beforeFirst": "第1期 finished 6th grade in 2012; earlier years aren't valid.",
     "exists": "That class already exists."
-  }
+  },
+  "emptyHint": "A class is created automatically the first time a member picks it when applying or in their profile."
 }

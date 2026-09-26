@@ -18,7 +18,9 @@
     "lineLinked": "Linked",
     "lineFollowing": "Linked and following",
     "lineUnlinked": "Not linked",
-    "adminOnly": "Admins only"
+    "adminOnly": "Admins only",
+    "more": "Filters",
+    "activeCount": "{count} on"
   },
   "columns": {
     "name": "Name",
@@ -34,7 +36,12 @@
   "line": {
     "notLinked": "Not linked",
     "linkedNotFollowing": "Linked, not following",
-    "following": "Linked and following"
+    "following": "Linked and following",
+    "short": {
+      "notLinked": "Not linked",
+      "linkedNotFollowing": "Linked",
+      "following": "Following"
+    }
   },
   "detail": {
     "title": "Member",

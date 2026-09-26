@@ -31,9 +31,12 @@ const s = (v: string | number | null | undefined) =>
 export function HistoryForm({
   kind,
   values,
+  onSaved,
 }: {
   kind: "education" | "work";
   values?: HistoryValues;
+  /** called after a successful save */
+  onSaved?: () => void;
 }) {
   const t = useTranslations("history");
   const [state, action] = useActionState<HistoryFormState, FormData>(
@@ -46,8 +49,12 @@ export function HistoryForm({
     state?.fieldErrors?.[f] ? t(`fieldErrors.${state.fieldErrors[f]}`) : null;
 
   // Clear the "add" form after a successful save.
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
   useEffect(() => {
-    if (state?.ok && !values?.id) formRef.current?.reset();
+    if (!state?.ok) return;
+    if (!values?.id) formRef.current?.reset();
+    onSavedRef.current?.();
   }, [state, values?.id]);
 
   return (
@@ -127,7 +134,7 @@ export function HistoryForm({
           </Field>
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3 sm:max-w-md sm:gap-4">
         <Field
           id={`${prefix}-start`}
           label={t("fields.startYear")}
@@ -139,27 +146,38 @@ export function HistoryForm({
               name="startYear"
               inputMode="numeric"
               maxLength={4}
-              placeholder="2020"
+              placeholder={t("yearPlaceholder")}
               defaultValue={s(values?.startYear)}
+              className="max-w-36"
             />
           )}
         </Field>
         <Field
           id={`${prefix}-end`}
           label={t("fields.endYear")}
-          hint={t(`hints.endYear.${kind}`)}
           error={err("endYear")}
         >
           {(a) => (
             <Input
               {...a}
+              aria-describedby={[a["aria-describedby"], `${prefix}-end-hint`]
+                .filter(Boolean)
+                .join(" ")}
               name="endYear"
               inputMode="numeric"
               maxLength={4}
+              placeholder={t("yearPlaceholder")}
               defaultValue={s(values?.endYear)}
+              className="max-w-36"
             />
           )}
         </Field>
+        <p
+          id={`${prefix}-end-hint`}
+          className="col-span-2 -mt-1 text-sm text-slate-600"
+        >
+          {t(`hints.endYear.${kind}`)}
+        </p>
       </div>
       <Field
         id={`${prefix}-visibility`}

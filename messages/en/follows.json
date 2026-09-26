@@ -54,5 +54,10 @@
     "autoText": "{name} is now following you on AIS Alumni. The request was accepted automatically because your graduation years are within one year. You can remove followers at any time.",
     "acceptedSubject": "{name} accepted your follow request",
     "acceptedText": "You can now see {name}'s contact details on AIS Alumni."
-  }
+  },
+  "menu": {
+    "label": "More actions"
+  },
+  "followHint": "Once your follow is accepted, you can see their contact details.",
+  "findInDirectory": "Find people in the directory"
 }

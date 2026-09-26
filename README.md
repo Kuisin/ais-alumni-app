@@ -18,7 +18,7 @@ pnpm dev
 
 Without `RESEND_API_KEY`, emails (including sign-in codes) are printed to the
 server console and written to `.data/dev-mail/<address>.txt`. Without
-`LINE_MESSAGING_CHANNEL_ACCESS_TOKEN`, LINE pushes are logged. Without
+`LINE_MESSAGING_CHANNEL_ID` + `LINE_MESSAGING_CHANNEL_SECRET`, LINE pushes are logged. Without
 `BLOB_READ_WRITE_TOKEN`, uploads go to `.data/uploads/`.
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit), `pnpm build && pnpm test:e2e` (Playwright smoke tests).

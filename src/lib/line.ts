@@ -10,8 +10,43 @@ const API = "https://api.line.me/v2/bot";
 
 export type LineTextMessage = { type: "text"; text: string };
 
-function token(): string | null {
-  return process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN ?? null;
+let cached: { token: string; expiresAt: number } | null = null;
+
+/**
+ * Channel access token. Prefers a stateless token (15 min) issued from the
+ * channel ID + secret, so no long-lived token has to be stored; falls back to
+ * LINE_MESSAGING_CHANNEL_ACCESS_TOKEN if that is set instead.
+ */
+async function token(): Promise<string | null> {
+  const id = process.env.LINE_MESSAGING_CHANNEL_ID;
+  const secret = process.env.LINE_MESSAGING_CHANNEL_SECRET;
+  if (!id || !secret)
+    return process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN ?? null;
+  // Refresh a minute early so a token never expires mid-request.
+  if (cached && cached.expiresAt - 60_000 > Date.now()) return cached.token;
+  const res = await fetch("https://api.line.me/oauth2/v3/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: id,
+      client_secret: secret,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `LINE token request failed: ${res.status} ${await res.text()}`,
+    );
+  }
+  const data = (await res.json()) as {
+    access_token: string;
+    expires_in: number;
+  };
+  cached = {
+    token: data.access_token,
+    expiresAt: Date.now() + data.expires_in * 1000,
+  };
+  return cached.token;
 }
 
 export function verifyLineSignature(
@@ -31,7 +66,7 @@ export function verifyLineSignature(
 }
 
 async function call(path: string, body: unknown): Promise<void> {
-  const t = token();
+  const t = await token();
   if (!t) {
     console.info(`[line:dev] POST ${path} ${JSON.stringify(body)}`);
     return;

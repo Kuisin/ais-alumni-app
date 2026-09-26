@@ -1,3 +1,4 @@
+import { Check, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { LineLinkPanel } from "@/components/line/line-link-panel";
@@ -15,15 +16,18 @@ import {
 } from "@/components/settings/sign-in-methods";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
 import {
   canRemoveSignInMethod,
   OAUTH_PROVIDERS,
   signInMethods,
 } from "@/lib/account";
+import { getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { parseLinkOutcome } from "@/lib/line-link";
 import { chooseChannel } from "@/lib/notify";
 import { requireActive } from "@/lib/session";
+import { ssoReady } from "@/lib/sso";
 
 export async function generateMetadata({
   params,
@@ -58,9 +62,15 @@ export default async function SettingsPage({
     ],
   });
   const rows: MethodRow[] = [
-    { method: "email", linked: methods.includes("email"), removable: false },
+    {
+      method: "email",
+      linked: methods.includes("email"),
+      removable: false,
+      ready: true,
+    },
     ...OAUTH_PROVIDERS.map((p) => ({
       method: p,
+      ready: ssoReady(p),
       linked: methods.includes(p),
       removable: canRemoveSignInMethod(methods, p),
     })),
@@ -75,7 +85,15 @@ export default async function SettingsPage({
     banners.push(t("banner.googleLinked"));
   if (one(sp.saved) === "language") banners.push(t("banner.languageSaved"));
 
+  const access = await getStaffAccess(user);
+  const staffKeys = (["admin", "broadcast", "teachers"] as const).filter(
+    (k) => access[k],
+  );
+
   const nav = [
+    ...(staffKeys.length
+      ? ([["admin-mode", t("adminMode.title")]] as const)
+      : []),
     ["language", t("language.title")],
     ["notifications", t("notifications.title")],
     ["line", t("line.title")],
@@ -115,6 +133,33 @@ export default async function SettingsPage({
       ) : null}
 
       <div className="space-y-6">
+        {staffKeys.length ? (
+          <SettingsSection
+            id="admin-mode"
+            title={t("adminMode.title")}
+            description={t("adminMode.description")}
+          >
+            <div>
+              <p className="text-sm font-medium">{t("adminMode.roles")}</p>
+              <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                {staffKeys.map((k) => (
+                  <li key={k} className="flex items-start gap-2">
+                    <Check
+                      aria-hidden="true"
+                      className="mt-0.5 size-4 shrink-0 text-green-600"
+                    />
+                    {t(`adminMode.access.${k}`)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link href="/app/admin" className={buttonClass("primary")}>
+              <ShieldCheck aria-hidden="true" className="size-4" />
+              {t("adminMode.button")}
+            </Link>
+          </SettingsSection>
+        ) : null}
+
         <SettingsSection
           id="language"
           title={t("language.title")}

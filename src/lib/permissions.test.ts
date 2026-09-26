@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   broadcastRights,
   type Holder,
+  hasStaffAccess,
   positionEligible,
   rightFor,
+  staffAccess,
   withinLimit,
 } from "./permissions";
 
@@ -100,5 +102,46 @@ describe("limits", () => {
       withinLimit("TEACHER_MANAGER", Array(20).fill(daysAgo(0.5)), now),
     ).toBe(false);
     expect(withinLimit(null, Array(100).fill(now), now)).toBe(true);
+  });
+});
+
+describe("staff access (admin mode)", () => {
+  const member = {
+    state: "ACTIVE" as const,
+    isAdmin: false,
+    roles: ["FORMER_STUDENT" as const],
+    currentTeacher: false,
+    positions: [],
+  };
+  it("plain members have no admin mode", () => {
+    expect(hasStaffAccess(staffAccess(member))).toBe(false);
+  });
+  it("teacher registrars get the teachers page only", () => {
+    const a = staffAccess({
+      ...member,
+      positions: [{ position: "TEACHER_REGISTRAR", cohortId: null }],
+    });
+    expect(a).toEqual({ admin: false, broadcast: false, teachers: true });
+    expect(
+      positionEligible("TEACHER_REGISTRAR", ["CURRENT_PARENT"], false),
+    ).toBe(true);
+  });
+  it("student leaders get the notification page; admins get everything", () => {
+    expect(
+      staffAccess({
+        ...member,
+        positions: [{ position: "STUDENT_LEADER", cohortId: "c1" }],
+      }),
+    ).toEqual({ admin: false, broadcast: true, teachers: false });
+    expect(staffAccess({ ...member, isAdmin: true })).toEqual({
+      admin: true,
+      broadcast: true,
+      teachers: true,
+    });
+    expect(
+      hasStaffAccess(
+        staffAccess({ ...member, isAdmin: true, state: "PENDING_REVIEW" }),
+      ),
+    ).toBe(false);
   });
 });

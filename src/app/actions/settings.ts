@@ -23,6 +23,7 @@ import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
+import { ssoReady } from "@/lib/sso";
 import { assertTransition } from "@/lib/state-machine";
 import { appUrl } from "@/lib/urls";
 
@@ -119,6 +120,7 @@ export async function updateNotifyViaAction(
  */
 export async function linkGoogleAction(): Promise<void> {
   await guard();
+  if (!ssoReady("google")) return;
   const locale = await getLocale();
   await signIn("google", {
     redirectTo: `/${locale}/app/settings?google=linked`,

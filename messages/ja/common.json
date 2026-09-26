@@ -51,9 +51,12 @@
     "family": "家族",
     "settings": "設定",
     "profile": "マイプロフィール",
-    "admin": "管理",
-    "backToMember": "会員サイトへ",
-    "notify": "お知らせを送る"
+    "notify": "お知らせを送る",
+    "adminMode": "管理モード",
+    "memberMode": "会員画面に戻る",
+    "account": "アカウントメニュー",
+    "adminLabel": "管理メニュー",
+    "profileShort": "マイページ"
   },
   "adminNav": {
     "verification": "本人確認",
@@ -65,7 +68,9 @@
     "audit": "操作ログ",
     "recordRequests": "在籍情報の修正",
     "cohorts": "学年",
-    "organizations": "学校・会社"
+    "organizations": "学校・会社",
+    "teachers": "教職員",
+    "destinations": "進路"
   },
   "notFoundTitle": "ページが見つかりません",
   "goHome": "ホームへ",
@@ -78,5 +83,12 @@
     "lastNameKanji": "姓",
     "firstNameKanji": "名"
   },
-  "cohortNumber": "第{number}期"
+  "cohortNumber": "第{number}期",
+  "adminGroups": {
+    "review": "審査",
+    "people": "会員",
+    "outreach": "発信",
+    "data": "データ"
+  },
+  "notReady": "準備中"
 }

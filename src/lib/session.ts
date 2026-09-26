@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
+import { getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { homePathFor } from "@/lib/state-machine";
 
@@ -53,6 +54,21 @@ export async function requireAdmin(): Promise<CurrentUser> {
   return user;
 }
 
+/** ACTIVE members with any admin-mode access (admin or a position). */
+export async function requireStaff(): Promise<CurrentUser> {
+  const user = await requireActive();
+  const a = await getStaffAccess(user);
+  if (!(a.admin || a.broadcast || a.teachers)) return go("/app/dashboard");
+  return user;
+}
+
+/** Admins and 教職員登録担当 (TEACHER_REGISTRAR). */
+export async function requireTeacherRegistrar(): Promise<CurrentUser> {
+  const user = await requireActive();
+  if (!(await getStaffAccess(user)).teachers) return go("/app/admin");
+  return user;
+}
+
 /**
  * Server-action guards: same checks, but throw instead of redirecting so
  * actions return an error to the caller.
@@ -76,5 +92,11 @@ export async function actionActive(): Promise<CurrentUser> {
 export async function actionAdmin(): Promise<CurrentUser> {
   const user = await actionActive();
   if (!user.isAdmin) throw new AuthError("forbidden");
+  return user;
+}
+
+export async function actionTeacherRegistrar(): Promise<CurrentUser> {
+  const user = await actionActive();
+  if (!(await getStaffAccess(user)).teachers) throw new AuthError("forbidden");
   return user;
 }

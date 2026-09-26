@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
@@ -14,24 +15,37 @@ import {
   type Audience,
   type BroadcastRight,
   broadcastRights,
+  type Holder,
+  type StaffAccess,
+  staffAccess,
 } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/session";
 
-/** The signed-in member's notification rights (loads their positions). */
-export async function getBroadcastRights(
-  user: CurrentUser,
-): Promise<BroadcastRight[]> {
+/** The member's roles and positions, loaded once per request. */
+const loadHolder = cache(async (user: CurrentUser): Promise<Holder> => {
   const positions = await db.userPosition.findMany({
     where: { userId: user.id },
     select: { position: true, cohortId: true },
   });
-  return broadcastRights({
+  return {
     state: user.state,
     isAdmin: user.isAdmin,
     roles: user.roles.map((r) => r.role),
     currentTeacher: isCurrentTeacher(user.roles),
     positions,
-  });
+  };
+});
+
+/** The signed-in member's notification rights (loads their positions). */
+export async function getBroadcastRights(
+  user: CurrentUser,
+): Promise<BroadcastRight[]> {
+  return broadcastRights(await loadHolder(user));
+}
+
+/** Which admin-mode pages the member may open. */
+export async function getStaffAccess(user: CurrentUser): Promise<StaffAccess> {
+  return staffAccess(await loadHolder(user));
 }
 
 /**

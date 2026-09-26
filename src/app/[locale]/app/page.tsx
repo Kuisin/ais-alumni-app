@@ -1,3 +1,4 @@
+import { MessageCircle } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   emailSignInAction,
@@ -5,10 +6,12 @@ import {
   signInWithLine,
 } from "@/app/actions/auth";
 import { AppShell } from "@/components/layout/app-shell";
+import { GoogleIcon } from "@/components/ui/brand-icons";
 import { buttonClass } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Badge, Card } from "@/components/ui/card";
 import { Link, redirect } from "@/i18n/navigation";
 import { getCurrentUser } from "@/lib/session";
+import { ssoReady } from "@/lib/sso";
 import { homePathFor } from "@/lib/state-machine";
 import { AuthErrorAlert, authErrorKey } from "./auth/_components/auth-error";
 import { OtpEmailForm } from "./auth/_components/otp-email-form";
@@ -81,20 +84,44 @@ export default async function LandingPage({
           {error ? <AuthErrorAlert error={error} /> : null}
 
           <div className="space-y-3">
-            <form action={signInWithLine}>
-              <button type="submit" className={buttonClass("line", "w-full")}>
-                {t("signIn.line")}
-              </button>
-            </form>
-            <form action={signInWithGoogle}>
-              <button
-                type="submit"
-                className={buttonClass("secondary", "w-full")}
-              >
-                {t("signIn.google")}
-              </button>
-            </form>
-            <p className="text-xs text-slate-600">{t("signIn.lineNote")}</p>
+            {(
+              [
+                ["line", signInWithLine, "line", MessageCircle],
+                ["google", signInWithGoogle, "secondary", GoogleIcon],
+              ] as const
+            ).map(([provider, action, variant, Icon]) =>
+              ssoReady(provider) ? (
+                <form key={provider} action={action}>
+                  <button
+                    type="submit"
+                    className={buttonClass(variant, "w-full")}
+                  >
+                    <Icon aria-hidden="true" className="size-5" />
+                    {t(`signIn.${provider}`)}
+                  </button>
+                </form>
+              ) : (
+                <button
+                  key={provider}
+                  type="button"
+                  disabled
+                  aria-describedby="sso-not-ready"
+                  className={buttonClass("secondary", "w-full")}
+                >
+                  <Icon aria-hidden="true" className="size-5" />
+                  {t(`signIn.${provider}`)}
+                  <Badge tone="amber">{t("signIn.notReady")}</Badge>
+                </button>
+              ),
+            )}
+            {ssoReady("line") && ssoReady("google") ? null : (
+              <p id="sso-not-ready" className="text-xs text-slate-600">
+                {t("signIn.notReadyNote")}
+              </p>
+            )}
+            {ssoReady("line") ? (
+              <p className="text-xs text-slate-600">{t("signIn.lineNote")}</p>
+            ) : null}
           </div>
 
           <div

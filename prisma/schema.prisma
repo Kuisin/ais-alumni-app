@@ -475,6 +475,8 @@ model RecordChangeRequest {
 enum PositionKey {
   TEACHER_MANAGER
   STUDENT_LEADER
+  /// may mark members as current teachers (現職) or remove them
+  TEACHER_REGISTRAR
 }
 
 model UserPosition {

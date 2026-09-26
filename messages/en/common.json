@@ -51,9 +51,12 @@
     "family": "Family",
     "settings": "Settings",
     "profile": "My profile",
-    "admin": "Admin",
-    "backToMember": "Member site",
-    "notify": "Send notification"
+    "notify": "Send notification",
+    "adminMode": "Admin mode",
+    "memberMode": "Back to member view",
+    "account": "Account menu",
+    "adminLabel": "Admin menu",
+    "profileShort": "Me"
   },
   "adminNav": {
     "verification": "Verification",
@@ -65,7 +68,9 @@
     "audit": "Audit log",
     "recordRequests": "Record corrections",
     "cohorts": "Classes",
-    "organizations": "Schools & companies"
+    "organizations": "Schools & companies",
+    "teachers": "Teachers",
+    "destinations": "Destinations"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",
@@ -78,5 +83,12 @@
     "lastNameKanji": "Last name (姓)",
     "firstNameKanji": "First name (名)"
   },
-  "cohortNumber": "Class {number}"
+  "cohortNumber": "Class {number}",
+  "adminGroups": {
+    "review": "Review",
+    "people": "People",
+    "outreach": "Outreach",
+    "data": "Data"
+  },
+  "notReady": "Not ready yet"
 }

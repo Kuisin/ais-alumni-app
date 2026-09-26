@@ -128,19 +128,26 @@ export function OrgCombobox({
         className="block min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base aria-[invalid=true]:border-red-600"
       />
       {open && items.length ? (
-        <ul
+        <div
           id={listId}
           role="listbox"
           className="animate-fade absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
         >
           {items.map((item, i) => (
-            <li
+            <div
               key={item.type === "org" ? item.org.id : "new"}
+              tabIndex={-1}
               id={optionId(i)}
               role="option"
               aria-selected={i === active}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => pick(i)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  pick(i);
+                }
+              }}
               onMouseEnter={() => setActive(i)}
               className={`flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm ${
                 i === active ? "bg-brand-50 text-brand-800" : ""
@@ -158,9 +165,9 @@ export function OrgCombobox({
                   {t("orgAddNew", { name: text.trim() })}
                 </span>
               )}
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : null}
       <p id={`${id}-hint`} className="text-sm text-slate-600">
         {orgId

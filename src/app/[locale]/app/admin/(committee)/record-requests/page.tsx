@@ -1,8 +1,10 @@
+import { ClipboardCheck, History } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { RecordDecisionForm } from "@/components/records/decision-form";
 import { RecordDiff } from "@/components/records/record-value";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { Tabs } from "@/components/ui/tabs";
 import { ChangeRequestStatus } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { loadCohortChoices } from "@/lib/cohorts-db";
@@ -28,6 +30,9 @@ export default async function RecordRequestsPage({
   const cohortLabels = Object.fromEntries(
     (await loadCohortChoices(locale)).map((c) => [c.value, c.label]),
   );
+  const pendingCount = await db.recordChangeRequest.count({
+    where: { status: ChangeRequestStatus.PENDING },
+  });
   const requests = await db.recordChangeRequest.findMany({
     where:
       tab === "pending"
@@ -48,23 +53,27 @@ export default async function RecordRequestsPage({
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} description={t("description")} />
-      <nav aria-label={t("tabsLabel")} className="flex gap-2">
-        {(["pending", "decided"] as const).map((k) => (
-          <Link
-            key={k}
-            href={{
-              pathname: "/app/admin/record-requests",
-              query: k === "decided" ? { tab: k } : {},
-            }}
-            aria-current={tab === k ? "page" : undefined}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${tab === k ? "bg-brand-700 text-white" : "bg-white text-slate-700 hover:bg-slate-100"}`}
-          >
-            {t(`tabs.${k}`)}
-          </Link>
-        ))}
-      </nav>
+      <Tabs
+        label={t("tabsLabel")}
+        items={(["pending", "decided"] as const).map((k) => ({
+          href: {
+            pathname: "/app/admin/record-requests",
+            query: k === "decided" ? { tab: k } : {},
+          },
+          label: t(`tabs.${k}`),
+          count: k === "pending" ? pendingCount : undefined,
+          active: tab === k,
+        }))}
+      />
 
-      {requests.length === 0 ? <EmptyState>{t("empty")}</EmptyState> : null}
+      {requests.length === 0 ? (
+        <EmptyState
+          icon={tab === "pending" ? <ClipboardCheck /> : <History />}
+          hint={t(tab === "pending" ? "emptyPendingHint" : "emptyDecidedHint")}
+        >
+          {t(tab === "pending" ? "emptyPending" : "empty")}
+        </EmptyState>
+      ) : null}
 
       {requests.map((q) => (
         <Card key={q.id} className="space-y-4">

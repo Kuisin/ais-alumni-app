@@ -1,9 +1,16 @@
+import { Filter } from "lucide-react";
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
-import { AUDIT_ROW_INCLUDE, AuditList } from "@/components/admin/audit-list";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatCompactDate } from "@/components/admin/admin-format";
+import {
+  AUDIT_CATEGORIES,
+  AUDIT_ROW_INCLUDE,
+  AuditList,
+} from "@/components/admin/audit-list";
+import { PageNav } from "@/components/admin/page-nav";
 import { buttonClass } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/field";
+import { Input, Select } from "@/components/ui/field";
 import type { Prisma } from "@/generated/prisma/client";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
@@ -27,7 +34,9 @@ export default async function AdminAuditPage({
 }: PageProps<"/[locale]/app/admin/audit">) {
   const sp = await searchParams;
   const t = await getTranslations("adminMembers.auditLog");
+  const ta = await getTranslations("audit");
   const tc = await getTranslations("common");
+  const locale = (await getLocale()) === "en" ? "en" : "ja";
 
   const action = one(sp.action).slice(0, 100);
   const target = one(sp.target).slice(0, 100);
@@ -47,6 +56,8 @@ export default async function AdminAuditPage({
   const hasMore = rows.length > PAGE_SIZE;
   const page = rows.slice(0, PAGE_SIZE);
 
+  const knownAction = AUDIT_CATEGORIES.some((c) => action === `${c}.`);
+
   const baseQuery: Record<string, string> = {};
   if (action) baseQuery.action = action;
   if (target) baseQuery.target = target;
@@ -62,14 +73,22 @@ export default async function AdminAuditPage({
       >
         <div>
           <label htmlFor="a-action" className="mb-1 block text-sm font-medium">
-            {t("action")}
+            {ta("category")}
           </label>
-          <Input
-            id="a-action"
-            name="action"
-            defaultValue={action}
-            placeholder="member."
-          />
+          {/* Values are action prefixes; the query still matches "contains". */}
+          <Select id="a-action" name="action" defaultValue={action}>
+            <option value="">{ta("allActions")}</option>
+            {AUDIT_CATEGORIES.map((c) => (
+              <option key={c} value={`${c}.`}>
+                {ta(`categories.${c}`)}
+              </option>
+            ))}
+            {action && !knownAction ? (
+              <option value={action}>
+                {ta("customFilter", { value: action })}
+              </option>
+            ) : null}
+          </Select>
         </div>
         <div>
           <label htmlFor="a-target" className="mb-1 block text-sm font-medium">
@@ -83,7 +102,11 @@ export default async function AdminAuditPage({
           />
         </div>
         <div className="flex items-end gap-2">
-          <button type="submit" className={buttonClass("primary")}>
+          <button
+            type="submit"
+            className={buttonClass("primary", "whitespace-nowrap")}
+          >
+            <Filter aria-hidden="true" className="size-4" />
             {tc("filter")}
           </button>
           {action || target ? (
@@ -94,29 +117,41 @@ export default async function AdminAuditPage({
         </div>
       </form>
 
-      <AuditList rows={page} />
+      <AuditList rows={page} dayHeading="h2" />
 
-      <nav aria-label={t("pagination")} className="mt-4 flex flex-wrap gap-2">
-        {cursor ? (
-          <Link
-            href={{ pathname: "/app/admin/audit", query: baseQuery }}
-            className={buttonClass("secondary")}
-          >
-            {t("newest")}
-          </Link>
-        ) : null}
-        {hasMore ? (
-          <Link
-            href={{
-              pathname: "/app/admin/audit",
-              query: { ...baseQuery, cursor: page[page.length - 1].id },
-            }}
-            className={buttonClass("secondary")}
-          >
-            {t("older")}
-          </Link>
-        ) : null}
-      </nav>
+      <PageNav
+        label={t("pagination")}
+        prev={
+          cursor ? { pathname: "/app/admin/audit", query: baseQuery } : null
+        }
+        next={
+          hasMore
+            ? {
+                pathname: "/app/admin/audit",
+                query: { ...baseQuery, cursor: page[page.length - 1].id },
+              }
+            : null
+        }
+        prevLabel={ta("newest")}
+        nextLabel={ta("older")}
+        status={
+          page.length ? (
+            <>
+              {ta("showing", { count: page.length })}
+              <span className="hidden sm:inline">
+                {" · "}
+                {ta("range", {
+                  from: formatCompactDate(
+                    page[page.length - 1].createdAt,
+                    locale,
+                  ),
+                  to: formatCompactDate(page[0].createdAt, locale),
+                })}
+              </span>
+            </>
+          ) : null
+        }
+      />
     </div>
   );
 }

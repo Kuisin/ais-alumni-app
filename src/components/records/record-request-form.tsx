@@ -65,7 +65,8 @@ export function RecordRequestForm({
               defaultValue={values[f]}
               inputMode="numeric"
               maxLength={4}
-              placeholder="2015"
+              placeholder={t("yearPlaceholder")}
+              className="max-w-36"
             />
           )}
         </Field>

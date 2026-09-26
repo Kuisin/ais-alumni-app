@@ -111,7 +111,10 @@ test("email sign-up → verification → admin approval → member dashboard", a
   // 4. Admin approves.
   const admin = await browser.newPage();
   await signInWithEmail(admin, ADMIN);
+  // The queue is paged oldest-first; search finds the new application.
   await admin.goto("/en/app/admin/verification");
+  await admin.getByRole("searchbox", { name: "Search" }).fill(lastName);
+  await admin.getByRole("button", { name: "Search" }).click();
   await admin
     .getByRole("link", { name: new RegExp(`Smoke ${lastName}`) })
     .first()

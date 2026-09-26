@@ -21,6 +21,10 @@
     "any": "指定なし",
     "apply": "検索",
     "clear": "クリア",
-    "cohort": "学年"
-  }
+    "cohort": "学年",
+    "more": "絞り込み",
+    "activeCount": "{count}件",
+    "applyFilters": "この条件で検索"
+  },
+  "count": "{count}名"
 }

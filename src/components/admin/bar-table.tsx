@@ -44,13 +44,19 @@ export async function BarTable({
               <th scope="col" className="py-1 pr-2 font-medium">
                 {t("label")}
               </th>
-              <th scope="col" className="py-1 pr-2 text-right font-medium">
+              <th
+                scope="col"
+                className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap"
+              >
                 {t("count")}
               </th>
-              <th scope="col" className="py-1 pr-2 text-right font-medium">
+              <th
+                scope="col"
+                className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap"
+              >
                 {t("share")}
               </th>
-              <th scope="col" className="w-2/5 py-1 font-medium">
+              <th scope="col" className="w-1/4 py-1 font-medium sm:w-2/5">
                 <span className="sr-only">{t("bar")}</span>
               </th>
             </tr>
@@ -58,7 +64,10 @@ export async function BarTable({
           <tbody>
             {rows.map((r) => (
               <tr key={r.key} className="border-t border-slate-100">
-                <th scope="row" className="py-2 pr-2 text-left font-normal">
+                <th
+                  scope="row"
+                  className="py-2 pr-2 text-left font-normal break-words"
+                >
                   {r.label}
                 </th>
                 <td className="py-2 pr-2 text-right tabular-nums">{r.value}</td>

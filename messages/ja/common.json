@@ -56,7 +56,10 @@
     "memberMode": "会員画面に戻る",
     "account": "アカウントメニュー",
     "adminLabel": "管理メニュー",
-    "profileShort": "マイページ"
+    "profileShort": "マイページ",
+    "adminModeShort": "管理",
+    "memberModeShort": "会員画面",
+    "pending": "{count}件の対応待ち"
   },
   "adminNav": {
     "verification": "本人確認",
@@ -81,7 +84,14 @@
     "firstNameRomaji": "名（First name）",
     "middleNameRomaji": "ミドルネーム（任意）",
     "lastNameKanji": "姓",
-    "firstNameKanji": "名"
+    "firstNameKanji": "名",
+    "placeholders": {
+      "lastNameRomaji": "例: Yamada",
+      "firstNameRomaji": "例: Taro",
+      "middleNameRomaji": "例: James",
+      "lastNameKanji": "例: 山田",
+      "firstNameKanji": "例: 太郎"
+    }
   },
   "cohortNumber": "第{number}期",
   "adminGroups": {

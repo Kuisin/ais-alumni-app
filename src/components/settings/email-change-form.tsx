@@ -76,12 +76,7 @@ export function EmailChangeForm({ current }: { current: string | null }) {
             )}
           </Field>
           <FormResult state={state} />
-          <SubmitButton
-            name="intent"
-            value="send"
-            variant="secondary"
-            pendingText={t("sending")}
-          >
+          <SubmitButton name="intent" value="send" pendingText={t("sending")}>
             {t("sendCode")}
           </SubmitButton>
         </form>

@@ -52,5 +52,6 @@
       "body": "Link your child's account so their status updates automatically.",
       "action": "Link"
     }
-  }
+  },
+  "doneSummary": "Completed ({count})"
 }

@@ -5,9 +5,9 @@ import { RsvpForm } from "@/components/events/rsvp-form";
 import { LineRsvpPrompt } from "@/components/line/line-rsvp-prompt";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
+import { BackLink } from "@/components/ui/back-link";
 import { Alert, Card } from "@/components/ui/card";
 import { RsvpAnswer } from "@/generated/prisma/enums";
-import { Link } from "@/i18n/navigation";
 import { isTargeted, toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import {
@@ -19,6 +19,9 @@ import {
 } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
 import { getCurrentUser, requireActive } from "@/lib/session";
+
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
 
 /** Event visible to the current user, or null (not found / not targeted). */
 const loadEvent = cache(async (id: string) => {
@@ -68,15 +71,24 @@ export default async function EventDetailPage({
   const map = mapLink(event.mapUrl, event.location);
   const open = isRsvpOpen(event);
   const closesAt = rsvpClosesAt(event);
+  // "13 days left" / "5 hours left" next to the RSVP deadline.
+  const msLeft = closesAt.getTime() - Date.now();
+  const left =
+    open && msLeft > 0
+      ? msLeft >= DAY_MS
+        ? { unit: "days" as const, count: Math.floor(msLeft / DAY_MS) }
+        : {
+            unit: "hours" as const,
+            count: Math.max(1, Math.ceil(msLeft / HOUR_MS)),
+          }
+      : null;
   const full = remaining === 0 && mine?.answer !== RsvpAnswer.GOING;
 
   return (
     <article className="space-y-6">
       <div>
-        <Link href="/app/events" className="text-sm text-brand-700 underline">
-          {t("backToList")}
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight">
+        <BackLink href="/app/events">{t("backToList")}</BackLink>
+        <h1 className="text-2xl font-bold tracking-tight">
           {title.text || t("untitled")}
           <FallbackTag fallback={title.fallback} />
         </h1>
@@ -132,19 +144,29 @@ export default async function EventDetailPage({
             <time dateTime={closesAt.toISOString()}>
               {formatDateTime(closesAt, locale)}
             </time>
+            {left ? (
+              <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                {t(`deadlineLeft.${left.unit}`, { count: left.count })}
+              </span>
+            ) : null}
           </dd>
         </dl>
       </Card>
 
       {body.text ? (
-        <section aria-label={t("details")}>
-          {body.fallback ? (
-            <p className="mb-2">
-              <FallbackTag fallback={body.fallback} />
-            </p>
-          ) : null}
-          <MarkdownBody source={body.text} />
-        </section>
+        <Card>
+          <section aria-labelledby="event-details-title">
+            <h2 id="event-details-title" className="mb-3 text-lg font-semibold">
+              {t("details")}
+            </h2>
+            {body.fallback ? (
+              <p className="mb-2">
+                <FallbackTag fallback={body.fallback} />
+              </p>
+            ) : null}
+            <MarkdownBody source={body.text} />
+          </section>
+        </Card>
       ) : null}
 
       <Card>

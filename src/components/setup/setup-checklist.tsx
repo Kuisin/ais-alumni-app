@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   Camera,
   Check,
+  ChevronDown,
   FileText,
   GraduationCap,
   Mail,
@@ -41,6 +42,9 @@ export async function SetupChecklist({
   const t = await getTranslations("setup");
   const { done, total, complete } = setupProgress(items);
   const next = items.find((i) => !i.done && i.href);
+  // Open tasks get full rows; finished ones fold into one line.
+  const todo = items.filter((i) => !i.done);
+  const finished = items.filter((i) => i.done);
   return (
     <section
       aria-labelledby="setup-heading"
@@ -72,60 +76,81 @@ export async function SetupChecklist({
           style={{ width: `${(done / total) * 100}%` }}
         />
       </div>
-      <ol className="space-y-2">
-        {items.map((item, i) => (
-          <li
-            key={item.key}
-            style={{ animationDelay: `${i * 40}ms` }}
-            className={`animate-rise flex items-start gap-3 rounded-xl p-3 ${item.done ? "bg-slate-50" : "bg-brand-50/60"}`}
-          >
+      {todo.length ? (
+        <ol className="space-y-2">
+          {todo.map((item, i) => {
+            const Icon = ICONS[item.key];
+            return (
+              <li
+                key={item.key}
+                style={{ animationDelay: `${i * 40}ms` }}
+                className="animate-rise flex items-start gap-3 rounded-xl bg-brand-50/60 p-3"
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-brand-700 ring-1 ring-brand-200"
+                >
+                  <Icon className="size-4" />
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">
+                      {t(`items.${item.key}.title`)}
+                      <span className="sr-only"> — {t("todo")}</span>
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {t(`items.${item.key}.body`)}
+                    </p>
+                  </div>
+                  {item.href ? (
+                    <Link
+                      href={item.href}
+                      className={buttonClass(
+                        item === next ? "primary" : "secondary",
+                        "min-w-[7rem] shrink-0 justify-center px-3 text-xs",
+                      )}
+                    >
+                      {t(`items.${item.key}.action`)}
+                    </Link>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+      {finished.length ? (
+        <details className="group rounded-xl bg-slate-50">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
             <span
               aria-hidden="true"
-              className={`inline-flex size-8 shrink-0 items-center justify-center rounded-full ${
-                item.done
-                  ? "animate-pop bg-green-600 text-white"
-                  : "bg-white text-brand-700 ring-1 ring-brand-200"
-              }`}
+              className="inline-flex size-6 items-center justify-center rounded-full bg-green-600 text-white"
             >
-              {item.done ? (
-                <Check className="size-4" strokeWidth={3} />
-              ) : (
-                (() => {
-                  const Icon = ICONS[item.key];
-                  return <Icon className="size-4" />;
-                })()
-              )}
+              <Check className="size-3.5" strokeWidth={3} />
             </span>
-            <div className="min-w-0 flex-1">
-              <p
-                className={`font-medium ${item.done ? "text-slate-500 line-through decoration-slate-300" : ""}`}
+            {t("doneSummary", { count: finished.length })}
+            <ChevronDown
+              aria-hidden="true"
+              className="ml-auto size-4 text-slate-500 transition-transform group-open:rotate-180"
+            />
+          </summary>
+          <ul className="space-y-1 px-3 pb-3">
+            {finished.map((item) => (
+              <li
+                key={item.key}
+                className="flex items-center gap-2 text-sm text-slate-600"
               >
+                <Check
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-green-700"
+                />
                 {t(`items.${item.key}.title`)}
-                <span className="sr-only">
-                  {" "}
-                  — {item.done ? t("done") : t("todo")}
-                </span>
-              </p>
-              {!item.done ? (
-                <p className="text-sm text-slate-600">
-                  {t(`items.${item.key}.body`)}
-                </p>
-              ) : null}
-            </div>
-            {!item.done && item.href ? (
-              <Link
-                href={item.href}
-                className={buttonClass(
-                  item === next ? "primary" : "secondary",
-                  "shrink-0 px-3 text-xs",
-                )}
-              >
-                {t(`items.${item.key}.action`)}
-              </Link>
-            ) : null}
-          </li>
-        ))}
-      </ol>
+                <span className="sr-only"> — {t("done")}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </section>
   );
 }

@@ -17,7 +17,7 @@ export function SettingsSection({
 }) {
   return (
     <section aria-labelledby={`${id}-title`} id={id} className="scroll-mt-20">
-      <Card className={cn(tone === "danger" && "border-red-200")}>
+      <Card className={cn(tone === "danger" && "border-red-200 bg-red-50/40")}>
         <h2
           id={`${id}-title`}
           className={cn(

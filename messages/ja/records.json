@@ -21,7 +21,8 @@
     "yearsTo": "離れた年",
     "subjects": "担当教科・学年",
     "studentIdNo": "学籍番号",
-    "cohort": "学年"
+    "cohort": "学年",
+    "employment": "在職状況"
   },
   "diff": {
     "field": "項目",
@@ -87,7 +88,13 @@
     "submit": {
       "APPROVE": "承認して反映",
       "REJECT": "却下"
-    }
+    },
+    "emptyPending": "確認待ちの依頼はありません。",
+    "emptyPendingHint": "会員がプロフィールの在籍情報（入学年・卒業年・学年など）の修正を依頼すると、ここに届きます。",
+    "emptyDecidedHint": "承認・却下した依頼は、新しい順に最大50件ここに表示されます。"
   },
-  "cohortCurrent": "在校中"
+  "cohortCurrent": "在校中",
+  "stillTeaching": "在職中",
+  "close": "閉じる",
+  "yearPlaceholder": "例: 2015"
 }

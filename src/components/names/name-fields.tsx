@@ -38,6 +38,7 @@ export function NameFields({
           maxLength={50}
           autoComplete={opts.autoComplete}
           lang={opts.lang}
+          placeholder={t(`placeholders.${name}`)}
         />
       )}
     </Field>

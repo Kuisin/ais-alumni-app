@@ -16,6 +16,16 @@ export default defineConfig({
       name: "mobile",
       use: { ...devices["iPhone 13"], browserName: "chromium" },
     },
+    {
+      // Desktop layout (top nav, admin sidebar). Runs after mobile: both use
+      // the same seeded accounts.
+      name: "desktop",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 860 },
+      },
+      dependencies: ["mobile"],
+    },
   ],
   webServer: {
     command: `pnpm next start -p ${PORT}`,

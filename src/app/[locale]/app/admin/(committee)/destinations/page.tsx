@@ -1,7 +1,16 @@
-import { Briefcase, Filter, School, Users } from "lucide-react";
+import {
+  Briefcase,
+  ChevronDown,
+  Filter,
+  GraduationCap,
+  Megaphone,
+  School,
+  Users,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { BarTable } from "@/components/admin/bar-table";
+import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -19,6 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const ENTRY = { startYear: true, endYear: true } as const;
+/** rows shown before "show all" */
+const ROW_LIMIT = 30;
 
 /** 進路: where former students went after AIS, from their 学歴・職歴. */
 export default async function DestinationsPage({
@@ -28,8 +39,13 @@ export default async function DestinationsPage({
   const th = await getTranslations("history");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
   const cohorts = await loadCohortOptions(locale);
-  const raw = (await searchParams).cohort;
-  const cohortId = cohorts.some((c) => c.id === raw) ? String(raw) : "";
+  const sp = await searchParams;
+  const cohortId = cohorts.some((c) => c.id === sp.cohort)
+    ? String(sp.cohort)
+    : "";
+  // The form sends f=1; without it (first visit) the toggle uses its default.
+  const toggled = sp.f === "1";
+  const showAll = sp.all === "1";
 
   const rows = await db.userRole.findMany({
     where: {
@@ -72,9 +88,19 @@ export default async function DestinationsPage({
     }))
     .sort(
       (a, b) =>
-        (a.cohort ?? 999) - (b.cohort ?? 999) || a.name.localeCompare(b.name),
+        // members with history first, then by 学年 and name
+        Number(b.path.hasHistory) - Number(a.path.hasHistory) ||
+        (a.cohort ?? 999) - (b.cohort ?? 999) ||
+        a.name.localeCompare(b.name),
     );
   const withHistory = people.filter((p) => p.path.hasHistory).length;
+  const onlyHistory = toggled ? sp.hist === "1" : withHistory > 0;
+  const listed = onlyHistory ? people.filter((p) => p.path.hasHistory) : people;
+  const shown = showAll ? listed : listed.slice(0, ROW_LIMIT);
+  const levels = PATH_LEVELS.slice(0, 3);
+  const baseQuery: Record<string, string> = { f: "1" };
+  if (cohortId) baseQuery.cohort = cohortId;
+  if (onlyHistory) baseQuery.hist = "1";
 
   const top = (names: (string | null | undefined)[]) =>
     topNames(names).map((n) => ({
@@ -99,12 +125,53 @@ export default async function DestinationsPage({
     },
   ];
 
+  const nowCell = (p: (typeof people)[number]) =>
+    p.path.now ? (
+      <span className="inline-flex max-w-full min-w-0 items-center gap-1">
+        {p.path.now.kind === "work" ? (
+          <Briefcase
+            aria-hidden="true"
+            className="size-4 shrink-0 text-slate-500"
+          />
+        ) : (
+          <School
+            aria-hidden="true"
+            className="size-4 shrink-0 text-slate-500"
+          />
+        )}
+        <span className="truncate" title={p.path.now.name}>
+          {p.path.now.name}
+        </span>
+      </span>
+    ) : p.path.hasHistory ? (
+      <span className="text-slate-400">—</span>
+    ) : (
+      <Badge>{t("table.noHistory")}</Badge>
+    );
+  const schoolCell = (name: string | undefined) =>
+    name ? (
+      <span className="block truncate" title={name}>
+        {name}
+      </span>
+    ) : (
+      <span className="text-slate-400">—</span>
+    );
+  const leftLine = (p: (typeof people)[number]) =>
+    p.year ? t(p.didGraduate ? "graduated" : "left", { year: p.year }) : null;
+  const cohortText = (p: (typeof people)[number]) =>
+    p.cohort ? cohortShort({ number: p.cohort }, locale) : "—";
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} description={t("description")} />
 
-      <form className="flex flex-wrap items-end gap-2">
-        <div className="space-y-1">
+      <form
+        method="get"
+        aria-label={t("filterLabel")}
+        className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4"
+      >
+        <input type="hidden" name="f" value="1" />
+        <div className="min-w-0 space-y-1">
           <label htmlFor="dest-cohort" className="block text-sm font-medium">
             {t("cohort")}
           </label>
@@ -117,7 +184,17 @@ export default async function DestinationsPage({
             ))}
           </Select>
         </div>
-        <SubmitButton variant="secondary">
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="hist"
+            value="1"
+            defaultChecked={onlyHistory}
+            className="size-5"
+          />
+          {t("onlyHistory")}
+        </label>
+        <SubmitButton variant="secondary" className="whitespace-nowrap">
           <Filter aria-hidden="true" className="size-4" />
           {t("apply")}
         </SubmitButton>
@@ -139,7 +216,9 @@ export default async function DestinationsPage({
               {withHistory}
               <span className="ml-2 text-base font-normal text-slate-500">
                 {people.length
-                  ? `${Math.round((withHistory / people.length) * 100)}%`
+                  ? t("rate", {
+                      percent: Math.round((withHistory / people.length) * 100),
+                    })
                   : "—"}
               </span>
             </p>
@@ -147,105 +226,171 @@ export default async function DestinationsPage({
         </Card>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {charts.map((c) => (
-          <BarTable
-            key={c.id}
-            id={c.id}
-            title={c.title}
-            rows={c.rows}
-            total={withHistory}
-            note={t("chartNote")}
-          />
-        ))}
-      </div>
+      {withHistory === 0 ? (
+        <EmptyState
+          icon={<GraduationCap />}
+          hint={t("noHistoryHint")}
+          action={
+            <Link href="/app/admin/notify" className={buttonClass("secondary")}>
+              <Megaphone aria-hidden="true" className="size-4" />
+              {t("askMembers")}
+            </Link>
+          }
+        >
+          {t("noHistory")}
+        </EmptyState>
+      ) : (
+        <section aria-label={t("chartsLabel")} className="space-y-3">
+          <p className="text-sm text-slate-600">{t("chartNote")}</p>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {charts.map((c) => (
+              <BarTable
+                key={c.id}
+                id={c.id}
+                title={c.title}
+                rows={c.rows}
+                total={withHistory}
+                note={undefined}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <Card>
-        <h2 className="mb-1 text-lg font-semibold">{t("table.title")}</h2>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold">{t("table.title")}</h2>
+          <p className="text-sm text-slate-600 tabular-nums">
+            {t("table.count", { shown: shown.length, total: listed.length })}
+          </p>
+        </div>
         <p className="mb-3 text-sm text-slate-600">{t("table.hint")}</p>
-        {people.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] border-collapse text-sm">
+        {shown.length ? (
+          <>
+            {/* Phones: one card per person */}
+            <ul className="divide-y divide-slate-100 sm:hidden">
+              {shown.map((p) => (
+                <li key={p.id} className="py-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <Link
+                      href={`/app/admin/members/${p.id}`}
+                      className="min-w-0 truncate font-medium text-brand-700 hover:underline"
+                    >
+                      {p.name}
+                    </Link>
+                    <span className="shrink-0 text-xs whitespace-nowrap text-slate-500">
+                      {cohortText(p)}
+                    </span>
+                  </div>
+                  {leftLine(p) ? (
+                    <p className="text-xs text-slate-500">{leftLine(p)}</p>
+                  ) : null}
+                  <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
+                    {levels.map((l) => (
+                      <div key={l} className="contents">
+                        <dt className="text-slate-500">{th(`levels.${l}`)}</dt>
+                        <dd className="min-w-0">
+                          {schoolCell(p.path.schools[l])}
+                        </dd>
+                      </div>
+                    ))}
+                    <dt className="text-slate-500">{t("table.now")}</dt>
+                    <dd className="min-w-0">{nowCell(p)}</dd>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+
+            {/* sm+: table */}
+            <table className="hidden w-full table-fixed border-collapse text-sm sm:table">
+              <caption className="sr-only">{t("table.title")}</caption>
+              <colgroup>
+                <col className="w-[22%]" />
+                <col className="w-[5.5rem]" />
+                {levels.map((l) => (
+                  <col key={l} />
+                ))}
+                <col className="w-[20%]" />
+              </colgroup>
               <thead>
                 <tr className="text-left text-xs text-slate-500">
                   <th scope="col" className="py-2 pr-3 font-medium">
                     {t("table.name")}
                   </th>
-                  <th scope="col" className="py-2 pr-3 font-medium">
+                  <th
+                    scope="col"
+                    className="py-2 pr-3 font-medium whitespace-nowrap"
+                  >
                     {t("cohort")}
                   </th>
-                  {PATH_LEVELS.slice(0, 3).map((l) => (
-                    <th key={l} scope="col" className="py-2 pr-3 font-medium">
+                  {levels.map((l) => (
+                    <th
+                      key={l}
+                      scope="col"
+                      className="py-2 pr-3 font-medium whitespace-nowrap"
+                    >
                       {th(`levels.${l}`)}
                     </th>
                   ))}
-                  <th scope="col" className="py-2 font-medium">
+                  <th
+                    scope="col"
+                    className="py-2 font-medium whitespace-nowrap"
+                  >
                     {t("table.now")}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {people.map((p) => (
+                {shown.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-t border-slate-100 align-top"
+                    className="border-t border-slate-100 align-top hover:bg-slate-50"
                   >
                     <th scope="row" className="py-2 pr-3 text-left font-medium">
                       <Link
                         href={`/app/admin/members/${p.id}`}
-                        className="text-brand-700 hover:underline"
+                        className="block truncate text-brand-700 hover:underline"
+                        title={p.name}
                       >
                         {p.name}
                       </Link>
-                      <span className="block text-xs font-normal text-slate-500">
-                        {p.year
-                          ? t(p.didGraduate ? "graduated" : "left", {
-                              year: p.year,
-                            })
-                          : null}
-                      </span>
+                      {leftLine(p) ? (
+                        <span className="block truncate text-xs font-normal text-slate-500">
+                          {leftLine(p)}
+                        </span>
+                      ) : null}
                     </th>
                     <td className="py-2 pr-3 whitespace-nowrap">
-                      {p.cohort
-                        ? cohortShort({ number: p.cohort }, locale)
-                        : "—"}
+                      {cohortText(p)}
                     </td>
-                    {PATH_LEVELS.slice(0, 3).map((l) => (
+                    {levels.map((l) => (
                       <td key={l} className="py-2 pr-3">
-                        {p.path.schools[l] ?? (
-                          <span className="text-slate-400">—</span>
-                        )}
+                        {schoolCell(p.path.schools[l])}
                       </td>
                     ))}
-                    <td className="py-2">
-                      {p.path.now ? (
-                        <span className="inline-flex items-center gap-1">
-                          {p.path.now.kind === "work" ? (
-                            <Briefcase
-                              aria-hidden="true"
-                              className="size-4 text-slate-500"
-                            />
-                          ) : (
-                            <School
-                              aria-hidden="true"
-                              className="size-4 text-slate-500"
-                            />
-                          )}
-                          {p.path.now.name}
-                        </span>
-                      ) : p.path.hasHistory ? (
-                        <span className="text-slate-400">—</span>
-                      ) : (
-                        <Badge>{t("table.noHistory")}</Badge>
-                      )}
-                    </td>
+                    <td className="py-2">{nowCell(p)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+
+            {shown.length < listed.length ? (
+              <div className="mt-4 text-center">
+                <Link
+                  href={{
+                    pathname: "/app/admin/destinations",
+                    query: { ...baseQuery, all: "1" },
+                  }}
+                  className={buttonClass("secondary")}
+                >
+                  <ChevronDown aria-hidden="true" className="size-4" />
+                  {t("table.showAll", { count: listed.length })}
+                </Link>
+              </div>
+            ) : null}
+          </>
         ) : (
-          <EmptyState>{t("table.empty")}</EmptyState>
+          <EmptyState icon={<Users />}>{t("table.empty")}</EmptyState>
         )}
       </Card>
     </div>

@@ -10,7 +10,12 @@
     "cohortHint": "Current and former students who selected this 学年.",
     "leaderOnly": "Your 学年:",
     "cohort": "学年 (class)",
-    "chooseCohort": "Choose a class"
+    "chooseCohort": "Choose a class",
+    "desc": {
+      "ALL": "Reaches every active member.",
+      "ROLES": "Reaches members in the roles you pick (students, alumni, parents, teachers…).",
+      "COHORT": "Reaches the students and alumni of the class you pick."
+    }
   },
   "title": "Title",
   "body": "Message",
@@ -45,5 +50,6 @@
     "limit": "You've reached your sending limit. Please try again later.",
     "noRecipients": "No members match this audience."
   },
-  "sent": "Sent."
+  "sent": "Sent.",
+  "charCount": "{count} / {max} characters"
 }

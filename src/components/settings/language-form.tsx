@@ -40,9 +40,7 @@ export function LanguageForm({ current }: { current: "ja" | "en" }) {
         </div>
       </fieldset>
       <FormResult state={state} />
-      <SubmitButton variant="secondary" pendingText={tc("saving")}>
-        {t("save")}
-      </SubmitButton>
+      <SubmitButton pendingText={tc("saving")}>{t("save")}</SubmitButton>
     </form>
   );
 }

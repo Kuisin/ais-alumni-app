@@ -74,5 +74,7 @@
   "orgHint": {
     "school": "Start typing to see existing schools.",
     "company": "Start typing to see existing companies."
-  }
+  },
+  "yearPlaceholder": "e.g. 2020",
+  "close": "Close"
 }

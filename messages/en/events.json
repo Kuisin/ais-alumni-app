@@ -15,7 +15,7 @@
   },
   "emptyUpcoming": "No upcoming events right now.",
   "emptyPast": "No past events yet.",
-  "backToList": "← All events",
+  "backToList": "All events",
   "when": "When",
   "jst": "(Japan time)",
   "where": "Where",
@@ -58,5 +58,9 @@
       "text": "Reminder: {title} is tomorrow, {when} (Japan time).",
       "textWithLocation": "Reminder: {title} is tomorrow, {when} (Japan time) at {location}."
     }
+  },
+  "deadlineLeft": {
+    "days": "{count, plural, one {# day} other {# days}} left",
+    "hours": "{count, plural, one {# hour} other {# hours}} left"
   }
 }

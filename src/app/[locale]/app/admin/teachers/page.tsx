@@ -98,8 +98,12 @@ export default async function TeachersPage({
             type="search"
             defaultValue={q}
             placeholder={t("add.placeholder")}
+            className="min-w-0 flex-1"
           />
-          <SubmitButton variant="secondary" className="shrink-0">
+          <SubmitButton
+            variant="secondary"
+            className="shrink-0 whitespace-nowrap"
+          >
             <Search aria-hidden="true" className="size-4" />
             {t("add.search")}
           </SubmitButton>

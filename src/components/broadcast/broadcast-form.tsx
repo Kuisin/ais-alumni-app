@@ -15,6 +15,9 @@ import type { CohortOption } from "@/lib/cohorts";
 
 type AudienceKind = "ALL" | "ROLES" | "COHORT";
 
+const TITLE_MAX = 100;
+const BODY_MAX = 2000;
+
 /**
  * Compose → confirm (recipient and LINE counts) → sent. Inputs are
  * controlled so values survive the preview step.
@@ -88,14 +91,31 @@ export function BroadcastForm({
             {(["ALL", "ROLES", "COHORT"] as const).map((k) => (
               <label
                 key={k}
-                className="flex min-h-11 items-center gap-2 text-sm"
+                className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-700 ${
+                  audience === k
+                    ? "border-brand-700 bg-brand-50"
+                    : "border-slate-200 bg-white hover:bg-slate-50"
+                }`}
               >
                 <input
                   type="radio"
+                  name="audience-choice"
                   checked={audience === k}
                   onChange={() => setAudience(k)}
+                  aria-describedby={`b-aud-${k}-desc`}
+                  className="mt-0.5 size-4 shrink-0"
                 />
-                {t(`audience.${k}`)}
+                <span className="min-w-0">
+                  <span className="block font-medium text-slate-900">
+                    {t(`audience.${k}`)}
+                  </span>
+                  <span
+                    id={`b-aud-${k}-desc`}
+                    className="block text-xs text-slate-600"
+                  >
+                    {t(`audience.desc.${k}`)}
+                  </span>
+                </span>
               </label>
             ))}
           </div>
@@ -159,12 +179,20 @@ export function BroadcastForm({
       <fieldset className="space-y-4" disabled={locked}>
         <Field id="b-title" label={t("title")} required error={err("title")}>
           {(a) => (
-            <Input
-              {...a}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={100}
-            />
+            <>
+              <Input
+                {...a}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={TITLE_MAX}
+              />
+              <p
+                aria-hidden="true"
+                className="mt-1 text-right text-xs text-slate-500 tabular-nums"
+              >
+                {t("charCount", { count: title.length, max: TITLE_MAX })}
+              </p>
+            </>
           )}
         </Field>
         <Field
@@ -175,13 +203,21 @@ export function BroadcastForm({
           error={err("body")}
         >
           {(a) => (
-            <Textarea
-              {...a}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={6}
-              maxLength={2000}
-            />
+            <>
+              <Textarea
+                {...a}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={6}
+                maxLength={BODY_MAX}
+              />
+              <p
+                aria-hidden="true"
+                className="mt-1 text-right text-xs text-slate-500 tabular-nums"
+              >
+                {t("charCount", { count: body.length, max: BODY_MAX })}
+              </p>
+            </>
           )}
         </Field>
       </fieldset>

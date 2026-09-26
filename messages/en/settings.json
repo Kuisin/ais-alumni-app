@@ -150,5 +150,9 @@
       "teachers": "Add or remove current teachers"
     },
     "button": "Switch to admin mode"
+  },
+  "danger": {
+    "title": "Danger zone",
+    "description": "Deactivate or delete your account. Please read each option carefully first."
   }
 }

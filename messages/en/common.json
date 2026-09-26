@@ -56,7 +56,10 @@
     "memberMode": "Back to member view",
     "account": "Account menu",
     "adminLabel": "Admin menu",
-    "profileShort": "Me"
+    "profileShort": "Me",
+    "adminModeShort": "Admin",
+    "memberModeShort": "Member",
+    "pending": "{count} waiting"
   },
   "adminNav": {
     "verification": "Verification",
@@ -81,7 +84,14 @@
     "firstNameRomaji": "First name",
     "middleNameRomaji": "Middle name (optional)",
     "lastNameKanji": "Last name (姓)",
-    "firstNameKanji": "First name (名)"
+    "firstNameKanji": "First name (名)",
+    "placeholders": {
+      "lastNameRomaji": "e.g. Yamada",
+      "firstNameRomaji": "e.g. Taro",
+      "middleNameRomaji": "e.g. James",
+      "lastNameKanji": "e.g. 山田",
+      "firstNameKanji": "e.g. 太郎"
+    }
   },
   "cohortNumber": "Class {number}",
   "adminGroups": {

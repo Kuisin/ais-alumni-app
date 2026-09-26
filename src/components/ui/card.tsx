@@ -1,3 +1,4 @@
+import { Inbox } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "./cn";
 
@@ -84,10 +85,32 @@ export function Alert({
   );
 }
 
-export function EmptyState({ children }: { children: ReactNode }) {
+/** Empty list: an icon, what's missing, and optionally what to do next. */
+export function EmptyState({
+  children,
+  icon,
+  hint,
+  action,
+  compact = false,
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+  hint?: ReactNode;
+  action?: ReactNode;
+  /** one-line variant for secondary lists */
+  compact?: boolean;
+}) {
+  if (compact) {
+    return <p className="py-2 text-sm text-slate-500">{children}</p>;
+  }
   return (
-    <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-600">
-      {children}
-    </p>
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-300 px-6 py-8 text-center">
+      <span aria-hidden="true" className="text-slate-300 [&_svg]:size-8">
+        {icon ?? <Inbox />}
+      </span>
+      <p className="text-slate-700">{children}</p>
+      {hint ? <p className="max-w-md text-sm text-slate-500">{hint}</p> : null}
+      {action ? <div className="mt-1">{action}</div> : null}
+    </div>
   );
 }

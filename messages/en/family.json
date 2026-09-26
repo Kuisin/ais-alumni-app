@@ -21,8 +21,14 @@
   },
   "members": {
     "title": "My family",
-    "privacy": "Everyone in your family can see each other's contact details, like mutual followers.",
-    "empty": "No family members linked yet."
+    "empty": "No family members linked yet.",
+    "steps": {
+      "one": "Search for your family member by name below.",
+      "two": "Choose “This is my child” (or parent) to send a request.",
+      "three": "Once they accept, you are linked and can see each other’s contact details."
+    },
+    "findChild": "Search for your child",
+    "findParent": "Search for your parent"
   },
   "links": {
     "title": "Family links",

@@ -91,16 +91,16 @@ export default async function SettingsPage({
   );
 
   const nav = [
-    ...(staffKeys.length
-      ? ([["admin-mode", t("adminMode.title")]] as const)
-      : []),
     ["language", t("language.title")],
     ["notifications", t("notifications.title")],
     ["line", t("line.title")],
     ["sign-in", t("methods.title")],
     ["email", t("email.title")],
     ["data", t("export.title")],
-    ["account", t("deactivate.title")],
+    ...(staffKeys.length
+      ? ([["admin-mode", t("adminMode.title")]] as const)
+      : []),
+    ["danger", t("danger.title")],
   ] as const;
 
   return (
@@ -133,33 +133,6 @@ export default async function SettingsPage({
       ) : null}
 
       <div className="space-y-6">
-        {staffKeys.length ? (
-          <SettingsSection
-            id="admin-mode"
-            title={t("adminMode.title")}
-            description={t("adminMode.description")}
-          >
-            <div>
-              <p className="text-sm font-medium">{t("adminMode.roles")}</p>
-              <ul className="mt-1 space-y-1 text-sm text-slate-700">
-                {staffKeys.map((k) => (
-                  <li key={k} className="flex items-start gap-2">
-                    <Check
-                      aria-hidden="true"
-                      className="mt-0.5 size-4 shrink-0 text-green-600"
-                    />
-                    {t(`adminMode.access.${k}`)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Link href="/app/admin" className={buttonClass("primary")}>
-              <ShieldCheck aria-hidden="true" className="size-4" />
-              {t("adminMode.button")}
-            </Link>
-          </SettingsSection>
-        ) : null}
-
         <SettingsSection
           id="language"
           title={t("language.title")}
@@ -266,21 +239,54 @@ export default async function SettingsPage({
           </a>
         </SettingsSection>
 
-        <SettingsSection
-          id="account"
-          title={t("deactivate.title")}
-          description={t("deactivate.description")}
-        >
-          <DeactivateAccount />
-        </SettingsSection>
+        {staffKeys.length ? (
+          <SettingsSection
+            id="admin-mode"
+            title={t("adminMode.title")}
+            description={t("adminMode.description")}
+          >
+            <div>
+              <p className="text-sm font-medium">{t("adminMode.roles")}</p>
+              <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                {staffKeys.map((k) => (
+                  <li key={k} className="flex items-start gap-2">
+                    <Check
+                      aria-hidden="true"
+                      className="mt-0.5 size-4 shrink-0 text-green-600"
+                    />
+                    {t(`adminMode.access.${k}`)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link href="/app/admin" className={buttonClass("primary")}>
+              <ShieldCheck aria-hidden="true" className="size-4" />
+              {t("adminMode.button")}
+            </Link>
+          </SettingsSection>
+        ) : null}
 
         <SettingsSection
-          id="delete"
-          title={t("delete.title")}
-          description={t("delete.description")}
+          id="danger"
+          title={t("danger.title")}
+          description={t("danger.description")}
           tone="danger"
         >
-          <DeleteAccount />
+          <div id="account" className="scroll-mt-20 space-y-2">
+            <h3 className="font-semibold">{t("deactivate.title")}</h3>
+            <p className="text-sm text-slate-600">
+              {t("deactivate.description")}
+            </p>
+            <DeactivateAccount />
+          </div>
+          <div
+            id="delete"
+            className="scroll-mt-20 space-y-2 border-t border-red-100 pt-4"
+          >
+            <h3 className="font-semibold text-red-800">{t("delete.title")}</h3>
+            <p className="text-sm text-slate-600">{t("delete.description")}</p>
+            <DeleteAccount />
+          </div>
         </SettingsSection>
       </div>
     </div>

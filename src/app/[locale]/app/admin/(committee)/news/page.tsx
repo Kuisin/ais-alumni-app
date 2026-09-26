@@ -1,3 +1,4 @@
+import { ChevronRight, Newspaper, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { TargetBadges } from "@/components/events/target-badges";
 import { FallbackTag } from "@/components/news/fallback-tag";
@@ -55,8 +56,10 @@ export default async function AdminNewsPage({
     <>
       <PageHeader
         title={t("news.title")}
+        description={t("news.description")}
         actions={
           <Link href="/app/admin/news/new" className={buttonClass("primary")}>
+            <Plus aria-hidden="true" className="size-4" />
             {t("news.new")}
           </Link>
         }
@@ -67,32 +70,52 @@ export default async function AdminNewsPage({
         </div>
       ) : null}
       {posts.length === 0 ? (
-        <EmptyState>{t("news.empty")}</EmptyState>
+        <EmptyState
+          icon={<Newspaper />}
+          hint={t("news.emptyHint")}
+          action={
+            <Link
+              href="/app/admin/news/new"
+              className={buttonClass("secondary")}
+            >
+              <Plus aria-hidden="true" className="size-4" />
+              {t("news.new")}
+            </Link>
+          }
+        >
+          {t("news.empty")}
+        </EmptyState>
       ) : (
-        <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+        <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
           {posts.map((p) => {
             const title = localized(p.titleJa, p.titleEn, locale);
             return (
               <li key={p.id}>
                 <Link
                   href={`/app/admin/news/${p.id}`}
-                  className="block space-y-1 p-4 hover:bg-slate-50"
+                  className="group flex items-center gap-3 p-4 transition-colors hover:bg-slate-50"
                 >
-                  <div className="flex flex-wrap items-center gap-1">
-                    <NewsStatusBadges post={p} />
-                    {p.publishedAt ? (
-                      <span className="ml-1 text-sm text-slate-600">
-                        {formatDateTime(p.publishedAt, locale)}
-                      </span>
-                    ) : null}
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      <NewsStatusBadges post={p} />
+                      {p.publishedAt ? (
+                        <span className="ml-1 text-sm text-slate-600">
+                          {formatDateTime(p.publishedAt, locale)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="font-semibold group-hover:text-brand-800">
+                      {title.text}
+                      <FallbackTag fallback={title.fallback} />
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      <TargetBadges roles={p.targetRoles} />
+                    </div>
                   </div>
-                  <p className="font-semibold">
-                    {title.text}
-                    <FallbackTag fallback={title.fallback} />
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    <TargetBadges roles={p.targetRoles} />
-                  </div>
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700"
+                  />
                 </Link>
               </li>
             );

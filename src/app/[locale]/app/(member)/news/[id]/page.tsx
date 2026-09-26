@@ -1,10 +1,11 @@
+import { Calendar } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
+import { BackLink } from "@/components/ui/back-link";
 import { Badge } from "@/components/ui/card";
-import { Link } from "@/i18n/navigation";
 import { isTargeted, toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
@@ -51,14 +52,15 @@ export default async function NewsDetailPage({
   return (
     <article className="space-y-6">
       <div>
-        <Link href="/app/news" className="text-sm text-brand-700 underline">
-          {t("backToList")}
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+        <BackLink href="/app/news">{t("backToList")}</BackLink>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           {post.pinned ? <Badge tone="brand">{t("pinned")}</Badge> : null}
-          <time dateTime={post.publishedAt.toISOString()}>
-            {formatDate(post.publishedAt, locale)}
-          </time>
+          <span className="inline-flex items-center gap-1.5">
+            <Calendar aria-hidden="true" className="size-4 shrink-0" />
+            <time dateTime={post.publishedAt.toISOString()}>
+              {formatDate(post.publishedAt, locale)}
+            </time>
+          </span>
         </div>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">
           {title.text || t("untitled")}

@@ -15,7 +15,7 @@
   },
   "emptyUpcoming": "現在予定されているイベントはありません。",
   "emptyPast": "過去のイベントはまだありません。",
-  "backToList": "← イベント一覧へ",
+  "backToList": "イベント一覧へ",
   "when": "日時",
   "jst": "（日本時間）",
   "where": "場所",
@@ -58,5 +58,9 @@
       "text": "リマインダー：{title}は明日開催です。日時：{when}（日本時間）。",
       "textWithLocation": "リマインダー：{title}は明日開催です。日時：{when}（日本時間）、場所：{location}。"
     }
+  },
+  "deadlineLeft": {
+    "days": "あと{count}日",
+    "hours": "あと{count}時間"
   }
 }

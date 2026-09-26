@@ -34,6 +34,7 @@ export const NAMESPACES = [
   "setup",
   "teachers",
   "destinations",
+  "audit",
 ] as const;
 
 export type Messages = Record<string, Record<string, unknown>>;

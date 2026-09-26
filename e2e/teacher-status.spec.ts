@@ -36,6 +36,9 @@ test("teacher with a leave year is registered as former automatically", async ({
   await signInWithEmail(admin, "admin@example.com");
   await admin.goto(`/en/app/admin/members?q=${lastName}`);
   await expect(
-    admin.getByText("Teacher / Staff（Former）").first(),
+    admin
+      .getByText("Teacher / Staff（Former）")
+      .filter({ visible: true })
+      .first(),
   ).toBeVisible();
 });

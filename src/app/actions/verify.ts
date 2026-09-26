@@ -256,6 +256,21 @@ async function saveRoles(
     where: { userId: user.id, role: { notIn: data.roles } },
   });
   const now = new Date();
+  // Keep only 学年 ids that exist (the list may have changed since the form loaded).
+  const cohortIds = [
+    data.currentStudent?.cohortId,
+    data.formerStudent?.cohortId,
+  ].filter((v): v is string => Boolean(v));
+  const known = new Set(
+    (
+      await tx.cohort.findMany({
+        where: { id: { in: cohortIds } },
+        select: { id: true },
+      })
+    ).map((c) => c.id),
+  );
+  const cohort = (id: string | null | undefined) =>
+    id && known.has(id) ? id : null;
   for (const role of data.roles) {
     let fields: Omit<Prisma.UserRoleUncheckedCreateInput, "userId" | "role"> =
       {};
@@ -269,6 +284,7 @@ async function saveRoles(
       };
     } else if (role === RoleKey.CURRENT_STUDENT && data.currentStudent) {
       fields = {
+        cohortId: cohort(data.currentStudent.cohortId),
         currentGrade: data.currentStudent.grade,
         studentIdNo: data.currentStudent.studentIdNo,
       };
@@ -276,6 +292,7 @@ async function saveRoles(
       const prev = user.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
       const f = data.formerStudent;
       fields = {
+        cohortId: cohort(f.cohortId),
         yearsFrom: f.yearsFrom,
         yearsTo: f.yearsTo,
         lastDivision: f.lastDivision,

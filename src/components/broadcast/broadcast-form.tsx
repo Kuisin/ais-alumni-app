@@ -11,6 +11,7 @@ import { Alert } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { RoleKey } from "@/generated/prisma/enums";
+import type { CohortOption } from "@/lib/cohorts";
 
 type AudienceKind = "ALL" | "ROLES" | "COHORT";
 
@@ -20,12 +21,12 @@ type AudienceKind = "ALL" | "ROLES" | "COHORT";
  */
 export function BroadcastForm({
   canAny,
-  leaderCohorts,
+  cohorts,
 }: {
   /** admin or teacher manager: any audience */
   canAny: boolean;
-  /** student leader: own class years */
-  leaderCohorts: number[];
+  /** 学年 the sender may target: all for canAny, else the leader's own */
+  cohorts: CohortOption[];
 }) {
   const t = useTranslations("broadcast");
   const tr = useTranslations("roles");
@@ -37,12 +38,14 @@ export function BroadcastForm({
     canAny ? "ALL" : "COHORT",
   );
   const [roles, setRoles] = useState<RoleKey[]>([]);
-  const [cohortYear, setCohortYear] = useState(String(leaderCohorts[0] ?? ""));
+  const [cohortId, setCohortId] = useState(
+    canAny ? "" : (cohorts[0]?.id ?? ""),
+  );
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
   const step = state?.step ?? "compose";
-  const err = (f: "title" | "body" | "audience" | "cohortYear") => {
+  const err = (f: "title" | "body" | "audience" | "cohortId") => {
     const code = state?.fieldErrors?.[f];
     return code ? t(`fieldErrors.${code}`) : null;
   };
@@ -72,7 +75,7 @@ export function BroadcastForm({
       {roles.map((r) => (
         <input key={r} type="hidden" name="roles" value={r} />
       ))}
-      <input type="hidden" name="cohortYear" value={cohortYear} />
+      <input type="hidden" name="cohortId" value={cohortId} />
       <input type="hidden" name="title" value={title} />
       <input type="hidden" name="body" value={body} />
 
@@ -126,42 +129,30 @@ export function BroadcastForm({
           </div>
         ) : null}
         {audience === "COHORT" ? (
-          canAny ? (
-            <Field
-              id="b-cohort"
-              label={t("audience.cohortYear")}
-              hint={t("audience.cohortHint")}
-              error={err("cohortYear")}
-            >
-              {(a) => (
-                <Input
-                  {...a}
-                  inputMode="numeric"
-                  maxLength={4}
-                  value={cohortYear}
-                  onChange={(e) => setCohortYear(e.target.value)}
-                  className="max-w-40"
-                />
-              )}
-            </Field>
-          ) : (
-            <Field id="b-cohort" label={t("audience.cohortYear")}>
-              {(a) => (
-                <Select
-                  {...a}
-                  value={cohortYear}
-                  onChange={(e) => setCohortYear(e.target.value)}
-                  className="max-w-60"
-                >
-                  {leaderCohorts.map((y) => (
-                    <option key={y} value={String(y)}>
-                      {t("audience.classOf", { year: y })}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-          )
+          <Field
+            id="b-cohort"
+            label={t("audience.cohort")}
+            hint={t("audience.cohortHint")}
+            error={err("cohortId")}
+          >
+            {(a) => (
+              <Select
+                {...a}
+                value={cohortId}
+                onChange={(e) => setCohortId(e.target.value)}
+                className="max-w-md"
+              >
+                {canAny ? (
+                  <option value="">{t("audience.chooseCohort")}</option>
+                ) : null}
+                {cohorts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
         ) : null}
       </fieldset>
 

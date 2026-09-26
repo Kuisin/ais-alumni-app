@@ -16,10 +16,11 @@ import {
 import { Alert, Badge, Card, PageHeader } from "@/components/ui/card";
 import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
 import { namePartsOf } from "@/lib/names";
-import { classOf, positionEligible } from "@/lib/permissions";
+import { positionEligible } from "@/lib/permissions";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -88,15 +89,17 @@ export default async function AdminMemberPage({
   const roleKeys = roles.map((r) => r.role);
   const positions = await db.userPosition.findMany({
     where: { userId: user.id },
-    select: { position: true, cohortYear: true },
+    select: { position: true, cohortId: true },
   });
-  // Suggested class for a student leader: their graduation year, or the
-  // expected one for a current student.
-  const former = roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
-  const current = roles.find((r) => r.role === RoleKey.CURRENT_STUDENT);
+  // Suggested 学年 for a student leader: the one on their student role.
   const defaultCohort =
-    former?.graduationOrLeaveYear ??
-    (current?.currentGrade != null ? classOf(current.currentGrade) : null);
+    roles.find(
+      (r) =>
+        (r.role === RoleKey.FORMER_STUDENT ||
+          r.role === RoleKey.CURRENT_STUDENT) &&
+        r.cohortId,
+    )?.cohortId ?? null;
+  const cohorts = await loadCohortOptions(locale === "en" ? "en" : "ja");
   const lineStatus = !user.lineUserId
     ? t("line.notLinked")
     : user.lineFollowing
@@ -215,8 +218,10 @@ export default async function AdminMemberPage({
                 ) : null}
                 <MemberRoleForm
                   userId={user.id}
+                  cohorts={cohorts}
                   values={{
                     role: r.role,
+                    cohortId: r.cohortId,
                     yearsFrom: r.yearsFrom,
                     yearsTo: r.yearsTo,
                     subjects: r.subjects,
@@ -240,7 +245,11 @@ export default async function AdminMemberPage({
                 {t("roles.addTitle")}
               </summary>
               <div className="mt-3">
-                <AddRoleForm userId={user.id} available={available} />
+                <AddRoleForm
+                  userId={user.id}
+                  available={available}
+                  cohorts={cohorts}
+                />
               </div>
             </details>
           ) : null}
@@ -275,8 +284,9 @@ export default async function AdminMemberPage({
                 userId={user.id}
                 position={p}
                 held={Boolean(held)}
-                cohortYear={held?.cohortYear ?? null}
-                defaultCohortYear={defaultCohort}
+                cohortId={held?.cohortId ?? null}
+                defaultCohortId={defaultCohort}
+                cohorts={cohorts}
                 eligible={positionEligible(p, roleKeys)}
               />
             );

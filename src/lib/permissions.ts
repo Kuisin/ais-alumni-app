@@ -6,20 +6,20 @@ import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
  * - Admin: may notify anyone.
  * - TEACHER_MANAGER (requires the TEACHER role): may notify all members,
  *   selected roles, or any class.
- * - STUDENT_LEADER (requires a student role): may notify their own class,
- *   i.e. members with the same graduation year (`cohortYear`).
+ * - STUDENT_LEADER (requires a student role): may notify their own 学年
+ *   (`cohortId`), i.e. students who selected that class.
  */
 
 export type Holder = {
   state: AccountState;
   isAdmin: boolean;
   roles: readonly RoleKey[];
-  positions: readonly { position: PositionKey; cohortYear: number | null }[];
+  positions: readonly { position: PositionKey; cohortId: string | null }[];
 };
 
 export type BroadcastRight =
   | { kind: "ANY"; position: PositionKey | null } // null = as admin
-  | { kind: "COHORT"; position: "STUDENT_LEADER"; cohortYear: number };
+  | { kind: "COHORT"; position: "STUDENT_LEADER"; cohortId: string };
 
 const STUDENT_ROLES: readonly RoleKey[] = [
   RoleKey.FORMER_STUDENT,
@@ -44,11 +44,11 @@ export function broadcastRights(h: Holder): BroadcastRight[] {
     if (!positionEligible(p.position, h.roles)) continue;
     if (p.position === PositionKey.TEACHER_MANAGER) {
       rights.push({ kind: "ANY", position: PositionKey.TEACHER_MANAGER });
-    } else if (p.cohortYear !== null) {
+    } else if (p.cohortId !== null) {
       rights.push({
         kind: "COHORT",
         position: PositionKey.STUDENT_LEADER,
-        cohortYear: p.cohortYear,
+        cohortId: p.cohortId,
       });
     }
   }
@@ -57,7 +57,7 @@ export function broadcastRights(h: Holder): BroadcastRight[] {
 
 export type Audience =
   | { scope: "ALL"; targetRoles: RoleKey[] } // [] = every member
-  | { scope: "COHORT"; cohortYear: number };
+  | { scope: "COHORT"; cohortId: string };
 
 /**
  * The right that authorises an audience, preferring the admin/manager right.
@@ -72,7 +72,7 @@ export function rightFor(
   if (audience.scope !== "COHORT") return null;
   return (
     rights.find(
-      (r) => r.kind === "COHORT" && r.cohortYear === audience.cohortYear,
+      (r) => r.kind === "COHORT" && r.cohortId === audience.cohortId,
     ) ?? null
   );
 }
@@ -96,29 +96,4 @@ export function withinLimit(
   return (
     sentAt.filter((d) => now.getTime() - d.getTime() < windowMs).length < count
   );
-}
-
-/**
- * Assumption: the AIS school year starts in August, so in Aug–Dec the
- * current school year ends next calendar year. Uses Japan time.
- */
-export function schoolYearEnd(now: Date = new Date()): number {
-  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return jst.getUTCMonth() >= 7
-    ? jst.getUTCFullYear() + 1
-    : jst.getUTCFullYear();
-}
-
-/** Expected graduation year of a current student in grade 0 (K)–12. */
-export function classOf(currentGrade: number, now: Date = new Date()): number {
-  return schoolYearEnd(now) + (12 - currentGrade);
-}
-
-/** Grade a current student in the given class is in now (null if not in school). */
-export function gradeForClassOf(
-  cohortYear: number,
-  now: Date = new Date(),
-): number | null {
-  const grade = 12 - (cohortYear - schoolYearEnd(now));
-  return grade >= 0 && grade <= 12 ? grade : null;
 }

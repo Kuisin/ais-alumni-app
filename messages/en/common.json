@@ -63,7 +63,8 @@
     "roster": "Roster",
     "stats": "Stats",
     "audit": "Audit log",
-    "recordRequests": "Record corrections"
+    "recordRequests": "Record corrections",
+    "cohorts": "Classes"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",

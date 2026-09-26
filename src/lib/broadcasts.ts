@@ -14,7 +14,6 @@ import {
   type Audience,
   type BroadcastRight,
   broadcastRights,
-  gradeForClassOf,
 } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/session";
 
@@ -24,7 +23,7 @@ export async function getBroadcastRights(
 ): Promise<BroadcastRight[]> {
   const positions = await db.userPosition.findMany({
     where: { userId: user.id },
-    select: { position: true, cohortYear: true },
+    select: { position: true, cohortId: true },
   });
   return broadcastRights({
     state: user.state,
@@ -36,14 +35,12 @@ export async function getBroadcastRights(
 
 /**
  * ACTIVE members in the audience, excluding the sender and anyone who has
- * blocked (or been blocked by) the sender. A class (COHORT) is former
- * students with that graduation year plus current students expected to
- * graduate that year.
+ * blocked (or been blocked by) the sender. A 学年 (COHORT) audience is the
+ * current and former students who selected that class.
  */
 export async function recipientsWhere(
   senderId: string,
   audience: Audience,
-  now: Date = new Date(),
 ): Promise<Prisma.UserWhereInput> {
   const blocked = await blockedUserIds(senderId);
   const base: Prisma.UserWhereInput = {
@@ -55,23 +52,15 @@ export async function recipientsWhere(
       ? { ...base, roles: { some: { role: { in: audience.targetRoles } } } }
       : base;
   }
-  const grade = gradeForClassOf(audience.cohortYear, now);
-  const cohort: Prisma.UserWhereInput[] = [
-    {
-      roles: {
-        some: {
-          role: RoleKey.FORMER_STUDENT,
-          graduationOrLeaveYear: audience.cohortYear,
-        },
+  return {
+    ...base,
+    roles: {
+      some: {
+        role: { in: [RoleKey.FORMER_STUDENT, RoleKey.CURRENT_STUDENT] },
+        cohortId: audience.cohortId,
       },
     },
-  ];
-  if (grade !== null) {
-    cohort.push({
-      roles: { some: { role: RoleKey.CURRENT_STUDENT, currentGrade: grade } },
-    });
-  }
-  return { ...base, OR: cohort };
+  };
 }
 
 export type BroadcastPreview = {
@@ -111,7 +100,7 @@ export async function sendBroadcast(params: {
       position: right.position,
       scope: audience.scope,
       targetRoles: audience.scope === "ALL" ? audience.targetRoles : [],
-      cohortYear: audience.scope === "COHORT" ? audience.cohortYear : null,
+      cohortId: audience.scope === "COHORT" ? audience.cohortId : null,
       title,
       body,
       recipientCount: users.length,

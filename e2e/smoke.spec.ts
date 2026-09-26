@@ -81,6 +81,11 @@ test("email sign-up → verification → admin approval → member dashboard", a
     .getByRole("checkbox", { name: "Former student / Alumni" })
     .check();
   await member.getByRole("button", { name: "Next" }).click();
+  // 学年: the 卒業済み / 在校中 toggle filters the list; 第5期 finished 6th grade in 2016.
+  await member.getByText("Graduated", { exact: true }).click();
+  await member
+    .getByRole("combobox", { name: /学年/ })
+    .selectOption({ label: "Class 5 (elementary 2010–2016)" });
   await member.getByLabel("From (year)").fill("2008");
   await member.getByLabel("To (year)").fill("2014");
   await member.getByLabel("Last division attended").selectOption("HIGH_SCHOOL");

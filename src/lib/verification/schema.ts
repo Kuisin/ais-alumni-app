@@ -139,7 +139,17 @@ export const teacherSchema = z
   })
   .superRefine(yearsOrdered);
 
+/** 学年 (Cohort id); optional — "not listed / not sure" is allowed. */
+const cohortId = () =>
+  z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .transform((v) => v || null);
+
 export const currentStudentSchema = z.object({
+  cohortId: cohortId(),
   grade: grade(),
   homeroomTeacher: requiredText(),
   studentIdNo: optionalText(50),
@@ -160,6 +170,7 @@ export const currentParentSchema = z.object({
 
 export const formerStudentSchema = z
   .object({
+    cohortId: cohortId(),
     yearsFrom: year(),
     yearsTo: year(),
     lastDivision: z.enum(Division, { error: "required" }),
@@ -297,12 +308,14 @@ export type VerifyFormState = {
     schoolEmail: string;
   };
   currentStudent: {
+    cohortId: string;
     grade: string;
     homeroomTeacher: string;
     studentIdNo: string;
   };
   currentParent: { children: CurrentChildState[] };
   formerStudent: {
+    cohortId: string;
     yearsFrom: string;
     yearsTo: string;
     lastDivision: string;
@@ -345,9 +358,15 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
       subjects: "",
       schoolEmail: "",
     },
-    currentStudent: { grade: "", homeroomTeacher: "", studentIdNo: "" },
+    currentStudent: {
+      cohortId: "",
+      grade: "",
+      homeroomTeacher: "",
+      studentIdNo: "",
+    },
     currentParent: { children: [emptyCurrentChild()] },
     formerStudent: {
+      cohortId: "",
       yearsFrom: "",
       yearsTo: "",
       lastDivision: "",
@@ -446,6 +465,7 @@ export function answersToFormState(
         }
       : base.teacher,
     currentStudent: {
+      cohortId: s(cs.cohortId),
       grade: s(cs.grade),
       homeroomTeacher: s(cs.homeroomTeacher),
       studentIdNo: s(cs.studentIdNo),
@@ -460,6 +480,7 @@ export function answersToFormState(
         : base.currentParent.children,
     },
     formerStudent: {
+      cohortId: s(fs.cohortId),
       yearsFrom: s(fs.yearsFrom),
       yearsTo: s(fs.yearsTo),
       lastDivision: s(fs.lastDivision),

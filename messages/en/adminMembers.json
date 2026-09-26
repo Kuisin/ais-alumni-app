@@ -86,7 +86,10 @@
     "currentStatus": "Current status",
     "currentStage": "Current stage",
     "currentStageDetail": "Details (school, company…)",
-    "stageUpdatedAt": "Current stage last updated {date}"
+    "stageUpdatedAt": "Current stage last updated {date}",
+    "cohort": "学年 (class)",
+    "yearsToAny": "To (year)",
+    "yearsFromAny": "From (year)"
   },
   "status": {
     "title": "Account status",
@@ -164,18 +167,17 @@
   "positions": {
     "title": "Positions",
     "held": "Assigned",
-    "heldCohort": "Assigned · class of {year}",
+    "heldCohort": "Assigned · {cohort}",
     "grant": "Assign",
     "update": "Update",
     "remove": "Remove",
-    "cohortYear": "Class (graduation year)",
     "names": {
       "TEACHER_MANAGER": "Teacher manager",
       "STUDENT_LEADER": "Class representative"
     },
     "descriptions": {
       "TEACHER_MANAGER": "Can send notifications to all members, selected roles or any class (up to 20 per day).",
-      "STUDENT_LEADER": "Can send notifications to members of their own class (up to 5 per week)."
+      "STUDENT_LEADER": "Can send notifications to members of their own 学年 (up to 5 per week)."
     },
     "requires": {
       "TEACHER_MANAGER": "Requires the Teacher / Staff role.",
@@ -187,7 +189,8 @@
       "forbidden": "You don't have permission to do that.",
       "invalid": "Please check the input.",
       "notEligible": "This member doesn't have the role this position requires.",
-      "cohortYear": "Enter the class as a 4-digit graduation year."
-    }
+      "cohort": "Choose the 学年 they represent."
+    },
+    "cohort": "学年 (class)"
   }
 }

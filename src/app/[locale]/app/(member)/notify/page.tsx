@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { BroadcastForm } from "@/components/broadcast/broadcast-form";
 import { Card, PageHeader } from "@/components/ui/card";
 import { getBroadcastRights } from "@/lib/broadcasts";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { requireActive } from "@/lib/session";
@@ -19,10 +20,15 @@ export default async function NotifyPage() {
   const rights = await getBroadcastRights(me);
   if (rights.length === 0) notFound();
   const canAny = rights.some((r) => r.kind === "ANY");
-  const leaderCohorts = rights.flatMap((r) =>
-    r.kind === "COHORT" ? [r.cohortYear] : [],
-  );
   const locale = (await getLocale()) === "en" ? "en" : "ja";
+  const leaderCohortIds = new Set(
+    rights.flatMap((r) => (r.kind === "COHORT" ? [r.cohortId] : [])),
+  );
+  const allCohorts = await loadCohortOptions(locale);
+  const cohorts = canAny
+    ? allCohorts
+    : allCohorts.filter((c) => leaderCohortIds.has(c.id));
+  const cohortName = new Map(allCohorts.map((c) => [c.id, c.label]));
   const [t, tr] = await Promise.all([
     getTranslations("broadcast"),
     getTranslations("roles"),
@@ -40,7 +46,7 @@ export default async function NotifyPage() {
         description={canAny ? t("descriptionAny") : t("descriptionLeader")}
       />
       <Card>
-        <BroadcastForm canAny={canAny} leaderCohorts={leaderCohorts} />
+        <BroadcastForm canAny={canAny} cohorts={cohorts} />
       </Card>
       {history.length ? (
         <Card>
@@ -52,7 +58,7 @@ export default async function NotifyPage() {
                 <p className="text-slate-600">
                   {formatDateTime(b.createdAt, locale)} ·{" "}
                   {b.scope === "COHORT"
-                    ? t("audience.classOf", { year: b.cohortYear ?? 0 })
+                    ? ((b.cohortId ? cohortName.get(b.cohortId) : null) ?? "—")
                     : b.targetRoles.length
                       ? b.targetRoles.map((r) => tr(`role.${r}`)).join(", ")
                       : t("audience.ALL")}{" "}

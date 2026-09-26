@@ -9,6 +9,7 @@ import {
 
 describe("record correction requests", () => {
   const row = {
+    cohortId: "c5",
     yearsFrom: 2008,
     yearsTo: 2014,
     lastDivision: "HIGH_SCHOOL",
@@ -21,6 +22,7 @@ describe("record correction requests", () => {
 
   it("snapshots only the role's fields", () => {
     expect(snapshot("FORMER_STUDENT", row)).toEqual({
+      cohortId: "c5",
       yearsFrom: 2008,
       yearsTo: 2014,
       lastDivision: "HIGH_SCHOOL",

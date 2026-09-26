@@ -20,6 +20,7 @@
     "stage": "Current stage",
     "any": "Any",
     "apply": "Search",
-    "clear": "Clear"
+    "clear": "Clear",
+    "cohort": "学年 (class)"
   }
 }

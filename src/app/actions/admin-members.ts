@@ -188,6 +188,11 @@ export async function updateMemberProfileAction(
 const roleSchema = z.object({
   userId: id,
   role: z.enum(RoleKey),
+  cohortId: z
+    .string()
+    .trim()
+    .max(40)
+    .transform((v) => v || null),
   yearsFrom: optInt(1950, 2100),
   yearsTo: optInt(1950, 2100),
   subjects: optText(200),
@@ -220,6 +225,7 @@ export async function saveMemberRoleAction(
     const parsed = roleSchema.safeParse({
       userId: str(fd, "userId"),
       role: str(fd, "role"),
+      cohortId: raw("cohortId"),
       yearsFrom: raw("yearsFrom"),
       yearsTo: raw("yearsTo"),
       subjects: raw("subjects"),
@@ -245,10 +251,28 @@ export async function saveMemberRoleAction(
     });
     if (!target) return { error: tc("errors.notFound") };
 
+    const isStudent =
+      d.role === RoleKey.CURRENT_STUDENT || d.role === RoleKey.FORMER_STUDENT;
+    const hasYears =
+      d.role === RoleKey.TEACHER ||
+      d.role === RoleKey.FORMER_STUDENT ||
+      d.role === RoleKey.FORMER_PARENT;
+    if (isStudent && d.cohortId) {
+      const cohort = await db.cohort.findUnique({
+        where: { id: d.cohortId },
+        select: { id: true },
+      });
+      if (!cohort)
+        return {
+          error: tc("errors.validation"),
+          fieldErrors: { cohortId: "invalid" },
+        };
+    }
     // Only the fields relevant to the role are written; others are cleared.
     const data = {
-      yearsFrom: d.role === RoleKey.TEACHER ? d.yearsFrom : null,
-      yearsTo: d.role === RoleKey.TEACHER ? d.yearsTo : null,
+      cohortId: isStudent ? d.cohortId : null,
+      yearsFrom: hasYears ? d.yearsFrom : null,
+      yearsTo: hasYears ? d.yearsTo : null,
       subjects: d.role === RoleKey.TEACHER ? d.subjects : null,
       schoolEmail: d.role === RoleKey.TEACHER ? d.schoolEmail : null,
       currentGrade: d.role === RoleKey.CURRENT_STUDENT ? d.currentGrade : null,

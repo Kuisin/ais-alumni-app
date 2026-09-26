@@ -1,12 +1,13 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { clearMailbox, signInWithEmail } from "./helpers";
+import { clearMailbox, resetBroadcasts, signInWithEmail } from "./helpers";
 
-// Seeded demo members (SEED_DEMO=1): hanako (class of 2015), ken (class of 2016).
+// Seeded demo members (SEED_DEMO=1): hanako (第5期), ken (第6期).
 test("admin appoints a class representative who notifies their class", async ({
   browser,
 }) => {
+  await resetBroadcasts("hanako@example.com");
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
   await admin.goto("/en/app/admin/members?q=hanako");
@@ -31,15 +32,19 @@ test("admin appoints a class representative who notifies their class", async ({
   const before = await member.goto("/en/app/notify");
   expect(before?.status()).toBe(404);
 
-  // Represent the class of 2016 (ken's class) for this test.
-  await leader.getByLabel("Class (graduation year)").fill("2016");
+  // Represent 第6期 (ken's class) for this test.
+  await leader
+    .getByLabel("学年 (class)")
+    .selectOption({ label: "Class 6 (elementary 2011–2017)" });
   await leader.getByRole("button", { name: "Assign" }).click();
-  await expect(leader.getByText("Assigned · class of 2016")).toBeVisible();
+  await expect(
+    leader.getByText("Assigned · Class 6 (elementary 2011–2017)"),
+  ).toBeVisible();
 
   await member.goto("/en/app/notify");
   await expect(
-    member.getByRole("combobox", { name: "Graduation year" }),
-  ).toHaveValue("2016");
+    member.getByRole("combobox", { name: "学年 (class)" }),
+  ).toContainText("Class 6");
   const title = `Class reunion ${Date.now()}`;
   await member.getByLabel("Title").fill(title);
   await member.getByLabel("Message").fill("Let's meet in December!");

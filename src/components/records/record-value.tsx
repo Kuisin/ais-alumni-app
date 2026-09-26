@@ -7,10 +7,13 @@ export function RecordValue({
   field,
   value,
   role,
+  cohortLabels,
 }: {
   field: RecordField;
   value: unknown;
   role: RoleKey;
+  /** 学年 id → label */
+  cohortLabels?: Record<string, string>;
 }) {
   const tr = useTranslations("roles");
   const tc = useTranslations("common");
@@ -20,6 +23,8 @@ export function RecordValue({
       <>{field === "yearsTo" && role === "TEACHER" ? tc("present") : "—"}</>
     );
   }
+  if (field === "cohortId")
+    return <>{cohortLabels?.[value as string] ?? "—"}</>;
   if (field === "lastDivision") return <>{tr(`division.${value as string}`)}</>;
   if (field === "didGraduate") return <>{value ? tc("yes") : tc("no")}</>;
   if (field === "currentGrade")
@@ -32,10 +37,12 @@ export function RecordDiff({
   role,
   current,
   proposed,
+  cohortLabels,
 }: {
   role: RoleKey;
   current: Record<string, unknown>;
   proposed: Record<string, unknown>;
+  cohortLabels?: Record<string, string>;
 }) {
   const t = useTranslations("records");
   return (
@@ -64,6 +71,7 @@ export function RecordDiff({
                 field={f as RecordField}
                 value={current[f]}
                 role={role}
+                cohortLabels={cohortLabels}
               />
             </td>
             <td className="py-1.5 font-semibold text-brand-800">
@@ -71,6 +79,7 @@ export function RecordDiff({
                 field={f as RecordField}
                 value={proposed[f]}
                 role={role}
+                cohortLabels={cohortLabels}
               />
             </td>
           </tr>

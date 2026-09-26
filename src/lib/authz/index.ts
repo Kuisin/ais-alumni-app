@@ -93,6 +93,7 @@ export type PublicProfile = {
     currentStage: UserWithRoles["roles"][number]["currentStage"];
     currentGrade: number | null;
     subjects: string | null;
+    cohortId: string | null;
   }[];
 };
 
@@ -130,6 +131,7 @@ export function projectPublic(user: UserWithRoles): PublicProfile {
       currentStage: r.currentStage,
       currentGrade: r.currentGrade,
       subjects: r.subjects,
+      cohortId: r.cohortId,
     })),
   };
 }

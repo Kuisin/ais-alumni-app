@@ -5,6 +5,7 @@ import { RecordDiff } from "@/components/records/record-value";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { ChangeRequestStatus } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { displayName, formatDateTime } from "@/lib/format";
 
@@ -24,6 +25,9 @@ export default async function RecordRequestsPage({
     getTranslations("roles"),
     getTranslations("records"),
   ]);
+  const cohortLabels = Object.fromEntries(
+    (await loadCohortOptions(locale)).map((c) => [c.id, c.label]),
+  );
   const requests = await db.recordChangeRequest.findMany({
     where:
       tab === "pending"
@@ -81,6 +85,7 @@ export default async function RecordRequestsPage({
             </span>
           </div>
           <RecordDiff
+            cohortLabels={cohortLabels}
             role={q.role}
             current={q.current as Record<string, unknown>}
             proposed={q.proposed as Record<string, unknown>}

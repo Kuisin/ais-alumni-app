@@ -1,6 +1,7 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/card";
 import { RoleKey } from "@/generated/prisma/enums";
+import { cohortShortLabels } from "@/lib/cohorts-db";
 import type { PublicCard } from "@/lib/directory";
 
 type RoleRow = PublicCard["roles"][number];
@@ -27,6 +28,16 @@ async function roleFacts(r: RoleRow, withStage: boolean): Promise<string[]> {
   const tr = await getTranslations("roles");
   const t = await getTranslations("profile");
   const facts: string[] = [];
+  // 学年 first for students ("第5期").
+  if (
+    r.cohortId &&
+    (r.role === RoleKey.CURRENT_STUDENT || r.role === RoleKey.FORMER_STUDENT)
+  ) {
+    const labels = await cohortShortLabels(
+      (await getLocale()) === "en" ? "en" : "ja",
+    );
+    if (labels[r.cohortId]) facts.push(labels[r.cohortId]);
+  }
   switch (r.role) {
     case RoleKey.TEACHER:
       if (r.yearsFrom !== null) {

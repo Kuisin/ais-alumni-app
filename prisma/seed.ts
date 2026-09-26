@@ -7,6 +7,12 @@
  */
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import {
+  defaultGraduated,
+  elementaryEndFor,
+  latestCohortNumber,
+  suggestedStartYear,
+} from "../src/lib/cohorts";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -38,8 +44,26 @@ async function main() {
   if (process.env.NODE_ENV === "production")
     throw new Error("Refusing to seed demo data in production");
 
+  // 学年 第1期 … current 1st graders (same as the admin "create missing" button).
+  for (let n = 1; n <= latestCohortNumber(); n++) {
+    const end = elementaryEndFor(n);
+    await db.cohort.upsert({
+      where: { number: n },
+      update: {},
+      create: {
+        number: n,
+        elementaryEndYear: end,
+        elementaryStartYear: suggestedStartYear(end),
+        graduated: defaultGraduated(end),
+      },
+    });
+  }
+  const cohortId = async (n: number) =>
+    (await db.cohort.findUniqueOrThrow({ where: { number: n } })).id;
+
   const demo: {
     email: string;
+    cohort: number;
     first: string;
     last: string;
     kanji: [string, string] | null;
@@ -48,6 +72,7 @@ async function main() {
   }[] = [
     {
       email: "hanako@example.com",
+      cohort: 5,
       first: "Hanako",
       last: "Suzuki",
       kanji: ["鈴木", "花子"],
@@ -56,6 +81,7 @@ async function main() {
     },
     {
       email: "ken@example.com",
+      cohort: 6,
       first: "Ken",
       last: "Tanaka",
       kanji: ["田中", "健"],
@@ -64,6 +90,7 @@ async function main() {
     },
     {
       email: "emma@example.com",
+      cohort: 9,
       first: "Emma",
       last: "Brown",
       kanji: null,
@@ -72,6 +99,15 @@ async function main() {
     },
   ];
   for (const m of demo) {
+    const existing = await db.user.findUnique({
+      where: { primaryEmail: m.email },
+    });
+    if (existing) {
+      await db.userRole.updateMany({
+        where: { userId: existing.id, role: "FORMER_STUDENT", cohortId: null },
+        data: { cohortId: await cohortId(m.cohort) },
+      });
+    }
     await db.user.upsert({
       where: { primaryEmail: m.email },
       update: {},
@@ -92,6 +128,7 @@ async function main() {
           create: [
             {
               role: "FORMER_STUDENT",
+              cohortId: await cohortId(m.cohort),
               yearsFrom: m.year - 6,
               yearsTo: m.year,
               lastDivision: "HIGH_SCHOOL",

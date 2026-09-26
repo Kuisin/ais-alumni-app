@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { DirectoryFilterForm } from "@/components/directory/filter-form";
 import { MemberCard } from "@/components/directory/member-card";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { toViewer } from "@/lib/authz";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import {
   directoryQuery,
   hasActiveFilters,
@@ -33,7 +34,12 @@ export default async function DirectoryPage({ searchParams }: Props) {
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <DirectoryFilterForm filters={filters} />
+      <DirectoryFilterForm
+        filters={filters}
+        cohorts={
+          await loadCohortOptions((await getLocale()) === "en" ? "en" : "ja")
+        }
+      />
 
       <section aria-labelledby="dir-results" className="mt-6">
         <h2 id="dir-results" className="sr-only">

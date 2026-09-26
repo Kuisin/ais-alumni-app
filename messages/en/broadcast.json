@@ -1,16 +1,16 @@
 {
   "pageTitle": "Send a notification",
   "descriptionAny": "Send a message to members by LINE (or email if they don't use LINE).",
-  "descriptionLeader": "As class representative, you can send a message to members of your class by LINE (or email).",
+  "descriptionLeader": "As class representative, you can send a message to members of your 学年 by LINE (or email).",
   "audience": {
     "label": "Send to",
     "ALL": "All members",
     "ROLES": "Members with selected roles",
-    "COHORT": "A class (graduation year)",
-    "cohortYear": "Graduation year",
-    "cohortHint": "Former students who graduated or left that year, and current students expected to graduate that year.",
-    "classOf": "Class of {year}",
-    "leaderOnly": "Your class:"
+    "COHORT": "A 学年 (class)",
+    "cohortHint": "Current and former students who selected this 学年.",
+    "leaderOnly": "Your 学年:",
+    "cohort": "学年 (class)",
+    "chooseCohort": "Choose a class"
   },
   "title": "Title",
   "body": "Message",
@@ -35,7 +35,7 @@
     "required": "This field is required.",
     "tooLong": "This is too long.",
     "rolesRequired": "Choose at least one role.",
-    "invalidYear": "Enter a 4-digit year."
+    "cohortRequired": "Choose a 学年."
   },
   "errors": {
     "forbidden": "Please sign in again.",

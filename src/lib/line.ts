@@ -45,7 +45,9 @@ async function call(path: string, body: unknown): Promise<void> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(`LINE API ${path} failed: ${res.status} ${await res.text()}`);
+    throw new Error(
+      `LINE API ${path} failed: ${res.status} ${await res.text()}`,
+    );
   }
 }
 

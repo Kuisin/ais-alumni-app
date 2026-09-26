@@ -5,7 +5,12 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient() {
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+    // DATABASE_URL is Supabase's transaction pooler (Tokyo). Supavisor does the
+    // real pooling, so keep each function instance's local pool small.
+    adapter: new PrismaPg({
+      connectionString: process.env.DATABASE_URL,
+      max: 5,
+    }),
   });
 }
 

@@ -1,1 +1,125 @@
-{}
+{
+  "title": "Verify your connection to AIS",
+  "description": "Tell us how you are connected to Aichi International School. A committee member reviews every application, usually within a few days.",
+  "resubmitDescription": "Please update your application and send it again.",
+  "needsInfo": {
+    "title": "The committee needs a little more information:"
+  },
+  "progressLabel": "Progress",
+  "stepOf": "Step {n} of {total}",
+  "steps": {
+    "basics": "About you",
+    "roles": "Your AIS details",
+    "evidence": "Documents & review"
+  },
+  "fixErrors": "{count, plural, one {Please fix 1 field.} other {Please fix # fields.}}",
+  "serverErrors": {
+    "validation": "Please check the highlighted fields.",
+    "evidence": "One of the uploaded files could not be verified. Please remove it and upload it again.",
+    "forbidden": "Your session has expired or this form is no longer available. Please reload the page.",
+    "generic": "Something went wrong while sending your application. Please try again."
+  },
+  "optional": "optional",
+  "select": "Select…",
+  "fields": {
+    "nameRomaji": "Name (romaji)",
+    "nameKanji": "Name (kanji / kana)",
+    "nameAtAis": "Name used at AIS",
+    "dateOfBirth": "Date of birth",
+    "roles": "Your connection to AIS",
+    "locale": "Preferred language",
+    "yearsFrom": "From (year)",
+    "yearsTo": "To (year)",
+    "present": "I still work at AIS",
+    "subjects": "Subjects / grades taught",
+    "schoolEmail": "School email",
+    "grade": "Grade",
+    "homeroomTeacher": "Homeroom teacher",
+    "homeroomTeacherThen": "Homeroom teacher (in your last year)",
+    "studentIdNo": "Student ID",
+    "childName": "Child’s name",
+    "lastDivision": "Last division attended",
+    "graduationOrLeaveYear": "Graduation / leaving year",
+    "didGraduate": "Did you graduate from AIS?",
+    "classmates": "Classmates who can confirm you",
+    "classmateN": "Classmate {n}",
+    "currentStage": "What are you doing now?"
+  },
+  "hints": {
+    "nameRomaji": "Given name and family name in Latin letters, e.g. Taro Yamada.",
+    "nameKanji": "e.g. 山田 太郎 / やまだ たろう",
+    "nameAtAis": "If different from your current name (e.g. maiden name or nickname).",
+    "dateOfBirth": "Used only for verification and age-appropriate privacy. Never shown to other members.",
+    "roles": "Choose all that apply.",
+    "locale": "Used for emails and LINE messages.",
+    "subjects": "e.g. Math, G9–12",
+    "schoolEmail": "If you have an AIS email address, we can send it a code to confirm your role faster.",
+    "parentConfirmation": "Student accounts must also be confirmed by a parent or guardian with an AIS Alumni account, or by the committee.",
+    "classmates": "We may ask these members to confirm that they know you. Please give 1–2 names."
+  },
+  "didGraduate": {
+    "yes": "Yes, I graduated",
+    "no": "No, I left before graduating"
+  },
+  "childN": "Child {n}",
+  "removeChild": "Remove",
+  "removeChildN": "Remove child {n}",
+  "addChild": "Add another child",
+  "errors": {
+    "required": "This field is required.",
+    "tooLong": "This is too long.",
+    "invalidYear": "Enter a valid 4-digit year.",
+    "invalidGrade": "Choose a grade.",
+    "invalidDate": "Enter a valid date.",
+    "invalidEmail": "Enter a valid email address.",
+    "yearsOrder": "The end year must be the same as or after the start year.",
+    "rolesRequired": "Choose at least one.",
+    "childrenRequired": "Add at least one child.",
+    "classmateRequired": "Enter at least one classmate’s name.",
+    "tooManyFiles": "You can upload up to 3 files.",
+    "evidenceInvalid": "One of the files could not be verified. Please remove it and upload it again.",
+    "invalid": "This value is not valid."
+  },
+  "evidence": {
+    "label": "Supporting documents (optional)",
+    "hint": "For example an AIS ID card, report card, diploma or yearbook page. JPG, PNG or PDF, up to 10 MB each, {max} files max. Only the committee can see them, and they are deleted 30 days after the decision.",
+    "remove": "Remove {name}",
+    "removeShort": "Remove",
+    "full": "You have added the maximum number of files.",
+    "uploading": "Uploading {name}…",
+    "uploaded": "Uploaded {name}.",
+    "errors": {
+      "type": "{name}: only JPG, PNG or PDF files can be uploaded.",
+      "size": "{name}: files must be 10 MB or smaller.",
+      "count": "You can upload up to 3 files in total.",
+      "forbidden": "Your session has expired. Please reload the page.",
+      "generic": "Upload failed. Please try again."
+    }
+  },
+  "schoolEmail": {
+    "send": "Send code",
+    "resend": "Resend code",
+    "sent": "We sent a 6-digit code to {email}.",
+    "codeLabel": "6-digit code",
+    "confirm": "Confirm",
+    "verified": "School email confirmed.",
+    "verifiedBadge": "Confirmed",
+    "errors": {
+      "forbidden": "Your session has expired. Please reload the page.",
+      "invalidEmail": "Enter a valid email address.",
+      "rateLimited": "Too many codes requested. Please wait a little and try again.",
+      "invalid": "That code is not correct.",
+      "expired": "That code has expired. Please request a new one.",
+      "tooManyAttempts": "Too many attempts. Please request a new code."
+    }
+  },
+  "review": {
+    "title": "Check your answers",
+    "files": "Documents",
+    "note": "After you submit, a committee member will review your application. We’ll let you know the result by email (and LINE if connected)."
+  },
+  "back": "Back",
+  "next": "Next",
+  "submit": "Submit application",
+  "submitting": "Submitting…"
+}

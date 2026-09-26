@@ -1,5 +1,5 @@
-import type { Adapter, AdapterAccount, AdapterUser } from "next-auth/adapters";
 import { cookies } from "next/headers";
+import type { Adapter, AdapterAccount, AdapterUser } from "next-auth/adapters";
 import type { User } from "@/generated/prisma/client";
 import { AccountState, Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
@@ -26,7 +26,9 @@ function toAdapterUser(u: User): AdapterUser {
 export async function resolveUserId(id: string): Promise<string> {
   let current = id;
   for (let i = 0; i < 5; i++) {
-    const merge = await db.userMerge.findUnique({ where: { fromUserId: current } });
+    const merge = await db.userMerge.findUnique({
+      where: { fromUserId: current },
+    });
     if (!merge) return current;
     current = merge.toUserId;
   }
@@ -61,7 +63,9 @@ export function appAdapter(): Adapter {
         data: {
           primaryEmail: email,
           emailVerifiedAt: email ? new Date() : null,
-          state: email ? AccountState.EMAIL_VERIFIED : AccountState.UNVERIFIED_EMAIL,
+          state: email
+            ? AccountState.EMAIL_VERIFIED
+            : AccountState.UNVERIFIED_EMAIL,
           locale,
           avatarUrl: data.image ?? null,
         },
@@ -69,7 +73,9 @@ export function appAdapter(): Adapter {
       return toAdapterUser(user);
     },
     async getUser(id) {
-      const user = await db.user.findUnique({ where: { id: await resolveUserId(id) } });
+      const user = await db.user.findUnique({
+        where: { id: await resolveUserId(id) },
+      });
       return user ? toAdapterUser(user) : null;
     },
     async getUserByEmail(email) {
@@ -112,7 +118,9 @@ export function appAdapter(): Adapter {
           scope: account.scope ?? null,
           id_token: account.id_token ?? null,
           session_state:
-            typeof account.session_state === "string" ? account.session_state : null,
+            typeof account.session_state === "string"
+              ? account.session_state
+              : null,
         },
       });
       if (account.provider === "line") {
@@ -129,7 +137,11 @@ export function appAdapter(): Adapter {
       if (provider === "line") {
         await db.user.update({
           where: { id: account.userId },
-          data: { lineUserId: null, lineFollowing: false, lineDisplayName: null },
+          data: {
+            lineUserId: null,
+            lineFollowing: false,
+            lineDisplayName: null,
+          },
         });
       }
     },

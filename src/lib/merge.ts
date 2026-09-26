@@ -10,17 +10,29 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
   if (fromId === toId) throw new Error("Cannot merge a user into itself");
   await db.$transaction(async (tx) => {
     const [from, to] = await Promise.all([
-      tx.user.findUniqueOrThrow({ where: { id: fromId }, include: { roles: true } }),
-      tx.user.findUniqueOrThrow({ where: { id: toId }, include: { roles: true } }),
+      tx.user.findUniqueOrThrow({
+        where: { id: fromId },
+        include: { roles: true },
+      }),
+      tx.user.findUniqueOrThrow({
+        where: { id: toId },
+        include: { roles: true },
+      }),
     ]);
 
-    await tx.account.updateMany({ where: { userId: fromId }, data: { userId: toId } });
+    await tx.account.updateMany({
+      where: { userId: fromId },
+      data: { userId: toId },
+    });
 
     // Roles: keep the target's record when both have the same role.
     const toRoles = new Set(to.roles.map((r) => r.role));
     for (const r of from.roles) {
       if (!toRoles.has(r.role)) {
-        await tx.userRole.update({ where: { id: r.id }, data: { userId: toId } });
+        await tx.userRole.update({
+          where: { id: r.id },
+          data: { userId: toId },
+        });
       }
     }
 
@@ -36,7 +48,11 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
         (await tx.follow.findUnique({
           where: { followerId_followeeId: { followerId, followeeId } },
         }));
-      if (!clash) await tx.follow.update({ where: { id: f.id }, data: { followerId, followeeId } });
+      if (!clash)
+        await tx.follow.update({
+          where: { id: f.id },
+          data: { followerId, followeeId },
+        });
     }
     const blocks = await tx.block.findMany({
       where: { OR: [{ blockerId: fromId }, { blockedId: fromId }] },
@@ -46,8 +62,14 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
       const blockedId = b.blockedId === fromId ? toId : b.blockedId;
       const clash =
         blockerId === blockedId ||
-        (await tx.block.findUnique({ where: { blockerId_blockedId: { blockerId, blockedId } } }));
-      if (!clash) await tx.block.update({ where: { id: b.id }, data: { blockerId, blockedId } });
+        (await tx.block.findUnique({
+          where: { blockerId_blockedId: { blockerId, blockedId } },
+        }));
+      if (!clash)
+        await tx.block.update({
+          where: { id: b.id },
+          data: { blockerId, blockedId },
+        });
     }
 
     const rsvps = await tx.rsvp.findMany({ where: { userId: fromId } });
@@ -55,13 +77,26 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
       const clash = await tx.rsvp.findUnique({
         where: { eventId_userId: { eventId: r.eventId, userId: toId } },
       });
-      if (!clash) await tx.rsvp.update({ where: { id: r.id }, data: { userId: toId } });
+      if (!clash)
+        await tx.rsvp.update({ where: { id: r.id }, data: { userId: toId } });
     }
 
-    await tx.familyLink.updateMany({ where: { parentId: fromId }, data: { parentId: toId } });
-    await tx.familyLink.updateMany({ where: { childId: fromId }, data: { childId: toId } });
-    await tx.vouch.updateMany({ where: { voucherId: fromId }, data: { voucherId: toId } });
-    await tx.notificationLog.updateMany({ where: { userId: fromId }, data: { userId: toId } });
+    await tx.familyLink.updateMany({
+      where: { parentId: fromId },
+      data: { parentId: toId },
+    });
+    await tx.familyLink.updateMany({
+      where: { childId: fromId },
+      data: { childId: toId },
+    });
+    await tx.vouch.updateMany({
+      where: { voucherId: fromId },
+      data: { voucherId: toId },
+    });
+    await tx.notificationLog.updateMany({
+      where: { userId: fromId },
+      data: { userId: toId },
+    });
 
     // Profile fields: fill gaps on the target from the source.
     await tx.user.update({ where: { id: fromId }, data: { lineUserId: null } });
@@ -81,7 +116,10 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
       },
     });
 
-    await tx.userMerge.updateMany({ where: { toUserId: fromId }, data: { toUserId: toId } });
+    await tx.userMerge.updateMany({
+      where: { toUserId: fromId },
+      data: { toUserId: toId },
+    });
     await tx.userMerge.create({ data: { fromUserId: fromId, toUserId: toId } });
     await tx.user.delete({ where: { id: fromId } });
   });

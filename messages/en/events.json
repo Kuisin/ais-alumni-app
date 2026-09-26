@@ -1,1 +1,62 @@
-{}
+{
+  "title": "Events",
+  "description": "Reunions and gatherings for the AIS community.",
+  "untitled": "(Untitled event)",
+  "myAnswer": "Your RSVP: {answer}",
+  "answer": {
+    "GOING": "Going",
+    "MAYBE": "Maybe",
+    "NOT_GOING": "Not going"
+  },
+  "tabs": {
+    "label": "Event lists",
+    "upcoming": "Upcoming",
+    "past": "Past"
+  },
+  "emptyUpcoming": "No upcoming events right now.",
+  "emptyPast": "No past events yet.",
+  "backToList": "← All events",
+  "when": "When",
+  "jst": "(Japan time)",
+  "where": "Where",
+  "openMap": "Open map",
+  "capacity": "Capacity",
+  "capacityUnlimited": "No limit · {going, plural, =0 {nobody going yet} one {# person going} other {# people going}}",
+  "capacityLimited": "{capacity} people · {going} going · {remaining, plural, =0 {full} one {# spot left} other {# spots left}}",
+  "deadline": "RSVP by",
+  "details": "Details",
+  "rsvp": {
+    "title": "RSVP",
+    "question": "Will you attend?",
+    "current": "Your answer: {answer}{guests, plural, =0 {} one { (+# guest)} other { (+# guests)}}",
+    "guests": "Guests you are bringing",
+    "guestsHint": "Not counting yourself. Up to {max}.",
+    "submit": "Send RSVP",
+    "update": "Update RSVP",
+    "saving": "Sending…",
+    "saved": "Your RSVP has been saved.",
+    "closed": "RSVPs for this event are closed.",
+    "full": "This event is full. You can still answer Maybe or Not going.",
+    "errors": {
+      "closed": "RSVPs for this event are closed.",
+      "capacity": "Sorry, there aren't enough spots left for you and your guests.",
+      "guests": "Please choose between 0 and 5 guests.",
+      "notFound": "This event is no longer available.",
+      "validation": "Please choose an answer.",
+      "forbidden": "Please sign in again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "reminder": {
+    "week": {
+      "subject": "One week to go: {title}",
+      "text": "{title} is one week away: {when} (Japan time). See you there!",
+      "textWithLocation": "{title} is one week away: {when} (Japan time) at {location}. See you there!"
+    },
+    "day": {
+      "subject": "Tomorrow: {title}",
+      "text": "Reminder: {title} is tomorrow, {when} (Japan time).",
+      "textWithLocation": "Reminder: {title} is tomorrow, {when} (Japan time) at {location}."
+    }
+  }
+}

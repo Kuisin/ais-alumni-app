@@ -64,7 +64,8 @@ export async function actionUser(
 ): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) throw new AuthError("unauthenticated");
-  if (states.length && !states.includes(user.state)) throw new AuthError("forbidden");
+  if (states.length && !states.includes(user.state))
+    throw new AuthError("forbidden");
   return user;
 }
 

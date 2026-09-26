@@ -1,1 +1,88 @@
-{}
+{
+  "title": "Profile",
+  "editTitle": "Edit my profile",
+  "editProfile": "Edit profile",
+  "viewMyProfile": "View my profile",
+  "self": "This is you",
+  "nameAtAisValue": "At AIS: {name}",
+  "sections": {
+    "about": "About",
+    "aisRecord": "AIS record",
+    "currentStage": "Current stage",
+    "contact": "Contact & links",
+    "photo": "Profile photo",
+    "basic": "Basic information",
+    "follows": "Follow requests"
+  },
+  "fields": {
+    "nameRomaji": "Name (romaji)",
+    "nameKanji": "Name (kanji / kana)",
+    "nameAtAis": "Name while at AIS",
+    "bio": "About me",
+    "email": "Email",
+    "phone": "Phone",
+    "lineDisplayName": "LINE name",
+    "instagram": "Instagram",
+    "linkedin": "LinkedIn",
+    "facebook": "Facebook",
+    "x": "X (Twitter)",
+    "website": "Website",
+    "avatar": "Photo",
+    "stage": "What are you doing now?",
+    "stageDetail": "Details (school, company, etc.)"
+  },
+  "hints": {
+    "nameAtAis": "Only if it was different, e.g. a previous family name.",
+    "bio": "Visible to all members.",
+    "privateTier": "Only you, your family, and followers you've approved can see these.",
+    "socialUrl": "Enter full addresses starting with https://",
+    "avatar": "JPG or PNG, up to 2 MB. Visible to all members.",
+    "stageDetail": "Only your family and approved followers can see the details."
+  },
+  "record": {
+    "teacherYears": "At AIS {from}–{to}",
+    "teacherYearsPresent": "At AIS {from}–present",
+    "graduated": "Class of {year}",
+    "left": "Left AIS in {year}",
+    "nowStage": "Now: {stage}",
+    "subjects": "Subjects: {subjects}",
+    "noDetails": "No details"
+  },
+  "recordReadOnly": "Your AIS record can only be changed by an administrator. Please contact the committee if something is wrong.",
+  "stageNotSet": "Not set yet",
+  "stageUpdated": "Last confirmed: {date}",
+  "stageNeverConfirmed": "You haven't set your current stage yet.",
+  "stageChoose": "Choose one",
+  "stageSave": "Save current stage",
+  "stageConfirm": "My status is still current",
+  "stageSaved": "Current stage saved.",
+  "stageConfirmed": "Thanks! Your status is confirmed.",
+  "noContact": "No contact details shared yet.",
+  "locked": {
+    "title": "Private details",
+    "body": "Follow {name} to see their contact details and links. They need to accept your request first.",
+    "requested": "Your follow request is waiting for approval.",
+    "unavailable": "Contact details are only visible to family and approved followers."
+  },
+  "autoAccept": {
+    "label": "Automatically accept follow requests from my graduation year ±1",
+    "hint": "Based on the graduation / leave year in your AIS record."
+  },
+  "settingsLink": "Notifications and language are managed in Settings.",
+  "goSettings": "Open Settings",
+  "save": "Save",
+  "saving": "Saving…",
+  "saved": "Profile saved.",
+  "uploading": "Uploading…",
+  "photoUpload": "Upload photo",
+  "photoRemove": "Remove photo",
+  "photoUploaded": "Photo updated.",
+  "errors": {
+    "forbidden": "You don't have permission to do that.",
+    "validation": "Please check the highlighted fields.",
+    "invalid": "Please check this field.",
+    "fileMissing": "Please choose an image.",
+    "fileSize": "The image must be 2 MB or smaller.",
+    "fileType": "Please choose a JPG or PNG image."
+  }
+}

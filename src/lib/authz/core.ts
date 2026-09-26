@@ -1,8 +1,4 @@
-import {
-  AccountState,
-  FollowStatus,
-  RoleKey,
-} from "@/generated/prisma/enums";
+import { AccountState, FollowStatus, RoleKey } from "@/generated/prisma/enums";
 
 /**
  * Pure authorization rules (§8, §9, §10.1). No database access here so the
@@ -76,9 +72,7 @@ export function canViewProfile(
   if (target.state !== AccountState.ACTIVE) return false;
   if (rel.blocked) return false;
   if (isMinor(target, now)) {
-    return (
-      sameFamily(viewer, target) || viewer.roles.includes(RoleKey.TEACHER)
-    );
+    return sameFamily(viewer, target) || viewer.roles.includes(RoleKey.TEACHER);
   }
   return true;
 }

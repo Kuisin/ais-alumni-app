@@ -1,1 +1,164 @@
-{}
+{
+  "title": "会員",
+  "description": "会員アカウントの検索・確認・編集",
+  "noName": "（氏名未登録）",
+  "empty": "条件に合う会員はいません。",
+  "resultCount": "{count}件",
+  "pagination": "ページ",
+  "nextPage": "次のページ",
+  "firstPage": "最初のページ",
+  "filters": {
+    "label": "会員の絞り込み",
+    "search": "氏名またはメールアドレス",
+    "searchPlaceholder": "例：田中、taro@example.com",
+    "state": "状態",
+    "role": "区分",
+    "line": "LINE",
+    "any": "すべて",
+    "lineLinked": "連携済み",
+    "lineFollowing": "連携済み・友だち追加済み",
+    "lineUnlinked": "未連携",
+    "adminOnly": "管理者のみ"
+  },
+  "columns": {
+    "name": "氏名",
+    "email": "メールアドレス",
+    "state": "状態",
+    "roles": "区分",
+    "line": "LINE",
+    "created": "登録日"
+  },
+  "badge": {
+    "admin": "管理者"
+  },
+  "line": {
+    "notLinked": "未連携",
+    "linkedNotFollowing": "連携済み・友だち未追加",
+    "following": "連携済み・友だち追加済み"
+  },
+  "detail": {
+    "title": "会員詳細",
+    "back": "会員一覧",
+    "unverified": "未確認",
+    "providers": "ログイン方法",
+    "notifyVia": "通知",
+    "deactivatedAt": "停止日時",
+    "merged": "アカウントを統合しました。重複アカウントは削除されました。"
+  },
+  "profile": {
+    "title": "プロフィール",
+    "nameRomaji": "氏名（ローマ字）",
+    "nameKanji": "氏名（漢字・かな）",
+    "nameAtAis": "AIS在籍時の氏名",
+    "dateOfBirth": "生年月日",
+    "bio": "自己紹介",
+    "phone": "電話番号",
+    "save": "プロフィールを保存"
+  },
+  "roles": {
+    "title": "区分",
+    "none": "区分がありません。",
+    "addTitle": "区分を追加",
+    "addRole": "追加する区分",
+    "add": "区分を追加",
+    "save": "区分を保存",
+    "remove": "区分を削除",
+    "removeConfirm": "この区分を削除しますか？",
+    "removed": "区分を削除しました。",
+    "lastRole": "区分は少なくとも1つ必要です。",
+    "noFields": "この区分には追加の項目はありません。",
+    "unknown": "未設定",
+    "yearsFrom": "在職開始年",
+    "yearsTo": "在職終了年",
+    "yearsToHint": "現在も在職中の場合は空欄にしてください。",
+    "subjects": "担当教科・役職",
+    "schoolEmail": "学校のメールアドレス",
+    "verified": "確認済み",
+    "unverified": "未確認",
+    "currentGrade": "現在の学年",
+    "studentIdNo": "生徒番号",
+    "aisRecord": "AISでの在籍記録",
+    "lastDivision": "最後に在籍した課程",
+    "graduationOrLeaveYear": "卒業・退学した年",
+    "didGraduate": "AISを卒業しましたか？",
+    "didGraduateYes": "卒業",
+    "didGraduateNo": "卒業前に退学・転校",
+    "currentStatus": "現在の状況",
+    "currentStage": "現在の所属",
+    "currentStageDetail": "詳細（学校名・勤務先など）",
+    "stageUpdatedAt": "現在の所属の最終更新：{date}"
+  },
+  "status": {
+    "title": "アカウントの状態",
+    "deactivate": "アカウントを停止",
+    "deactivateConfirm": "このアカウントを停止しますか？会員ページを利用できなくなり、本人にメールで通知されます。",
+    "reactivate": "アカウントを再開",
+    "notSelf": "ご自身のアカウントの状態はここでは変更できません。「設定」から操作してください。",
+    "noActions": "審査中のアカウントの状態は「本人確認」画面で変更します。",
+    "invalidTransition": "この状態には変更できません。",
+    "deactivatedDone": "アカウントを停止しました。",
+    "reactivatedDone": "アカウントを再開しました。"
+  },
+  "admin": {
+    "title": "管理者権限",
+    "isAdmin": "この会員は管理者です。",
+    "notAdmin": "この会員は管理者ではありません。",
+    "grant": "管理者にする",
+    "revoke": "管理者権限を外す",
+    "grantConfirm": "この会員に、会員の非公開情報を含むすべての管理機能へのアクセスを与えますか？",
+    "revokeConfirm": "この会員の管理者権限を外しますか？",
+    "revokeSelfConfirm": "ご自身の管理者権限を外しますか？すぐに管理画面を利用できなくなります。",
+    "lastAdmin": "有効な管理者が少なくとも1人必要です。",
+    "mustBeActive": "有効な会員のみ管理者にできます。",
+    "granted": "管理者権限を付与しました。",
+    "revoked": "管理者権限を外しました。"
+  },
+  "merge": {
+    "title": "重複アカウントの統合",
+    "description": "同じ人が2つのアカウントを持っている場合に、1つにまとめます。ログイン方法・LINE・区分・フォロー・出欠・家族のつながりは残すアカウントに移り、もう一方は削除されます。",
+    "other": "もう一方のアカウント（IDまたはメールアドレス）",
+    "otherHint": "IDはもう一方の会員詳細ページで確認できます。",
+    "keep": "どちらのアカウントを残しますか？",
+    "keepThis": "このアカウントを残す",
+    "keepOther": "もう一方のアカウントを残す",
+    "preview": "統合内容を確認",
+    "confirmTitle": "統合の確認",
+    "keepLabel": "残す",
+    "duplicateLabel": "統合して削除",
+    "whatHappens": "残すアカウントの空欄の項目は、もう一方の情報で補完されます。同じ区分がある場合は残すアカウントの内容が優先されます。この操作は元に戻せません。",
+    "confirm": "アカウントを統合",
+    "working": "統合しています…",
+    "notFound": "そのIDまたはメールアドレスのアカウントが見つかりません。",
+    "same": "同じアカウントです。",
+    "notSelf": "ご自身のアカウントを統合して削除することはできません。"
+  },
+  "audit": {
+    "title": "操作履歴",
+    "viewAll": "この会員の操作履歴をすべて表示"
+  },
+  "auditLog": {
+    "title": "操作ログ",
+    "description": "管理者によるすべての操作（新しい順・日本時間）",
+    "filterLabel": "操作ログの絞り込み",
+    "action": "操作",
+    "targetOrActorId": "対象または実行者のID",
+    "actor": "実行者",
+    "target": "対象",
+    "data": "詳細",
+    "system": "システム／削除済みユーザー",
+    "empty": "操作ログはありません。",
+    "pagination": "ページ",
+    "older": "古いログ",
+    "newest": "最新のログ"
+  },
+  "notify": {
+    "deactivated": {
+      "subject": "AIS同窓会のアカウントが停止されました",
+      "text": "委員会により、AIS同窓会のアカウントが停止されました。お心当たりがない場合は、このメールに返信するか委員会までご連絡ください。"
+    },
+    "reactivated": {
+      "subject": "AIS同窓会のアカウントが再開されました",
+      "text": "おかえりなさい！AIS同窓会のアカウントが再開されました。"
+    }
+  }
+}

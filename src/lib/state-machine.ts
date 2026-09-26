@@ -57,7 +57,9 @@ export function homePathFor(user: {
     case AccountState.UNVERIFIED_EMAIL:
       return "/onboarding/email";
     case AccountState.EMAIL_VERIFIED:
-      return user.lineOnboardingSeenAt ? "/onboarding/verify" : "/onboarding/line";
+      return user.lineOnboardingSeenAt
+        ? "/onboarding/verify"
+        : "/onboarding/line";
     case AccountState.NEEDS_INFO:
       return "/onboarding/verify";
     case AccountState.PENDING_REVIEW:

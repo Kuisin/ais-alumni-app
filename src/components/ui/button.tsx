@@ -1,7 +1,12 @@
 import type { ButtonHTMLAttributes } from "react";
 import { cn } from "./cn";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "line";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "danger"
+  | "line";
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-brand-700 text-white hover:bg-brand-800 disabled:bg-slate-400",
@@ -12,7 +17,10 @@ const VARIANTS: Record<ButtonVariant, string> = {
   line: "bg-line text-white hover:brightness-95 disabled:bg-slate-400",
 };
 
-export function buttonClass(variant: ButtonVariant = "primary", extra?: string) {
+export function buttonClass(
+  variant: ButtonVariant = "primary",
+  extra?: string,
+) {
   return cn(
     "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed",
     VARIANTS[variant],
@@ -26,6 +34,11 @@ export function Button({
   type = "button",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
-  // biome-ignore lint/a11y/useButtonType: type is always set via the default above
-  return <button type={type} className={buttonClass(variant, className)} {...props} />;
+  return (
+    <button
+      type={type}
+      className={buttonClass(variant, className)}
+      {...props}
+    />
+  );
 }

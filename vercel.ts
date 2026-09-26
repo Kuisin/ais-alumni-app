@@ -1,7 +1,8 @@
 import type { VercelConfig } from "@vercel/config/v1";
 
 // Production domain: ais.kai-lab.net (added in the Vercel dashboard).
-// Functions run in Tokyo (hnd1), next to the database (ap-northeast-1).
+// Everything runs in Tokyo: functions (hnd1), Supabase Postgres
+// (ap-northeast-1), Vercel Blob (hnd1) and Resend sending (ap-northeast-1).
 // Cron schedules are UTC.
 export const config: VercelConfig = {
   framework: "nextjs",

@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AIS Alumni (同窓会)
 
-## Getting Started
+Alumni association web app for Aichi International School — https://ais.kai-lab.net
 
-First, run the development server:
+Next.js 16 (App Router) · Auth.js v5 · Prisma 7 + PostgreSQL · next-intl (ja/en) · Tailwind 4 · Resend · LINE Login + Messaging API · Vercel Blob (private) · Vercel Cron.
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install                     # also runs `prisma generate`
+docker run -d --name ais-alumni-db -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=ais_alumni -p 54329:5432 postgres:17-alpine
+cp .env.example .env             # set DATABASE_URL + AUTH_SECRET at minimum
+pnpm db:migrate                  # apply migrations
+SEED_ADMIN_EMAIL=you@example.com SEED_DEMO=1 pnpm db:seed
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Without `RESEND_API_KEY`, emails (including sign-in codes) are printed to the
+server console and written to `.data/dev-mail/<address>.txt`. Without
+`LINE_MESSAGING_CHANNEL_ACCESS_TOKEN`, LINE pushes are logged. Without
+`BLOB_READ_WRITE_TOKEN`, uploads go to `.data/uploads/`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit), `pnpm build && pnpm test:e2e` (Playwright smoke tests).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploying to Vercel (everything in Tokyo)
 
-## Learn More
+| Service | Region |
+|---|---|
+| Vercel Functions | `hnd1` (Tokyo) — pinned in `vercel.ts` |
+| Supabase Postgres | Northeast Asia (Tokyo), `ap-northeast-1` |
+| Vercel Blob | Tokyo (`hnd1`) |
+| Resend | Tokyo (`ap-northeast-1`), chosen when adding the domain |
 
-To learn more about Next.js, take a look at the following resources:
+1. **Database** — create a Supabase project in *Northeast Asia (Tokyo)*. Set
+   `DATABASE_URL` to the Supavisor **transaction** pooler (port 6543) and
+   `DIRECT_URL` to the **session** pooler / direct connection (port 5432, used by migrations).
+2. **Project** — import the repo in Vercel. `vercel.ts` pins functions to
+   `hnd1` (Tokyo), runs `prisma migrate deploy` before `next build`, and registers the crons.
+3. **Domain** — add `ais.kai-lab.net` in Project → Domains and create the DNS
+   record Vercel shows (CNAME `ais` → `cname.vercel-dns.com` at kai-lab.net's DNS).
+4. **Blob** — create a *private* Blob store in region Tokyo (`hnd1`) and connect it to the project (`BLOB_READ_WRITE_TOKEN`).
+5. **Environment variables** — everything in `.env.example`. Generate `AUTH_SECRET` and `CRON_SECRET` with `openssl rand -base64 32`.
+6. **Resend** — add the `ais.kai-lab.net` domain with region **Tokyo (ap-northeast-1)**, add its SPF/DKIM DNS records, set `EMAIL_FROM`.
+7. **Google OAuth** — authorized redirect URI `https://ais.kai-lab.net/api/auth/callback/google`.
+8. **LINE** — under ONE LINE provider (so user IDs match, §5.1):
+   - *LINE Login channel*: callback URLs `https://ais.kai-lab.net/api/auth/callback/line`
+     and `https://ais.kai-lab.net/api/line/link/callback`; link the "AIS Alumni Committee"
+     Official Account as the channel's bot (enables the add-friend prompt).
+   - *Messaging API channel* (the Official Account): webhook URL
+     `https://ais.kai-lab.net/api/line/webhook`, enable "Use webhook", disable auto-reply messages.
+9. After the first deploy, bootstrap an admin:
+   `DATABASE_URL=<prod pooled url> SEED_ADMIN_EMAIL=you@example.com pnpm db:seed`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Crons (UTC schedules in `vercel.ts`)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Path | When (JST) | Purpose |
+|---|---|---|
+| `/api/cron/reminders` | daily 09:00 | 7-day / 1-day event reminders; scheduled news notifications |
+| `/api/cron/stage-prompt` | April 1, 09:00 | yearly "is your status still …?" prompt |
+| `/api/cron/cleanup-evidence` | daily 03:00 | delete proof uploads 30 days after decision |
 
-## Deploy on Vercel
+## Assumptions for the spec's open questions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Roster** — none for v1; roster import and matching exist, and the score is shown only when rows exist.
+2. **Admins** — staff and committee volunteers share one `isAdmin` flag.
+3. **Translation** — manual ja/en entry.
+4. **LINE budget** — free tier; admins see an estimated push count before news goes out, and LINE sends are batched as multicasts.
+5. **Minors** — current students can have accounts; admin approval (optionally backed by a parent's confirmed family link) activates them.
+6. **Official Account** — operated by the committee; credentials go in env vars.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Other deviations from the spec sketch are commented in `prisma/schema.prisma`. For example, `primaryEmail` is nullable until a LINE-first user confirms an email, and the schema adds `OtpCode`, `UserMerge`, and `AuditLog` tables.
+
+## Layout
+
+- `src/lib/authz/` — `canViewPrivate` and the other access rules (pure core, unit-tested) plus `getProfileForViewer`, the only projection used to display another member's data.
+- `src/lib/state-machine.ts` — account states and the screen each state lands on.
+- `src/lib/notify/` — LINE-vs-email routing (§11), batching, and the notification log.
+- `src/lib/session.ts` — page guards (`requireActive`, `requireAdmin`, …) and server-action guards (`actionActive`, `actionAdmin`, …).
+- `messages/<locale>/<namespace>.json` — all UI strings.

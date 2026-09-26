@@ -41,7 +41,8 @@ export async function issueOtp(params: {
   });
   if (
     recent.length >= OTP_MAX_PER_HOUR ||
-    (recent[0] && Date.now() - recent[0].createdAt.getTime() < OTP_RESEND_COOLDOWN_MS)
+    (recent[0] &&
+      Date.now() - recent[0].createdAt.getTime() < OTP_RESEND_COOLDOWN_MS)
   ) {
     return { ok: false, error: "rate_limited" };
   }
@@ -114,7 +115,8 @@ export async function verifyOtp(params: {
     });
     return {
       ok: false,
-      error: row.attempts + 1 >= OTP_MAX_ATTEMPTS ? "too_many_attempts" : "invalid",
+      error:
+        row.attempts + 1 >= OTP_MAX_ATTEMPTS ? "too_many_attempts" : "invalid",
     };
   }
   // Conditional update guards against the same code being used twice concurrently.

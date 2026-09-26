@@ -53,3 +53,7 @@ next-env.d.ts
 # playwright
 /test-results
 /playwright-report
+.env.supabase
+
+# supabase cli state
+/supabase/.temp

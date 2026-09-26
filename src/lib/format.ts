@@ -90,6 +90,7 @@ export function localized(
   const preferred = locale === "ja" ? ja : en;
   if (preferred?.trim()) return { text: preferred, fallback: null };
   const other = locale === "ja" ? en : ja;
-  if (other?.trim()) return { text: other, fallback: locale === "ja" ? "en" : "ja" };
+  if (other?.trim())
+    return { text: other, fallback: locale === "ja" ? "en" : "ja" };
   return { text: "", fallback: null };
 }

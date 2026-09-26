@@ -1,1 +1,142 @@
-{}
+{
+  "title": "Settings",
+  "description": "Language, notifications, sign-in and your data.",
+  "sectionsLabel": "Settings sections",
+  "banner": {
+    "googleLinked": "Google is now linked. You can use it to sign in.",
+    "languageSaved": "Language updated."
+  },
+  "language": {
+    "title": "Language",
+    "description": "The language used on this site and in the notifications we send you.",
+    "label": "Language",
+    "ja": "日本語 (Japanese)",
+    "en": "English",
+    "save": "Save language"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "How we reach you about events, news and your account.",
+    "auto": "Automatic (recommended)",
+    "autoHint": "LINE if you have linked LINE and added the AIS Alumni Committee as a friend; otherwise email.",
+    "emailOnly": "Email only",
+    "emailOnlyHint": "Always email, even if LINE is linked.",
+    "rule": "Important account messages (verification results, sign-in or email changes, deactivation) are always also sent by email.",
+    "current": "Notifications currently go to: {channel}",
+    "channel": {
+      "LINE": "LINE",
+      "EMAIL": "Email",
+      "NONE": "Nowhere (no LINE or email)"
+    },
+    "save": "Save notification setting"
+  },
+  "line": {
+    "title": "LINE",
+    "description": "Get event reminders and news on LINE.",
+    "status": "Status",
+    "linked": "Linked",
+    "notLinked": "Not linked",
+    "following": "Following",
+    "notFollowing": "Not following the AIS Alumni Committee",
+    "notificationsVia": "Notifications: {channel}",
+    "emailOnlyNote": "You chose email only, so LINE is not used for notifications.",
+    "linkPrompt": "Link LINE to sign in with it and receive notifications there."
+  },
+  "methods": {
+    "title": "Sign-in methods",
+    "description": "Ways you can sign in to this account. At least one must remain.",
+    "email": "Email code",
+    "google": "Google",
+    "line": "LINE",
+    "emailHint": "A one-time code sent to {email}. Always available.",
+    "linked": "Linked",
+    "notLinked": "Not linked",
+    "remove": "Remove",
+    "removeConfirm": "Remove {method} as a sign-in method?",
+    "removeLineNote": "Removing LINE also stops LINE notifications.",
+    "confirmRemove": "Yes, remove",
+    "cannotRemoveLast": "You can't remove your last sign-in method.",
+    "removed": "Sign-in method removed.",
+    "addGoogle": "Add Google sign-in",
+    "addLineHint": "Link LINE in the LINE section above."
+  },
+  "email": {
+    "title": "Email address",
+    "description": "Your primary email, used for sign-in codes and important notices.",
+    "current": "Current email",
+    "newLabel": "New email address",
+    "sendCode": "Send code",
+    "sending": "Sending…",
+    "codeSent": "We sent a 6-digit code to {email}.",
+    "codeLabel": "6-digit code",
+    "verify": "Change email",
+    "verifying": "Checking…",
+    "resend": "Resend code",
+    "startOver": "Use a different address",
+    "changed": "Your email is now {email}. We've let your old address know.",
+    "errors": {
+      "invalid": "Please enter a valid email address.",
+      "same": "That's already your email address.",
+      "taken": "That email address is already used by another account. If it's yours, contact the committee to merge accounts.",
+      "invalidCode": "That code isn't correct.",
+      "expired": "That code has expired. Please request a new one.",
+      "tooMany": "Too many wrong attempts. Please request a new code."
+    }
+  },
+  "export": {
+    "title": "Download your data",
+    "description": "Get a copy of the personal data we hold about you (JSON file).",
+    "download": "Download my data"
+  },
+  "deactivate": {
+    "title": "Deactivate account",
+    "description": "Hide your profile and stop all notifications. Your data is kept, and the committee can reactivate your account if you ask.",
+    "button": "Deactivate my account",
+    "confirmText": "Are you sure? You will be signed out and won't be able to use the site until the committee reactivates you.",
+    "confirmButton": "Yes, deactivate",
+    "working": "Deactivating…"
+  },
+  "delete": {
+    "title": "Delete account",
+    "description": "Permanently delete your account and all your data, including uploaded files. This cannot be undone.",
+    "button": "Delete my account…",
+    "confirmWord": "DELETE",
+    "typeToConfirm": "Type {word} to confirm",
+    "confirmButton": "Permanently delete",
+    "working": "Deleting…",
+    "wordMismatch": "Please type the confirmation word exactly.",
+    "soleAdminContent": "You are the only admin and you created events or news. Please appoint another admin first.",
+    "failed": "We couldn't delete your account. Please try again."
+  },
+  "notify": {
+    "methodRemoved": {
+      "subject": "A sign-in method was removed",
+      "text": "{method} was removed as a sign-in method for your AIS Alumni account. If this wasn't you, please contact the committee right away."
+    },
+    "emailChangedOld": {
+      "subject": "Your AIS Alumni email address was changed",
+      "text": "The email address for your AIS Alumni account was changed to {email}. This address will no longer receive messages. If this wasn't you, please contact the committee right away."
+    },
+    "emailChangedNew": {
+      "subject": "Your AIS Alumni email address was updated",
+      "text": "{email} is now the email address for your AIS Alumni account."
+    },
+    "deactivated": {
+      "subject": "Your AIS Alumni account was deactivated",
+      "text": "Your account has been deactivated at your request. Contact the committee if you'd like to reactivate it."
+    },
+    "deleted": {
+      "subject": "Your AIS Alumni account was deleted",
+      "text": "Your AIS Alumni account and its data have been permanently deleted. Thank you for being part of the community."
+    },
+    "stagePrompt": {
+      "subject": "Is your status still up to date?",
+      "text": "It's a new school year! Is your current status still \"{stage}\"? Please update or confirm it on your profile.",
+      "textNoStage": "It's a new school year! Please tell your classmates what you're doing now by setting your current status on your profile."
+    },
+    "methodAdded": {
+      "subject": "A new sign-in method was added",
+      "text": "{method} was added as a sign-in method for your AIS Alumni account. If this wasn't you, please contact the committee right away."
+    }
+  }
+}

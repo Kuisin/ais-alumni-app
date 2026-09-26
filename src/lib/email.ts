@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { Resend } from "resend";
 
 export type EmailMessage = {
@@ -38,7 +40,18 @@ export async function sendEmail(msg: EmailMessage): Promise<void> {
   const r = resend();
   const text = msg.url ? `${msg.text}\n\n${msg.url}` : msg.text;
   if (!r) {
+    // EMAIL_DEV_MAILBOX=1 allows the file mailbox under `next start` (e2e tests).
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.EMAIL_DEV_MAILBOX !== "1"
+    ) {
+      throw new Error("RESEND_API_KEY is not set");
+    }
     console.info(`[email:dev] to=${msg.to} subject=${msg.subject}\n${text}`);
+    // Dev/test mailbox: the Playwright smoke tests read OTP codes from here.
+    const dir = path.join(process.cwd(), ".data", "dev-mail");
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, `${msg.to}.txt`), `${msg.subject}\n${text}`);
     return;
   }
   const { error } = await r.emails.send({

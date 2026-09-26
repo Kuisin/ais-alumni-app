@@ -3,7 +3,13 @@ import { getPrivate, verifySignedFile } from "@/lib/storage";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const key = url.searchParams.get("key");
-  if (!verifySignedFile(key, url.searchParams.get("exp"), url.searchParams.get("sig"))) {
+  if (
+    !verifySignedFile(
+      key,
+      url.searchParams.get("exp"),
+      url.searchParams.get("sig"),
+    )
+  ) {
     return new Response("Forbidden", { status: 403 });
   }
   const file = await getPrivate(key);

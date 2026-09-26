@@ -8,6 +8,7 @@ import { appAdapter, resolveUserId } from "@/lib/auth/adapter";
 import { normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { db } from "@/lib/db";
 import { fetchLineFriendship } from "@/lib/line";
+import { notifySignInMethodAdded } from "@/lib/security-notice";
 
 const otpCredentials = z.object({
   email: z.email(),
@@ -34,9 +35,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = otpCredentials.safeParse(raw);
         if (!parsed.success) return null;
         const email = normalizeEmail(parsed.data.email);
-        const result = await verifyOtp({ email, purpose: OtpPurpose.SIGN_IN, code: parsed.data.code });
+        const result = await verifyOtp({
+          email,
+          purpose: OtpPurpose.SIGN_IN,
+          code: parsed.data.code,
+        });
         if (!result.ok) return null;
-        const existing = await db.user.findUnique({ where: { primaryEmail: email } });
+        const existing = await db.user.findUnique({
+          where: { primaryEmail: email },
+        });
         const user =
           existing ??
           (await db.user.create({
@@ -67,7 +74,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     //    consent screen (§5.3). Its email is never trusted: LINE users confirm
     //    an email by OTP afterwards (§4.2), so no email is passed to Auth.js.
     Line({
-      authorization: { params: { scope: "profile openid", bot_prompt: "aggressive" } },
+      authorization: {
+        params: { scope: "profile openid", bot_prompt: "aggressive" },
+      },
       profile(p) {
         return { id: p.sub, email: null, name: p.name, image: p.picture };
       },
@@ -75,7 +84,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async signIn({ account, profile }) {
-      if (account?.provider === "google" && !profile?.email_verified) return false;
+      if (account?.provider === "google" && !profile?.email_verified)
+        return false;
       return true;
     },
     async jwt({ token, user }) {
@@ -89,6 +99,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
+    // Fires for new sign-ups too; only accounts older than a few minutes are
+    // "existing" ones gaining a new sign-in method.
+    async linkAccount({ user, account }) {
+      if (
+        !user.id ||
+        (account.provider !== "google" && account.provider !== "line")
+      )
+        return;
+      const row = await db.user.findUnique({
+        where: { id: user.id },
+        select: { createdAt: true },
+      });
+      if (row && Date.now() - row.createdAt.getTime() > 5 * 60 * 1000) {
+        await notifySignInMethodAdded(user.id, account.provider);
+      }
+    },
     async signIn({ user, account, profile }) {
       if (account?.provider !== "line" || !user.id) return;
       const following = account.access_token
@@ -98,11 +124,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         where: { id: user.id },
         data: {
           lineUserId: account.providerAccountId,
-          lineDisplayName: typeof profile?.name === "string" ? profile.name : undefined,
+          lineDisplayName:
+            typeof profile?.name === "string" ? profile.name : undefined,
           ...(following === null ? {} : { lineFollowing: following }),
         },
       });
     },
   },
 });
-

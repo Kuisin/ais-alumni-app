@@ -1,1 +1,164 @@
-{}
+{
+  "title": "Members",
+  "description": "Search, review and edit member accounts.",
+  "noName": "(no name yet)",
+  "empty": "No members match these filters.",
+  "resultCount": "{count, plural, one {# member} other {# members}}",
+  "pagination": "Pages",
+  "nextPage": "Next page",
+  "firstPage": "First page",
+  "filters": {
+    "label": "Filter members",
+    "search": "Name or email",
+    "searchPlaceholder": "e.g. Tanaka, taro@example.com",
+    "state": "State",
+    "role": "Role",
+    "line": "LINE",
+    "any": "Any",
+    "lineLinked": "Linked",
+    "lineFollowing": "Linked and following",
+    "lineUnlinked": "Not linked",
+    "adminOnly": "Admins only"
+  },
+  "columns": {
+    "name": "Name",
+    "email": "Email",
+    "state": "State",
+    "roles": "Roles",
+    "line": "LINE",
+    "created": "Joined"
+  },
+  "badge": {
+    "admin": "Admin"
+  },
+  "line": {
+    "notLinked": "Not linked",
+    "linkedNotFollowing": "Linked, not following",
+    "following": "Linked and following"
+  },
+  "detail": {
+    "title": "Member",
+    "back": "All members",
+    "unverified": "unverified",
+    "providers": "Sign-in methods",
+    "notifyVia": "Notifications",
+    "deactivatedAt": "Deactivated",
+    "merged": "Accounts merged. The duplicate account has been removed."
+  },
+  "profile": {
+    "title": "Profile",
+    "nameRomaji": "Name (romaji)",
+    "nameKanji": "Name (kanji/kana)",
+    "nameAtAis": "Name at AIS",
+    "dateOfBirth": "Date of birth",
+    "bio": "Bio",
+    "phone": "Phone",
+    "save": "Save profile"
+  },
+  "roles": {
+    "title": "Roles",
+    "none": "No roles.",
+    "addTitle": "Add a role",
+    "addRole": "Role to add",
+    "add": "Add role",
+    "save": "Save role",
+    "remove": "Remove role",
+    "removeConfirm": "Remove this role?",
+    "removed": "Role removed.",
+    "lastRole": "A member must keep at least one role.",
+    "noFields": "This role has no extra details.",
+    "unknown": "Not set",
+    "yearsFrom": "Taught from (year)",
+    "yearsTo": "Taught until (year)",
+    "yearsToHint": "Leave empty if still at AIS.",
+    "subjects": "Subjects / position",
+    "schoolEmail": "School email",
+    "verified": "Verified",
+    "unverified": "Not verified",
+    "currentGrade": "Current grade",
+    "studentIdNo": "Student ID",
+    "aisRecord": "AIS record",
+    "lastDivision": "Last division at AIS",
+    "graduationOrLeaveYear": "Graduation / leaving year",
+    "didGraduate": "Graduated from AIS?",
+    "didGraduateYes": "Graduated",
+    "didGraduateNo": "Left before graduating",
+    "currentStatus": "Current status",
+    "currentStage": "Current stage",
+    "currentStageDetail": "Details (school, company…)",
+    "stageUpdatedAt": "Current stage last updated {date}"
+  },
+  "status": {
+    "title": "Account status",
+    "deactivate": "Deactivate account",
+    "deactivateConfirm": "Deactivate this account? The member is signed out of member pages and notified by email.",
+    "reactivate": "Reactivate account",
+    "notSelf": "You can't change your own account status here. Use Settings instead.",
+    "noActions": "Status changes for accounts under review are made on the Verification screen.",
+    "invalidTransition": "This status change isn't allowed.",
+    "deactivatedDone": "Account deactivated.",
+    "reactivatedDone": "Account reactivated."
+  },
+  "admin": {
+    "title": "Admin rights",
+    "isAdmin": "This member is an admin.",
+    "notAdmin": "This member is not an admin.",
+    "grant": "Make admin",
+    "revoke": "Remove admin rights",
+    "grantConfirm": "Give this member full admin access, including private member data?",
+    "revokeConfirm": "Remove this member's admin rights?",
+    "revokeSelfConfirm": "Remove your own admin rights? You will lose access to the admin area immediately.",
+    "lastAdmin": "There must always be at least one active admin.",
+    "mustBeActive": "Only active members can be made admins.",
+    "granted": "Admin rights granted.",
+    "revoked": "Admin rights removed."
+  },
+  "merge": {
+    "title": "Merge duplicate account",
+    "description": "If this person has two accounts, merge them into one. Sign-in methods, LINE, roles, follows, RSVPs and family links move to the kept account; the other account is deleted.",
+    "other": "Other account (ID or email)",
+    "otherHint": "Find the ID on the other member's page.",
+    "keep": "Which account should remain?",
+    "keepThis": "Keep this account",
+    "keepOther": "Keep the other account",
+    "preview": "Review merge",
+    "confirmTitle": "Confirm merge",
+    "keepLabel": "Keep",
+    "duplicateLabel": "Merge in and delete",
+    "whatHappens": "Empty profile fields on the kept account are filled from the other one. Where both have the same role, the kept account's details win. This cannot be undone.",
+    "confirm": "Merge accounts",
+    "working": "Merging…",
+    "notFound": "No account found with that ID or email.",
+    "same": "That's this same account.",
+    "notSelf": "You can't merge away your own account."
+  },
+  "audit": {
+    "title": "Audit trail",
+    "viewAll": "View the full audit log for this member"
+  },
+  "auditLog": {
+    "title": "Audit log",
+    "description": "Every admin action, newest first. Times are JST.",
+    "filterLabel": "Filter audit log",
+    "action": "Action",
+    "targetOrActorId": "Target or actor ID",
+    "actor": "By",
+    "target": "Target",
+    "data": "Details",
+    "system": "System / deleted user",
+    "empty": "No audit entries.",
+    "pagination": "Pages",
+    "older": "Older entries",
+    "newest": "Newest entries"
+  },
+  "notify": {
+    "deactivated": {
+      "subject": "Your AIS Alumni account was deactivated",
+      "text": "Your AIS Alumni account has been deactivated by the committee. If you think this is a mistake, please reply to this email or contact the committee."
+    },
+    "reactivated": {
+      "subject": "Your AIS Alumni account is active again",
+      "text": "Welcome back! Your AIS Alumni account has been reactivated."
+    }
+  }
+}

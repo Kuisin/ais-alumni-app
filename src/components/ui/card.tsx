@@ -4,7 +4,10 @@ import { cn } from "./cn";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6", className)}
+      className={cn(
+        "rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6",
+        className,
+      )}
       {...props}
     />
   );
@@ -23,7 +26,9 @@ export function PageHeader({
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        {description ? <p className="mt-1 text-slate-600">{description}</p> : null}
+        {description ? (
+          <p className="mt-1 text-slate-600">{description}</p>
+        ) : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
     </div>
@@ -45,7 +50,12 @@ export function Badge({
     red: "bg-red-100 text-red-800",
   };
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", tones[tone])}>
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        tones[tone],
+      )}
+    >
       {children}
     </span>
   );

@@ -62,7 +62,9 @@ export async function blockedUserIds(viewerId: string): Promise<string[]> {
     where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
     select: { blockerId: true, blockedId: true },
   });
-  return blocks.map((b) => (b.blockerId === viewerId ? b.blockedId : b.blockerId));
+  return blocks.map((b) =>
+    b.blockerId === viewerId ? b.blockedId : b.blockerId,
+  );
 }
 
 /** DB-backed wrapper for the single private-tier gate (§15). */

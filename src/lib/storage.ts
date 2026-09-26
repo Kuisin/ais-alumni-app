@@ -20,7 +20,8 @@ export function isBlobConfigured(): boolean {
 
 function localPath(key: string): string {
   const resolved = path.resolve(LOCAL_DIR, key);
-  if (!resolved.startsWith(LOCAL_DIR + path.sep)) throw new Error("Invalid key");
+  if (!resolved.startsWith(LOCAL_DIR + path.sep))
+    throw new Error("Invalid key");
   return resolved;
 }
 
@@ -39,7 +40,8 @@ export async function putPrivate(
   }
   const file = localPath(key);
   await mkdir(path.dirname(file), { recursive: true });
-  const buf = body instanceof Blob ? Buffer.from(await body.arrayBuffer()) : body;
+  const buf =
+    body instanceof Blob ? Buffer.from(await body.arrayBuffer()) : body;
   await writeFile(file, buf);
   await writeFile(`${file}.type`, contentType);
   return key;
@@ -81,13 +83,19 @@ export async function deletePrivate(key: string): Promise<void> {
 function sign(key: string, exp: number): string {
   const secret = process.env.AUTH_SECRET;
   if (!secret) throw new Error("AUTH_SECRET is not set");
-  return createHmac("sha256", secret).update(`${key}\n${exp}`).digest("base64url");
+  return createHmac("sha256", secret)
+    .update(`${key}\n${exp}`)
+    .digest("base64url");
 }
 
 /** Short-lived URL for a private file. Call only after authorizing the viewer. */
 export function signedFileUrl(key: string, ttlMs = SIGNED_URL_TTL_MS): string {
   const exp = Date.now() + ttlMs;
-  const qs = new URLSearchParams({ key, exp: String(exp), sig: sign(key, exp) });
+  const qs = new URLSearchParams({
+    key,
+    exp: String(exp),
+    sig: sign(key, exp),
+  });
   return `/api/files?${qs}`;
 }
 

@@ -4,7 +4,7 @@ import { sendEmail } from "@/lib/email";
 import { lineMulticast, linePush } from "@/lib/line";
 import { type Channel, channelsFor, type RoutableUser } from "./route";
 
-export { chooseChannel, channelsFor } from "./route";
+export { channelsFor, chooseChannel } from "./route";
 
 export type NotifyUser = RoutableUser & { id: string; locale: Locale };
 
@@ -22,10 +22,15 @@ export type Notification = {
 };
 
 function lineText(m: RenderedMessage): string {
-  return m.url ? `${m.subject}\n\n${m.text}\n\n${m.url}` : `${m.subject}\n\n${m.text}`;
+  return m.url
+    ? `${m.subject}\n\n${m.text}\n\n${m.url}`
+    : `${m.subject}\n\n${m.text}`;
 }
 
-async function alreadySent(userIds: string[], n: Notification): Promise<Set<string>> {
+async function alreadySent(
+  userIds: string[],
+  n: Notification,
+): Promise<Set<string>> {
   if (!n.dedupe) return new Set();
   const rows = await db.notificationLog.findMany({
     where: { userId: { in: userIds }, kind: n.kind, refId: n.refId ?? null },
@@ -35,7 +40,10 @@ async function alreadySent(userIds: string[], n: Notification): Promise<Set<stri
 }
 
 /** Send one notification to one user via the routed channel(s). */
-export async function notify(user: NotifyUser, n: Notification): Promise<Channel[]> {
+export async function notify(
+  user: NotifyUser,
+  n: Notification,
+): Promise<Channel[]> {
   return (await notifyMany([user], n)).get(user.id) ?? [];
 }
 
@@ -58,7 +66,8 @@ export async function notifyMany(
 
   for (const u of users) {
     if (skip.has(u.id)) continue;
-    if (!rendered.has(u.locale)) rendered.set(u.locale, await n.render(u.locale));
+    if (!rendered.has(u.locale))
+      rendered.set(u.locale, await n.render(u.locale));
     const msg = rendered.get(u.locale) as RenderedMessage;
     const channels = channelsFor(u, { alwaysEmail: n.alwaysEmail });
     for (const ch of channels) {

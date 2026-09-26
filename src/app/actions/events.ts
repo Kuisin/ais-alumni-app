@@ -81,8 +81,8 @@ export async function rsvpAction(
     return { error: "generic" };
   }
 
-  revalidatePath("/[locale]/events/[id]", "page");
-  revalidatePath("/[locale]/events", "page");
-  revalidatePath("/[locale]/dashboard", "page");
+  revalidatePath("/[locale]/app/events/[id]", "page");
+  revalidatePath("/[locale]/app/events", "page");
+  revalidatePath("/[locale]/app/dashboard", "page");
   return { ok: true };
 }

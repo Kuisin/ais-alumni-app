@@ -137,7 +137,7 @@ export async function verifyEmailAction(
   try {
     user = await actionUser(AccountState.UNVERIFIED_EMAIL);
   } catch (e) {
-    if (e instanceof AuthError) return go("/onboarding");
+    if (e instanceof AuthError) return go("/app/onboarding");
     throw e;
   }
   const intent = intentSchema.safeParse(formData.get("intent"));
@@ -162,5 +162,5 @@ export async function skipLineOnboardingAction(): Promise<void> {
       data: { lineOnboardingSeenAt: new Date() },
     });
   }
-  return go("/onboarding/verify");
+  return go("/app/onboarding/verify");
 }

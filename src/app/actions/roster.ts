@@ -79,7 +79,7 @@ export async function rosterImportAction(
   try {
     const res = await db.rosterEntry.createMany({ data: rows });
     await audit(me.id, "roster.import", undefined, { rows: res.count, byKind });
-    revalidatePath("/[locale]/admin/roster", "page");
+    revalidatePath("/[locale]/app/admin/roster", "page");
     return { ok: true, message: "imported", imported: res.count, ...summary };
   } catch (e) {
     console.error("[roster] import failed", e);
@@ -103,6 +103,6 @@ export async function deleteAllRosterAction(
     return { ok: false, message: "confirm" };
   const { count } = await db.rosterEntry.deleteMany({});
   await audit(me.id, "roster.deleteAll", undefined, { rows: count });
-  revalidatePath("/[locale]/admin/roster", "page");
+  revalidatePath("/[locale]/app/admin/roster", "page");
   return { ok: true, message: "deleted", deleted: count };
 }

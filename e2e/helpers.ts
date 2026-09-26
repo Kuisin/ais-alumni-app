@@ -26,17 +26,17 @@ export async function clearMailbox(email: string): Promise<void> {
   await rm(path.join(MAILBOX, `${email}.txt`), { force: true });
 }
 
-/** Email-code sign-in from the English landing page. */
+/** Email-code sign-in from the English sign-in page (/en/app). */
 export async function signInWithEmail(
   page: Page,
   email: string,
 ): Promise<void> {
   await clearMailbox(email);
-  await page.goto("/en");
+  await page.goto("/en/app");
   await page.getByLabel("Email address").fill(email);
   await page.getByRole("button", { name: "Email me a sign-in code" }).click();
   const code = await readCode(email);
   await page.getByLabel("6-digit code").fill(code);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).not.toHaveURL(/\/en$/);
+  await expect(page).not.toHaveURL(/\/en\/app$/);
 }

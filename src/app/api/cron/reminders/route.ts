@@ -65,7 +65,7 @@ async function remind(
                   location: event.location,
                 })
               : t(`${key}.text`, { title, when }),
-            url: appUrl(`/${locale}/events/${event.id}`),
+            url: appUrl(`/${locale}/app/events/${event.id}`),
           };
         },
       });

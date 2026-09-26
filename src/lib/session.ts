@@ -22,10 +22,10 @@ async function go(href: string): Promise<never> {
   return redirect({ href, locale });
 }
 
-/** Any signed-in user, or redirect to the landing page. */
+/** Any signed-in user, or redirect to the sign-in page. */
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) return go("/");
+  if (!user) return go("/app");
   return user;
 }
 
@@ -49,7 +49,7 @@ export async function requireActive(): Promise<CurrentUser> {
 /** ACTIVE admins only (§3.2). */
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await requireActive();
-  if (!user.isAdmin) return go("/dashboard");
+  if (!user.isAdmin) return go("/app/dashboard");
   return user;
 }
 

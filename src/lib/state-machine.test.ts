@@ -31,24 +31,24 @@ describe("account state machine", () => {
   it("routes each state to its screen", () => {
     expect(
       homePathFor({ state: S.UNVERIFIED_EMAIL, lineOnboardingSeenAt: null }),
-    ).toBe("/onboarding/email");
+    ).toBe("/app/onboarding/email");
     expect(
       homePathFor({ state: S.EMAIL_VERIFIED, lineOnboardingSeenAt: null }),
-    ).toBe("/onboarding/line");
+    ).toBe("/app/onboarding/line");
     expect(
       homePathFor({
         state: S.EMAIL_VERIFIED,
         lineOnboardingSeenAt: new Date(),
       }),
-    ).toBe("/onboarding/verify");
+    ).toBe("/app/onboarding/verify");
     expect(
       homePathFor({ state: S.NEEDS_INFO, lineOnboardingSeenAt: null }),
-    ).toBe("/onboarding/verify");
+    ).toBe("/app/onboarding/verify");
     expect(
       homePathFor({ state: S.PENDING_REVIEW, lineOnboardingSeenAt: null }),
-    ).toBe("/onboarding/status");
+    ).toBe("/app/onboarding/status");
     expect(homePathFor({ state: S.ACTIVE, lineOnboardingSeenAt: null })).toBe(
-      "/dashboard",
+      "/app/dashboard",
     );
   });
 });

@@ -32,7 +32,7 @@ export async function MemberCard({
     locale === "ja" && member.nameKanji ? member.nameRomaji : member.nameKanji;
   const nameEl = linked ? (
     <Link
-      href={`/members/${member.id}`}
+      href={`/app/members/${member.id}`}
       className="font-semibold text-slate-900 underline-offset-2 hover:underline"
     >
       {name}

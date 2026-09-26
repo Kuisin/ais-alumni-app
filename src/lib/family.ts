@@ -373,7 +373,7 @@ export async function createFamilyLink(
         return {
           subject: t(`notify.${key}Subject`, { name }),
           text: t(`notify.${key}Text`, { name }),
-          url: appUrl(`/${locale}/family`),
+          url: appUrl(`/${locale}/app/family`),
         };
       },
     });

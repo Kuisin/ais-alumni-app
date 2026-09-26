@@ -148,9 +148,9 @@ const EventSchema = z
   });
 
 function revalidateEvents() {
-  revalidatePath("/[locale]/admin/events", "layout");
-  revalidatePath("/[locale]/events", "layout");
-  revalidatePath("/[locale]/dashboard", "page");
+  revalidatePath("/[locale]/app/admin/events", "layout");
+  revalidatePath("/[locale]/app/events", "layout");
+  revalidatePath("/[locale]/app/dashboard", "page");
 }
 
 /** Create (no id) or update an event. */
@@ -204,7 +204,7 @@ export async function saveEventAction(
     summary,
   );
   revalidateEvents();
-  return go(`/admin/events/${event.id}?created=1`);
+  return go(`/app/admin/events/${event.id}?created=1`);
 }
 
 export async function deleteEventAction(fd: FormData): Promise<void> {
@@ -234,7 +234,7 @@ export async function deleteEventAction(fd: FormData): Promise<void> {
     );
     revalidateEvents();
   }
-  return go("/admin/events?deleted=1");
+  return go("/app/admin/events?deleted=1");
 }
 
 // ─── News ─────────────────────────────────────────────────────────────────
@@ -273,9 +273,9 @@ function sniffImage(buf: Buffer): { type: string; ext: string } | null {
 }
 
 function revalidateNews() {
-  revalidatePath("/[locale]/admin/news", "layout");
-  revalidatePath("/[locale]/news", "layout");
-  revalidatePath("/[locale]/dashboard", "page");
+  revalidatePath("/[locale]/app/admin/news", "layout");
+  revalidatePath("/[locale]/app/news", "layout");
+  revalidatePath("/[locale]/app/dashboard", "page");
 }
 
 async function removeFile(key: string | null) {
@@ -381,8 +381,8 @@ export async function saveNewsAction(
   revalidateNews();
 
   if (str(fd, "intent") === "notify")
-    return go(`/admin/news/${postId}?notify=1`);
-  if (!id) return go(`/admin/news/${postId}?created=1`);
+    return go(`/app/admin/news/${postId}?notify=1`);
+  if (!id) return go(`/app/admin/news/${postId}?created=1`);
   return { ok: true };
 }
 
@@ -406,7 +406,7 @@ export async function deleteNewsAction(fd: FormData): Promise<void> {
     );
     revalidateNews();
   }
-  return go("/admin/news?deleted=1");
+  return go("/app/admin/news?deleted=1");
 }
 
 /**
@@ -420,8 +420,8 @@ export async function notifyNewsAction(fd: FormData): Promise<void> {
     where: { id },
     select: { publishedAt: true, notifiedAt: true },
   });
-  if (!post) return go("/admin/news");
-  if (post.notifiedAt) return go(`/admin/news/${id}`);
+  if (!post) return go("/app/admin/news");
+  if (post.notifiedAt) return go(`/app/admin/news/${id}`);
 
   const now = new Date();
   const publishNow = !post.publishedAt || post.publishedAt > now;
@@ -440,5 +440,5 @@ export async function notifyNewsAction(fd: FormData): Promise<void> {
     },
   );
   revalidateNews();
-  return go(`/admin/news/${id}?notified=1`);
+  return go(`/app/admin/news/${id}?notified=1`);
 }

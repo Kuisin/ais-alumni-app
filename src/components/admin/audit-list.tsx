@@ -63,7 +63,7 @@ export async function AuditList({ rows }: { rows: AuditRow[] }) {
               <dd className="break-all">
                 {r.actorId && r.actor ? (
                   <Link
-                    href={`/admin/members/${r.actorId}`}
+                    href={`/app/admin/members/${r.actorId}`}
                     className="text-brand-700 underline"
                   >
                     {actorLabel}
@@ -79,7 +79,7 @@ export async function AuditList({ rows }: { rows: AuditRow[] }) {
                     {r.targetType ? `${r.targetType} ` : ""}
                     {r.targetType === "User" ? (
                       <Link
-                        href={`/admin/members/${r.targetId}`}
+                        href={`/app/admin/members/${r.targetId}`}
                         className="font-mono text-xs text-brand-700 underline"
                       >
                         {r.targetId}

@@ -401,7 +401,7 @@ export async function setMemberStateAction(
         return {
           subject: tr(`notify.${key}.subject`),
           text: tr(`notify.${key}.text`),
-          url: deactivating ? undefined : appUrl(`/${locale}/dashboard`),
+          url: deactivating ? undefined : appUrl(`/${locale}/app/dashboard`),
         };
       },
     }).catch((e) => console.error("[admin-members] notify failed", e));
@@ -465,7 +465,7 @@ export async function setMemberAdminAction(
     );
     if (!grant && userId === admin.id) {
       // Revoked own rights: leave the admin area.
-      redirect({ href: "/dashboard", locale: await getLocale() });
+      redirect({ href: "/app/dashboard", locale: await getLocale() });
     }
     refresh();
     return { ok: true, message: t(grant ? "admin.granted" : "admin.revoked") };
@@ -601,7 +601,7 @@ export async function mergeMembersAction(
     return { ...prev, error: await errorText(e) };
   }
   redirect({
-    href: `/admin/members/${keepId}?merged=1`,
+    href: `/app/admin/members/${keepId}?merged=1`,
     locale: await getLocale(),
   });
   return {};

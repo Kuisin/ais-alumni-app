@@ -11,5 +11,5 @@ export async function dismissLineBannerAction(): Promise<void> {
     where: { id: user.id },
     data: { lineBannerDismissedAt: new Date() },
   });
-  revalidatePath("/[locale]/dashboard", "page");
+  revalidatePath("/[locale]/app/dashboard", "page");
 }

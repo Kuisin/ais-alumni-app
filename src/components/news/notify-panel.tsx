@@ -59,7 +59,7 @@ export async function NotifyPanel({
               : t("notify.publishedHint")}
         </p>
         <Link
-          href={`/admin/news/${post.id}?notify=1`}
+          href={`/app/admin/news/${post.id}?notify=1`}
           className={buttonClass("secondary")}
         >
           {status === "published"
@@ -108,7 +108,10 @@ export async function NotifyPanel({
             {t("notify.confirm", { count: users.length })}
           </SubmitButton>
         </form>
-        <Link href={`/admin/news/${post.id}`} className={buttonClass("ghost")}>
+        <Link
+          href={`/app/admin/news/${post.id}`}
+          className={buttonClass("ghost")}
+        >
           {t("notify.cancel")}
         </Link>
       </div>

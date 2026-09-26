@@ -107,7 +107,7 @@ async function verifySignInCode(formData: FormData): Promise<OtpFormState> {
       email: normalized,
       code: parsed.data.code,
       locale,
-      redirectTo: `/${locale}/onboarding`,
+      redirectTo: `/${locale}/app/onboarding`,
     });
   } catch (e) {
     if (e instanceof AuthError) {
@@ -142,7 +142,7 @@ export async function emailSignInAction(
 
 async function oauthSignIn(provider: "google" | "line"): Promise<void> {
   const locale = await currentLocale();
-  await signIn(provider, { redirectTo: `/${locale}/onboarding` });
+  await signIn(provider, { redirectTo: `/${locale}/app/onboarding` });
 }
 
 export async function signInWithGoogle(): Promise<void> {

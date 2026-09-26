@@ -31,7 +31,7 @@ export function NewsCard({
     : "";
   return (
     <Link
-      href={`/news/${post.id}`}
+      href={`/app/news/${post.id}`}
       className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-brand-300 focus-visible:outline-2"
     >
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">

@@ -6,7 +6,8 @@ import type { VercelConfig } from "@vercel/config/v1";
 // Cron schedules are UTC.
 export const config: VercelConfig = {
   framework: "nextjs",
-  buildCommand: "prisma migrate deploy && next build",
+  // Generate explicitly: cached installs on Vercel skip the postinstall hook.
+  buildCommand: "prisma generate && prisma migrate deploy && next build",
   regions: ["hnd1"],
   // Deploy only main (production, ais.kai-lab.net) and dev (ais-dev.kai-lab.net).
   // Other branches have no env vars; exit 0 tells Vercel to skip the build.

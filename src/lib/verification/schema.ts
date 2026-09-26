@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
+import { nameColumns } from "@/lib/names";
 
 /**
  * Verification form (§6.1, §6.2, §7). Shared by the client form (per-step
@@ -215,8 +216,11 @@ export function safeFileName(name: string): string {
 export function verificationSchema(opts: { requireKanji: boolean }) {
   return z
     .object({
-      nameRomaji: requiredText(100),
-      nameKanji: opts.requireKanji ? requiredText(100) : optionalText(100),
+      lastNameRomaji: requiredText(50),
+      firstNameRomaji: requiredText(50),
+      middleNameRomaji: optionalText(50),
+      lastNameKanji: opts.requireKanji ? requiredText(50) : optionalText(50),
+      firstNameKanji: opts.requireKanji ? requiredText(50) : optionalText(50),
       nameAtAis: optionalText(100),
       dateOfBirth: isoDate,
       roles: z
@@ -247,7 +251,8 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
     })
     .transform((v) => {
       // Drop sections for roles that were not selected.
-      const out = { ...v };
+      // Also add the combined display names (nameRomaji / nameKanji).
+      const out = { ...v, ...nameColumns(v) };
       for (const role of Object.keys(ROLE_SECTION) as RoleKey[]) {
         if (!v.roles.includes(role)) delete out[ROLE_SECTION[role]];
       }
@@ -275,8 +280,11 @@ export type FormerChildState = {
 };
 
 export type VerifyFormState = {
-  nameRomaji: string;
-  nameKanji: string;
+  lastNameRomaji: string;
+  firstNameRomaji: string;
+  middleNameRomaji: string;
+  lastNameKanji: string;
+  firstNameKanji: string;
   nameAtAis: string;
   dateOfBirth: string;
   roles: RoleKey[];
@@ -321,8 +329,11 @@ export const emptyFormerChild = (): FormerChildState => ({
 
 export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
   return {
-    nameRomaji: "",
-    nameKanji: "",
+    lastNameRomaji: "",
+    firstNameRomaji: "",
+    middleNameRomaji: "",
+    lastNameKanji: "",
+    firstNameKanji: "",
     nameAtAis: "",
     dateOfBirth: "",
     roles: [],
@@ -412,8 +423,13 @@ export function answersToFormState(
 
   return {
     ...base,
-    nameRomaji: s(a.nameRomaji),
-    nameKanji: s(a.nameKanji),
+    // Answers saved before names were split have no parts; the page fills
+    // those from the user's current name (see onboarding/verify/page.tsx).
+    lastNameRomaji: s(a.lastNameRomaji),
+    firstNameRomaji: s(a.firstNameRomaji),
+    middleNameRomaji: s(a.middleNameRomaji),
+    lastNameKanji: s(a.lastNameKanji),
+    firstNameKanji: s(a.firstNameKanji),
     nameAtAis: s(a.nameAtAis),
     dateOfBirth: s(a.dateOfBirth),
     roles: arr(a.roles).filter(

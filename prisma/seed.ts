@@ -25,6 +25,8 @@ async function main() {
         emailVerifiedAt: new Date(),
         state: "ACTIVE",
         isAdmin: true,
+        lastNameRomaji: "Admin",
+        firstNameRomaji: "AIS",
         nameRomaji: "AIS Admin",
         roles: { create: [{ role: "TEACHER", yearsFrom: 2010 }] },
       },
@@ -36,27 +38,37 @@ async function main() {
   if (process.env.NODE_ENV === "production")
     throw new Error("Refusing to seed demo data in production");
 
-  const demo = [
+  const demo: {
+    email: string;
+    first: string;
+    last: string;
+    kanji: [string, string] | null;
+    year: number;
+    stage: "WORKING" | "UNIVERSITY_COLLEGE";
+  }[] = [
     {
       email: "hanako@example.com",
-      romaji: "Hanako Suzuki",
-      kanji: "鈴木花子",
+      first: "Hanako",
+      last: "Suzuki",
+      kanji: ["鈴木", "花子"],
       year: 2015,
-      stage: "WORKING" as const,
+      stage: "WORKING",
     },
     {
       email: "ken@example.com",
-      romaji: "Ken Tanaka",
-      kanji: "田中健",
+      first: "Ken",
+      last: "Tanaka",
+      kanji: ["田中", "健"],
       year: 2016,
-      stage: "UNIVERSITY_COLLEGE" as const,
+      stage: "UNIVERSITY_COLLEGE",
     },
     {
       email: "emma@example.com",
-      romaji: "Emma Brown",
+      first: "Emma",
+      last: "Brown",
       kanji: null,
       year: 2019,
-      stage: "UNIVERSITY_COLLEGE" as const,
+      stage: "UNIVERSITY_COLLEGE",
     },
   ];
   for (const m of demo) {
@@ -67,8 +79,12 @@ async function main() {
         primaryEmail: m.email,
         emailVerifiedAt: new Date(),
         state: "ACTIVE",
-        nameRomaji: m.romaji,
-        nameKanji: m.kanji,
+        firstNameRomaji: m.first,
+        lastNameRomaji: m.last,
+        nameRomaji: `${m.first} ${m.last}`,
+        lastNameKanji: m.kanji?.[0] ?? null,
+        firstNameKanji: m.kanji?.[1] ?? null,
+        nameKanji: m.kanji ? m.kanji.join(" ") : null,
         dateOfBirth: new Date(`${m.year - 18}-06-01`),
         bio: "Demo member",
         phone: "090-0000-0000",

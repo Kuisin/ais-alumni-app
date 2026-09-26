@@ -16,6 +16,7 @@ import {
 import type { Prisma } from "@/generated/prisma/client";
 import { LifeStage, RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
@@ -48,9 +49,7 @@ const socialUrl = z
   .max(SOCIAL_URL_MAX)
   .refine((v) => v === "" || isHttpUrl(v));
 
-const ProfileSchema = z.object({
-  nameRomaji: z.string().trim().min(1).max(100),
-  nameKanji: optionalText(100),
+const ProfileSchema = nameFormSchema.extend({
   nameAtAis: optionalText(100),
   bio: optionalText(1000),
   phone: optionalText(40).refine((v) => v === null || /^[0-9+\-() ]+$/.test(v)),
@@ -85,8 +84,7 @@ export async function updateProfileAction(
   const me = await member();
   if (!me) return FORBIDDEN;
   const parsed = ProfileSchema.safeParse({
-    nameRomaji: field(formData, "nameRomaji"),
-    nameKanji: field(formData, "nameKanji"),
+    ...nameFormInput(formData),
     nameAtAis: field(formData, "nameAtAis"),
     bio: field(formData, "bio"),
     phone: field(formData, "phone"),
@@ -106,8 +104,7 @@ export async function updateProfileAction(
   await db.user.update({
     where: { id: me.id },
     data: {
-      nameRomaji: d.nameRomaji,
-      nameKanji: d.nameKanji,
+      ...nameColumns(d),
       nameAtAis: d.nameAtAis,
       bio: d.bio,
       phone: d.phone,

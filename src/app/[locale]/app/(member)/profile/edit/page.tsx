@@ -11,6 +11,7 @@ import { Card, PageHeader } from "@/components/ui/card";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { displayName, formatDate } from "@/lib/format";
+import { namePartsOf } from "@/lib/names";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -52,8 +53,7 @@ export default async function ProfileEditPage() {
         <ProfileForm
           showAutoAccept={Boolean(former)}
           values={{
-            nameRomaji: me.nameRomaji ?? "",
-            nameKanji: me.nameKanji ?? "",
+            ...namePartsOf(me),
             nameAtAis: me.nameAtAis ?? "",
             bio: me.bio ?? "",
             phone: me.phone ?? "",

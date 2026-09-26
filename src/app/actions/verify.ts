@@ -137,6 +137,11 @@ export async function submitVerificationAction(
       const moved = await tx.user.updateMany({
         where: { id: user.id, state: user.state },
         data: {
+          lastNameRomaji: data.lastNameRomaji,
+          firstNameRomaji: data.firstNameRomaji,
+          middleNameRomaji: data.middleNameRomaji,
+          lastNameKanji: data.lastNameKanji,
+          firstNameKanji: data.firstNameKanji,
           nameRomaji: data.nameRomaji,
           nameKanji: data.nameKanji,
           nameAtAis: data.nameAtAis,

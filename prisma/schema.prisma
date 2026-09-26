@@ -61,6 +61,14 @@ model User {
   state                 AccountState  @default(UNVERIFIED_EMAIL)
   isAdmin               Boolean       @default(false)
   locale                Locale        @default(ja)
+  // Name parts are what members enter. nameRomaji ("First Middle Last") and
+  // nameKanji ("姓 名") are the combined display/search names, always
+  // recomputed from the parts by src/lib/names.ts when a name is saved.
+  lastNameRomaji        String?
+  firstNameRomaji       String?
+  middleNameRomaji      String?
+  lastNameKanji         String?
+  firstNameKanji        String?
   nameRomaji            String?
   nameKanji             String?
   nameAtAis             String?

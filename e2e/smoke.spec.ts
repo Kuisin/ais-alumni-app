@@ -68,7 +68,12 @@ test("email sign-up → verification → admin approval → member dashboard", a
 
   // 2. Verification form.
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/verify/);
-  await member.getByLabel("Name (romaji)").fill("Smoke Tester");
+  await member
+    .getByRole("textbox", { name: "Last name", exact: true })
+    .fill("Tester");
+  await member
+    .getByRole("textbox", { name: "First name", exact: true })
+    .fill("Smoke");
   await member.getByLabel("Date of birth").fill("1996-04-02");
   await member
     .getByRole("checkbox", { name: "Former student / Alumni" })

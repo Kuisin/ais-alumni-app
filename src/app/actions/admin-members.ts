@@ -17,6 +17,7 @@ import { audit } from "@/lib/audit";
 import { normalizeEmail } from "@/lib/auth/otp";
 import { db } from "@/lib/db";
 import { mergeUsers } from "@/lib/merge";
+import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { AuthError, actionAdmin } from "@/lib/session";
 import { canTransition } from "@/lib/state-machine";
@@ -105,10 +106,8 @@ function fieldErrors(error: z.ZodError): Record<string, string> {
 // Profile fields
 // ---------------------------------------------------------------------------
 
-const profileSchema = z.object({
+const profileSchema = nameFormSchema.extend({
   userId: id,
-  nameRomaji: optText(100),
-  nameKanji: optText(100),
   nameAtAis: optText(100),
   dateOfBirth: z
     .string()
@@ -129,8 +128,7 @@ export async function updateMemberProfileAction(
     const admin = await actionAdmin();
     const parsed = profileSchema.safeParse({
       userId: str(fd, "userId"),
-      nameRomaji: str(fd, "nameRomaji") ?? "",
-      nameKanji: str(fd, "nameKanji") ?? "",
+      ...nameFormInput(fd),
       nameAtAis: str(fd, "nameAtAis") ?? "",
       dateOfBirth: str(fd, "dateOfBirth") ?? "",
       bio: str(fd, "bio") ?? "",
@@ -142,10 +140,16 @@ export async function updateMemberProfileAction(
         fieldErrors: fieldErrors(parsed.error),
       };
     }
-    const { userId, ...data } = parsed.data;
+    const { userId, ...rest } = parsed.data;
+    const data = { ...rest, ...nameColumns(rest) };
     const before = await db.user.findUnique({
       where: { id: userId },
       select: {
+        lastNameRomaji: true,
+        firstNameRomaji: true,
+        middleNameRomaji: true,
+        lastNameKanji: true,
+        firstNameKanji: true,
         nameRomaji: true,
         nameKanji: true,
         nameAtAis: true,

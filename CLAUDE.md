@@ -15,7 +15,12 @@
 
 # Database migrations (LLM-owned)
 
-- The LLM writes migrations (`pnpm db:migrate --name <change>` against the local Docker DB) and ships them in the PR into `dev`.
+- The LLM writes migrations and ships them in the PR into `dev`. `prisma migrate dev` does not work here (its shadow database can't replay the RLS migration, which touches `_prisma_migrations`), so create them from a diff against the local Docker DB:
+  ```bash
+  mkdir prisma/migrations/<timestamp>_<name>
+  npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > prisma/migrations/<timestamp>_<name>/migration.sql
+  npx prisma migrate deploy   # apply locally
+  ```
 - Vercel runs `prisma migrate deploy` on every `dev` and `main` build. `dev` **shares the production Supabase DB**, so a migration merged into `dev` hits production immediately, before `main` has the matching code.
 - Therefore every migration must be **backward-compatible with the code on `main`** (expand → migrate → contract):
   - OK in one step: new tables, new nullable columns or columns with defaults, new indexes.

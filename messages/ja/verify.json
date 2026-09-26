@@ -43,11 +43,16 @@
     "didGraduate": "AISを卒業しましたか？",
     "classmates": "あなたを知っている同級生",
     "classmateN": "同級生 {n}",
-    "currentStage": "現在の状況"
+    "currentStage": "現在の状況",
+    "lastNameRomaji": "姓（Last name）",
+    "firstNameRomaji": "名（First name）",
+    "middleNameRomaji": "ミドルネーム",
+    "lastNameKanji": "姓",
+    "firstNameKanji": "名"
   },
   "hints": {
-    "nameRomaji": "名・姓をローマ字で入力してください（例：Taro Yamada）。",
-    "nameKanji": "例：山田 太郎／やまだ たろう",
+    "nameRomaji": "ローマ字で入力してください。例：Yamada / Taro",
+    "nameKanji": "漢字またはかなで入力してください。例：山田 / 太郎、やまだ / たろう",
     "nameAtAis": "現在の氏名と異なる場合（旧姓やニックネームなど）。",
     "dateOfBirth": "本人確認と年齢に応じたプライバシー保護のためにのみ使用し、他の会員には表示されません。",
     "roles": "当てはまるものをすべて選んでください。",

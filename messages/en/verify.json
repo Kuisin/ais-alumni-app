@@ -43,11 +43,16 @@
     "didGraduate": "Did you graduate from AIS?",
     "classmates": "Classmates who can confirm you",
     "classmateN": "Classmate {n}",
-    "currentStage": "What are you doing now?"
+    "currentStage": "What are you doing now?",
+    "lastNameRomaji": "Last name",
+    "firstNameRomaji": "First name",
+    "middleNameRomaji": "Middle name",
+    "lastNameKanji": "Last name (姓)",
+    "firstNameKanji": "First name (名)"
   },
   "hints": {
-    "nameRomaji": "Given name and family name in Latin letters, e.g. Taro Yamada.",
-    "nameKanji": "e.g. 山田 太郎 / やまだ たろう",
+    "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",
+    "nameKanji": "In kanji or kana, e.g. 山田 / 太郎 or やまだ / たろう.",
     "nameAtAis": "If different from your current name (e.g. maiden name or nickname).",
     "dateOfBirth": "Used only for verification and age-appropriate privacy. Never shown to other members.",
     "roles": "Choose all that apply.",

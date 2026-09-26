@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { composeKanji, composeRomaji } from "@/lib/names";
 
 type Obj = Record<string, unknown>;
 const obj = (v: unknown): Obj =>
@@ -62,8 +63,25 @@ export async function AnswersView({ answers }: { answers: unknown }) {
       <section>
         <h3 className="mb-2 font-semibold">{ta("detail.basics")}</h3>
         <List>
-          <Row label={t("fields.nameRomaji")} value={str(a.nameRomaji)} />
-          <Row label={t("fields.nameKanji")} value={str(a.nameKanji)} />
+          <Row
+            label={t("fields.nameRomaji")}
+            value={
+              composeRomaji({
+                lastNameRomaji: str(a.lastNameRomaji),
+                firstNameRomaji: str(a.firstNameRomaji),
+                middleNameRomaji: str(a.middleNameRomaji),
+              }) ?? str(a.nameRomaji)
+            }
+          />
+          <Row
+            label={t("fields.nameKanji")}
+            value={
+              composeKanji({
+                lastNameKanji: str(a.lastNameKanji),
+                firstNameKanji: str(a.firstNameKanji),
+              }) ?? str(a.nameKanji)
+            }
+          />
           <Row label={t("fields.nameAtAis")} value={str(a.nameAtAis)} />
           <Row label={t("fields.dateOfBirth")} value={str(a.dateOfBirth)} />
           <Row

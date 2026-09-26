@@ -106,8 +106,22 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
         lineUserId: to.lineUserId ?? from.lineUserId,
         lineDisplayName: to.lineDisplayName ?? from.lineDisplayName,
         lineFollowing: to.lineUserId ? to.lineFollowing : from.lineFollowing,
-        nameRomaji: to.nameRomaji ?? from.nameRomaji,
-        nameKanji: to.nameKanji ?? from.nameKanji,
+        // Take the whole romaji / kanji name from one side so parts stay consistent.
+        ...(to.nameRomaji
+          ? {}
+          : {
+              lastNameRomaji: from.lastNameRomaji,
+              firstNameRomaji: from.firstNameRomaji,
+              middleNameRomaji: from.middleNameRomaji,
+              nameRomaji: from.nameRomaji,
+            }),
+        ...(to.nameKanji
+          ? {}
+          : {
+              lastNameKanji: from.lastNameKanji,
+              firstNameKanji: from.firstNameKanji,
+              nameKanji: from.nameKanji,
+            }),
         nameAtAis: to.nameAtAis ?? from.nameAtAis,
         dateOfBirth: to.dateOfBirth ?? from.dateOfBirth,
         avatarUrl: to.avatarUrl ?? from.avatarUrl,

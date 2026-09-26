@@ -6,13 +6,13 @@ import {
   type ProfileActionState,
   updateProfileAction,
 } from "@/app/actions/profile";
+import { NameFields } from "@/components/names/name-fields";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import type { NameParts } from "@/lib/names";
 import { SOCIAL_KEYS, type SocialLinks } from "./social-links";
 
-export type ProfileFormValues = {
-  nameRomaji: string;
-  nameKanji: string;
+export type ProfileFormValues = Record<keyof NameParts, string> & {
   nameAtAis: string;
   bio: string;
   phone: string;
@@ -53,36 +53,12 @@ export function ProfileForm({
     <form action={action} className="space-y-6" noValidate>
       <fieldset className="space-y-4">
         <legend className="text-lg font-semibold">{t("sections.basic")}</legend>
-        <Field
-          id="nameRomaji"
-          label={t("fields.nameRomaji")}
-          required
-          error={err("nameRomaji")}
-        >
-          {(a) => (
-            <Input
-              {...a}
-              name="nameRomaji"
-              defaultValue={values.nameRomaji}
-              maxLength={100}
-              autoComplete="name"
-            />
-          )}
-        </Field>
-        <Field
-          id="nameKanji"
-          label={t("fields.nameKanji")}
-          error={err("nameKanji")}
-        >
-          {(a) => (
-            <Input
-              {...a}
-              name="nameKanji"
-              defaultValue={values.nameKanji}
-              maxLength={100}
-            />
-          )}
-        </Field>
+        <NameFields
+          values={values}
+          error={(f) =>
+            state?.fields?.includes(f) ? t("errors.invalid") : null
+          }
+        />
         <Field
           id="nameAtAis"
           label={t("fields.nameAtAis")}

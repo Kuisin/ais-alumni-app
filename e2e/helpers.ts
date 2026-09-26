@@ -27,7 +27,10 @@ export async function clearMailbox(email: string): Promise<void> {
 }
 
 /** Email-code sign-in from the English landing page. */
-export async function signInWithEmail(page: Page, email: string): Promise<void> {
+export async function signInWithEmail(
+  page: Page,
+  email: string,
+): Promise<void> {
   await clearMailbox(email);
   await page.goto("/en");
   await page.getByLabel("Email address").fill(email);

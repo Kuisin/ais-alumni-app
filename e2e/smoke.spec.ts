@@ -5,7 +5,9 @@ import { signInWithEmail, uniqueEmail } from "./helpers";
 const ADMIN = "admin@example.com";
 
 test.describe("landing & i18n", () => {
-  test("redirects / to a locale and renders both languages", async ({ page }) => {
+  test("redirects / to a locale and renders both languages", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/(ja|en)$/);
     await page.goto("/ja");
@@ -25,13 +27,17 @@ test.describe("OAuth providers", () => {
   test("Google button starts the Google OAuth flow", async ({ page }) => {
     await page.goto("/en");
     const [req] = await Promise.all([
-      page.waitForRequest((r) => r.url().startsWith("https://accounts.google.com/")),
+      page.waitForRequest((r) =>
+        r.url().startsWith("https://accounts.google.com/"),
+      ),
       page.getByRole("button", { name: "Continue with Google" }).click(),
     ]);
     expect(req.url()).toContain("redirect_uri=");
   });
 
-  test("LINE button starts LINE Login with the add-friend prompt", async ({ page }) => {
+  test("LINE button starts LINE Login with the add-friend prompt", async ({
+    page,
+  }) => {
     await page.goto("/en");
     const [req] = await Promise.all([
       page.waitForRequest((r) => r.url().startsWith("https://access.line.me/")),
@@ -42,7 +48,9 @@ test.describe("OAuth providers", () => {
   });
 });
 
-test("email sign-up → verification → admin approval → member dashboard", async ({ browser }) => {
+test("email sign-up → verification → admin approval → member dashboard", async ({
+  browser,
+}) => {
   const email = uniqueEmail("alumni");
   const member = await browser.newPage();
 
@@ -55,7 +63,9 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(member).toHaveURL(/\/en\/onboarding\/verify/);
   await member.getByLabel("Name (romaji)").fill("Smoke Tester");
   await member.getByLabel("Date of birth").fill("1996-04-02");
-  await member.getByRole("checkbox", { name: "Former student / Alumni" }).check();
+  await member
+    .getByRole("checkbox", { name: "Former student / Alumni" })
+    .check();
   await member.getByRole("button", { name: "Next" }).click();
   await member.getByLabel("From (year)").fill("2008");
   await member.getByLabel("To (year)").fill("2014");
@@ -76,10 +86,15 @@ test("email sign-up → verification → admin approval → member dashboard", a
   const admin = await browser.newPage();
   await signInWithEmail(admin, ADMIN);
   await admin.goto("/en/admin/verification");
-  await admin.getByRole("link", { name: /Smoke Tester/ }).first().click();
+  await admin
+    .getByRole("link", { name: /Smoke Tester/ })
+    .first()
+    .click();
   await admin.getByRole("radio", { name: "Approve" }).check();
   await admin.getByRole("button", { name: "Approve" }).click();
-  await expect(admin.getByText("This application has been decided.")).toBeVisible();
+  await expect(
+    admin.getByText("This application has been decided."),
+  ).toBeVisible();
 
   // 5. Member now reaches the dashboard and directory.
   await member.goto("/en/dashboard");

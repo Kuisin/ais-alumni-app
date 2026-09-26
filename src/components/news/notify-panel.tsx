@@ -1,3 +1,4 @@
+import { BellRing, Send } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { notifyNewsAction } from "@/app/actions/admin-content";
 import { buttonClass } from "@/components/ui/button";
@@ -35,7 +36,10 @@ export async function NotifyPanel({
   if (post.notifiedAt) {
     return (
       <Card>
-        <h2 className="mb-2 text-lg font-semibold">{t("notify.title")}</h2>
+        <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+          <BellRing aria-hidden="true" className="size-5 text-brand-700" />
+          {t("notify.title")}
+        </h2>
         <p className="text-sm text-slate-700">
           {t("notify.alreadySent", {
             date: formatDateTime(post.notifiedAt, locale),
@@ -48,7 +52,10 @@ export async function NotifyPanel({
   if (!confirm) {
     return (
       <Card>
-        <h2 className="mb-2 text-lg font-semibold">{t("notify.title")}</h2>
+        <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+          <BellRing aria-hidden="true" className="size-5 text-brand-700" />
+          {t("notify.title")}
+        </h2>
         <p className="mb-3 text-sm text-slate-700">
           {status === "scheduled" && post.publishedAt
             ? t("notify.scheduledHint", {
@@ -60,8 +67,9 @@ export async function NotifyPanel({
         </p>
         <Link
           href={`/app/admin/news/${post.id}?notify=1`}
-          className={buttonClass("secondary")}
+          className={buttonClass("secondary", "w-full sm:w-auto xl:w-full")}
         >
+          <Send aria-hidden="true" className="size-4" />
           {status === "published"
             ? t("notify.notifyNow")
             : t("notify.publishAndNotify")}
@@ -76,13 +84,16 @@ export async function NotifyPanel({
 
   return (
     <Card className="border-amber-300">
-      <h2 className="mb-2 text-lg font-semibold">{t("notify.confirmTitle")}</h2>
+      <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+        <BellRing aria-hidden="true" className="size-5 text-amber-600" />
+        {t("notify.confirmTitle")}
+      </h2>
       {status !== "published" ? (
         <div className="mb-3">
           <Alert tone="warning">{t("notify.willPublishNow")}</Alert>
         </div>
       ) : null}
-      <dl className="mb-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+      <dl className="mb-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 xl:grid-cols-2">
         <div className="rounded-lg bg-slate-50 p-3">
           <dt className="text-slate-600">{t("notify.recipients")}</dt>
           <dd className="text-xl font-semibold">{users.length}</dd>
@@ -100,17 +111,20 @@ export async function NotifyPanel({
           <dd className="text-xl font-semibold">{unreachable}</dd>
         </div>
       </dl>
-      <p className="mb-4 text-sm text-slate-600">{t("notify.quotaHint")}</p>
-      <div className="flex flex-wrap gap-2">
+      <p className="mb-4 text-xs text-slate-500">{t("notify.quotaHint")}</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:flex-col">
         <form action={notifyNewsAction}>
           <input type="hidden" name="id" value={post.id} />
-          <SubmitButton pendingText={t("notify.sending")}>
+          <SubmitButton
+            pendingText={t("notify.sending")}
+            className="w-full sm:w-auto xl:w-full"
+          >
             {t("notify.confirm", { count: users.length })}
           </SubmitButton>
         </form>
         <Link
           href={`/app/admin/news/${post.id}`}
-          className={buttonClass("ghost")}
+          className={buttonClass("ghost", "w-full sm:w-auto xl:w-full")}
         >
           {t("notify.cancel")}
         </Link>

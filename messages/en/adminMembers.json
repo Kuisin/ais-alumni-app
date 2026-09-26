@@ -50,7 +50,10 @@
     "providers": "Sign-in methods",
     "notifyVia": "Notifications",
     "deactivatedAt": "Deactivated",
-    "merged": "Accounts merged. The duplicate account has been removed."
+    "merged": "Accounts merged. The duplicate account has been removed.",
+    "sections": "Sections on this page",
+    "overview": "Overview",
+    "account": "Account"
   },
   "profile": {
     "title": "Profile",

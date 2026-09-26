@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, MessageSquareMore, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import {
@@ -27,6 +28,17 @@ function Status({ state }: { state: AdminActionState }) {
 type Decision = "APPROVE" | "REJECT" | "NEEDS_INFO";
 
 /** Approve / Reject (reason required) / Needs more info (message required). */
+const DECISION_ICON = {
+  APPROVE: Check,
+  NEEDS_INFO: MessageSquareMore,
+  REJECT: X,
+} as const;
+const DECISION_TONE = {
+  APPROVE: "border-green-600 bg-green-50 text-green-900",
+  NEEDS_INFO: "border-amber-500 bg-amber-50 text-amber-900",
+  REJECT: "border-red-600 bg-red-50 text-red-900",
+} as const;
+
 export function DecisionForm({ requestId }: { requestId: string }) {
   const t = useTranslations("adminVerify");
   const [state, action] = useActionState<AdminActionState, FormData>(
@@ -42,26 +54,30 @@ export function DecisionForm({ requestId }: { requestId: string }) {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="requestId" value={requestId} />
-      <fieldset className="space-y-1">
-        <legend className="text-sm font-medium text-slate-800">
-          {t("decision.label")}
-        </legend>
-        {(["APPROVE", "NEEDS_INFO", "REJECT"] as const).map((d) => (
-          <label
-            key={d}
-            className="flex min-h-11 items-center gap-3 rounded-lg px-2 hover:bg-slate-50"
-          >
-            <input
-              type="radio"
-              name="decision"
-              value={d}
-              className="size-5"
-              checked={decision === d}
-              onChange={() => setDecision(d)}
-            />
-            {t(`decision.${d}`)}
-          </label>
-        ))}
+      <fieldset className="space-y-2">
+        <legend className="sr-only">{t("decision.label")}</legend>
+        {(["APPROVE", "NEEDS_INFO", "REJECT"] as const).map((d) => {
+          const Icon = DECISION_ICON[d];
+          return (
+            <label
+              key={d}
+              className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border px-3 transition-colors hover:bg-slate-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-600 ${
+                decision === d ? DECISION_TONE[d] : "border-slate-200"
+              }`}
+            >
+              <input
+                type="radio"
+                name="decision"
+                value={d}
+                className="size-5 shrink-0"
+                checked={decision === d}
+                onChange={() => setDecision(d)}
+              />
+              <Icon aria-hidden="true" className="size-4 shrink-0" />
+              {t(`decision.${d}`)}
+            </label>
+          );
+        })}
       </fieldset>
       <Field
         id="decision-note"
@@ -81,6 +97,7 @@ export function DecisionForm({ requestId }: { requestId: string }) {
       <SubmitButton
         variant={decision === "REJECT" ? "danger" : "primary"}
         pendingText={t("saving")}
+        className="w-full"
       >
         {t(`decision.submit.${decision}`)}
       </SubmitButton>

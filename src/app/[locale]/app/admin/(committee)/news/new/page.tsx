@@ -17,13 +17,16 @@ export default async function NewNewsPage() {
   const t = await getTranslations("adminContent");
   return (
     <>
-      <Link href="/app/admin/news" className="text-sm text-brand-700 underline">
+      <Link
+        href="/app/admin/news"
+        className="inline-flex min-h-11 items-center text-sm text-brand-700 underline"
+      >
         {t("news.backToList")}
       </Link>
-      <div className="mt-2">
+      <div className="mt-1">
         <PageHeader title={t("news.new")} />
       </div>
-      <NewsForm values={EMPTY_NEWS} />
+      <NewsForm values={EMPTY_NEWS} cancelHref="/app/admin/news" />
     </>
   );
 }

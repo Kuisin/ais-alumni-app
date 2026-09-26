@@ -271,10 +271,10 @@ export default async function DestinationsPage({
             <ul className="divide-y divide-slate-100 sm:hidden">
               {shown.map((p) => (
                 <li key={p.id} className="py-3">
-                  <div className="flex items-baseline justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2">
                     <Link
                       href={`/app/admin/members/${p.id}`}
-                      className="min-w-0 truncate font-medium text-brand-700 hover:underline"
+                      className="block min-w-0 truncate py-3 leading-5 font-medium text-brand-700 hover:underline"
                     >
                       {p.name}
                     </Link>

@@ -204,7 +204,7 @@ export async function AuditList({
                     </code>
                     {hasData ? (
                       <details className="mt-1">
-                        <summary className="inline-flex min-h-8 cursor-pointer items-center text-xs text-brand-700">
+                        <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-brand-700 lg:min-h-8">
                           {t("data")}
                         </summary>
                         <pre className="mt-1 max-h-64 overflow-auto rounded bg-slate-50 p-2 text-xs break-all whitespace-pre-wrap">
@@ -218,7 +218,7 @@ export async function AuditList({
                     {r.actorId && r.actor ? (
                       <Link
                         href={`/app/admin/members/${r.actorId}`}
-                        className="text-brand-700 underline"
+                        className="inline-flex min-h-11 items-center text-brand-700 underline lg:inline lg:min-h-0"
                       >
                         {actorLabel}
                       </Link>
@@ -238,7 +238,7 @@ export async function AuditList({
                         {target.person ? (
                           <Link
                             href={target.href ?? "#"}
-                            className="text-brand-700 underline"
+                            className="inline-flex min-h-11 items-center text-brand-700 underline lg:inline lg:min-h-0"
                           >
                             {personLabel(target.person, target.id)}
                           </Link>
@@ -246,7 +246,7 @@ export async function AuditList({
                           <Link
                             href={target.href}
                             title={target.id}
-                            className="inline-block max-w-[12ch] truncate align-bottom font-mono text-xs text-brand-700 underline"
+                            className="inline-flex min-h-11 max-w-[12ch] items-center truncate font-mono text-xs text-brand-700 underline lg:inline-block lg:min-h-0 lg:align-bottom"
                           >
                             {target.id}
                           </Link>
@@ -262,7 +262,7 @@ export async function AuditList({
                           <span className="block text-xs">
                             <Link
                               href={`/app/admin/members/${applicantId}`}
-                              className="text-brand-700 underline"
+                              className="inline-flex min-h-11 items-center text-brand-700 underline lg:inline lg:min-h-0"
                             >
                               {personLabel(applicant, applicantId)}
                             </Link>

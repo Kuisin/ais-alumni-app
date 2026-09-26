@@ -85,7 +85,9 @@
     "name": "氏名",
     "answer": "回答",
     "guests": "同伴者",
-    "updated": "更新日時"
+    "updated": "更新日時",
+    "list": "回答一覧",
+    "jumpToList": "回答一覧を見る"
   },
   "news": {
     "title": "お知らせ管理",

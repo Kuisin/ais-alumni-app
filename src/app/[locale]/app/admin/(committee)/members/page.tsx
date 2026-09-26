@@ -263,13 +263,13 @@ export default async function AdminMembersPage({
         <EmptyState>{t("empty")}</EmptyState>
       ) : (
         <>
-          {/* Mobile: cards */}
-          <ul className="space-y-3 md:hidden">
+          {/* Phones and tablets: cards (two columns from md) */}
+          <ul className="grid gap-3 md:grid-cols-2 lg:hidden">
             {page.map((u) => (
               <li key={u.id}>
                 <Link
                   href={`/app/admin/members/${u.id}`}
-                  className="block rounded-xl border border-slate-200 bg-white p-4 hover:border-brand-700"
+                  className="block h-full rounded-xl border border-slate-200 bg-white p-4 transition-shadow hover:border-brand-700 hover:shadow-sm"
                 >
                   <p className="flex flex-wrap items-center gap-2 font-semibold">
                     {name(u)}
@@ -309,8 +309,8 @@ export default async function AdminMembersPage({
             ))}
           </ul>
 
-          {/* md+: table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white md:block">
+          {/* lg+: table */}
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
             <table className="w-full text-sm">
               <caption className="sr-only">{t("title")}</caption>
               <thead className="bg-slate-50 text-left text-xs text-slate-600">
@@ -320,12 +320,6 @@ export default async function AdminMembersPage({
                     className="px-3 py-2 font-medium whitespace-nowrap"
                   >
                     {t("columns.name")}
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 font-medium whitespace-nowrap"
-                  >
-                    {t("columns.email")}
                   </th>
                   <th
                     scope="col"
@@ -347,7 +341,7 @@ export default async function AdminMembersPage({
                   </th>
                   <th
                     scope="col"
-                    className="px-3 py-2 font-medium whitespace-nowrap"
+                    className="hidden px-3 py-2 font-medium whitespace-nowrap xl:table-cell"
                   >
                     {t("columns.created")}
                   </th>
@@ -362,7 +356,7 @@ export default async function AdminMembersPage({
                     <th scope="row" className="px-3 py-2 text-left font-medium">
                       <Link
                         href={`/app/admin/members/${u.id}`}
-                        className="text-brand-700 underline"
+                        className="text-brand-700 hover:underline"
                       >
                         {name(u)}
                       </Link>
@@ -371,15 +365,14 @@ export default async function AdminMembersPage({
                           <Badge tone="brand">{t("badge.admin")}</Badge>
                         </span>
                       ) : null}
-                    </th>
-                    <td className="px-3 py-2">
                       <span
-                        className="block max-w-[16rem] truncate"
+                        className="block max-w-[18rem] truncate text-xs font-normal text-slate-500"
                         title={u.primaryEmail ?? undefined}
                       >
+                        <span className="sr-only">{t("columns.email")}: </span>
                         {u.primaryEmail ?? "—"}
                       </span>
-                    </td>
+                    </th>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <Badge tone={stateTone(u.state)}>
                         {tr(`state.${u.state}`)}
@@ -409,7 +402,7 @@ export default async function AdminMembersPage({
                         <span className="sr-only">{lineLabel(u)}</span>
                       </span>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                    <td className="hidden px-3 py-2 whitespace-nowrap tabular-nums xl:table-cell">
                       <time dateTime={u.createdAt.toISOString()}>
                         {formatCompactDate(u.createdAt, locale)}
                       </time>

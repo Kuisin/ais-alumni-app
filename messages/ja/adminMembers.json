@@ -50,7 +50,10 @@
     "providers": "ログイン方法",
     "notifyVia": "通知",
     "deactivatedAt": "停止日時",
-    "merged": "アカウントを統合しました。重複アカウントは削除されました。"
+    "merged": "アカウントを統合しました。重複アカウントは削除されました。",
+    "sections": "ページ内の項目",
+    "overview": "概要",
+    "account": "アカウント"
   },
   "profile": {
     "title": "プロフィール",

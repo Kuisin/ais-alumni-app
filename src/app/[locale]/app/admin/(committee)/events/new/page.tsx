@@ -19,14 +19,14 @@ export default async function NewEventPage() {
     <>
       <Link
         href="/app/admin/events"
-        className="text-sm text-brand-700 underline"
+        className="inline-flex min-h-11 items-center text-sm text-brand-700 underline"
       >
         {t("events.backToList")}
       </Link>
-      <div className="mt-2">
+      <div className="mt-1">
         <PageHeader title={t("events.new")} />
       </div>
-      <EventForm values={EMPTY_EVENT} />
+      <EventForm values={EMPTY_EVENT} cancelHref="/app/admin/events" />
     </>
   );
 }

@@ -85,7 +85,9 @@
     "name": "Name",
     "answer": "Answer",
     "guests": "Guests",
-    "updated": "Updated"
+    "updated": "Updated",
+    "list": "Responses",
+    "jumpToList": "See all responses"
   },
   "news": {
     "title": "News",

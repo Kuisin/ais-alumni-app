@@ -40,7 +40,7 @@
   },
   "detail": {
     "title": "Application",
-    "back": "← Back to queue",
+    "back": "Back to queue",
     "submitted": "Submitted {date}",
     "basics": "Basic information",
     "years": "Years",

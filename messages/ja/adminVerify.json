@@ -40,7 +40,7 @@
   },
   "detail": {
     "title": "申請内容",
-    "back": "← キューに戻る",
+    "back": "キューに戻る",
     "submitted": "{date} 申請",
     "basics": "基本情報",
     "years": "在籍期間",

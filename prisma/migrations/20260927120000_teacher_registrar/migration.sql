@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "PositionKey" ADD VALUE 'TEACHER_REGISTRAR';
+

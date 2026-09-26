@@ -72,3 +72,21 @@ export async function signInWithEmail(
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).not.toHaveURL(/\/en\/app$/);
 }
+
+/** Insert an approved member with no roles (for tests that change roles). */
+export async function createActiveMember(nameRomaji: string): Promise<string> {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const id = `e2e${Date.now()}${Math.floor(Math.random() * 1e4)}`;
+    const [first, last] = nameRomaji.split(" ");
+    await db.query(
+      `INSERT INTO "User" (id, "primaryEmail", state, "nameRomaji", "firstNameRomaji", "lastNameRomaji", "updatedAt")
+       VALUES ($1, $2, 'ACTIVE', $3, $4, $5, now())`,
+      [id, uniqueEmail("e2e-member"), nameRomaji, first, last],
+    );
+    return id;
+  } finally {
+    await db.end();
+  }
+}

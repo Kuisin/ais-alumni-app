@@ -189,15 +189,18 @@
     "remove": "Remove",
     "names": {
       "TEACHER_MANAGER": "Teacher manager",
-      "STUDENT_LEADER": "Class representative"
+      "STUDENT_LEADER": "Class representative",
+      "TEACHER_REGISTRAR": "Teacher registrar"
     },
     "descriptions": {
       "TEACHER_MANAGER": "Can send notifications to all members, selected roles or any class (up to 20 per day).",
-      "STUDENT_LEADER": "Can send notifications to members of their own 学年 (up to 5 per week)."
+      "STUDENT_LEADER": "Can send notifications to members of their own 学年 (up to 5 per week).",
+      "TEACHER_REGISTRAR": "Can mark members as current teachers or move them to former (Admin mode → Teachers). Current teachers can see children's profiles, so grant this only to someone you trust."
     },
     "requires": {
       "TEACHER_MANAGER": "Requires the Teacher / Staff role.",
-      "STUDENT_LEADER": "Requires a current or former student role."
+      "STUDENT_LEADER": "Requires a current or former student role.",
+      "TEACHER_REGISTRAR": ""
     },
     "granted": "Position assigned.",
     "removed": "Position removed.",

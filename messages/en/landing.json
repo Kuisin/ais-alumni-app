@@ -24,7 +24,9 @@
     "lineNote": "With LINE you'll also confirm an email address, so we can reach you if LINE is unavailable.",
     "or": "or",
     "emailTitle": "Sign in with an email code",
-    "privacy": "By continuing you agree to how we handle your information, as described in our <link>privacy notice</link>."
+    "privacy": "By continuing you agree to how we handle your information, as described in our <link>privacy notice</link>.",
+    "notReady": "Not ready yet",
+    "notReadyNote": "Sign-in methods marked “Not ready yet” can't be used yet. Please sign in with your email — you can add them later in Settings."
   },
   "privacy": {
     "title": "Privacy notice",

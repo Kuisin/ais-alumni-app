@@ -8,6 +8,8 @@ import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
  *   selected roles, or any class.
  * - STUDENT_LEADER (requires a student role): may notify their own 学年
  *   (`cohortId`), i.e. students who selected that class.
+ * - TEACHER_REGISTRAR (any member the admins choose): may mark members as
+ *   current teachers (現職) or move them to former.
  */
 
 export type Holder = {
@@ -36,6 +38,7 @@ export function positionEligible(
 ): boolean {
   if (position === PositionKey.TEACHER_MANAGER)
     return roles.includes(RoleKey.TEACHER) && currentTeacher;
+  if (position === PositionKey.TEACHER_REGISTRAR) return true;
   return roles.some((r) => STUDENT_ROLES.includes(r));
 }
 
@@ -45,6 +48,7 @@ export function broadcastRights(h: Holder): BroadcastRight[] {
   if (h.isAdmin) rights.push({ kind: "ANY", position: null });
   for (const p of h.positions) {
     if (!positionEligible(p.position, h.roles, h.currentTeacher)) continue;
+    if (p.position === PositionKey.TEACHER_REGISTRAR) continue;
     if (p.position === PositionKey.TEACHER_MANAGER) {
       rights.push({ kind: "ANY", position: PositionKey.TEACHER_MANAGER });
     } else if (p.cohortId !== null) {
@@ -81,9 +85,8 @@ export function rightFor(
 }
 
 /** Send limits per position (admins are unlimited). */
-export const BROADCAST_LIMITS: Record<
-  PositionKey,
-  { count: number; windowMs: number }
+export const BROADCAST_LIMITS: Partial<
+  Record<PositionKey, { count: number; windowMs: number }>
 > = {
   STUDENT_LEADER: { count: 5, windowMs: 7 * 24 * 60 * 60 * 1000 },
   TEACHER_MANAGER: { count: 20, windowMs: 24 * 60 * 60 * 1000 },
@@ -95,8 +98,37 @@ export function withinLimit(
   now: Date = new Date(),
 ): boolean {
   if (position === null) return true;
-  const { count, windowMs } = BROADCAST_LIMITS[position];
+  const limit = BROADCAST_LIMITS[position];
+  if (!limit) return false; // positions without a send right
+  const { count, windowMs } = limit;
   return (
     sentAt.filter((d) => now.getTime() - d.getTime() < windowMs).length < count
   );
+}
+
+/** What a member may open in admin mode. */
+export type StaffAccess = {
+  /** the full committee admin area */
+  admin: boolean;
+  /** the send-notification page */
+  broadcast: boolean;
+  /** the current-teachers page */
+  teachers: boolean;
+};
+
+export function staffAccess(h: Holder): StaffAccess {
+  const active = h.state === AccountState.ACTIVE;
+  return {
+    admin: active && h.isAdmin,
+    broadcast: broadcastRights(h).length > 0,
+    teachers:
+      active &&
+      (h.isAdmin ||
+        h.positions.some((p) => p.position === PositionKey.TEACHER_REGISTRAR)),
+  };
+}
+
+/** Whether the member sees the admin-mode switch at all. */
+export function hasStaffAccess(a: StaffAccess): boolean {
+  return a.admin || a.broadcast || a.teachers;
 }

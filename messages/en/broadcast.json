@@ -29,7 +29,8 @@
   "signatureCommittee": "— AIS Alumni Committee",
   "positions": {
     "TEACHER_MANAGER": "Teacher manager",
-    "STUDENT_LEADER": "Class representative"
+    "STUDENT_LEADER": "Class representative",
+    "TEACHER_REGISTRAR": "Teacher registrar"
   },
   "fieldErrors": {
     "required": "This field is required.",

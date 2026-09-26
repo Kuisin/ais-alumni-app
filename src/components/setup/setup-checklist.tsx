@@ -1,7 +1,31 @@
+import {
+  BadgeCheck,
+  Camera,
+  Check,
+  FileText,
+  GraduationCap,
+  Mail,
+  MessageCircle,
+  PenLine,
+  UserPlus,
+  UsersRound,
+} from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { buttonClass } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { type SetupItem, setupProgress } from "@/lib/setup";
+import { type SetupItem, type SetupKey, setupProgress } from "@/lib/setup";
+
+const ICONS: Record<SetupKey, typeof Mail> = {
+  email: Mail,
+  apply: FileText,
+  approval: BadgeCheck,
+  line: MessageCircle,
+  photo: Camera,
+  bio: PenLine,
+  history: GraduationCap,
+  follow: UserPlus,
+  family: UsersRound,
+};
 
 /**
  * "Get set up" checklist with progress. Each open task says why it helps
@@ -57,13 +81,20 @@ export async function SetupChecklist({
           >
             <span
               aria-hidden="true"
-              className={`mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+              className={`inline-flex size-8 shrink-0 items-center justify-center rounded-full ${
                 item.done
                   ? "animate-pop bg-green-600 text-white"
-                  : "border-2 border-slate-300 bg-white text-transparent"
+                  : "bg-white text-brand-700 ring-1 ring-brand-200"
               }`}
             >
-              ✓
+              {item.done ? (
+                <Check className="size-4" strokeWidth={3} />
+              ) : (
+                (() => {
+                  const Icon = ICONS[item.key];
+                  return <Icon className="size-4" />;
+                })()
+              )}
             </span>
             <div className="min-w-0 flex-1">
               <p

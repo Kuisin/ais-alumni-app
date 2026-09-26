@@ -4,6 +4,7 @@ import { type SetupInput, setupChecklist, setupProgress } from "./setup";
 const base: SetupInput = {
   active: false,
   submitted: true,
+  lineAvailable: true,
   lineLinked: false,
   lineFollowing: false,
   hasAvatar: false,
@@ -58,6 +59,10 @@ describe("setup checklist", () => {
       )?.done,
     ).toBe(true);
   });
+  it("leaves LINE out while LINE Login isn't configured", () => {
+    const items = setupChecklist({ ...base, lineAvailable: false });
+    expect(items.map((i) => i.key)).toEqual(["email", "apply", "approval"]);
+  });
   it("complete when everything is done", () => {
     const all = setupChecklist({
       ...base,
@@ -70,5 +75,18 @@ describe("setup checklist", () => {
       followsSomeone: true,
     });
     expect(setupProgress(all).complete).toBe(true);
+  });
+});
+
+describe("sso readiness", async () => {
+  const { ssoReady } = await import("./sso");
+  it("needs both id and secret", () => {
+    const saved = { ...process.env };
+    process.env.AUTH_GOOGLE_ID = "id";
+    process.env.AUTH_GOOGLE_SECRET = "";
+    expect(ssoReady("google")).toBe(false);
+    process.env.AUTH_GOOGLE_SECRET = "secret";
+    expect(ssoReady("google")).toBe(true);
+    process.env = saved;
   });
 });

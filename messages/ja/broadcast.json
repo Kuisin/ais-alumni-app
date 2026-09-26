@@ -29,7 +29,8 @@
   "signatureCommittee": "— AIS同窓会委員会",
   "positions": {
     "TEACHER_MANAGER": "教職員・管理者",
-    "STUDENT_LEADER": "学年代表"
+    "STUDENT_LEADER": "学年代表",
+    "TEACHER_REGISTRAR": "教職員登録担当"
   },
   "fieldErrors": {
     "required": "この項目は必須です。",

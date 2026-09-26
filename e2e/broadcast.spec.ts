@@ -29,8 +29,10 @@ test("admin appoints a class representative who notifies their class", async ({
 
   const member = await browser.newPage();
   await signInWithEmail(member, "hanako@example.com");
-  const before = await member.goto("/en/app/notify");
-  expect(before?.status()).toBe(404);
+  // No position yet: no admin mode, and the send page sends them home.
+  await member.goto("/en/app/notify");
+  await expect(member).toHaveURL(/\/en\/app\/dashboard/);
+  await expect(member.getByRole("link", { name: "Admin mode" })).toHaveCount(0);
 
   // Represent 第6期 (ken's class) for this test.
   await leader
@@ -41,7 +43,12 @@ test("admin appoints a class representative who notifies their class", async ({
     leader.getByText("Assigned · Class 6 (graduated 2017)"),
   ).toBeVisible();
 
-  await member.goto("/en/app/notify");
+  // The position unlocks admin mode with just the send page.
+  await member.goto("/en/app/dashboard");
+  await member.getByRole("link", { name: "Admin mode" }).first().click();
+  await expect(member).toHaveURL(/\/en\/app\/admin\/notify/);
+  const adminNav = member.getByRole("navigation", { name: "Admin menu" });
+  await expect(adminNav.getByRole("link")).toHaveCount(1);
   await expect(
     member.getByRole("combobox", { name: "学年 (class)" }),
   ).toContainText("Class 6");

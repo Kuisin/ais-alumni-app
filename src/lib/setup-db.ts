@@ -2,6 +2,7 @@ import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import type { CurrentUser } from "@/lib/session";
 import { type SetupItem, setupChecklist } from "@/lib/setup";
+import { ssoReady } from "@/lib/sso";
 
 /** Checklist items for the signed-in member. */
 export async function loadSetupChecklist(
@@ -23,6 +24,7 @@ export async function loadSetupChecklist(
     active: user.state === AccountState.ACTIVE,
     // Admin-created or seeded accounts may be active without an application.
     submitted: request !== null || user.state === AccountState.ACTIVE,
+    lineAvailable: ssoReady("line"),
     lineLinked: Boolean(user.lineUserId),
     lineFollowing: user.lineFollowing,
     hasAvatar: Boolean(user.avatarUrl),

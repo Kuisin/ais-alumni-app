@@ -5,6 +5,8 @@
 export type SetupInput = {
   active: boolean;
   submitted: boolean;
+  /** LINE Login configured on this server */
+  lineAvailable: boolean;
   lineLinked: boolean;
   lineFollowing: boolean;
   hasAvatar: boolean;
@@ -33,12 +35,14 @@ export function setupChecklist(i: SetupInput): SetupItem[] {
     { key: "email", done: true, href: null },
     { key: "apply", done: i.submitted, href: "/app/onboarding/verify" },
     { key: "approval", done: i.active, href: null },
-    {
+  ];
+  // Not offered until LINE Login is set up (it couldn't be completed).
+  if (i.lineAvailable || i.lineLinked)
+    items.push({
       key: "line",
       done: i.lineLinked && i.lineFollowing,
       href: i.active ? "/app/settings#line" : "/app/onboarding/status#line",
-    },
-  ];
+    });
   // Profile tasks need an approved account.
   if (i.active) {
     items.push(

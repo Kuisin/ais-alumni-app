@@ -3,6 +3,7 @@ import { buttonClass } from "@/components/ui/button";
 import { AccountState } from "@/generated/prisma/enums";
 import { lineAddFriendUrl, lineLinkStartUrl } from "@/lib/line-link";
 import type { CurrentUser } from "@/lib/session";
+import { ssoReady } from "@/lib/sso";
 import { dismissLineBannerAction } from "./actions";
 
 const DISMISS_FOR_MS = 30 * 24 * 60 * 60 * 1000;
@@ -14,6 +15,7 @@ const DISMISS_FOR_MS = 30 * 24 * 60 * 60 * 1000;
 export async function LineBanner({ user }: { user: CurrentUser }) {
   if (user.state !== AccountState.ACTIVE) return null;
   if (user.lineUserId && user.lineFollowing) return null;
+  if (!user.lineUserId && !ssoReady("line")) return null;
   if (
     user.lineBannerDismissedAt &&
     Date.now() - user.lineBannerDismissedAt.getTime() < DISMISS_FOR_MS

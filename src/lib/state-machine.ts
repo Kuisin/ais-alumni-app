@@ -55,18 +55,18 @@ export function homePathFor(user: {
 }): string {
   switch (user.state) {
     case AccountState.UNVERIFIED_EMAIL:
-      return "/onboarding/email";
+      return "/app/onboarding/email";
     case AccountState.EMAIL_VERIFIED:
       return user.lineOnboardingSeenAt
-        ? "/onboarding/verify"
-        : "/onboarding/line";
+        ? "/app/onboarding/verify"
+        : "/app/onboarding/line";
     case AccountState.NEEDS_INFO:
-      return "/onboarding/verify";
+      return "/app/onboarding/verify";
     case AccountState.PENDING_REVIEW:
     case AccountState.REJECTED:
     case AccountState.DEACTIVATED:
-      return "/onboarding/status";
+      return "/app/onboarding/status";
     case AccountState.ACTIVE:
-      return "/dashboard";
+      return "/app/dashboard";
   }
 }

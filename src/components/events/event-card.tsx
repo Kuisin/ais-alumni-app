@@ -32,7 +32,7 @@ export function EventCard({
   const title = localized(event.titleJa, event.titleEn, locale);
   return (
     <Link
-      href={`/events/${event.id}`}
+      href={`/app/events/${event.id}`}
       className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-brand-300 focus-visible:outline-2"
     >
       <p className="text-sm font-medium text-brand-700">

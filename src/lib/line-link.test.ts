@@ -11,7 +11,7 @@ import {
 const key = "k1";
 const input = {
   userId: "user_1",
-  returnTo: "/settings",
+  returnTo: "/app/settings",
   locale: "en" as const,
 };
 
@@ -21,7 +21,7 @@ describe("line link state", () => {
     const state = verifyLinkState(token, { key, now: 2000 });
     expect(state).toMatchObject({
       u: "user_1",
-      r: "/settings",
+      r: "/app/settings",
       l: "en",
       e: 1000 + LINK_STATE_TTL_MS,
     });
@@ -87,8 +87,8 @@ describe("line link state", () => {
 
 describe("safeReturnPath", () => {
   it("keeps local paths", () => {
-    expect(safeReturnPath("/settings")).toBe("/settings");
-    expect(safeReturnPath("/events/1?x=1")).toBe("/events/1?x=1");
+    expect(safeReturnPath("/app/settings")).toBe("/app/settings");
+    expect(safeReturnPath("/app/events/1?x=1")).toBe("/app/events/1?x=1");
   });
   it("blocks open redirects", () => {
     for (const bad of [
@@ -112,14 +112,14 @@ describe("safeReturnPath", () => {
 
 describe("urls", () => {
   it("builds the start url", () => {
-    expect(lineLinkStartUrl("u", "/dashboard", "ja")).toMatch(
+    expect(lineLinkStartUrl("u", "/app/dashboard", "ja")).toMatch(
       /\/api\/line\/link\/start\?s=[\w.%-]+$/,
     );
   });
   it("builds a locale-prefixed return url", () => {
-    expect(returnUrl({ r: "/settings", l: "ja" }, { line: "linked" })).toMatch(
-      /\/ja\/settings\?line=linked$/,
-    );
+    expect(
+      returnUrl({ r: "/app/settings", l: "ja" }, { line: "linked" }),
+    ).toMatch(/\/ja\/app\/settings\?line=linked$/);
     expect(returnUrl({ r: "/", l: "en" }, { line: "linked" })).toMatch(
       /\/en\?line=linked$/,
     );

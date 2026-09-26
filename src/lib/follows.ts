@@ -120,7 +120,7 @@ export async function requestFollow(
           }),
           text: t(auto ? "notify.autoText" : "notify.requestText", { name }),
           url: appUrl(
-            `/${locale}/follows?tab=${auto ? "followers" : "incoming"}`,
+            `/${locale}/app/follows?tab=${auto ? "followers" : "incoming"}`,
           ),
         };
       },
@@ -154,7 +154,7 @@ export async function acceptFollow(
         return {
           subject: t("notify.acceptedSubject", { name }),
           text: t("notify.acceptedText", { name }),
-          url: appUrl(`/${locale}/members/${me.id}`),
+          url: appUrl(`/${locale}/app/members/${me.id}`),
         };
       },
     });

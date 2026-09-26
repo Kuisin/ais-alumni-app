@@ -22,7 +22,7 @@ export type LinkLocale = "ja" | "en";
 export type LinkState = {
   /** user id to link */
   u: string;
-  /** locale-relative return path, e.g. "/settings" */
+  /** locale-relative return path, e.g. "/app/settings" */
   r: string;
   /** UI locale */
   l: LinkLocale;
@@ -43,7 +43,7 @@ function mac(payload: string, key: string): Buffer {
 }
 
 /**
- * Only allow same-site, locale-relative paths ("/settings", "/onboarding/line?x=1").
+ * Only allow same-site, locale-relative paths ("/app/settings", "/app/onboarding/line?x=1").
  * Anything else (absolute URLs, protocol-relative "//evil", backslashes) falls
  * back to "/" to prevent open redirects.
  */

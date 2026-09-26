@@ -51,6 +51,6 @@ export async function answerVouchAction(
     where: { id: parsed.data.vouchId },
     data: { answer: parsed.data.answer, answeredAt: new Date() },
   });
-  revalidatePath("/[locale]/vouch/[id]", "page");
+  revalidatePath("/[locale]/app/vouch/[id]", "page");
   return { ok: true, message: "saved" };
 }

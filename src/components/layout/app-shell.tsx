@@ -21,38 +21,38 @@ export async function AppShell({
   const locale = await getLocale();
 
   const memberNav: NavItem[] = [
-    { href: "/dashboard", label: t("nav.dashboard") },
-    { href: "/directory", label: t("nav.directory") },
-    { href: "/events", label: t("nav.events") },
-    { href: "/news", label: t("nav.news") },
-    { href: "/follows", label: t("nav.follows") },
-    { href: "/family", label: t("nav.family") },
-    { href: "/profile", label: t("nav.profile") },
-    { href: "/settings", label: t("nav.settings") },
+    { href: "/app/dashboard", label: t("nav.dashboard") },
+    { href: "/app/directory", label: t("nav.directory") },
+    { href: "/app/events", label: t("nav.events") },
+    { href: "/app/news", label: t("nav.news") },
+    { href: "/app/follows", label: t("nav.follows") },
+    { href: "/app/family", label: t("nav.family") },
+    { href: "/app/profile", label: t("nav.profile") },
+    { href: "/app/settings", label: t("nav.settings") },
   ];
   const adminNav: NavItem[] = [
-    { href: "/admin/verification", label: t("adminNav.verification") },
-    { href: "/admin/members", label: t("adminNav.members") },
-    { href: "/admin/events", label: t("adminNav.events") },
-    { href: "/admin/news", label: t("adminNav.news") },
-    { href: "/admin/roster", label: t("adminNav.roster") },
-    { href: "/admin/stats", label: t("adminNav.stats") },
-    { href: "/admin/audit", label: t("adminNav.audit") },
+    { href: "/app/admin/verification", label: t("adminNav.verification") },
+    { href: "/app/admin/members", label: t("adminNav.members") },
+    { href: "/app/admin/events", label: t("adminNav.events") },
+    { href: "/app/admin/news", label: t("adminNav.news") },
+    { href: "/app/admin/roster", label: t("adminNav.roster") },
+    { href: "/app/admin/stats", label: t("adminNav.stats") },
+    { href: "/app/admin/audit", label: t("adminNav.audit") },
   ];
   const nav =
     variant === "admin" ? adminNav : variant === "member" ? memberNav : [];
 
   const extra: NavItem[] = [];
   if (variant === "member" && user?.isAdmin)
-    extra.push({ href: "/admin/verification", label: t("nav.admin") });
+    extra.push({ href: "/app/admin/verification", label: t("nav.admin") });
   if (variant === "admin")
-    extra.push({ href: "/dashboard", label: t("nav.backToMember") });
+    extra.push({ href: "/app/dashboard", label: t("nav.backToMember") });
 
   const home =
     variant === "admin"
-      ? "/admin/verification"
+      ? "/app/admin/verification"
       : variant === "member"
-        ? "/dashboard"
+        ? "/app/dashboard"
         : "/";
 
   return (

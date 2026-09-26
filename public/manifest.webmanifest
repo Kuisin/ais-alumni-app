@@ -2,7 +2,7 @@
   "name": "AIS Alumni / AIS 同窓会",
   "short_name": "AIS Alumni",
   "description": "The alumni association of Aichi International School / 愛知インターナショナルスクール同窓会",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

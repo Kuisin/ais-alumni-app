@@ -23,7 +23,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // database (src/lib/session.ts).
   session: { strategy: "jwt" },
   trustHost: true,
-  pages: { signIn: "/", error: "/auth/error" },
+  // The sign-in page lives at /app; the public landing page is "/".
+  pages: { signIn: "/app", error: "/app/auth/error" },
   providers: [
     // 1. Email — passwordless 6-digit code (§4.1). Codes are issued by the
     //    requestSignInCode server action; this provider only verifies them.

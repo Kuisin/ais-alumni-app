@@ -207,7 +207,7 @@ export async function submitVerificationAction(
   );
 
   return redirect({
-    href: "/onboarding/status",
+    href: "/app/onboarding/status",
     locale: uiLocale.success ? uiLocale.data : data.locale,
   });
 }

@@ -7,6 +7,7 @@ export const NAMESPACES = [
   "common",
   "roles",
   "email",
+  "home",
   "landing",
   "auth",
   "onboarding",

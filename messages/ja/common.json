@@ -52,7 +52,8 @@
     "settings": "設定",
     "profile": "マイプロフィール",
     "admin": "管理",
-    "backToMember": "会員サイトへ"
+    "backToMember": "会員サイトへ",
+    "notify": "お知らせを送る"
   },
   "adminNav": {
     "verification": "本人確認",

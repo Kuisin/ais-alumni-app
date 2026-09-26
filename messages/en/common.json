@@ -52,7 +52,8 @@
     "settings": "Settings",
     "profile": "My profile",
     "admin": "Admin",
-    "backToMember": "Member site"
+    "backToMember": "Member site",
+    "notify": "Send notification"
   },
   "adminNav": {
     "verification": "Verification",

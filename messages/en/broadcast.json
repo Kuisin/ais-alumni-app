@@ -1,0 +1,48 @@
+{
+  "pageTitle": "Send a notification",
+  "descriptionAny": "Send a message to members by LINE (or email if they don't use LINE).",
+  "descriptionLeader": "As class representative, you can send a message to members of your class by LINE (or email).",
+  "audience": {
+    "label": "Send to",
+    "ALL": "All members",
+    "ROLES": "Members with selected roles",
+    "COHORT": "A class (graduation year)",
+    "cohortYear": "Graduation year",
+    "cohortHint": "Former students who graduated or left that year, and current students expected to graduate that year.",
+    "classOf": "Class of {year}",
+    "leaderOnly": "Your class:"
+  },
+  "title": "Title",
+  "body": "Message",
+  "bodyHint": "Your name and position are added at the end.",
+  "preview": "Check recipients",
+  "checking": "Checking…",
+  "confirmSummary": "This will reach {recipients} members: {line} by LINE and {email} by email. Sending uses {line} messages of the LINE monthly quota.",
+  "send": "Send to {count} members",
+  "sending": "Sending…",
+  "edit": "Edit",
+  "sentSummary": "Sent to {recipients} members ({line} by LINE, {email} by email).",
+  "sendAnother": "Send another",
+  "history": "Sent by you",
+  "historyCounts": "{recipients} recipients (LINE {line} / email {email})",
+  "signature": "— {name} ({position}), via AIS Alumni",
+  "signatureCommittee": "— AIS Alumni Committee",
+  "positions": {
+    "TEACHER_MANAGER": "Teacher manager",
+    "STUDENT_LEADER": "Class representative"
+  },
+  "fieldErrors": {
+    "required": "This field is required.",
+    "tooLong": "This is too long.",
+    "rolesRequired": "Choose at least one role.",
+    "invalidYear": "Enter a 4-digit year."
+  },
+  "errors": {
+    "forbidden": "Please sign in again.",
+    "validation": "Please check the highlighted fields.",
+    "notAllowed": "You can't send to this audience.",
+    "limit": "You've reached your sending limit. Please try again later.",
+    "noRecipients": "No members match this audience."
+  },
+  "sent": "Sent."
+}

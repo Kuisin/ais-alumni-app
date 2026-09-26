@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { signOutAction } from "@/app/actions/common";
 import { Link } from "@/i18n/navigation";
+import { getBroadcastRights } from "@/lib/broadcasts";
 import { displayName } from "@/lib/format";
 import type { CurrentUser } from "@/lib/session";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -19,12 +20,18 @@ export async function AppShell({
 }) {
   const t = await getTranslations("common");
   const locale = await getLocale();
+  // Members holding a position (or admins) get the "send notification" page.
+  const canBroadcast =
+    variant === "member" && user
+      ? (await getBroadcastRights(user)).length > 0
+      : false;
 
   const memberNav: NavItem[] = [
     { href: "/app/dashboard", label: t("nav.dashboard") },
     { href: "/app/directory", label: t("nav.directory") },
     { href: "/app/events", label: t("nav.events") },
     { href: "/app/news", label: t("nav.news") },
+    ...(canBroadcast ? [{ href: "/app/notify", label: t("nav.notify") }] : []),
     { href: "/app/follows", label: t("nav.follows") },
     { href: "/app/family", label: t("nav.family") },
     { href: "/app/profile", label: t("nav.profile") },

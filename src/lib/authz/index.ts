@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { RoleKey } from "@/generated/prisma/enums";
+import { RoleKey, TeacherStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import {
   canViewPrivate as canViewPrivateCore,
@@ -19,8 +19,19 @@ export function toViewer(user: UserWithRoles): Viewer {
     state: user.state,
     isAdmin: user.isAdmin,
     roles: user.roles.map((r) => r.role),
+    currentTeacher: isCurrentTeacher(user.roles),
     familyId: user.familyId,
   };
+}
+
+/** Has the TEACHER role with status 現職 (unset counts as current). */
+export function isCurrentTeacher(
+  roles: readonly { role: RoleKey; teacherStatus: TeacherStatus | null }[],
+): boolean {
+  return roles.some(
+    (r) =>
+      r.role === RoleKey.TEACHER && r.teacherStatus !== TeacherStatus.FORMER,
+  );
 }
 
 export const toTarget: (user: UserWithRoles) => Target = (user) => ({
@@ -94,6 +105,7 @@ export type PublicProfile = {
     currentGrade: number | null;
     subjects: string | null;
     cohortId: string | null;
+    teacherStatus: TeacherStatus | null;
   }[];
 };
 
@@ -132,6 +144,7 @@ export function projectPublic(user: UserWithRoles): PublicProfile {
       currentGrade: r.currentGrade,
       subjects: r.subjects,
       cohortId: r.cohortId,
+      teacherStatus: r.teacherStatus,
     })),
   };
 }

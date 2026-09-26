@@ -11,17 +11,27 @@ const h = (o: Partial<Holder> = {}): Holder => ({
   state: "ACTIVE",
   isAdmin: false,
   roles: [],
+  currentTeacher: false,
   positions: [],
   ...o,
 });
 
 describe("positions", () => {
   it("requires the matching role", () => {
-    expect(positionEligible("TEACHER_MANAGER", ["TEACHER"])).toBe(true);
-    expect(positionEligible("TEACHER_MANAGER", ["FORMER_STUDENT"])).toBe(false);
-    expect(positionEligible("STUDENT_LEADER", ["CURRENT_STUDENT"])).toBe(true);
-    expect(positionEligible("STUDENT_LEADER", ["FORMER_STUDENT"])).toBe(true);
-    expect(positionEligible("STUDENT_LEADER", ["CURRENT_PARENT"])).toBe(false);
+    expect(positionEligible("TEACHER_MANAGER", ["TEACHER"], true)).toBe(true);
+    expect(positionEligible("TEACHER_MANAGER", ["TEACHER"], false)).toBe(false);
+    expect(positionEligible("TEACHER_MANAGER", ["FORMER_STUDENT"], false)).toBe(
+      false,
+    );
+    expect(positionEligible("STUDENT_LEADER", ["CURRENT_STUDENT"], false)).toBe(
+      true,
+    );
+    expect(positionEligible("STUDENT_LEADER", ["FORMER_STUDENT"], false)).toBe(
+      true,
+    );
+    expect(positionEligible("STUDENT_LEADER", ["CURRENT_PARENT"], false)).toBe(
+      false,
+    );
   });
 });
 
@@ -36,6 +46,7 @@ describe("broadcast rights", () => {
   it("teacher managers may notify anyone; without the teacher role nothing", () => {
     const mgr = h({
       roles: ["TEACHER"],
+      currentTeacher: true,
       positions: [{ position: "TEACHER_MANAGER", cohortId: null }],
     });
     const rights = broadcastRights(mgr);

@@ -50,7 +50,8 @@
     "lastNameKanji": "姓",
     "firstNameKanji": "名",
     "cohort": "学年",
-    "cohortFilter": "表示する学年"
+    "cohortFilter": "表示する学年",
+    "teacherStatus": "ステータス"
   },
   "hints": {
     "nameRomaji": "ローマ字で入力してください。例：Yamada / Taro",

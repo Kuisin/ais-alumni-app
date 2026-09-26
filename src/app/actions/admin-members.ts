@@ -9,6 +9,7 @@ import {
   Division,
   LifeStage,
   RoleKey,
+  TeacherStatus,
 } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { getTranslatorFor } from "@/i18n/translator";
@@ -193,6 +194,7 @@ const roleSchema = z.object({
     .trim()
     .max(40)
     .transform((v) => v || null),
+  teacherStatus: optEnum(TeacherStatus),
   yearsFrom: optInt(1950, 2100),
   yearsTo: optInt(1950, 2100),
   subjects: optText(200),
@@ -226,6 +228,7 @@ export async function saveMemberRoleAction(
       userId: str(fd, "userId"),
       role: str(fd, "role"),
       cohortId: raw("cohortId"),
+      teacherStatus: raw("teacherStatus"),
       yearsFrom: raw("yearsFrom"),
       yearsTo: raw("yearsTo"),
       subjects: raw("subjects"),
@@ -271,6 +274,10 @@ export async function saveMemberRoleAction(
     // Only the fields relevant to the role are written; others are cleared.
     const data = {
       cohortId: isStudent ? d.cohortId : null,
+      teacherStatus:
+        d.role === RoleKey.TEACHER
+          ? (d.teacherStatus ?? TeacherStatus.CURRENT)
+          : null,
       yearsFrom: hasYears ? d.yearsFrom : null,
       yearsTo: hasYears ? d.yearsTo : null,
       subjects: d.role === RoleKey.TEACHER ? d.subjects : null,

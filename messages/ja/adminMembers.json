@@ -89,7 +89,9 @@
     "stageUpdatedAt": "現在の所属の最終更新：{date}",
     "cohort": "学年",
     "yearsToAny": "在籍終了（年）",
-    "yearsFromAny": "在籍開始（年）"
+    "yearsFromAny": "在籍開始（年）",
+    "teacherStatus": "ステータス",
+    "teacherStatusHint": "元教職員には教職員としての権限（生徒の閲覧、教職員・管理者など）がありません。"
   },
   "status": {
     "title": "アカウントの状態",

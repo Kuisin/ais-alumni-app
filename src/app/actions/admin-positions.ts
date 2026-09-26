@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { PositionKey } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
+import { isCurrentTeacher } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { positionEligible } from "@/lib/permissions";
 import { AuthError, actionAdmin } from "@/lib/session";
@@ -53,12 +54,13 @@ export async function setMemberPositionAction(
 
   const roles = await db.userRole.findMany({
     where: { userId },
-    select: { role: true },
+    select: { role: true, teacherStatus: true },
   });
   if (
     !positionEligible(
       position,
       roles.map((r) => r.role),
+      isCurrentTeacher(roles),
     )
   ) {
     return { ok: false, message: "errors.notEligible" };

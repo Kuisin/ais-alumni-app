@@ -7,6 +7,7 @@ import {
   AccountState,
   OtpPurpose,
   RoleKey,
+  TeacherStatus,
   VerificationStatus,
 } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
@@ -279,6 +280,11 @@ async function saveRoles(
         yearsFrom: data.teacher.yearsFrom,
         yearsTo: data.teacher.yearsTo,
         subjects: data.teacher.subjects,
+        // No end year = still at AIS (現職).
+        teacherStatus:
+          data.teacher.yearsTo === null
+            ? TeacherStatus.CURRENT
+            : TeacherStatus.FORMER,
         schoolEmail: data.teacher.schoolEmail,
         schoolEmailVerified,
       };

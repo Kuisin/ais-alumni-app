@@ -16,6 +16,7 @@ import {
 import { Alert, Badge, Card, PageHeader } from "@/components/ui/card";
 import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { isCurrentTeacher } from "@/lib/authz";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
@@ -222,6 +223,7 @@ export default async function AdminMemberPage({
                   values={{
                     role: r.role,
                     cohortId: r.cohortId,
+                    teacherStatus: r.teacherStatus,
                     yearsFrom: r.yearsFrom,
                     yearsTo: r.yearsTo,
                     subjects: r.subjects,
@@ -287,7 +289,11 @@ export default async function AdminMemberPage({
                 cohortId={held?.cohortId ?? null}
                 defaultCohortId={defaultCohort}
                 cohorts={cohorts}
-                eligible={positionEligible(p, roleKeys)}
+                eligible={positionEligible(
+                  p,
+                  roleKeys,
+                  isCurrentTeacher(roles),
+                )}
               />
             );
           })}

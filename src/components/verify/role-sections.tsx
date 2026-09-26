@@ -58,6 +58,29 @@ export function TeacherSection({
     onChange({ ...value, ...patch });
   return (
     <Section title={tr("role.TEACHER")}>
+      {/* Teacher status: 現職 (current, no end year) or 元教職員 (former). */}
+      <fieldset className="space-y-1">
+        <legend className="text-sm font-medium text-slate-800">
+          {t("fields.teacherStatus")}
+        </legend>
+        <div className="flex flex-wrap gap-4">
+          {([true, false] as const).map((present) => (
+            <label
+              key={String(present)}
+              className="flex min-h-11 items-center gap-2 text-sm"
+            >
+              <input
+                type="radio"
+                name="teacher-status"
+                className="size-5"
+                checked={value.present === present}
+                onChange={() => set({ present })}
+              />
+              {tr(`teacherStatus.${present ? "CURRENT" : "FORMER"}`)}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <YearsRow>
         <YearInput
           path="teacher.yearsFrom"
@@ -75,15 +98,6 @@ export function TeacherSection({
           disabled={value.present}
         />
       </YearsRow>
-      <label className="flex min-h-11 items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="size-5"
-          checked={value.present}
-          onChange={(e) => set({ present: e.target.checked })}
-        />
-        {t("fields.present")}
-      </label>
       <TextInput
         path="teacher.subjects"
         label={t("fields.subjects")}

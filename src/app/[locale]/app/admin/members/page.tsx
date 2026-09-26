@@ -38,6 +38,11 @@ export default async function AdminMembersPage({
   const sp = await searchParams;
   const t = await getTranslations("adminMembers");
   const tr = await getTranslations("roles");
+  // "教職員（元教職員）" for former teachers, so status is visible in the list.
+  const roleLabel = (r: { role: string; teacherStatus: string | null }) =>
+    r.role === "TEACHER" && r.teacherStatus === "FORMER"
+      ? `${tr("role.TEACHER")}（${tr("teacherStatusShort.FORMER")}）`
+      : tr(`role.${r.role}`);
   const tc = await getTranslations("common");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
 
@@ -85,7 +90,7 @@ export default async function AdminMembersPage({
         lineUserId: true,
         lineFollowing: true,
         createdAt: true,
-        roles: { select: { role: true } },
+        roles: { select: { role: true, teacherStatus: true } },
       },
     }),
     db.user.count({ where }),
@@ -229,7 +234,7 @@ export default async function AdminMembersPage({
                       {tr(`state.${u.state}`)}
                     </Badge>
                     {u.roles.map((r) => (
-                      <Badge key={r.role}>{tr(`role.${r.role}`)}</Badge>
+                      <Badge key={r.role}>{roleLabel(r)}</Badge>
                     ))}
                   </p>
                   <p className="mt-2 text-xs text-slate-500">
@@ -295,8 +300,7 @@ export default async function AdminMembersPage({
                       </Badge>
                     </td>
                     <td className="px-3 py-2">
-                      {u.roles.map((r) => tr(`role.${r.role}`)).join(", ") ||
-                        "—"}
+                      {u.roles.map(roleLabel).join(", ") || "—"}
                     </td>
                     <td className="px-3 py-2">{lineLabel(u)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">

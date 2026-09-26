@@ -50,7 +50,8 @@
     "lastNameKanji": "Last name (姓)",
     "firstNameKanji": "First name (名)",
     "cohort": "Your 学年 (class)",
-    "cohortFilter": "Show classes"
+    "cohortFilter": "Show classes",
+    "teacherStatus": "Status"
   },
   "hints": {
     "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",

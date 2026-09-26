@@ -41,6 +41,7 @@ export const PUBLIC_CARD_SELECT = {
       currentStage: true,
       currentGrade: true,
       cohortId: true,
+      teacherStatus: true,
     },
   },
 } as const satisfies Prisma.UserSelect;
@@ -194,7 +195,7 @@ export function buildDirectoryWhere(
 
   // Minors (§8): hidden unless the viewer is a teacher, an admin, or family.
   const v = ctx.viewer;
-  if (!v.isAdmin && !v.roles.includes(RoleKey.TEACHER)) {
+  if (!v.isAdmin && !v.currentTeacher) {
     const notMinor: Prisma.UserWhereInput = {
       AND: [
         { roles: { none: { role: RoleKey.CURRENT_STUDENT } } },

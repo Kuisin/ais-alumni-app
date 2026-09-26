@@ -29,6 +29,11 @@ enum NotifyChannel {
   EMAIL_ONLY
 }
 
+enum TeacherStatus {
+  CURRENT
+  FORMER
+}
+
 enum RoleKey {
   TEACHER
   CURRENT_STUDENT
@@ -169,16 +174,19 @@ model OtpCode {
 }
 
 model UserRole {
-  id                    String     @id @default(cuid())
+  id                    String         @id @default(cuid())
   userId                String
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   role                  RoleKey
   // TEACHER
   yearsFrom             Int?
   yearsTo               Int? // null with TEACHER = "present"
   subjects              String?
+  // TEACHER: 現職 (CURRENT) or 元教職員 (FORMER). Access tied to being a teacher
+  // (minors, TEACHER_MANAGER) applies to current teachers only.
+  teacherStatus         TeacherStatus?
   schoolEmail           String?
-  schoolEmailVerified   Boolean    @default(false)
+  schoolEmailVerified   Boolean        @default(false)
   // CURRENT_STUDENT
   currentGrade          Int? // 0 = K
   studentIdNo           String?
@@ -193,7 +201,7 @@ model UserRole {
   // Students (CURRENT_STUDENT / FORMER_STUDENT): their 学年 (class). Kept
   // separate from their own join / leave / graduation years above.
   cohortId              String?
-  cohort                Cohort?    @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  cohort                Cohort?        @relation(fields: [cohortId], references: [id], onDelete: SetNull)
 
   @@unique([userId, role])
   @@index([role])

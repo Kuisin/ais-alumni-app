@@ -89,7 +89,9 @@
     "stageUpdatedAt": "Current stage last updated {date}",
     "cohort": "学年 (class)",
     "yearsToAny": "To (year)",
-    "yearsFromAny": "From (year)"
+    "yearsFromAny": "From (year)",
+    "teacherStatus": "Status",
+    "teacherStatusHint": "Former teachers lose teacher access (e.g. seeing students, 教職員・管理者)."
   },
   "status": {
     "title": "Account status",

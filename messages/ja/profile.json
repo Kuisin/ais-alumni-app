@@ -48,7 +48,7 @@
     "subjects": "担当科目: {subjects}",
     "noDetails": "詳細なし"
   },
-  "recordReadOnly": "AIS在籍記録は管理者のみが変更できます。誤りがある場合は同窓会委員会までご連絡ください。",
+  "recordReadOnly": "在籍情報は委員会のみが変更できます。誤りがある場合は修正を依頼してください。",
   "stageNotSet": "未設定",
   "stageUpdated": "最終確認日: {date}",
   "stageNeverConfirmed": "現在の状況がまだ設定されていません。",
@@ -84,5 +84,6 @@
     "fileMissing": "画像を選択してください。",
     "fileSize": "画像は2MB以下にしてください。",
     "fileType": "JPGまたはPNGの画像を選択してください。"
-  }
+  },
+  "requestRecordCorrection": "在籍情報の修正を依頼"
 }

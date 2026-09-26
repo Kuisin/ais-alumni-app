@@ -21,6 +21,7 @@ export const NAMESPACES = [
   "adminContent",
   "directory",
   "profile",
+  "records",
   "follows",
   "family",
   "settings",

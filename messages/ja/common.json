@@ -61,7 +61,8 @@
     "news": "お知らせ",
     "roster": "名簿データ",
     "stats": "統計",
-    "audit": "操作ログ"
+    "audit": "操作ログ",
+    "recordRequests": "在籍情報の修正"
   },
   "notFoundTitle": "ページが見つかりません",
   "goHome": "ホームへ",

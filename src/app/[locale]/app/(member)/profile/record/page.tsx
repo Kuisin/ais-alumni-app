@@ -1,0 +1,156 @@
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
+import { cancelRecordRequestAction } from "@/app/actions/record-requests";
+import { RecordRequestForm } from "@/components/records/record-request-form";
+import { RecordDiff, RecordValue } from "@/components/records/record-value";
+import { Badge, Card, PageHeader } from "@/components/ui/card";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { ChangeRequestStatus } from "@/generated/prisma/enums";
+import { Link } from "@/i18n/navigation";
+import { db } from "@/lib/db";
+import { formatDate } from "@/lib/format";
+import {
+  fieldsFor,
+  hasRecord,
+  snapshot,
+  toFormValues,
+} from "@/lib/record-requests";
+import { requireActive } from "@/lib/session";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("records");
+  return { title: t("title") };
+}
+
+const STATUS_TONE = {
+  PENDING: "amber",
+  APPROVED: "green",
+  REJECTED: "red",
+  CANCELLED: "slate",
+} as const;
+
+/** Member: view the AIS record (在籍情報) and request corrections. */
+export default async function RecordPage() {
+  const me = await requireActive();
+  const locale = (await getLocale()) === "en" ? "en" : "ja";
+  const [t, tr] = await Promise.all([
+    getTranslations("records"),
+    getTranslations("roles"),
+  ]);
+  const requests = await db.recordChangeRequest.findMany({
+    where: { userId: me.id },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+  const roles = me.roles.filter((r) => hasRecord(r.role));
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <Link
+            href="/app/profile/edit"
+            className="text-sm text-brand-700 underline"
+          >
+            {t("backToProfile")}
+          </Link>
+        }
+      />
+
+      {roles.length === 0 ? <Card>{t("noRecord")}</Card> : null}
+
+      {roles.map((r) => {
+        const current = snapshot(r.role, r);
+        const pending = requests.find(
+          (q) => q.role === r.role && q.status === ChangeRequestStatus.PENDING,
+        );
+        return (
+          <Card key={r.role} className="space-y-4">
+            <h2 className="text-lg font-semibold">{tr(`role.${r.role}`)}</h2>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+              {fieldsFor(r.role).map((f) => (
+                <div key={f} className="contents">
+                  <dt className="text-slate-600">{t(`fields.${f}`)}</dt>
+                  <dd>
+                    <RecordValue field={f} value={current[f]} role={r.role} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            {pending ? (
+              <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <p className="font-medium text-amber-900">
+                  {t("pending", {
+                    date: formatDate(pending.createdAt, locale),
+                  })}
+                </p>
+                <RecordDiff
+                  role={r.role}
+                  current={pending.current as Record<string, unknown>}
+                  proposed={pending.proposed as Record<string, unknown>}
+                />
+                <p className="text-sm text-slate-700">
+                  <span className="font-medium">{t("reason")}: </span>
+                  {pending.reason}
+                </p>
+                <form action={cancelRecordRequestAction.bind(null, pending.id)}>
+                  <SubmitButton variant="secondary">{t("cancel")}</SubmitButton>
+                </form>
+              </div>
+            ) : (
+              <details className="rounded-lg border border-slate-200 p-4">
+                <summary className="cursor-pointer font-medium text-brand-700">
+                  {t("requestCorrection")}
+                </summary>
+                <div className="mt-4">
+                  <RecordRequestForm
+                    role={r.role}
+                    fields={fieldsFor(r.role)}
+                    values={toFormValues(r.role, current)}
+                  />
+                </div>
+              </details>
+            )}
+          </Card>
+        );
+      })}
+
+      {requests.some((q) => q.status !== ChangeRequestStatus.PENDING) ? (
+        <Card>
+          <h2 className="mb-3 text-lg font-semibold">{t("history")}</h2>
+          <ul className="divide-y divide-slate-100">
+            {requests
+              .filter((q) => q.status !== ChangeRequestStatus.PENDING)
+              .map((q) => (
+                <li key={q.id} className="space-y-2 py-3">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <Badge tone={STATUS_TONE[q.status]}>
+                      {t(`status.${q.status}`)}
+                    </Badge>
+                    <span>{tr(`role.${q.role}`)}</span>
+                    <span className="text-slate-500">
+                      {formatDate(q.createdAt, locale)}
+                    </span>
+                  </div>
+                  <RecordDiff
+                    role={q.role}
+                    current={q.current as Record<string, unknown>}
+                    proposed={q.proposed as Record<string, unknown>}
+                  />
+                  {q.reviewNote ? (
+                    <p className="text-sm text-slate-700">
+                      <span className="font-medium">{t("reviewNote")}: </span>
+                      {q.reviewNote}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+          </ul>
+        </Card>
+      ) : null}
+    </div>
+  );
+}

@@ -48,7 +48,7 @@
     "subjects": "Subjects: {subjects}",
     "noDetails": "No details"
   },
-  "recordReadOnly": "Your AIS record can only be changed by an administrator. Please contact the committee if something is wrong.",
+  "recordReadOnly": "Your AIS record can only be changed by the committee. If something is wrong, send a correction request.",
   "stageNotSet": "Not set yet",
   "stageUpdated": "Last confirmed: {date}",
   "stageNeverConfirmed": "You haven't set your current stage yet.",
@@ -84,5 +84,6 @@
     "fileMissing": "Please choose an image.",
     "fileSize": "The image must be 2 MB or smaller.",
     "fileType": "Please choose a JPG or PNG image."
-  }
+  },
+  "requestRecordCorrection": "Request a correction"
 }

@@ -1,0 +1,30 @@
+name: CI
+
+# Runs on PRs and on pushes to dev. The push run matters: the auto-created
+# dev → main PR is opened with GITHUB_TOKEN, which does not trigger
+# pull_request workflows, so its required check comes from the push run on
+# the same commit.
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec next typegen
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test

@@ -1,0 +1,18 @@
+{
+  "title": "お知らせ",
+  "description": "AIS同窓会からのお知らせです。",
+  "empty": "お知らせはまだありません。",
+  "pinned": "固定",
+  "untitled": "（タイトルなし）",
+  "backToList": "← お知らせ一覧へ",
+  "pager": {
+    "label": "ページ",
+    "prev": "← 新しい記事",
+    "next": "古い記事 →",
+    "page": "{page}ページ目"
+  },
+  "notify": {
+    "subject": "【AIS同窓会】{title}",
+    "fallbackText": "新しいお知らせが投稿されました。"
+  }
+}

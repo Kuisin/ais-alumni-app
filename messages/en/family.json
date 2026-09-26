@@ -1,0 +1,62 @@
+{
+  "title": "Family",
+  "description": "Link parents and children. Family members can see each other's private details.",
+  "working": "Working…",
+  "search": "Search",
+  "noResults": "No matching members found.",
+  "confirm": "Confirm",
+  "decline": "Decline",
+  "cancel": "Cancel request",
+  "sent": "Request sent. It will be linked once they confirm.",
+  "sentAdmin": "Added. An administrator will confirm this link.",
+  "status": {
+    "confirmed": "Confirmed",
+    "pendingAdmin": "Waiting for administrator confirmation",
+    "pendingOther": "Waiting for {name} to confirm"
+  },
+  "pendingForMe": {
+    "title": "Waiting for your confirmation",
+    "asChild": "{name} says they are your parent.",
+    "asParent": "{name} says you are their parent."
+  },
+  "members": {
+    "title": "My family",
+    "privacy": "Everyone in your family can see each other's contact details, like mutual followers.",
+    "empty": "No family members linked yet."
+  },
+  "links": {
+    "title": "Family links",
+    "row": "{parent} (parent) → {child} (child)"
+  },
+  "claimChild": {
+    "title": "Add my child",
+    "description": "Search for your child's account. They will be asked to confirm.",
+    "searchLabel": "Child's name",
+    "minorHint": "Current students only appear when you enter their full registered name.",
+    "select": "This is my child",
+    "manualTitle": "My child doesn't have an account",
+    "manualLabel": "Child's full name",
+    "manualHint": "An administrator will check and confirm this.",
+    "manualSubmit": "Add child"
+  },
+  "claimParent": {
+    "title": "Add my parent",
+    "description": "Search for your parent's account. They will be asked to confirm.",
+    "searchLabel": "Parent's name",
+    "select": "This is my parent"
+  },
+  "errors": {
+    "notAllowed": "Your account type can't add this kind of family link.",
+    "notFound": "Member not found.",
+    "wrongRole": "That member isn't registered as a parent or student.",
+    "already": "This family link already exists or is waiting for confirmation.",
+    "tooMany": "You have too many unconfirmed requests. Please wait for them to be confirmed.",
+    "invalid": "Please check your input."
+  },
+  "notify": {
+    "asChildSubject": "{name} added you as their child",
+    "asChildText": "{name} says they are your parent on AIS Alumni. Please confirm or decline on the Family page.",
+    "asParentSubject": "{name} added you as their parent",
+    "asParentText": "{name} says you are their parent on AIS Alumni. Please confirm or decline on the Family page."
+  }
+}

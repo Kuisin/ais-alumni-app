@@ -1,0 +1,88 @@
+{
+  "title": "プロフィール",
+  "editTitle": "プロフィールの編集",
+  "editProfile": "プロフィールを編集",
+  "viewMyProfile": "自分のプロフィールを見る",
+  "self": "あなた",
+  "nameAtAisValue": "在籍時: {name}",
+  "sections": {
+    "about": "自己紹介",
+    "aisRecord": "AIS在籍記録",
+    "currentStage": "現在の状況",
+    "contact": "連絡先・リンク",
+    "photo": "プロフィール写真",
+    "basic": "基本情報",
+    "follows": "フォローリクエスト"
+  },
+  "fields": {
+    "nameRomaji": "氏名（ローマ字）",
+    "nameKanji": "氏名（漢字・かな）",
+    "nameAtAis": "在籍時の氏名",
+    "bio": "自己紹介",
+    "email": "メールアドレス",
+    "phone": "電話番号",
+    "lineDisplayName": "LINEの名前",
+    "instagram": "Instagram",
+    "linkedin": "LinkedIn",
+    "facebook": "Facebook",
+    "x": "X（Twitter）",
+    "website": "ウェブサイト",
+    "avatar": "写真",
+    "stage": "現在の状況",
+    "stageDetail": "詳細（学校名・勤務先など）"
+  },
+  "hints": {
+    "nameAtAis": "旧姓など、現在と異なる場合のみ入力してください。",
+    "bio": "すべての会員に表示されます。",
+    "privateTier": "あなた本人、家族、承認したフォロワーだけが見られます。",
+    "socialUrl": "https:// から始まるURLを入力してください。",
+    "avatar": "JPGまたはPNG、2MBまで。すべての会員に表示されます。",
+    "stageDetail": "詳細は家族と承認したフォロワーだけが見られます。"
+  },
+  "record": {
+    "teacherYears": "在職 {from}〜{to}年",
+    "teacherYearsPresent": "在職 {from}年〜現在",
+    "graduated": "{year}年卒業",
+    "left": "{year}年に退学・転校",
+    "nowStage": "現在: {stage}",
+    "subjects": "担当科目: {subjects}",
+    "noDetails": "詳細なし"
+  },
+  "recordReadOnly": "AIS在籍記録は管理者のみが変更できます。誤りがある場合は同窓会委員会までご連絡ください。",
+  "stageNotSet": "未設定",
+  "stageUpdated": "最終確認日: {date}",
+  "stageNeverConfirmed": "現在の状況がまだ設定されていません。",
+  "stageChoose": "選択してください",
+  "stageSave": "現在の状況を保存",
+  "stageConfirm": "現在の状況に変更はありません",
+  "stageSaved": "現在の状況を保存しました。",
+  "stageConfirmed": "ありがとうございます。現在の状況を確認しました。",
+  "noContact": "共有されている連絡先はまだありません。",
+  "locked": {
+    "title": "非公開の情報",
+    "body": "{name}さんをフォローすると連絡先やリンクを見られます。相手の承認が必要です。",
+    "requested": "フォローリクエストの承認待ちです。",
+    "unavailable": "連絡先は家族と承認されたフォロワーだけが見られます。"
+  },
+  "autoAccept": {
+    "label": "卒業年が前後1年以内の人からのフォローリクエストを自動で承認する",
+    "hint": "AIS在籍記録の卒業・退学年をもとに判定します。"
+  },
+  "settingsLink": "通知と表示言語は「設定」で変更できます。",
+  "goSettings": "設定を開く",
+  "save": "保存",
+  "saving": "保存中…",
+  "saved": "プロフィールを保存しました。",
+  "uploading": "アップロード中…",
+  "photoUpload": "写真をアップロード",
+  "photoRemove": "写真を削除",
+  "photoUploaded": "写真を更新しました。",
+  "errors": {
+    "forbidden": "この操作を行う権限がありません。",
+    "validation": "入力内容をご確認ください。",
+    "invalid": "この項目をご確認ください。",
+    "fileMissing": "画像を選択してください。",
+    "fileSize": "画像は2MB以下にしてください。",
+    "fileType": "JPGまたはPNGの画像を選択してください。"
+  }
+}

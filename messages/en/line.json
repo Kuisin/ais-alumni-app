@@ -1,0 +1,59 @@
+{
+  "linkButton": "Link LINE",
+  "addFriend": "Add the Official Account as a friend",
+  "opensInNewTab": "(opens in a new tab)",
+  "outcome": {
+    "linked": "LINE is linked.",
+    "taken": "That LINE account is already linked to another member. Sign in with LINE to use that account, or link a different LINE account.",
+    "cancelled": "Linking was cancelled. You can try again anytime.",
+    "error": "We couldn't link LINE. Please try again.",
+    "expired": "The link expired. Please start again."
+  },
+  "panel": {
+    "linkedFollowing": "LINE is linked. You'll get updates on LINE.",
+    "linkedFollowingAs": "Linked to LINE as {name}. You'll get updates on LINE.",
+    "linkedNotFollowing": "LINE is linked, but you haven't added the Official Account as a friend yet, so we can't message you there.",
+    "linkedNotFollowingAs": "Linked to LINE as {name}, but you haven't added the Official Account as a friend yet, so we can't message you there.",
+    "refresh": "Done? Refresh this page",
+    "qrTitle": "Or use your phone",
+    "qrStep1": "Scan this code with your phone's camera.",
+    "qrStep2": "Log in to LINE and allow access. Tick \"Add friend\" for the AIS Alumni Committee.",
+    "qrStep3": "Come back here and refresh the page.",
+    "qrAlt": "QR code to link LINE on your phone",
+    "expiryNote": "For your security, this link and QR code work for 10 minutes."
+  },
+  "banner": {
+    "title": "Get updates on LINE",
+    "body": "Link LINE to get event reminders and news from the committee there instead of by email.",
+    "bodyNotFollowing": "Add the AIS Alumni Committee Official Account as a friend to get reminders and news on LINE.",
+    "dismiss": "Not now"
+  },
+  "rsvpPrompt": {
+    "text": "Get the reminder on LINE?",
+    "link": "Link LINE"
+  },
+  "done": {
+    "metaTitle": "LINE linking",
+    "openApp": "Open AIS Alumni",
+    "linked": {
+      "title": "LINE is linked",
+      "body": "All set. You can close this page and go back to your other device — refresh the page there to see the change."
+    },
+    "taken": {
+      "title": "Already linked to another member",
+      "body": "That LINE account is already linked to a different AIS Alumni account. Try again with another LINE account, or sign in with LINE to use that account."
+    },
+    "cancelled": {
+      "title": "Linking cancelled",
+      "body": "LINE wasn't linked. You can start again from your other device."
+    },
+    "error": {
+      "title": "Couldn't link LINE",
+      "body": "Something went wrong. Please start again from your other device."
+    },
+    "expired": {
+      "title": "This link has expired",
+      "body": "Linking links and QR codes work for 10 minutes. Please refresh the page on your other device and scan the new code."
+    }
+  }
+}

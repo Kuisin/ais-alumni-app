@@ -1,0 +1,404 @@
+// AIS Alumni — data model. Derived from spec §13 with the additions noted inline.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountState {
+  UNVERIFIED_EMAIL
+  EMAIL_VERIFIED
+  PENDING_REVIEW
+  NEEDS_INFO
+  ACTIVE
+  REJECTED
+  DEACTIVATED
+}
+
+enum Locale {
+  ja
+  en
+}
+
+enum NotifyChannel {
+  AUTO
+  EMAIL_ONLY
+}
+
+enum RoleKey {
+  TEACHER
+  CURRENT_STUDENT
+  CURRENT_PARENT
+  FORMER_STUDENT
+  FORMER_PARENT
+}
+
+enum Division {
+  ELEMENTARY
+  JUNIOR_HIGH
+  HIGH_SCHOOL
+}
+
+enum LifeStage {
+  ELEMENTARY
+  JUNIOR_HIGH
+  HIGH_SCHOOL
+  UNIVERSITY_COLLEGE
+  WORKING
+}
+
+model User {
+  id                    String        @id @default(cuid())
+  // Nullable (spec says required): a LINE-first sign-up has no verified email
+  // until it passes the mandatory OTP step (§4.2). Postgres allows many NULLs
+  // under a unique index.
+  primaryEmail          String?       @unique
+  emailVerifiedAt       DateTime?
+  state                 AccountState  @default(UNVERIFIED_EMAIL)
+  isAdmin               Boolean       @default(false)
+  locale                Locale        @default(ja)
+  nameRomaji            String?
+  nameKanji             String?
+  nameAtAis             String?
+  dateOfBirth           DateTime?     @db.Date
+  avatarUrl             String?
+  bio                   String?
+  phone                 String?
+  socialLinks           Json?
+  lineUserId            String?       @unique
+  lineDisplayName       String?
+  lineFollowing         Boolean       @default(false)
+  lineBannerDismissedAt DateTime?
+  lineOnboardingSeenAt  DateTime?
+  notifyVia             NotifyChannel @default(AUTO)
+  autoAcceptSameYear    Boolean       @default(false)
+  familyId              String?
+  family                Family?       @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  deactivatedAt         DateTime?
+
+  roles          UserRole[]
+  accounts       Account[]
+  verification   VerificationRequest? @relation("applicant")
+  reviewed       VerificationRequest[] @relation("reviewer")
+  followsOut     Follow[]             @relation("follower")
+  followsIn      Follow[]             @relation("followee")
+  blocksOut      Block[]              @relation("blocker")
+  blocksIn       Block[]              @relation("blocked")
+  rsvps          Rsvp[]
+  parentLinks    FamilyLink[]         @relation("parent")
+  childLinks     FamilyLink[]         @relation("child")
+  vouchesGiven   Vouch[]
+  notifications  NotificationLog[]
+  eventsCreated  Event[]
+  newsCreated    NewsPost[]
+  auditActions   AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([state])
+}
+
+// Auth.js account table (OAuth providers). Email OTP sign-in does not create rows here.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// Added: when two users are merged (LINE-first sign-up whose OTP email matches
+// an existing account, or admin merge), live JWTs for the old id are remapped.
+model UserMerge {
+  fromUserId String   @id
+  toUserId   String
+  createdAt  DateTime @default(now())
+}
+
+enum OtpPurpose {
+  SIGN_IN
+  VERIFY_EMAIL
+  SCHOOL_EMAIL
+  CHANGE_EMAIL
+}
+
+// Added: 6-digit one-time codes (§4.1). Only a hash of the code is stored.
+model OtpCode {
+  id         String     @id @default(cuid())
+  email      String
+  purpose    OtpPurpose
+  userId     String?
+  codeHash   String
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([email, purpose, createdAt])
+}
+
+model UserRole {
+  id                    String     @id @default(cuid())
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role                  RoleKey
+  // TEACHER
+  yearsFrom             Int?
+  yearsTo               Int? // null with TEACHER = "present"
+  subjects              String?
+  schoolEmail           String?
+  schoolEmailVerified   Boolean    @default(false)
+  // CURRENT_STUDENT
+  currentGrade          Int? // 0 = K
+  studentIdNo           String?
+  // FORMER_STUDENT — AIS record
+  lastDivision          Division?
+  graduationOrLeaveYear Int?
+  didGraduate           Boolean?
+  // FORMER_STUDENT — current stage
+  currentStage          LifeStage?
+  currentStageUpdatedAt DateTime?
+  currentStageDetail    String? // private tier
+
+  @@unique([userId, role])
+  @@index([role])
+  @@index([graduationOrLeaveYear])
+  @@index([currentStage])
+  @@index([lastDivision])
+}
+
+model Family {
+  id      String       @id @default(cuid())
+  members User[]
+  links   FamilyLink[]
+}
+
+enum FamilyLinkInitiator {
+  PARENT
+  CHILD
+}
+
+model FamilyLink {
+  id          String              @id @default(cuid())
+  familyId    String
+  family      Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  parentId    String
+  parent      User                @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
+  childId     String? // null if child has no account yet
+  child       User?               @relation("child", fields: [childId], references: [id], onDelete: Cascade)
+  childName   String?
+  initiatedBy FamilyLinkInitiator @default(PARENT)
+  confirmedAt DateTime?
+  confirmedBy String? // userId or "ADMIN"
+  createdAt   DateTime            @default(now())
+
+  @@index([parentId])
+  @@index([childId])
+}
+
+enum VerificationStatus {
+  PENDING
+  NEEDS_INFO
+  APPROVED
+  REJECTED
+}
+
+model VerificationRequest {
+  id          String                 @id @default(cuid())
+  userId      String                 @unique
+  user        User                   @relation("applicant", fields: [userId], references: [id], onDelete: Cascade)
+  answers     Json
+  rosterScore Int?
+  rosterRowId String?
+  status      VerificationStatus     @default(PENDING)
+  reviewerId  String?
+  reviewer    User?                  @relation("reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote  String?
+  submittedAt DateTime               @default(now())
+  decidedAt   DateTime?
+  evidence    VerificationEvidence[]
+  vouches     Vouch[]
+
+  @@index([status, submittedAt])
+}
+
+model VerificationEvidence {
+  id          String              @id @default(cuid())
+  requestId   String
+  request     VerificationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  storageKey  String
+  fileName    String
+  mimeType    String
+  size        Int
+  // null while the request is undecided; set to decidedAt + 30 days (§6.3)
+  deleteAfter DateTime?
+  createdAt   DateTime            @default(now())
+
+  @@index([deleteAfter])
+}
+
+enum VouchAnswer {
+  YES
+  NO
+  NOT_SURE
+}
+
+model Vouch {
+  id         String              @id @default(cuid())
+  requestId  String
+  request    VerificationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  voucherId  String
+  voucher    User                @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  answer     VouchAnswer?
+  askedAt    DateTime            @default(now())
+  answeredAt DateTime?
+
+  @@unique([requestId, voucherId])
+}
+
+model RosterEntry {
+  id              String    @id @default(cuid())
+  nameRomaji      String
+  nameKanji       String?
+  dateOfBirth     DateTime? @db.Date
+  yearsFrom       Int?
+  yearsTo         Int?
+  kind            RoleKey
+  claimedByUserId String?   @unique
+  createdAt       DateTime  @default(now())
+}
+
+enum FollowStatus {
+  REQUESTED
+  ACCEPTED
+}
+
+model Follow {
+  id         String       @id @default(cuid())
+  followerId String
+  follower   User         @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followeeId String
+  followee   User         @relation("followee", fields: [followeeId], references: [id], onDelete: Cascade)
+  status     FollowStatus @default(REQUESTED)
+  createdAt  DateTime     @default(now())
+
+  @@unique([followerId, followeeId])
+  @@index([followeeId, status])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+model Event {
+  id           String    @id @default(cuid())
+  titleJa      String?
+  titleEn      String?
+  bodyJa       String?
+  bodyEn       String?
+  startsAt     DateTime
+  endsAt       DateTime?
+  location     String?
+  mapUrl       String?
+  capacity     Int?
+  rsvpDeadline DateTime?
+  targetRoles  RoleKey[] // empty = all members
+  createdById  String
+  createdBy    User      @relation(fields: [createdById], references: [id])
+  rsvps        Rsvp[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([startsAt])
+}
+
+enum RsvpAnswer {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+model Rsvp {
+  id        String     @id @default(cuid())
+  eventId   String
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer    RsvpAnswer
+  guests    Int        @default(0)
+  updatedAt DateTime   @updatedAt
+
+  @@unique([eventId, userId])
+}
+
+model NewsPost {
+  id          String    @id @default(cuid())
+  titleJa     String?
+  titleEn     String?
+  bodyJa      String?
+  bodyEn      String?
+  coverUrl    String?
+  targetRoles RoleKey[]
+  pinned      Boolean   @default(false)
+  publishedAt DateTime?
+  notifiedAt  DateTime? // added: set once the publish notification batch has gone out
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([publishedAt])
+}
+
+model NotificationLog {
+  id      String   @id @default(cuid())
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel String // LINE | EMAIL
+  kind    String // EVENT_REMINDER_7D | EVENT_REMINDER_1D | NEWS | VERIFICATION | STAGE_PROMPT | ...
+  refId   String?
+  sentAt  DateTime @default(now())
+
+  @@index([userId, kind, refId])
+}
+
+// Added (§15 Observability): every admin action.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String?
+  targetId   String?
+  data       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+}

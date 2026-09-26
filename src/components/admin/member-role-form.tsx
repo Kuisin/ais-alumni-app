@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
+import type { CohortOption } from "@/lib/cohorts";
 import { AdminFormResult } from "./form-result";
 
 export type RoleValues = {
   role: RoleKey;
+  cohortId: string | null;
   yearsFrom: number | null;
   yearsTo: number | null;
   subjects: string | null;
@@ -39,14 +41,55 @@ function RoleFields({
   role,
   values,
   idPrefix,
+  cohorts,
 }: {
   role: RoleKey;
   values?: RoleValues;
   idPrefix: string;
+  cohorts: CohortOption[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tr = useTranslations("roles");
   const id = (k: string) => `${idPrefix}-${k}`;
+  // 学年 (student roles) and the member's own years at AIS (kept separate).
+  const cohortField = (
+    <Field id={id("cohortId")} label={t("cohort")}>
+      {(a) => (
+        <Select {...a} name="cohortId" defaultValue={s(values?.cohortId)}>
+          <option value="">{t("unknown")}</option>
+          {cohorts.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
+          ))}
+        </Select>
+      )}
+    </Field>
+  );
+  const yearsFields = (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field id={id("yearsFrom")} label={t("yearsFromAny")}>
+        {(a) => (
+          <Input
+            {...a}
+            name="yearsFrom"
+            inputMode="numeric"
+            defaultValue={s(values?.yearsFrom)}
+          />
+        )}
+      </Field>
+      <Field id={id("yearsTo")} label={t("yearsToAny")}>
+        {(a) => (
+          <Input
+            {...a}
+            name="yearsTo"
+            inputMode="numeric"
+            defaultValue={s(values?.yearsTo)}
+          />
+        )}
+      </Field>
+    </div>
+  );
 
   if (role === RoleKey.TEACHER) {
     return (
@@ -102,6 +145,7 @@ function RoleFields({
   if (role === RoleKey.CURRENT_STUDENT) {
     return (
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">{cohortField}</div>
         <Field id={id("currentGrade")} label={t("currentGrade")}>
           {(a) => (
             <Select
@@ -133,6 +177,8 @@ function RoleFields({
   if (role === RoleKey.FORMER_STUDENT) {
     return (
       <div className="space-y-4">
+        {cohortField}
+        {yearsFields}
         <fieldset className="grid gap-4 sm:grid-cols-3">
           <legend className="mb-2 text-sm font-semibold text-slate-700">
             {t("aisRecord")}
@@ -219,7 +265,8 @@ function RoleFields({
       </div>
     );
   }
-  // CURRENT_PARENT / FORMER_PARENT have no role-specific fields.
+  if (role === RoleKey.FORMER_PARENT) return yearsFields;
+  // CURRENT_PARENT has no role-specific fields.
   return <p className="text-sm text-slate-600">{t("noFields")}</p>;
 }
 
@@ -227,9 +274,11 @@ function RoleFields({
 export function MemberRoleForm({
   userId,
   values,
+  cohorts,
 }: {
   userId: string;
   values: RoleValues;
+  cohorts: CohortOption[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tc = useTranslations("common");
@@ -252,6 +301,7 @@ export function MemberRoleForm({
           role={values.role}
           values={values}
           idPrefix={`r-${values.role}`}
+          cohorts={cohorts}
         />
         <AdminFormResult state={state} />
         <SubmitButton variant="secondary" pendingText={tc("saving")}>
@@ -291,9 +341,11 @@ export function MemberRoleForm({
 export function AddRoleForm({
   userId,
   available,
+  cohorts,
 }: {
   userId: string;
   available: RoleKey[];
+  cohorts: CohortOption[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tr = useTranslations("roles");
@@ -324,7 +376,9 @@ export function AddRoleForm({
           </Select>
         )}
       </Field>
-      {role ? <RoleFields key={role} role={role} idPrefix="add" /> : null}
+      {role ? (
+        <RoleFields key={role} role={role} idPrefix="add" cohorts={cohorts} />
+      ) : null}
       <AdminFormResult state={state} />
       {role ? (
         <SubmitButton pendingText={tc("saving")}>{t("add")}</SubmitButton>

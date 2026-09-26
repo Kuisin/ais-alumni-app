@@ -18,7 +18,7 @@ export type BroadcastFormState = {
   /** key in the "broadcast" namespace */
   message?: string;
   fieldErrors?: Partial<
-    Record<"title" | "body" | "audience" | "cohortYear", string>
+    Record<"title" | "body" | "audience" | "cohortId", string>
   >;
   preview?: BroadcastPreview;
 } | null;
@@ -27,7 +27,7 @@ const formSchema = z
   .object({
     audience: z.enum(["ALL", "ROLES", "COHORT"]),
     roles: z.array(z.enum(RoleKey)),
-    cohortYear: z.string().trim(),
+    cohortId: z.string().trim(),
     title: z.string().trim().min(1, "required").max(100, "tooLong"),
     body: z.string().trim().min(1, "required").max(2000, "tooLong"),
   })
@@ -38,17 +38,16 @@ const formSchema = z
         path: ["audience"],
         message: "rolesRequired",
       });
-    if (v.audience === "COHORT" && !/^\d{4}$/.test(v.cohortYear))
+    if (v.audience === "COHORT" && !v.cohortId)
       ctx.addIssue({
         code: "custom",
-        path: ["cohortYear"],
-        message: "invalidYear",
+        path: ["cohortId"],
+        message: "cohortRequired",
       });
   });
 
 function toAudience(v: z.infer<typeof formSchema>): Audience {
-  if (v.audience === "COHORT")
-    return { scope: "COHORT", cohortYear: Number(v.cohortYear) };
+  if (v.audience === "COHORT") return { scope: "COHORT", cohortId: v.cohortId };
   return { scope: "ALL", targetRoles: v.audience === "ROLES" ? v.roles : [] };
 }
 
@@ -74,7 +73,7 @@ export async function broadcastAction(
   const parsed = formSchema.safeParse({
     audience: fd.get("audience"),
     roles: fd.getAll("roles"),
-    cohortYear: String(fd.get("cohortYear") ?? ""),
+    cohortId: String(fd.get("cohortId") ?? ""),
     title: String(fd.get("title") ?? ""),
     body: String(fd.get("body") ?? ""),
   });

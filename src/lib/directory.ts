@@ -40,6 +40,7 @@ export const PUBLIC_CARD_SELECT = {
       didGraduate: true,
       currentStage: true,
       currentGrade: true,
+      cohortId: true,
     },
   },
 } as const satisfies Prisma.UserSelect;
@@ -55,6 +56,8 @@ export type DirectoryFilters = {
   yearTo: number | null;
   division: Division | null;
   stage: LifeStage | null;
+  /** 学年 (Cohort id) */
+  cohort: string | null;
   cursor: string | null;
 };
 
@@ -88,6 +91,7 @@ export function parseDirectoryFilters(params: RawParams): DirectoryFilters {
     [yearFrom, yearTo] = [yearTo, yearFrom];
   }
   const cursor = first(params.cursor);
+  const cohort = first(params.cohort);
   return {
     q,
     role: oneOf(RoleKey, first(params.role)),
@@ -95,6 +99,7 @@ export function parseDirectoryFilters(params: RawParams): DirectoryFilters {
     yearTo,
     division: oneOf(Division, first(params.division)),
     stage: oneOf(LifeStage, first(params.stage)),
+    cohort: cohort && /^[a-z0-9]{10,40}$/i.test(cohort) ? cohort : null,
     // cuid ids only; anything else is ignored rather than sent to the DB.
     cursor: cursor && /^[a-z0-9]{10,40}$/i.test(cursor) ? cursor : null,
   };
@@ -112,6 +117,7 @@ export function directoryQuery(
   if (f.yearTo !== null) p.set("to", String(f.yearTo));
   if (f.division) p.set("division", f.division);
   if (f.stage) p.set("stage", f.stage);
+  if (f.cohort) p.set("cohort", f.cohort);
   if (cursor) p.set("cursor", cursor);
   const s = p.toString();
   return s ? `?${s}` : "";
@@ -124,7 +130,8 @@ export function hasActiveFilters(f: DirectoryFilters): boolean {
       f.yearFrom !== null ||
       f.yearTo !== null ||
       f.division ||
-      f.stage,
+      f.stage ||
+      f.cohort,
   );
 }
 
@@ -182,6 +189,7 @@ export function buildDirectoryWhere(
   }
   if (f.division) roleWhere.lastDivision = f.division;
   if (f.stage) roleWhere.currentStage = f.stage;
+  if (f.cohort) roleWhere.cohortId = f.cohort;
   if (Object.keys(roleWhere).length) and.push({ roles: { some: roleWhere } });
 
   // Minors (§8): hidden unless the viewer is a teacher, an admin, or family.

@@ -48,7 +48,9 @@
     "firstNameRomaji": "First name",
     "middleNameRomaji": "Middle name",
     "lastNameKanji": "Last name (姓)",
-    "firstNameKanji": "First name (名)"
+    "firstNameKanji": "First name (名)",
+    "cohort": "Your 学年 (class)",
+    "cohortFilter": "Show classes"
   },
   "hints": {
     "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",
@@ -60,7 +62,8 @@
     "subjects": "e.g. Math, G9–12",
     "schoolEmail": "If you have an AIS email address, we can send it a code to confirm your role faster.",
     "parentConfirmation": "Student accounts must also be confirmed by a parent or guardian with an AIS Alumni account, or by the committee.",
-    "classmates": "We may ask these members to confirm that they know you. Please give 1–2 names."
+    "classmates": "We may ask these members to confirm that they know you. Please give 1–2 names.",
+    "cohort": "Classes are numbered by the year they finished 6th grade (2016 = 第5期). Choose the class you belong to, even if you joined or left AIS in a different year."
   },
   "didGraduate": {
     "yes": "Yes, I graduated",
@@ -127,5 +130,11 @@
   "back": "Back",
   "next": "Next",
   "submit": "Submit application",
-  "submitting": "Submitting…"
+  "submitting": "Submitting…",
+  "cohortNotListed": "Not listed / not sure",
+  "cohortFilter": {
+    "graduated": "Graduated",
+    "current": "At AIS",
+    "all": "All"
+  }
 }

@@ -1,0 +1,47 @@
+{
+  "title": "学年 (classes)",
+  "description": "Classes are numbered by the year they finish 6th grade (finishing in 2016 = 第5期). They are separate from each member's own join and leave / graduation years.",
+  "bulk": {
+    "title": "Create missing classes",
+    "description": "Classes from 第1期 up to this year's 1st graders (第{latest}期).",
+    "button": "Create {count} missing classes (up to 第{latest}期)",
+    "none": "All classes up to the current 1st graders exist."
+  },
+  "addTitle": "Add a class",
+  "create": "Add class",
+  "save": "Save",
+  "edit": "Edit",
+  "delete": "Delete class",
+  "cannotDelete": "Classes with members, representatives or sent notifications can't be deleted.",
+  "empty": "No classes yet.",
+  "numberValue": "第{number}期",
+  "elementary": "Elementary {start}–{end}",
+  "members": "{count, plural, =0 {No members} one {1 member} other {# members}}",
+  "status": {
+    "graduated": "Graduated",
+    "current": "At AIS"
+  },
+  "markGraduated": "Mark as graduated",
+  "markCurrent": "Mark as at AIS",
+  "fields": {
+    "number": "Class number",
+    "elementaryStartYear": "Elementary start year",
+    "elementaryEndYear": "Year they finish 6th grade",
+    "note": "Note (optional)",
+    "graduated": "This class has graduated"
+  },
+  "hints": {
+    "start": "Suggested: six years earlier.",
+    "end": "Sets the number: 2016 → 第5期.",
+    "endChangesNumber": "Changing this changes the class number."
+  },
+  "created": "Class added.",
+  "saved": "Saved.",
+  "errors": {
+    "forbidden": "You don't have permission to do that.",
+    "years": "Enter 4-digit years.",
+    "yearsOrder": "The end year must be after the start year.",
+    "beforeFirst": "第1期 finished 6th grade in 2012; earlier years aren't valid.",
+    "exists": "That class already exists."
+  }
+}

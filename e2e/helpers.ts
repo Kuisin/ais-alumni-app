@@ -42,6 +42,21 @@ async function resetCodes(email: string): Promise<void> {
   }
 }
 
+/** Forget a test member's sent notifications so the send limit doesn't block reruns. */
+export async function resetBroadcasts(email: string): Promise<void> {
+  if (!email.endsWith("@example.com")) return;
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    await db.query(
+      'DELETE FROM "Broadcast" WHERE "senderId" IN (SELECT id FROM "User" WHERE "primaryEmail" = $1)',
+      [email],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
 /** Email-code sign-in from the English sign-in page (/en/app). */
 export async function signInWithEmail(
   page: Page,

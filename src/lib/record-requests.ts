@@ -8,6 +8,7 @@ import { Division, type RoleKey } from "@/generated/prisma/enums";
  */
 export const RECORD_FIELDS = {
   FORMER_STUDENT: [
+    "cohortId",
     "yearsFrom",
     "yearsTo",
     "lastDivision",
@@ -15,12 +16,13 @@ export const RECORD_FIELDS = {
     "didGraduate",
   ],
   TEACHER: ["yearsFrom", "yearsTo", "subjects"],
-  CURRENT_STUDENT: ["currentGrade", "studentIdNo"],
+  CURRENT_STUDENT: ["cohortId", "currentGrade", "studentIdNo"],
   FORMER_PARENT: ["yearsFrom", "yearsTo"],
   CURRENT_PARENT: [],
 } as const satisfies Record<RoleKey, readonly string[]>;
 
 export type RecordField =
+  | "cohortId"
   | "yearsFrom"
   | "yearsTo"
   | "lastDivision"
@@ -31,6 +33,7 @@ export type RecordField =
   | "studentIdNo";
 
 export type RecordValues = Partial<{
+  cohortId: string | null;
   yearsFrom: number | null;
   yearsTo: number | null;
   lastDivision: Division | null;
@@ -80,6 +83,12 @@ const text = (max: number) =>
     .transform((v) => v || null);
 
 const FIELD_SCHEMAS: Record<RecordField, z.ZodType<unknown, string>> = {
+  // 学年: existence is checked by the server action.
+  cohortId: z
+    .string()
+    .trim()
+    .max(40)
+    .transform((v) => v || null),
   yearsFrom: year,
   yearsTo: year,
   graduationOrLeaveYear: year,

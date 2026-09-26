@@ -1,16 +1,16 @@
 {
   "pageTitle": "お知らせを送る",
   "descriptionAny": "会員にLINE（LINE未連携の方にはメール）でメッセージを送ります。",
-  "descriptionLeader": "学年代表として、同じ学年（卒業年）の会員にLINE（またはメール）でメッセージを送れます。",
+  "descriptionLeader": "学年代表として、同じ学年の会員にLINE（またはメール）でメッセージを送れます。",
   "audience": {
     "label": "送信先",
     "ALL": "すべての会員",
     "ROLES": "選択した立場の会員",
-    "COHORT": "学年（卒業年）",
-    "cohortYear": "卒業年",
-    "cohortHint": "その年に卒業・退学した卒業生と、その年に卒業予定の在校生に送られます。",
-    "classOf": "{year}年卒",
-    "leaderOnly": "あなたの学年："
+    "COHORT": "学年",
+    "cohortHint": "この学年を選択している在校生・卒業生に送られます。",
+    "leaderOnly": "あなたの学年：",
+    "cohort": "学年",
+    "chooseCohort": "学年を選択"
   },
   "title": "件名",
   "body": "本文",
@@ -35,7 +35,7 @@
     "required": "この項目は必須です。",
     "tooLong": "長すぎます。",
     "rolesRequired": "1つ以上選択してください。",
-    "invalidYear": "4桁の西暦で入力してください。"
+    "cohortRequired": "学年を選択してください。"
   },
   "errors": {
     "forbidden": "もう一度ログインしてください。",

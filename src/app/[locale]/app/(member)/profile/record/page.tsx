@@ -7,6 +7,7 @@ import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ChangeRequestStatus } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import {
@@ -43,6 +44,8 @@ export default async function RecordPage() {
     take: 20,
   });
   const roles = me.roles.filter((r) => hasRecord(r.role));
+  const cohorts = await loadCohortOptions(locale);
+  const cohortLabels = Object.fromEntries(cohorts.map((c) => [c.id, c.label]));
 
   return (
     <div className="space-y-6">
@@ -74,7 +77,12 @@ export default async function RecordPage() {
                 <div key={f} className="contents">
                   <dt className="text-slate-600">{t(`fields.${f}`)}</dt>
                   <dd>
-                    <RecordValue field={f} value={current[f]} role={r.role} />
+                    <RecordValue
+                      field={f}
+                      value={current[f]}
+                      role={r.role}
+                      cohortLabels={cohortLabels}
+                    />
                   </dd>
                 </div>
               ))}
@@ -88,6 +96,7 @@ export default async function RecordPage() {
                   })}
                 </p>
                 <RecordDiff
+                  cohortLabels={cohortLabels}
                   role={r.role}
                   current={pending.current as Record<string, unknown>}
                   proposed={pending.proposed as Record<string, unknown>}
@@ -107,6 +116,7 @@ export default async function RecordPage() {
                 </summary>
                 <div className="mt-4">
                   <RecordRequestForm
+                    cohorts={cohorts}
                     role={r.role}
                     fields={fieldsFor(r.role)}
                     values={toFormValues(r.role, current)}
@@ -136,6 +146,7 @@ export default async function RecordPage() {
                     </span>
                   </div>
                   <RecordDiff
+                    cohortLabels={cohortLabels}
                     role={q.role}
                     current={q.current as Record<string, unknown>}
                     proposed={q.proposed as Record<string, unknown>}

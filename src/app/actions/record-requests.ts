@@ -76,6 +76,18 @@ export async function submitRecordRequestAction(
     };
   }
 
+  if (parsed.values.cohortId) {
+    const exists = await db.cohort.findUnique({
+      where: { id: parsed.values.cohortId },
+      select: { id: true },
+    });
+    if (!exists)
+      return {
+        ok: false,
+        message: "errors.validation",
+        fieldErrors: { cohortId: "invalid" },
+      };
+  }
   const current = snapshot(role.data, roleRow);
   const proposed = diffRecord(current, parsed.values);
   if (Object.keys(proposed).length === 0)

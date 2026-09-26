@@ -23,7 +23,8 @@
     "didGraduate": "AISを卒業",
     "subjects": "担当教科・学年",
     "currentGrade": "現在の学年",
-    "studentIdNo": "学籍番号"
+    "studentIdNo": "学籍番号",
+    "cohortId": "学年"
   },
   "diff": {
     "field": "項目",
@@ -90,5 +91,6 @@
       "APPROVE": "承認して反映",
       "REJECT": "却下"
     }
-  }
+  },
+  "cohortCurrent": "在校中"
 }

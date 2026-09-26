@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Division, LifeStage } from "@/generated/prisma/enums";
+import type { CohortOption } from "@/lib/cohorts";
 import {
   emptyCurrentChild,
   emptyFormerChild,
@@ -12,6 +13,7 @@ import {
   type VerifyFormState,
 } from "@/lib/verification/schema";
 import {
+  CohortPicker,
   EnumSelect,
   type Errors,
   GradeSelect,
@@ -106,7 +108,8 @@ export function CurrentStudentSection({
   value,
   onChange,
   errors,
-}: SectionProps<"currentStudent">) {
+  cohorts,
+}: SectionProps<"currentStudent"> & { cohorts: CohortOption[] }) {
   const t = useTranslations("verify");
   const tr = useTranslations("roles");
   const set = (patch: Partial<VerifyFormState["currentStudent"]>) =>
@@ -114,6 +117,14 @@ export function CurrentStudentSection({
   return (
     <Section title={tr("role.CURRENT_STUDENT")}>
       <Alert tone="info">{t("hints.parentConfirmation")}</Alert>
+      <CohortPicker
+        path="currentStudent.cohortId"
+        value={value.cohortId}
+        onChange={(v) => set({ cohortId: v })}
+        errors={errors}
+        cohorts={cohorts}
+        defaultFilter="current"
+      />
       <GradeSelect
         path="currentStudent.grade"
         label={t("fields.grade")}
@@ -297,13 +308,45 @@ export function FormerStudentSection({
   value,
   onChange,
   errors,
-}: SectionProps<"formerStudent">) {
+  cohorts,
+}: SectionProps<"formerStudent"> & { cohorts: CohortOption[] }) {
   const t = useTranslations("verify");
   const tr = useTranslations("roles");
   const set = (patch: Partial<VerifyFormState["formerStudent"]>) =>
     onChange({ ...value, ...patch });
   return (
     <Section title={tr("role.FORMER_STUDENT")}>
+      <CohortPicker
+        path="formerStudent.cohortId"
+        value={value.cohortId}
+        onChange={(v) => set({ cohortId: v })}
+        errors={errors}
+        cohorts={cohorts}
+        defaultFilter="graduated"
+      />
+      <fieldset className="space-y-1">
+        <legend className="text-sm font-medium text-slate-800">
+          {t("fields.didGraduate")}
+          <span className="ml-1 text-red-700" aria-hidden="true">
+            *
+          </span>
+        </legend>
+        <div className="flex flex-wrap gap-4">
+          {(["yes", "no"] as const).map((v) => (
+            <label key={v} className="flex min-h-11 items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="formerStudent-didGraduate"
+                className="size-5"
+                checked={value.didGraduate === v}
+                onChange={() => set({ didGraduate: v })}
+              />
+              {t(`didGraduate.${v}`)}
+            </label>
+          ))}
+        </div>
+        <GroupError errors={errors} path="formerStudent.didGraduate" />
+      </fieldset>
       <YearsRow>
         <YearInput
           path="formerStudent.yearsFrom"
@@ -338,29 +381,6 @@ export function FormerStudentSection({
         onChange={(v) => set({ graduationOrLeaveYear: v })}
         errors={errors}
       />
-      <fieldset className="space-y-1">
-        <legend className="text-sm font-medium text-slate-800">
-          {t("fields.didGraduate")}
-          <span className="ml-1 text-red-700" aria-hidden="true">
-            *
-          </span>
-        </legend>
-        <div className="flex flex-wrap gap-4">
-          {(["yes", "no"] as const).map((v) => (
-            <label key={v} className="flex min-h-11 items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="formerStudent-didGraduate"
-                className="size-5"
-                checked={value.didGraduate === v}
-                onChange={() => set({ didGraduate: v })}
-              />
-              {t(`didGraduate.${v}`)}
-            </label>
-          ))}
-        </div>
-        <GroupError errors={errors} path="formerStudent.didGraduate" />
-      </fieldset>
       <TextInput
         path="formerStudent.homeroomTeacher"
         label={t("fields.homeroomTeacherThen")}

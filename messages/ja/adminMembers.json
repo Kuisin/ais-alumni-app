@@ -86,7 +86,10 @@
     "currentStatus": "現在の状況",
     "currentStage": "現在の所属",
     "currentStageDetail": "詳細（学校名・勤務先など）",
-    "stageUpdatedAt": "現在の所属の最終更新：{date}"
+    "stageUpdatedAt": "現在の所属の最終更新：{date}",
+    "cohort": "学年",
+    "yearsToAny": "在籍終了（年）",
+    "yearsFromAny": "在籍開始（年）"
   },
   "status": {
     "title": "アカウントの状態",
@@ -164,11 +167,10 @@
   "positions": {
     "title": "役職",
     "held": "任命済み",
-    "heldCohort": "任命済み・{year}年卒",
+    "heldCohort": "任命済み・{cohort}",
     "grant": "任命する",
     "update": "更新",
     "remove": "解除",
-    "cohortYear": "担当学年（卒業年）",
     "names": {
       "TEACHER_MANAGER": "教職員・管理者",
       "STUDENT_LEADER": "学年代表"
@@ -187,7 +189,8 @@
       "forbidden": "この操作を行う権限がありません。",
       "invalid": "入力内容を確認してください。",
       "notEligible": "この役職に必要な立場がありません。",
-      "cohortYear": "担当学年を4桁の卒業年で入力してください。"
-    }
+      "cohort": "担当する学年を選択してください。"
+    },
+    "cohort": "担当学年"
   }
 }

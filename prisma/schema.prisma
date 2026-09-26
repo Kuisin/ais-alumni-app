@@ -190,12 +190,17 @@ model UserRole {
   currentStage          LifeStage?
   currentStageUpdatedAt DateTime?
   currentStageDetail    String? // private tier
+  // Students (CURRENT_STUDENT / FORMER_STUDENT): their 学年 (class). Kept
+  // separate from their own join / leave / graduation years above.
+  cohortId              String?
+  cohort                Cohort?    @relation(fields: [cohortId], references: [id], onDelete: SetNull)
 
   @@unique([userId, role])
   @@index([role])
   @@index([graduationOrLeaveYear])
   @@index([currentStage])
   @@index([lastDivision])
+  @@index([cohortId])
 }
 
 model Family {
@@ -447,7 +452,7 @@ model RecordChangeRequest {
 
 // Added: positions that grant extra permissions (src/lib/permissions.ts).
 // TEACHER_MANAGER (teacher) may notify all members or chosen roles;
-// STUDENT_LEADER (student) may notify their own class (cohortYear).
+// STUDENT_LEADER (student) may notify their own 学年 (cohortId).
 enum PositionKey {
   TEACHER_MANAGER
   STUDENT_LEADER
@@ -458,8 +463,9 @@ model UserPosition {
   userId      String
   user        User        @relation("positionHolder", fields: [userId], references: [id], onDelete: Cascade)
   position    PositionKey
-  // STUDENT_LEADER: the graduation year ("class of") they represent.
-  cohortYear  Int?
+  // STUDENT_LEADER: the 学年 they represent.
+  cohortId    String?
+  cohort      Cohort?     @relation(fields: [cohortId], references: [id], onDelete: SetNull)
   grantedById String?
   grantedBy   User?       @relation("positionGrantor", fields: [grantedById], references: [id], onDelete: SetNull)
   createdAt   DateTime    @default(now())
@@ -480,7 +486,8 @@ model Broadcast {
   position       PositionKey? // null when sent by an admin
   scope          BroadcastScope
   targetRoles    RoleKey[] // ALL scope: empty = every member
-  cohortYear     Int? // COHORT scope
+  cohortId       String? // COHORT scope: the 学年
+  cohort         Cohort?        @relation(fields: [cohortId], references: [id], onDelete: SetNull)
   title          String
   body           String
   recipientCount Int
@@ -489,4 +496,20 @@ model Broadcast {
   createdAt      DateTime       @default(now())
 
   @@index([senderId, createdAt])
+}
+
+// Added: 学年 (class), managed by admins. Numbered 第N期 by the year the class
+// finishes 6th grade (finishing in 2016 = 第5期; see src/lib/cohorts.ts).
+model Cohort {
+  id                  String         @id @default(cuid())
+  number              Int            @unique // 第N期
+  elementaryStartYear Int
+  elementaryEndYear   Int // year the class finishes 6th grade
+  graduated           Boolean        @default(false) // class-level 卒業済み / 在校中
+  note                String?
+  roles               UserRole[]
+  positions           UserPosition[]
+  broadcasts          Broadcast[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 }

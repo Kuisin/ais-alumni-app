@@ -7,24 +7,27 @@ import {
   setMemberPositionAction,
 } from "@/app/actions/admin-positions";
 import { Alert, Badge } from "@/components/ui/card";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { PositionKey } from "@/generated/prisma/enums";
+import type { CohortOption } from "@/lib/cohorts";
 
 /** One position row: current status plus grant / update / remove. */
 export function MemberPositionControl({
   userId,
   position,
   held,
-  cohortYear,
-  defaultCohortYear,
+  cohortId,
+  defaultCohortId,
+  cohorts,
   eligible,
 }: {
   userId: string;
   position: PositionKey;
   held: boolean;
-  cohortYear: number | null;
-  defaultCohortYear: number | null;
+  cohortId: string | null;
+  defaultCohortId: string | null;
+  cohorts: CohortOption[];
   eligible: boolean;
 }) {
   const t = useTranslations("adminMembers.positions");
@@ -40,8 +43,10 @@ export function MemberPositionControl({
         <span className="font-medium">{t(`names.${position}`)}</span>
         {held ? (
           <Badge tone="green">
-            {needsCohort && cohortYear
-              ? t("heldCohort", { year: cohortYear })
+            {needsCohort && cohortId
+              ? t("heldCohort", {
+                  cohort: cohorts.find((c) => c.id === cohortId)?.label ?? "—",
+                })
               : t("held")}
           </Badge>
         ) : null}
@@ -54,16 +59,20 @@ export function MemberPositionControl({
           <input type="hidden" name="userId" value={userId} />
           <input type="hidden" name="position" value={position} />
           {needsCohort ? (
-            <Field id={`cohort-${position}`} label={t("cohortYear")}>
+            <Field id={`cohort-${position}`} label={t("cohort")}>
               {(a) => (
-                <Input
+                <Select
                   {...a}
-                  name="cohortYear"
-                  inputMode="numeric"
-                  maxLength={4}
-                  defaultValue={String(cohortYear ?? defaultCohortYear ?? "")}
-                  className="w-28"
-                />
+                  name="cohortId"
+                  defaultValue={cohortId ?? defaultCohortId ?? ""}
+                >
+                  <option value="">—</option>
+                  {cohorts.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </Select>
               )}
             </Field>
           ) : null}

@@ -10,6 +10,7 @@ import { Alert } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Division, type RoleKey } from "@/generated/prisma/enums";
+import type { CohortOption } from "@/lib/cohorts";
 import type { RecordField } from "@/lib/record-requests";
 
 const YEAR_FIELDS = new Set<RecordField>([
@@ -24,10 +25,12 @@ export function RecordRequestForm({
   role,
   fields,
   values,
+  cohorts,
 }: {
   role: RoleKey;
   fields: readonly RecordField[];
   values: Record<string, string>;
+  cohorts: CohortOption[];
 }) {
   const t = useTranslations("records");
   const tr = useTranslations("roles");
@@ -65,6 +68,23 @@ export function RecordRequestForm({
               maxLength={4}
               placeholder="2015"
             />
+          )}
+        </Field>
+      );
+    }
+    if (f === "cohortId") {
+      return (
+        <Field key={f} id={id(f)} label={t(`fields.${f}`)} error={err(f)}>
+          {(a) => (
+            <Select {...a} name={f} defaultValue={values[f]}>
+              <option value="">—</option>
+              {cohorts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                  {c.graduated ? "" : ` · ${t("cohortCurrent")}`}
+                </option>
+              ))}
+            </Select>
           )}
         </Field>
       );

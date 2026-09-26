@@ -48,7 +48,9 @@
     "firstNameRomaji": "名（First name）",
     "middleNameRomaji": "ミドルネーム",
     "lastNameKanji": "姓",
-    "firstNameKanji": "名"
+    "firstNameKanji": "名",
+    "cohort": "学年",
+    "cohortFilter": "表示する学年"
   },
   "hints": {
     "nameRomaji": "ローマ字で入力してください。例：Yamada / Taro",
@@ -60,7 +62,8 @@
     "subjects": "例：数学、9〜12年生",
     "schoolEmail": "AISのメールアドレスをお持ちの場合、確認コードを送ることで確認が早くなります。",
     "parentConfirmation": "在校生のアカウントは、AIS Alumniに登録済みの保護者、または委員会による確認も必要です。",
-    "classmates": "確認のため、これらの会員にあなたをご存じか問い合わせることがあります。1〜2名のお名前を入力してください。"
+    "classmates": "確認のため、これらの会員にあなたをご存じか問い合わせることがあります。1〜2名のお名前を入力してください。",
+    "cohort": "学年は小学6年生を修了した年で決まります（2016年修了＝第5期）。入学・退学の年が異なっていても、所属する学年を選んでください。"
   },
   "didGraduate": {
     "yes": "はい、卒業しました",
@@ -127,5 +130,11 @@
   "back": "戻る",
   "next": "次へ",
   "submit": "申請を送信",
-  "submitting": "送信中…"
+  "submitting": "送信中…",
+  "cohortNotListed": "一覧にない・わからない",
+  "cohortFilter": {
+    "graduated": "卒業済み",
+    "current": "在校中",
+    "all": "すべて"
+  }
 }

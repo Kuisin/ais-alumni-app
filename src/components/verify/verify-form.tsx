@@ -17,6 +17,7 @@ import { Alert } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { RoleKey } from "@/generated/prisma/enums";
+import type { CohortOption } from "@/lib/cohorts";
 import { composeKanji, composeRomaji } from "@/lib/names";
 import {
   issuesToErrors,
@@ -74,7 +75,9 @@ export function VerifyForm({
   userId,
   useBlob,
   initialVerifiedSchoolEmail,
+  cohorts,
 }: {
+  cohorts: CohortOption[];
   initial: VerifyFormState;
   uiLocale: "ja" | "en";
   userId: string;
@@ -369,6 +372,7 @@ export function VerifyForm({
                     value={state.currentStudent}
                     onChange={(v) => set("currentStudent", v)}
                     errors={errors}
+                    cohorts={cohorts}
                   />
                 );
               case "CURRENT_PARENT":
@@ -387,6 +391,7 @@ export function VerifyForm({
                     value={state.formerStudent}
                     onChange={(v) => set("formerStudent", v)}
                     errors={errors}
+                    cohorts={cohorts}
                   />
                 );
               case "FORMER_PARENT":

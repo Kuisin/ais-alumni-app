@@ -3,13 +3,16 @@ import { buttonClass } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import type { CohortOption } from "@/lib/cohorts";
 import { type DirectoryFilters, MAX_YEAR, MIN_YEAR } from "@/lib/directory";
 
 /** Plain GET form so filtering works without JavaScript (§10.1). */
 export async function DirectoryFilterForm({
   filters,
+  cohorts,
 }: {
   filters: DirectoryFilters;
+  cohorts: CohortOption[];
 }) {
   const t = await getTranslations("directory");
   const tr = await getTranslations("roles");
@@ -92,6 +95,22 @@ export async function DirectoryFilterForm({
                 {Object.values(Division).map((d) => (
                   <option key={d} value={d}>
                     {tr(`division.${d}`)}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+          <Field id="dir-cohort" label={t("filters.cohort")}>
+            {(aria) => (
+              <Select
+                {...aria}
+                name="cohort"
+                defaultValue={filters.cohort ?? ""}
+              >
+                <option value="">{t("filters.any")}</option>
+                {cohorts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
                   </option>
                 ))}
               </Select>

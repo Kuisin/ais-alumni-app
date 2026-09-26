@@ -44,6 +44,7 @@ export async function AppShell({
       label: t("adminNav.recordRequests"),
     },
     { href: "/app/admin/members", label: t("adminNav.members") },
+    { href: "/app/admin/cohorts", label: t("adminNav.cohorts") },
     { href: "/app/admin/events", label: t("adminNav.events") },
     { href: "/app/admin/news", label: t("adminNav.news") },
     { href: "/app/admin/roster", label: t("adminNav.roster") },

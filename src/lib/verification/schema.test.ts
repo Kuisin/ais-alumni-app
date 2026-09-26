@@ -15,6 +15,7 @@ function filled() {
   s.dateOfBirth = "2000-04-02";
   s.roles = ["FORMER_STUDENT", "TEACHER"];
   s.formerStudent = {
+    cohortId: "",
     yearsFrom: "2006",
     yearsTo: "2018",
     lastDivision: "HIGH_SCHOOL",

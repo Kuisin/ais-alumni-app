@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   broadcastRights,
-  classOf,
-  gradeForClassOf,
   type Holder,
   positionEligible,
   rightFor,
-  schoolYearEnd,
   withinLimit,
 } from "./permissions";
 
@@ -39,7 +36,7 @@ describe("broadcast rights", () => {
   it("teacher managers may notify anyone; without the teacher role nothing", () => {
     const mgr = h({
       roles: ["TEACHER"],
-      positions: [{ position: "TEACHER_MANAGER", cohortYear: null }],
+      positions: [{ position: "TEACHER_MANAGER", cohortId: null }],
     });
     const rights = broadcastRights(mgr);
     expect(rightFor(rights, { scope: "ALL", targetRoles: [] })).toMatchObject({
@@ -47,7 +44,7 @@ describe("broadcast rights", () => {
       position: "TEACHER_MANAGER",
     });
     expect(
-      rightFor(rights, { scope: "COHORT", cohortYear: 2010 }),
+      rightFor(rights, { scope: "COHORT", cohortId: "c1" }),
     ).not.toBeNull();
     expect(broadcastRights({ ...mgr, roles: ["FORMER_PARENT"] })).toEqual([]);
   });
@@ -55,13 +52,13 @@ describe("broadcast rights", () => {
   it("student leaders may only notify their own class", () => {
     const leader = h({
       roles: ["FORMER_STUDENT"],
-      positions: [{ position: "STUDENT_LEADER", cohortYear: 2015 }],
+      positions: [{ position: "STUDENT_LEADER", cohortId: "c5" }],
     });
     const rights = broadcastRights(leader);
-    expect(
-      rightFor(rights, { scope: "COHORT", cohortYear: 2015 }),
-    ).toMatchObject({ kind: "COHORT", cohortYear: 2015 });
-    expect(rightFor(rights, { scope: "COHORT", cohortYear: 2016 })).toBeNull();
+    expect(rightFor(rights, { scope: "COHORT", cohortId: "c5" })).toMatchObject(
+      { kind: "COHORT", cohortId: "c5" },
+    );
+    expect(rightFor(rights, { scope: "COHORT", cohortId: "c6" })).toBeNull();
     expect(rightFor(rights, { scope: "ALL", targetRoles: [] })).toBeNull();
   });
 
@@ -92,19 +89,5 @@ describe("limits", () => {
       withinLimit("TEACHER_MANAGER", Array(20).fill(daysAgo(0.5)), now),
     ).toBe(false);
     expect(withinLimit(null, Array(100).fill(now), now)).toBe(true);
-  });
-});
-
-describe("class year", () => {
-  it("school year starts in August (JST)", () => {
-    expect(schoolYearEnd(new Date("2026-07-31T12:00:00Z"))).toBe(2026);
-    expect(schoolYearEnd(new Date("2026-08-01T00:00:00Z"))).toBe(2027);
-  });
-  it("maps grades to graduation years and back", () => {
-    const sept2026 = new Date("2026-09-27T00:00:00Z"); // school year 2026–27
-    expect(classOf(12, sept2026)).toBe(2027);
-    expect(classOf(0, sept2026)).toBe(2039);
-    expect(gradeForClassOf(2030, sept2026)).toBe(9);
-    expect(gradeForClassOf(2015, sept2026)).toBeNull();
   });
 });

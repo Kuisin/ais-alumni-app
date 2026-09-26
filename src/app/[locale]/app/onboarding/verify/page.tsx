@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Alert, PageHeader } from "@/components/ui/card";
 import { VerifyForm } from "@/components/verify/verify-form";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { namePartsOf } from "@/lib/names";
 import { requireState } from "@/lib/session";
@@ -96,6 +97,7 @@ export default async function VerifyPage({ params }: Props) {
         userId={user.id}
         useBlob={isBlobConfigured()}
         initialVerifiedSchoolEmail={verifiedSchoolEmail}
+        cohorts={await loadCohortOptions(uiLocale)}
       />
     </>
   );

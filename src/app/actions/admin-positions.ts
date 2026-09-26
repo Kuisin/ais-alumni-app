@@ -14,7 +14,7 @@ const schema = z.object({
   userId: z.string().min(1).max(64),
   position: z.enum(PositionKey),
   grant: z.enum(["yes", "no"]),
-  cohortYear: z.string().trim(),
+  cohortId: z.string().trim(),
 });
 
 /** Admin: grant or remove a position (message = key in adminMembers.positions). */
@@ -34,7 +34,7 @@ export async function setMemberPositionAction(
     userId: fd.get("userId"),
     position: fd.get("position"),
     grant: fd.get("grant"),
-    cohortYear: String(fd.get("cohortYear") ?? ""),
+    cohortId: String(fd.get("cohortId") ?? ""),
   });
   if (!parsed.success) return { ok: false, message: "errors.invalid" };
   const { userId, position } = parsed.data;
@@ -63,22 +63,27 @@ export async function setMemberPositionAction(
   ) {
     return { ok: false, message: "errors.notEligible" };
   }
-  let cohortYear: number | null = null;
+  let cohortId: string | null = null;
   if (position === PositionKey.STUDENT_LEADER) {
-    if (!/^\d{4}$/.test(parsed.data.cohortYear))
-      return { ok: false, message: "errors.cohortYear" };
-    cohortYear = Number(parsed.data.cohortYear);
+    const cohort = parsed.data.cohortId
+      ? await db.cohort.findUnique({
+          where: { id: parsed.data.cohortId },
+          select: { id: true },
+        })
+      : null;
+    if (!cohort) return { ok: false, message: "errors.cohort" };
+    cohortId = cohort.id;
   }
   await db.userPosition.upsert({
     where: { userId_position: { userId, position } },
-    create: { userId, position, cohortYear, grantedById: admin.id },
-    update: { cohortYear, grantedById: admin.id },
+    create: { userId, position, cohortId, grantedById: admin.id },
+    update: { cohortId, grantedById: admin.id },
   });
   await audit(
     admin.id,
     "member.position_granted",
     { type: "User", id: userId },
-    { position, cohortYear },
+    { position, cohortId },
   );
   refresh();
   return { ok: true, message: "granted" };

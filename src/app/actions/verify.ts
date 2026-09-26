@@ -7,7 +7,6 @@ import {
   AccountState,
   OtpPurpose,
   RoleKey,
-  TeacherStatus,
   VerificationStatus,
 } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";

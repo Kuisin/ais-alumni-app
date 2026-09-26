@@ -5,13 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
-import {
-  AccountState,
-  Division,
-  LifeStage,
-  RoleKey,
-  TeacherStatus,
-} from "@/generated/prisma/enums";
+import { AccountState, LifeStage, RoleKey } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { getTranslatorFor } from "@/i18n/translator";
 import { canRevokeAdmin } from "@/lib/account";

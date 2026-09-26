@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { type CohortChoice, elementaryEndFor, gradeLabel } from "@/lib/cohorts";
@@ -182,6 +182,8 @@ export function ParentSection({
   const t = useTranslations("verify");
   const preview = useStudentPreview();
   const children = value.children;
+  // Stable row keys so removing a middle child doesn't shuffle inputs.
+  const [ids, setIds] = useState(() => children.map(() => crypto.randomUUID()));
   const update = (i: number, patch: Partial<(typeof children)[number]>) =>
     onChange({
       children: children.map((c, j) => (j === i ? { ...c, ...patch } : c)),
@@ -196,9 +198,8 @@ export function ParentSection({
         {children.map((c, i) => {
           const p = preview(c.cohortNumber, c.leftYear);
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id before saving
             <li
-              key={i}
+              key={ids[i] ?? i}
               className="animate-rise space-y-3 rounded-xl bg-slate-50 p-3"
             >
               <div className="flex items-center justify-between">
@@ -208,9 +209,12 @@ export function ParentSection({
                 {children.length > 1 ? (
                   <Button
                     variant="ghost"
-                    onClick={() =>
-                      onChange({ children: children.filter((_, j) => j !== i) })
-                    }
+                    onClick={() => {
+                      setIds(ids.filter((_, j) => j !== i));
+                      onChange({
+                        children: children.filter((_, j) => j !== i),
+                      });
+                    }}
                     aria-label={t("removeChildN", { n: i + 1 })}
                   >
                     {t("removeChild")}
@@ -252,7 +256,10 @@ export function ParentSection({
       {children.length < MAX_CHILDREN ? (
         <Button
           variant="secondary"
-          onClick={() => onChange({ children: [...children, emptyChild()] })}
+          onClick={() => {
+            setIds([...ids, crypto.randomUUID()]);
+            onChange({ children: [...children, emptyChild()] });
+          }}
         >
           {t("addChild")}
         </Button>

@@ -10,7 +10,6 @@ import { isClassGraduated } from "@/lib/school";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("cohorts");
-  const locale = (await getLocale()) === "en" ? "en" : "ja";
   return { title: t("title") };
 }
 

@@ -296,7 +296,6 @@ export function AddRoleForm({
   cohorts: CohortChoice[];
 }) {
   const t = useTranslations("adminMembers.roles");
-  const tr = useTranslations("roles");
   const tc = useTranslations("common");
   const [role, setRole] = useState<RoleKey | "">("");
   const [state, action] = useActionState<AdminMemberFormState, FormData>(

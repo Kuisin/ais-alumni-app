@@ -24,7 +24,7 @@
     "subjects": "Subjects / grades taught",
     "currentGrade": "Current grade",
     "studentIdNo": "Student ID",
-    "cohortId": "学年 (class)"
+    "cohort": "学年 (class)"
   },
   "diff": {
     "field": "Item",

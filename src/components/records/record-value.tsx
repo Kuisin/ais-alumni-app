@@ -12,7 +12,7 @@ export function RecordValue({
   field: RecordField;
   value: unknown;
   role: RoleKey;
-  /** 学年 id → label */
+  /** 学年 number → label */
   cohortLabels?: Record<string, string>;
 }) {
   const tr = useTranslations("roles");
@@ -23,8 +23,14 @@ export function RecordValue({
       <>{field === "yearsTo" && role === "TEACHER" ? tc("present") : "—"}</>
     );
   }
-  if (field === "cohortId")
-    return <>{cohortLabels?.[value as string] ?? "—"}</>;
+  // 学年 number; label from the choices list, else "第N期".
+  if (field === "cohort")
+    return (
+      <>
+        {cohortLabels?.[String(value)] ??
+          tc("cohortNumber", { number: String(value) })}
+      </>
+    );
   if (field === "lastDivision") return <>{tr(`division.${value as string}`)}</>;
   if (field === "didGraduate") return <>{value ? tc("yes") : tc("no")}</>;
   if (field === "currentGrade")

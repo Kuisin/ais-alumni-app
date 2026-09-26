@@ -1,19 +1,11 @@
 {
   "title": "学年 (classes)",
-  "description": "Classes are numbered by the year they finish 6th grade (finishing in 2016 = 第5期). They are separate from each member's own join and leave / graduation years.",
-  "bulk": {
-    "title": "Create missing classes",
-    "description": "Classes from 第1期 up to this year's 1st graders (第{latest}期).",
-    "button": "Create {count} missing classes (up to 第{latest}期)",
-    "none": "All classes up to the current 1st graders exist."
-  },
-  "addTitle": "Add a class",
-  "create": "Add class",
+  "description": "A 学年 is created automatically the first time a member or class representative is assigned to it. Numbers follow the year the class finishes 6th grade (2016 = 第5期). You can adjust years, mark a class as graduated, or delete unused ones.",
   "save": "Save",
   "edit": "Edit",
   "delete": "Delete class",
   "cannotDelete": "Classes with members, representatives or sent notifications can't be deleted.",
-  "empty": "No classes yet.",
+  "empty": "No classes yet. They appear when members choose their 学年.",
   "numberValue": "第{number}期",
   "elementary": "Elementary {start}–{end}",
   "members": "{count, plural, =0 {No members} one {1 member} other {# members}}",
@@ -35,7 +27,6 @@
     "end": "Sets the number: 2016 → 第5期.",
     "endChangesNumber": "Changing this changes the class number."
   },
-  "created": "Class added.",
   "saved": "Saved.",
   "errors": {
     "forbidden": "You don't have permission to do that.",

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { Division, type RoleKey } from "@/generated/prisma/enums";
+import { Division, RoleKey } from "@/generated/prisma/enums";
+import { parseCohortNumber } from "@/lib/cohorts";
 
 /**
  * AIS record (在籍情報) correction requests. Members can't edit these UserRole
@@ -8,21 +9,21 @@ import { Division, type RoleKey } from "@/generated/prisma/enums";
  */
 export const RECORD_FIELDS = {
   FORMER_STUDENT: [
-    "cohortId",
+    "cohort",
     "yearsFrom",
-    "yearsTo",
     "lastDivision",
     "graduationOrLeaveYear",
     "didGraduate",
   ],
   TEACHER: ["yearsFrom", "yearsTo", "subjects"],
-  CURRENT_STUDENT: ["cohortId", "currentGrade", "studentIdNo"],
+  CURRENT_STUDENT: ["cohort", "currentGrade", "studentIdNo"],
   FORMER_PARENT: ["yearsFrom", "yearsTo"],
   CURRENT_PARENT: [],
 } as const satisfies Record<RoleKey, readonly string[]>;
 
 export type RecordField =
-  | "cohortId"
+  /** 学年 as its 第N期 number (stored as UserRole.cohortId) */
+  | "cohort"
   | "yearsFrom"
   | "yearsTo"
   | "lastDivision"
@@ -33,7 +34,7 @@ export type RecordField =
   | "studentIdNo";
 
 export type RecordValues = Partial<{
-  cohortId: string | null;
+  cohort: number | null;
   yearsFrom: number | null;
   yearsTo: number | null;
   lastDivision: Division | null;
@@ -83,12 +84,15 @@ const text = (max: number) =>
     .transform((v) => v || null);
 
 const FIELD_SCHEMAS: Record<RecordField, z.ZodType<unknown, string>> = {
-  // 学年: existence is checked by the server action.
-  cohortId: z
-    .string()
-    .trim()
-    .max(40)
-    .transform((v) => v || null),
+  // 学年 number; the row is created when the change is approved.
+  cohort: z.string().transform((v, ctx) => {
+    const n = parseCohortNumber(v);
+    if (n === undefined) {
+      ctx.addIssue({ code: "custom", message: "invalid" });
+      return z.NEVER;
+    }
+    return n;
+  }),
   yearsFrom: year,
   yearsTo: year,
   graduationOrLeaveYear: year,
@@ -131,9 +135,13 @@ export function parseRecordForm(
     if (r.success) values[f] = r.data;
     else errors[f] = r.error.issues[0]?.message ?? "invalid";
   }
+  // A former student's end year is their graduation / leaving year.
+  const endField: RecordField =
+    role === RoleKey.FORMER_STUDENT ? "graduationOrLeaveYear" : "yearsTo";
   const from = values.yearsFrom as number | null | undefined;
-  const to = values.yearsTo as number | null | undefined;
-  if (from != null && to != null && to < from) errors.yearsTo = "yearsOrder";
+  const to = values[endField] as number | null | undefined;
+  if (from != null && to != null && to < from && !errors[endField])
+    errors[endField] = "yearsOrder";
   return Object.keys(errors).length
     ? { ok: false, errors }
     : { ok: true, values: values as RecordValues };
@@ -163,4 +171,27 @@ export function toFormValues(
       return [f, x === null || x === undefined ? "" : String(x)];
     }),
   );
+}
+
+/**
+ * UserRole update for an approved change. `cohort` (a number) becomes
+ * cohortId via `cohortIdFor`; a former student's graduation / leaving year
+ * is also their end year (yearsTo).
+ */
+export async function toRoleUpdate(
+  role: RoleKey,
+  proposed: RecordValues,
+  cohortIdFor: (n: number) => Promise<string>,
+): Promise<Record<string, unknown>> {
+  const { cohort, ...rest } = proposed;
+  const data: Record<string, unknown> = { ...rest };
+  if (cohort !== undefined)
+    data.cohortId = cohort === null ? null : await cohortIdFor(cohort);
+  if (
+    role === RoleKey.FORMER_STUDENT &&
+    rest.graduationOrLeaveYear !== undefined
+  ) {
+    data.yearsTo = rest.graduationOrLeaveYear;
+  }
+  return data;
 }

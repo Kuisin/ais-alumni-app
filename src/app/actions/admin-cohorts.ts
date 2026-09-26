@@ -3,13 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
-import {
-  cohortNumberFor,
-  defaultGraduated,
-  elementaryEndFor,
-  latestCohortNumber,
-  suggestedStartYear,
-} from "@/lib/cohorts";
+import { cohortNumberFor } from "@/lib/cohorts";
 import { db } from "@/lib/db";
 import { AuthError, actionAdmin } from "@/lib/session";
 
@@ -41,6 +35,9 @@ async function admin() {
   }
 }
 
+// 学年 are created automatically the first time a member (or 学年代表) is
+// assigned to one (ensureCohort in src/lib/cohorts-db.ts); admins only edit.
+
 async function numberTaken(
   number: number,
   exceptId?: string,
@@ -50,76 +47,6 @@ async function numberTaken(
     select: { id: true },
   });
   return Boolean(row && row.id !== exceptId);
-}
-
-export async function createCohortAction(
-  _prev: CohortFormState,
-  fd: FormData,
-): Promise<CohortFormState> {
-  const me = await admin();
-  if (!me) return { ok: false, message: "errors.forbidden" };
-  const endRaw = String(fd.get("elementaryEndYear") ?? "");
-  const startRaw =
-    String(fd.get("elementaryStartYear") ?? "") ||
-    (endRaw ? String(suggestedStartYear(Number(endRaw))) : "");
-  const parsed = cohortSchema.safeParse({
-    elementaryStartYear: startRaw,
-    elementaryEndYear: endRaw,
-    note: String(fd.get("note") ?? ""),
-  });
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: `errors.${parsed.error.issues[0]?.message === "yearsOrder" ? "yearsOrder" : "years"}`,
-    };
-  }
-  const number = cohortNumberFor(parsed.data.elementaryEndYear);
-  if (number < 1) return { ok: false, message: "errors.beforeFirst" };
-  if (await numberTaken(number)) return { ok: false, message: "errors.exists" };
-  const cohort = await db.cohort.create({
-    data: {
-      number,
-      ...parsed.data,
-      note: parsed.data.note || null,
-      graduated: fd.get("graduated") === "on",
-    },
-  });
-  await audit(
-    me.id,
-    "cohort.created",
-    { type: "Cohort", id: cohort.id },
-    { number },
-  );
-  refresh();
-  return { ok: true, message: "created" };
-}
-
-/** Create every missing 学年 from 第1期 up to this year's 1st graders. */
-export async function createMissingCohortsAction(): Promise<void> {
-  const me = await actionAdmin();
-  const existing = new Set(
-    (await db.cohort.findMany({ select: { number: true } })).map(
-      (c) => c.number,
-    ),
-  );
-  const toCreate = [];
-  for (let n = 1; n <= latestCohortNumber(); n++) {
-    if (existing.has(n)) continue;
-    const end = elementaryEndFor(n);
-    toCreate.push({
-      number: n,
-      elementaryEndYear: end,
-      elementaryStartYear: suggestedStartYear(end),
-      graduated: defaultGraduated(end),
-    });
-  }
-  if (toCreate.length) {
-    await db.cohort.createMany({ data: toCreate, skipDuplicates: true });
-    await audit(me.id, "cohort.bulk_created", undefined, {
-      numbers: toCreate.map((c) => c.number),
-    });
-  }
-  refresh();
 }
 
 export async function updateCohortAction(

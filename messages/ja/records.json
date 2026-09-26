@@ -24,7 +24,7 @@
     "subjects": "担当教科・学年",
     "currentGrade": "現在の学年",
     "studentIdNo": "学籍番号",
-    "cohortId": "学年"
+    "cohort": "学年"
   },
   "diff": {
     "field": "項目",

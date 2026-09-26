@@ -7,7 +7,7 @@ import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ChangeRequestStatus } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
-import { loadCohortOptions } from "@/lib/cohorts-db";
+import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import {
@@ -44,8 +44,12 @@ export default async function RecordPage() {
     take: 20,
   });
   const roles = me.roles.filter((r) => hasRecord(r.role));
-  const cohorts = await loadCohortOptions(locale);
-  const cohortLabels = Object.fromEntries(cohorts.map((c) => [c.id, c.label]));
+  const cohorts = await loadCohortChoices(locale);
+  const cohortNumbers = await cohortNumbersById();
+  // 学年 number → label, for showing requested and current values.
+  const cohortLabels = Object.fromEntries(
+    cohorts.map((c) => [c.value, c.label]),
+  );
 
   return (
     <div className="space-y-6">
@@ -65,7 +69,10 @@ export default async function RecordPage() {
       {roles.length === 0 ? <Card>{t("noRecord")}</Card> : null}
 
       {roles.map((r) => {
-        const current = snapshot(r.role, r);
+        const current = snapshot(r.role, {
+          ...r,
+          cohort: r.cohortId ? (cohortNumbers.get(r.cohortId) ?? null) : null,
+        });
         const pending = requests.find(
           (q) => q.role === r.role && q.status === ChangeRequestStatus.PENDING,
         );

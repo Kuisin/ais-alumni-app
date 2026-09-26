@@ -76,5 +76,6 @@
     "middleNameRomaji": "Middle name (optional)",
     "lastNameKanji": "Last name (姓)",
     "firstNameKanji": "First name (名)"
-  }
+  },
+  "cohortNumber": "Class {number}"
 }

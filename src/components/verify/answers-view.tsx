@@ -35,7 +35,12 @@ export async function AnswersView({ answers }: { answers: unknown }) {
   const t = await getTranslations("verify");
   const ta = await getTranslations("adminVerify");
   const tr = await getTranslations("roles");
+  const tc = await getTranslations("common");
   const a = obj(answers);
+  const cohort = (s: Obj) =>
+    typeof s.cohortNumber === "number"
+      ? tc("cohortNumber", { number: s.cohortNumber })
+      : null;
   const years = (s: Obj) => {
     const from = str(s.yearsFrom);
     if (!from) return null;
@@ -119,6 +124,7 @@ export async function AnswersView({ answers }: { answers: unknown }) {
         <section>
           <h3 className="mb-2 font-semibold">{tr("role.CURRENT_STUDENT")}</h3>
           <List>
+            <Row label={t("fields.cohort")} value={cohort(cs)} />
             <Row label={t("fields.grade")} value={grade(cs.grade)} />
             <Row
               label={t("fields.homeroomTeacher")}
@@ -156,7 +162,15 @@ export async function AnswersView({ answers }: { answers: unknown }) {
         <section>
           <h3 className="mb-2 font-semibold">{tr("role.FORMER_STUDENT")}</h3>
           <List>
-            <Row label={ta("detail.years")} value={years(fs)} />
+            <Row label={t("fields.cohort")} value={cohort(fs)} />
+            {/* Joined – graduated / left (older answers may still carry yearsTo). */}
+            <Row
+              label={ta("detail.years")}
+              value={years({
+                ...fs,
+                yearsTo: fs.graduationOrLeaveYear ?? fs.yearsTo,
+              })}
+            />
             <Row
               label={t("fields.lastDivision")}
               value={

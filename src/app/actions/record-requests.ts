@@ -10,6 +10,7 @@ import {
 } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
+import { cohortNumbersById, ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { NOTIFY_USER_SELECT, notify, notifyMany } from "@/lib/notify";
@@ -21,6 +22,7 @@ import {
   type RecordField,
   type RecordValues,
   snapshot,
+  toRoleUpdate,
 } from "@/lib/record-requests";
 import { AuthError, actionActive, actionAdmin } from "@/lib/session";
 import { appUrl } from "@/lib/urls";
@@ -76,19 +78,11 @@ export async function submitRecordRequestAction(
     };
   }
 
-  if (parsed.values.cohortId) {
-    const exists = await db.cohort.findUnique({
-      where: { id: parsed.values.cohortId },
-      select: { id: true },
-    });
-    if (!exists)
-      return {
-        ok: false,
-        message: "errors.validation",
-        fieldErrors: { cohortId: "invalid" },
-      };
-  }
-  const current = snapshot(role.data, roleRow);
+  const numbers = await cohortNumbersById();
+  const current = snapshot(role.data, {
+    ...roleRow,
+    cohort: roleRow.cohortId ? (numbers.get(roleRow.cohortId) ?? null) : null,
+  });
   const proposed = diffRecord(current, parsed.values);
   if (Object.keys(proposed).length === 0)
     return { ok: false, message: "errors.noChanges" };
@@ -185,9 +179,15 @@ export async function decideRecordRequestAction(
     const req = await tx.recordChangeRequest.findUnique({ where: { id } });
     if (!req || req.status !== ChangeRequestStatus.PENDING) return null;
     if (approved) {
+      // 学年 numbers become cohort rows (created on first use).
+      const data = await toRoleUpdate(
+        req.role,
+        req.proposed as RecordValues,
+        (n) => ensureCohort(n, tx),
+      );
       await tx.userRole.update({
         where: { userId_role: { userId: req.userId, role: req.role } },
-        data: req.proposed as RecordValues,
+        data,
       });
     }
     return tx.recordChangeRequest.update({

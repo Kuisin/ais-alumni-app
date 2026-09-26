@@ -10,24 +10,25 @@ import { Alert, Badge } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { PositionKey } from "@/generated/prisma/enums";
-import type { CohortOption } from "@/lib/cohorts";
+import type { CohortChoice } from "@/lib/cohorts";
 
 /** One position row: current status plus grant / update / remove. */
 export function MemberPositionControl({
   userId,
   position,
   held,
-  cohortId,
-  defaultCohortId,
+  cohortNumber,
+  defaultCohortNumber,
   cohorts,
   eligible,
 }: {
   userId: string;
   position: PositionKey;
   held: boolean;
-  cohortId: string | null;
-  defaultCohortId: string | null;
-  cohorts: CohortOption[];
+  /** 学年 as its 第N期 number */
+  cohortNumber: number | null;
+  defaultCohortNumber: number | null;
+  cohorts: CohortChoice[];
   eligible: boolean;
 }) {
   const t = useTranslations("adminMembers.positions");
@@ -43,9 +44,11 @@ export function MemberPositionControl({
         <span className="font-medium">{t(`names.${position}`)}</span>
         {held ? (
           <Badge tone="green">
-            {needsCohort && cohortId
+            {needsCohort && cohortNumber
               ? t("heldCohort", {
-                  cohort: cohorts.find((c) => c.id === cohortId)?.label ?? "—",
+                  cohort:
+                    cohorts.find((c) => c.value === String(cohortNumber))
+                      ?.label ?? "—",
                 })
               : t("held")}
           </Badge>
@@ -63,12 +66,14 @@ export function MemberPositionControl({
               {(a) => (
                 <Select
                   {...a}
-                  name="cohortId"
-                  defaultValue={cohortId ?? defaultCohortId ?? ""}
+                  name="cohortNumber"
+                  defaultValue={String(
+                    cohortNumber ?? defaultCohortNumber ?? "",
+                  )}
                 >
                   <option value="">—</option>
                   {cohorts.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.value} value={c.value}>
                       {c.label}
                     </option>
                   ))}

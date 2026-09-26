@@ -38,7 +38,8 @@
     "unauthenticated": "Please sign in again.",
     "notFound": "Not found.",
     "validation": "Please check the highlighted fields.",
-    "rateLimited": "Too many attempts. Please wait a little and try again."
+    "rateLimited": "Too many attempts. Please wait a little and try again.",
+    "emailSendFailed": "We couldn't send the email right now. Please try again in a few minutes."
   },
   "nav": {
     "label": "Main",

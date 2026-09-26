@@ -110,7 +110,8 @@
       "rateLimited": "Too many codes requested. Please wait a little and try again.",
       "invalid": "That code is not correct.",
       "expired": "That code has expired. Please request a new one.",
-      "tooManyAttempts": "Too many attempts. Please request a new code."
+      "tooManyAttempts": "Too many attempts. Please request a new code.",
+      "sendFailed": "We couldn't send the email right now. Please try again in a few minutes."
     }
   },
   "review": {

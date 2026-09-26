@@ -406,6 +406,7 @@ export type SchoolEmailResult = {
     | "forbidden"
     | "invalidEmail"
     | "rateLimited"
+    | "sendFailed"
     | "invalid"
     | "expired"
     | "tooManyAttempts";
@@ -428,7 +429,11 @@ export async function sendSchoolEmailCodeAction(
     locale: user.locale,
     userId: user.id,
   });
-  return res.ok ? { ok: true } : { ok: false, error: "rateLimited" };
+  if (res.ok) return { ok: true };
+  return {
+    ok: false,
+    error: res.error === "send_failed" ? "sendFailed" : "rateLimited",
+  };
 }
 
 export async function verifySchoolEmailCodeAction(

@@ -24,6 +24,8 @@ export const NAMESPACES = [
   "records",
   "broadcast",
   "cohorts",
+  "history",
+  "organizations",
   "follows",
   "family",
   "settings",

@@ -95,6 +95,14 @@ export default async function ProfileEditPage() {
       </Card>
 
       <Card>
+        <h2 className="mb-1 text-lg font-semibold">{t("sections.history")}</h2>
+        <p className="mb-3 text-sm text-slate-600">{t("historyIntro")}</p>
+        <Link href="/app/profile/history" className={buttonClass("secondary")}>
+          {t("editHistory")}
+        </Link>
+      </Card>
+
+      <Card>
         <p className="text-slate-700">{t("settingsLink")}</p>
         <Link href="/app/settings" className={buttonClass("secondary", "mt-3")}>
           {t("goSettings")}

@@ -226,6 +226,8 @@ export async function buildUserExport(userId: string) {
         select: { answer: true, askedAt: true, answeredAt: true },
       },
       notifications: { orderBy: { sentAt: "desc" } },
+      education: true,
+      work: true,
     },
   });
   if (!user) return null;
@@ -309,5 +311,7 @@ export async function buildUserExport(userId: string) {
     })),
     vouchesGiven: user.vouchesGiven,
     notifications: user.notifications.map(({ userId: _u, ...n }) => n),
+    education: user.education.map(({ userId: _u, ...e }) => e),
+    work: user.work.map(({ userId: _u, ...e }) => e),
   };
 }

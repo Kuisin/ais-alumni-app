@@ -12,7 +12,8 @@
     "contact": "連絡先・リンク",
     "photo": "プロフィール写真",
     "basic": "基本情報",
-    "follows": "フォローリクエスト"
+    "follows": "フォローリクエスト",
+    "history": "学歴・職歴"
   },
   "fields": {
     "nameRomaji": "氏名（ローマ字）",
@@ -85,5 +86,7 @@
     "fileSize": "画像は2MB以下にしてください。",
     "fileType": "JPGまたはPNGの画像を選択してください。"
   },
-  "requestRecordCorrection": "在籍情報の修正を依頼"
+  "requestRecordCorrection": "在籍情報の修正を依頼",
+  "historyIntro": "AIS以降の学校や勤務先を登録すると、同級生が見つけやすくなります。",
+  "editHistory": "学歴・職歴を編集"
 }

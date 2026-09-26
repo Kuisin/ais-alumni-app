@@ -97,6 +97,15 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
       where: { userId: fromId },
       data: { userId: toId },
     });
+    // 学歴・職歴 move with the account.
+    await tx.educationEntry.updateMany({
+      where: { userId: fromId },
+      data: { userId: toId },
+    });
+    await tx.workEntry.updateMany({
+      where: { userId: fromId },
+      data: { userId: toId },
+    });
 
     // Profile fields: fill gaps on the target from the source.
     await tx.user.update({ where: { id: fromId }, data: { lineUserId: null } });

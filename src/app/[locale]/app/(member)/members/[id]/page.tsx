@@ -6,6 +6,7 @@ import {
   FollowButton,
   type FollowUiState,
 } from "@/components/follows/follow-button";
+import { HistoryList } from "@/components/history/history-list";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { AisRecord } from "@/components/profile/role-details";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
+import { visibleHistory } from "@/lib/history";
 import { requireActive } from "@/lib/session";
 
 type Props = { params: Promise<{ locale: string; id: string }> };
@@ -39,6 +41,21 @@ export default async function MemberProfilePage({ params }: Props) {
   const me = await requireActive();
   const view = await getProfileForViewer(me, id);
   if (!view) notFound();
+  // 学歴・職歴: "followers only" entries need private-tier access.
+  const [education, work] = await Promise.all([
+    db.educationEntry.findMany({
+      where: { userId: id },
+      include: { school: true },
+    }),
+    db.workEntry.findMany({
+      where: { userId: id },
+      include: { company: true },
+    }),
+  ]);
+  const history = {
+    education: visibleHistory(education, view.private !== null),
+    work: visibleHistory(work, view.private !== null),
+  };
 
   const t = await getTranslations("profile");
   const tf = await getTranslations("follows");
@@ -163,6 +180,15 @@ export default async function MemberProfilePage({ params }: Props) {
               {priv.currentStageDetail}
             </p>
           ) : null}
+        </Card>
+      ) : null}
+
+      {history.education.length || history.work.length ? (
+        <Card>
+          <h2 className="mb-3 text-lg font-semibold">
+            {t("sections.history")}
+          </h2>
+          <HistoryList education={history.education} work={history.work} />
         </Card>
       ) : null}
 

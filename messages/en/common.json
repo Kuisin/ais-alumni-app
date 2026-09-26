@@ -64,7 +64,8 @@
     "stats": "Stats",
     "audit": "Audit log",
     "recordRequests": "Record corrections",
-    "cohorts": "Classes"
+    "cohorts": "Classes",
+    "organizations": "Schools & companies"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",

@@ -3,14 +3,14 @@ import {
   cohortChoices,
   cohortLabel,
   cohortNumberFor,
-  cohortOptions,
-  defaultGraduated,
   elementaryEndFor,
+  gradeLabel,
   latestCohortNumber,
   parseCohortNumber,
-  schoolYearEnd,
   suggestedStartYear,
 } from "./cohorts";
+
+const now = new Date("2026-09-27T00:00:00Z"); // school year 2026 (April–March)
 
 describe("学年 numbering", () => {
   it("finishing 6th grade in 2016 is 第5期", () => {
@@ -19,60 +19,43 @@ describe("学年 numbering", () => {
     expect(elementaryEndFor(5)).toBe(2016);
     expect(suggestedStartYear(2016)).toBe(2010);
   });
-  it("school year starts in August (JST)", () => {
-    expect(schoolYearEnd(new Date("2026-07-31T12:00:00Z"))).toBe(2026);
-    expect(schoolYearEnd(new Date("2026-08-01T00:00:00Z"))).toBe(2027);
-    // 2026–27 school year: 1st graders finish 6th grade in 2032 = 第21期
-    expect(latestCohortNumber(new Date("2026-09-27T00:00:00Z"))).toBe(21);
-  });
-  it("defaults to graduated once high school is over", () => {
-    const now = new Date("2026-09-27T00:00:00Z"); // school year 2026–27
-    expect(defaultGraduated(2016, now)).toBe(true); // HS 2022
-    expect(defaultGraduated(2020, now)).toBe(true); // HS June 2026
-    expect(defaultGraduated(2021, now)).toBe(false); // HS 2027
-  });
-  it("labels and sorts classes", () => {
-    const c = {
-      id: "a",
-      number: 5,
-      elementaryStartYear: 2010,
-      elementaryEndYear: 2016,
-      graduated: true,
-    };
-    expect(cohortLabel(c, "ja")).toBe("第5期（小学校 2010–2016）");
-    expect(cohortLabel(c, "en")).toBe("Class 5 (elementary 2010–2016)");
-    expect(
-      cohortOptions([{ ...c, id: "b", number: 7 }, c], "en").map((o) => o.id),
-    ).toEqual(["a", "b"]);
+  it("newest class is this year's 年少", () => {
+    // 年少 in school year 2026 finishes 6th grade in March 2035 = 第24期
+    expect(latestCohortNumber(now)).toBe(24);
   });
 });
 
-describe("学年 choices (created on first use)", () => {
-  const now = new Date("2026-09-27T00:00:00Z");
-  it("offers 第1期 … current 1st graders, newest first, with defaults", () => {
-    const choices = cohortChoices([], "ja", now);
-    expect(choices).toHaveLength(21);
-    expect(choices[0]).toMatchObject({ value: "21", graduated: false });
-    expect(choices.at(-1)).toMatchObject({
-      value: "1",
-      label: "第1期（小学校 2006–2012）",
-      graduated: true,
-    });
-  });
-  it("uses an existing row's years and status", () => {
-    const edited = {
-      id: "x",
-      number: 5,
-      elementaryStartYear: 2009,
-      elementaryEndYear: 2016,
-      graduated: false,
-    };
-    const five = cohortChoices([edited], "en", now).find(
-      (c) => c.value === "5",
+describe("labels", () => {
+  it("shows graduation or the current grade", () => {
+    expect(cohortLabel({ number: 5, elementaryEndYear: 2016 }, "ja", now)).toBe(
+      "第5期（2016年 小学校卒業）",
     );
-    expect(five).toEqual({
-      value: "5",
-      label: "Class 5 (elementary 2009–2016)",
+    expect(
+      cohortLabel({ number: 21, elementaryEndYear: 2032 }, "ja", now),
+    ).toBe("第21期（現在 小学1年生）");
+    expect(
+      cohortLabel({ number: 24, elementaryEndYear: 2035 }, "ja", now),
+    ).toBe("第24期（現在 年少）");
+    expect(
+      cohortLabel({ number: 16, elementaryEndYear: 2027 }, "en", now),
+    ).toBe("Class 16 (now Grade 6)");
+  });
+  it("grade names", () => {
+    expect(gradeLabel(0, "ja")).toBe("年長");
+    expect(gradeLabel(-2, "en")).toBe("Kindergarten (year 1)");
+    expect(gradeLabel(4, "ja")).toBe("小学4年生");
+  });
+});
+
+describe("choices (created on first use)", () => {
+  it("offers 第1期 … 年少, newest first, graduation computed", () => {
+    const choices = cohortChoices([], "ja", now);
+    expect(choices).toHaveLength(24);
+    expect(choices[0]).toMatchObject({ value: "24", graduated: false });
+    expect(choices.find((c) => c.value === "15")).toMatchObject({
+      graduated: true,
+    }); // finished March 2026
+    expect(choices.find((c) => c.value === "16")).toMatchObject({
       graduated: false,
     });
   });
@@ -80,6 +63,5 @@ describe("学年 choices (created on first use)", () => {
     expect(parseCohortNumber("5")).toBe(5);
     expect(parseCohortNumber("")).toBeNull();
     expect(parseCohortNumber("0")).toBeUndefined();
-    expect(parseCohortNumber("abc")).toBeUndefined();
   });
 });

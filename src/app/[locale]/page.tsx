@@ -134,6 +134,16 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
         </section>
 
         <section
+          aria-labelledby="about-title"
+          className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 text-center"
+        >
+          <h2 id="about-title" className="text-lg font-bold">
+            {t("about.title")}
+          </h2>
+          <p className="mt-2 text-sm text-slate-700">{t("about.body")}</p>
+        </section>
+
+        <section
           aria-labelledby="cta-title"
           className="rounded-2xl bg-brand-700 px-6 py-10 text-center text-white"
         >

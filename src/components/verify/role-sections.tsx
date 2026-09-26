@@ -1,22 +1,19 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
-import { Division, LifeStage } from "@/generated/prisma/enums";
-import type { CohortChoice } from "@/lib/cohorts";
+import { type CohortChoice, elementaryEndFor, gradeLabel } from "@/lib/cohorts";
+import { isCurrentTeacher, studentStatus } from "@/lib/school";
 import {
-  emptyCurrentChild,
-  emptyFormerChild,
+  emptyChild,
   MAX_CHILDREN,
   type VerifyFormState,
 } from "@/lib/verification/schema";
 import {
   CohortPicker,
-  EnumSelect,
   type Errors,
-  GradeSelect,
   GroupError,
   TextInput,
   YearInput,
@@ -29,17 +26,246 @@ type SectionProps<K extends keyof VerifyFormState> = {
   errors: Errors;
 };
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({
+  icon,
+  title,
+  intro,
+  children,
+}: {
+  icon: string;
+  title: string;
+  intro: string;
+  children: ReactNode;
+}) {
   return (
-    <fieldset className="space-y-4 rounded-xl border border-slate-200 p-4">
-      <legend className="px-1 text-base font-semibold">{title}</legend>
+    <fieldset className="animate-rise space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      <legend className="flex items-center gap-2 px-1 text-base font-semibold">
+        <span aria-hidden="true" className="text-xl">
+          {icon}
+        </span>
+        {title}
+      </legend>
+      <p className="text-sm text-slate-600">{intro}</p>
       {children}
     </fieldset>
   );
 }
 
 function YearsRow({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-2 gap-3">{children}</div>;
+  return <div className="grid gap-3 sm:grid-cols-2">{children}</div>;
+}
+
+/** "You'll be registered as …" — the status the app works out. */
+function Preview({ children }: { children: ReactNode }) {
+  return (
+    <p
+      className="animate-fade rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800"
+      aria-live="polite"
+    >
+      <span aria-hidden="true">→ </span>
+      {children}
+    </p>
+  );
+}
+
+const num = (v: string): number | null =>
+  /^\d{4}$/.test(v.trim()) ? Number(v) : null;
+
+/** Status preview for a 学年 number + optional leave year. */
+function useStudentPreview() {
+  const t = useTranslations("verify");
+  const locale = useLocale() === "en" ? "en" : "ja";
+  return (cohortNumber: string, leftYear: string): string | null => {
+    const n = Number(cohortNumber);
+    if (!Number.isInteger(n) || n < 1) return null;
+    const st = studentStatus(elementaryEndFor(n), num(leftYear));
+    if (st.current)
+      return st.currentGrade !== null
+        ? t("preview.current", { grade: gradeLabel(st.currentGrade, locale) })
+        : t("preview.upcoming");
+    return st.didGraduate
+      ? t("preview.graduated", { year: st.graduationOrLeaveYear ?? "" })
+      : t("preview.left", { year: st.graduationOrLeaveYear ?? "" });
+  };
+}
+
+export function StudentSection({
+  value,
+  onChange,
+  errors,
+  cohorts,
+}: SectionProps<"student"> & { cohorts: CohortChoice[] }) {
+  const t = useTranslations("verify");
+  const preview = useStudentPreview()(value.cohortNumber, value.leftYear);
+  const set = (patch: Partial<VerifyFormState["student"]>) =>
+    onChange({ ...value, ...patch });
+  return (
+    <Section
+      icon="🎓"
+      title={t("types.STUDENT.title")}
+      intro={t("sections.student")}
+    >
+      <CohortPicker
+        path="student.cohortNumber"
+        value={value.cohortNumber}
+        onChange={(v) => set({ cohortNumber: v })}
+        errors={errors}
+        cohorts={cohorts}
+        defaultFilter="all"
+        required
+      />
+      <YearsRow>
+        <YearInput
+          path="student.joinedYear"
+          label={t("fields.joinedYear")}
+          value={value.joinedYear}
+          onChange={(v) => set({ joinedYear: v })}
+          errors={errors}
+        />
+        <YearInput
+          path="student.leftYear"
+          label={t("fields.leftYearStudent")}
+          hint={t("hints.leftYearStudent")}
+          required={false}
+          value={value.leftYear}
+          onChange={(v) => set({ leftYear: v })}
+          errors={errors}
+        />
+      </YearsRow>
+      {preview ? <Preview>{preview}</Preview> : null}
+      <details className="group rounded-lg border border-slate-200 p-3">
+        <summary className="cursor-pointer text-sm font-medium text-brand-700">
+          {t("sections.studentMore")}
+        </summary>
+        <div className="mt-3 space-y-4">
+          <p className="text-sm text-slate-600">{t("hints.classmates")}</p>
+          <TextInput
+            path="student.classmates.0"
+            label={t("fields.classmateN", { n: 1 })}
+            value={value.classmates[0]}
+            onChange={(v) => set({ classmates: [v, value.classmates[1]] })}
+            errors={errors}
+          />
+          <TextInput
+            path="student.classmates.1"
+            label={t("fields.classmateN", { n: 2 })}
+            value={value.classmates[1]}
+            onChange={(v) => set({ classmates: [value.classmates[0], v] })}
+            errors={errors}
+          />
+          <TextInput
+            path="student.homeroomTeacher"
+            label={t("fields.homeroomTeacher")}
+            value={value.homeroomTeacher}
+            onChange={(v) => set({ homeroomTeacher: v })}
+            errors={errors}
+          />
+          <TextInput
+            path="student.studentIdNo"
+            label={t("fields.studentIdNo")}
+            value={value.studentIdNo}
+            onChange={(v) => set({ studentIdNo: v })}
+            errors={errors}
+          />
+        </div>
+      </details>
+    </Section>
+  );
+}
+
+export function ParentSection({
+  value,
+  onChange,
+  errors,
+  cohorts,
+}: SectionProps<"parent"> & { cohorts: CohortChoice[] }) {
+  const t = useTranslations("verify");
+  const preview = useStudentPreview();
+  const children = value.children;
+  // Stable row keys so removing a middle child doesn't shuffle inputs.
+  const [ids, setIds] = useState(() => children.map(() => crypto.randomUUID()));
+  const update = (i: number, patch: Partial<(typeof children)[number]>) =>
+    onChange({
+      children: children.map((c, j) => (j === i ? { ...c, ...patch } : c)),
+    });
+  return (
+    <Section
+      icon="👪"
+      title={t("types.PARENT.title")}
+      intro={t("sections.parent")}
+    >
+      <ol className="space-y-4">
+        {children.map((c, i) => {
+          const p = preview(c.cohortNumber, c.leftYear);
+          return (
+            <li
+              key={ids[i] ?? i}
+              className="animate-rise space-y-3 rounded-xl bg-slate-50 p-3"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">
+                  {t("childN", { n: i + 1 })}
+                </p>
+                {children.length > 1 ? (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setIds(ids.filter((_, j) => j !== i));
+                      onChange({
+                        children: children.filter((_, j) => j !== i),
+                      });
+                    }}
+                    aria-label={t("removeChildN", { n: i + 1 })}
+                  >
+                    {t("removeChild")}
+                  </Button>
+                ) : null}
+              </div>
+              <TextInput
+                path={`parent.children.${i}.name`}
+                label={t("fields.childName")}
+                required
+                value={c.name}
+                onChange={(v) => update(i, { name: v })}
+                errors={errors}
+              />
+              <CohortPicker
+                path={`parent.children.${i}.cohortNumber`}
+                value={c.cohortNumber}
+                onChange={(v) => update(i, { cohortNumber: v })}
+                errors={errors}
+                cohorts={cohorts}
+                defaultFilter="current"
+                required
+              />
+              <YearInput
+                path={`parent.children.${i}.leftYear`}
+                label={t("fields.leftYearStudent")}
+                hint={t("hints.leftYearStudent")}
+                required={false}
+                value={c.leftYear}
+                onChange={(v) => update(i, { leftYear: v })}
+                errors={errors}
+              />
+              {p ? <Preview>{p}</Preview> : null}
+            </li>
+          );
+        })}
+      </ol>
+      <GroupError errors={errors} path="parent.children" />
+      {children.length < MAX_CHILDREN ? (
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setIds([...ids, crypto.randomUUID()]);
+            onChange({ children: [...children, emptyChild()] });
+          }}
+        >
+          {t("addChild")}
+        </Button>
+      ) : null}
+    </Section>
+  );
 }
 
 export function TeacherSection({
@@ -53,51 +279,41 @@ export function TeacherSection({
   onVerified: (e: string) => void;
 }) {
   const t = useTranslations("verify");
-  const tr = useTranslations("roles");
   const set = (patch: Partial<VerifyFormState["teacher"]>) =>
     onChange({ ...value, ...patch });
+  const joined = num(value.joinedYear);
+  const left = num(value.leftYear);
   return (
-    <Section title={tr("role.TEACHER")}>
-      {/* Teacher status: 現職 (current, no end year) or 元教職員 (former). */}
-      <fieldset className="space-y-1">
-        <legend className="text-sm font-medium text-slate-800">
-          {t("fields.teacherStatus")}
-        </legend>
-        <div className="flex flex-wrap gap-4">
-          {([true, false] as const).map((present) => (
-            <label
-              key={String(present)}
-              className="flex min-h-11 items-center gap-2 text-sm"
-            >
-              <input
-                type="radio"
-                name="teacher-status"
-                className="size-5"
-                checked={value.present === present}
-                onChange={() => set({ present })}
-              />
-              {tr(`teacherStatus.${present ? "CURRENT" : "FORMER"}`)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+    <Section
+      icon="🧑‍🏫"
+      title={t("types.TEACHER.title")}
+      intro={t("sections.teacher")}
+    >
       <YearsRow>
         <YearInput
-          path="teacher.yearsFrom"
-          label={t("fields.yearsFrom")}
-          value={value.yearsFrom}
-          onChange={(v) => set({ yearsFrom: v })}
+          path="teacher.joinedYear"
+          label={t("fields.joinedYearTeacher")}
+          value={value.joinedYear}
+          onChange={(v) => set({ joinedYear: v })}
           errors={errors}
         />
         <YearInput
-          path="teacher.yearsTo"
-          label={t("fields.yearsTo")}
-          value={value.present ? "" : value.yearsTo}
-          onChange={(v) => set({ yearsTo: v })}
+          path="teacher.leftYear"
+          label={t("fields.leftYearTeacher")}
+          hint={t("hints.leftYearTeacher")}
+          required={false}
+          value={value.leftYear}
+          onChange={(v) => set({ leftYear: v })}
           errors={errors}
-          disabled={value.present}
         />
       </YearsRow>
+      {joined ? (
+        <Preview>
+          {isCurrentTeacher(left)
+            ? t("preview.teacherCurrent")
+            : t("preview.teacherFormer", { year: left ?? "" })}
+        </Preview>
+      ) : null}
       <TextInput
         path="teacher.subjects"
         label={t("fields.subjects")}
@@ -118,316 +334,8 @@ export function TeacherSection({
   );
 }
 
-export function CurrentStudentSection({
-  value,
-  onChange,
-  errors,
-  cohorts,
-}: SectionProps<"currentStudent"> & { cohorts: CohortChoice[] }) {
+/** Kept for layouts that show a parent-confirmation note for young students. */
+export function MinorNote() {
   const t = useTranslations("verify");
-  const tr = useTranslations("roles");
-  const set = (patch: Partial<VerifyFormState["currentStudent"]>) =>
-    onChange({ ...value, ...patch });
-  return (
-    <Section title={tr("role.CURRENT_STUDENT")}>
-      <Alert tone="info">{t("hints.parentConfirmation")}</Alert>
-      <CohortPicker
-        path="currentStudent.cohortNumber"
-        value={value.cohortNumber}
-        onChange={(v) => set({ cohortNumber: v })}
-        errors={errors}
-        cohorts={cohorts}
-        defaultFilter="current"
-      />
-      <GradeSelect
-        path="currentStudent.grade"
-        label={t("fields.grade")}
-        value={value.grade}
-        onChange={(v) => set({ grade: v })}
-        errors={errors}
-      />
-      <TextInput
-        path="currentStudent.homeroomTeacher"
-        label={t("fields.homeroomTeacher")}
-        required
-        value={value.homeroomTeacher}
-        onChange={(v) => set({ homeroomTeacher: v })}
-        errors={errors}
-      />
-      <TextInput
-        path="currentStudent.studentIdNo"
-        label={t("fields.studentIdNo")}
-        value={value.studentIdNo}
-        onChange={(v) => set({ studentIdNo: v })}
-        errors={errors}
-      />
-    </Section>
-  );
-}
-
-function ChildrenList<T>({
-  items,
-  onChange,
-  make,
-  render,
-  errors,
-  path,
-  addLabel,
-}: {
-  items: T[];
-  onChange: (items: T[]) => void;
-  make: () => T;
-  render: (item: T, i: number, set: (item: T) => void) => ReactNode;
-  errors: Errors;
-  path: string;
-  addLabel: string;
-}) {
-  const t = useTranslations("verify");
-  return (
-    <div className="space-y-3">
-      <GroupError errors={errors} path={path} />
-      <ol className="space-y-3">
-        {items.map((item, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: rows have no identity until submitted
-          <li key={i} className="space-y-3 rounded-lg bg-slate-50 p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">
-                {t("childN", { n: i + 1 })}
-              </p>
-              {items.length > 1 ? (
-                <Button
-                  variant="ghost"
-                  onClick={() => onChange(items.filter((_, j) => j !== i))}
-                  aria-label={t("removeChildN", { n: i + 1 })}
-                >
-                  {t("removeChild")}
-                </Button>
-              ) : null}
-            </div>
-            {render(item, i, (next) =>
-              onChange(items.map((c, j) => (j === i ? next : c))),
-            )}
-          </li>
-        ))}
-      </ol>
-      {items.length < MAX_CHILDREN ? (
-        <Button
-          variant="secondary"
-          onClick={() => onChange([...items, make()])}
-        >
-          {addLabel}
-        </Button>
-      ) : null}
-    </div>
-  );
-}
-
-export function CurrentParentSection({
-  value,
-  onChange,
-  errors,
-}: SectionProps<"currentParent">) {
-  const t = useTranslations("verify");
-  const tr = useTranslations("roles");
-  return (
-    <Section title={tr("role.CURRENT_PARENT")}>
-      <ChildrenList
-        items={value.children}
-        onChange={(children) => onChange({ children })}
-        make={emptyCurrentChild}
-        errors={errors}
-        path="currentParent.children"
-        addLabel={t("addChild")}
-        render={(c, i, set) => (
-          <>
-            <TextInput
-              path={`currentParent.children.${i}.name`}
-              label={t("fields.childName")}
-              required
-              value={c.name}
-              onChange={(v) => set({ ...c, name: v })}
-              errors={errors}
-            />
-            <GradeSelect
-              path={`currentParent.children.${i}.grade`}
-              label={t("fields.grade")}
-              value={c.grade}
-              onChange={(v) => set({ ...c, grade: v })}
-              errors={errors}
-            />
-            <TextInput
-              path={`currentParent.children.${i}.homeroomTeacher`}
-              label={t("fields.homeroomTeacher")}
-              value={c.homeroomTeacher}
-              onChange={(v) => set({ ...c, homeroomTeacher: v })}
-              errors={errors}
-            />
-          </>
-        )}
-      />
-    </Section>
-  );
-}
-
-export function FormerParentSection({
-  value,
-  onChange,
-  errors,
-}: SectionProps<"formerParent">) {
-  const t = useTranslations("verify");
-  const tr = useTranslations("roles");
-  return (
-    <Section title={tr("role.FORMER_PARENT")}>
-      <ChildrenList
-        items={value.children}
-        onChange={(children) => onChange({ children })}
-        make={emptyFormerChild}
-        errors={errors}
-        path="formerParent.children"
-        addLabel={t("addChild")}
-        render={(c, i, set) => (
-          <>
-            <TextInput
-              path={`formerParent.children.${i}.name`}
-              label={t("fields.childName")}
-              required
-              value={c.name}
-              onChange={(v) => set({ ...c, name: v })}
-              errors={errors}
-            />
-            <YearsRow>
-              <YearInput
-                path={`formerParent.children.${i}.yearsFrom`}
-                label={t("fields.yearsFrom")}
-                value={c.yearsFrom}
-                onChange={(v) => set({ ...c, yearsFrom: v })}
-                errors={errors}
-              />
-              <YearInput
-                path={`formerParent.children.${i}.yearsTo`}
-                label={t("fields.yearsTo")}
-                value={c.yearsTo}
-                onChange={(v) => set({ ...c, yearsTo: v })}
-                errors={errors}
-              />
-            </YearsRow>
-          </>
-        )}
-      />
-    </Section>
-  );
-}
-
-export function FormerStudentSection({
-  value,
-  onChange,
-  errors,
-  cohorts,
-}: SectionProps<"formerStudent"> & { cohorts: CohortChoice[] }) {
-  const t = useTranslations("verify");
-  const tr = useTranslations("roles");
-  const set = (patch: Partial<VerifyFormState["formerStudent"]>) =>
-    onChange({ ...value, ...patch });
-  return (
-    <Section title={tr("role.FORMER_STUDENT")}>
-      <CohortPicker
-        path="formerStudent.cohortNumber"
-        value={value.cohortNumber}
-        onChange={(v) => set({ cohortNumber: v })}
-        errors={errors}
-        cohorts={cohorts}
-        defaultFilter="graduated"
-      />
-      <fieldset className="space-y-1">
-        <legend className="text-sm font-medium text-slate-800">
-          {t("fields.didGraduate")}
-          <span className="ml-1 text-red-700" aria-hidden="true">
-            *
-          </span>
-        </legend>
-        <div className="flex flex-wrap gap-4">
-          {(["yes", "no"] as const).map((v) => (
-            <label key={v} className="flex min-h-11 items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="formerStudent-didGraduate"
-                className="size-5"
-                checked={value.didGraduate === v}
-                onChange={() => set({ didGraduate: v })}
-              />
-              {t(`didGraduate.${v}`)}
-            </label>
-          ))}
-        </div>
-        <GroupError errors={errors} path="formerStudent.didGraduate" />
-      </fieldset>
-      <YearsRow>
-        <YearInput
-          path="formerStudent.yearsFrom"
-          label={t("fields.yearsFrom")}
-          value={value.yearsFrom}
-          onChange={(v) => set({ yearsFrom: v })}
-          errors={errors}
-        />
-        <YearInput
-          path="formerStudent.graduationOrLeaveYear"
-          label={t("fields.graduationOrLeaveYear")}
-          value={value.graduationOrLeaveYear}
-          onChange={(v) => set({ graduationOrLeaveYear: v })}
-          errors={errors}
-        />
-      </YearsRow>
-      <EnumSelect
-        path="formerStudent.lastDivision"
-        label={t("fields.lastDivision")}
-        value={value.lastDivision}
-        onChange={(v) => set({ lastDivision: v })}
-        errors={errors}
-        options={Object.values(Division).map((d) => ({
-          value: d,
-          label: tr(`division.${d}`),
-        }))}
-      />
-      <TextInput
-        path="formerStudent.homeroomTeacher"
-        label={t("fields.homeroomTeacherThen")}
-        value={value.homeroomTeacher}
-        onChange={(v) => set({ homeroomTeacher: v })}
-        errors={errors}
-      />
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-medium text-slate-800">
-          {t("fields.classmates")}
-        </legend>
-        <p className="text-sm text-slate-600">{t("hints.classmates")}</p>
-        <TextInput
-          path="formerStudent.classmates.0"
-          label={t("fields.classmateN", { n: 1 })}
-          required
-          value={value.classmates[0]}
-          onChange={(v) => set({ classmates: [v, value.classmates[1]] })}
-          errors={errors}
-        />
-        <TextInput
-          path="formerStudent.classmates.1"
-          label={t("fields.classmateN", { n: 2 })}
-          value={value.classmates[1]}
-          onChange={(v) => set({ classmates: [value.classmates[0], v] })}
-          errors={errors}
-        />
-        <GroupError errors={errors} path="formerStudent.classmates" />
-      </fieldset>
-      <EnumSelect
-        path="formerStudent.currentStage"
-        label={t("fields.currentStage")}
-        value={value.currentStage}
-        onChange={(v) => set({ currentStage: v })}
-        errors={errors}
-        options={Object.values(LifeStage).map((s) => ({
-          value: s,
-          label: tr(`stage.${s}`),
-        }))}
-      />
-    </Section>
-  );
+  return <Alert tone="info">{t("hints.parentConfirmation")}</Alert>;
 }

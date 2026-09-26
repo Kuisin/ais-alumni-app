@@ -1,3 +1,4 @@
+/* biome-ignore-all lint/complexity/noImportantStyles: the reduced-motion override below must beat every animation utility */
 @import "tailwindcss";
 
 @theme {
@@ -7,6 +8,51 @@
   --color-brand-700: #1e3a8a;
   --color-brand-800: #172e6e;
   --color-line: #06c755;
+  /* Motion: short, calm transitions (disabled for prefers-reduced-motion). */
+  --animate-step: step-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-rise: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-fade: fade 0.3s ease-out both;
+  --animate-pop: pop 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+
+  @keyframes step-in {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes pop {
+    0% {
+      transform: scale(0.6);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
   --font-sans:
     system-ui, -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN",
     "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
@@ -23,4 +69,15 @@ body {
 /* Visible focus for keyboard users (WCAG 2.4.7) */
 :focus-visible {
   @apply outline-2 outline-offset-2 outline-brand-600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }

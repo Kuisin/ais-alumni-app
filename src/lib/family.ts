@@ -284,7 +284,13 @@ export async function createFamilyLink(
   me: CurrentUser,
   input:
     | { direction: Direction; otherId: string }
-    | { direction: "child"; childName: string },
+    | {
+        direction: "child";
+        childName: string;
+        /** the child's 学年 (Cohort id) and early-leave year, for parent status */
+        childCohortId?: string | null;
+        childLeftYear?: number | null;
+      },
 ): Promise<
   { ok: true; linkId: string } | { ok: false; error: CreateLinkError }
 > {
@@ -312,6 +318,8 @@ export async function createFamilyLink(
           parentId: me.id,
           childId: null,
           childName: input.childName,
+          childCohortId: input.childCohortId ?? null,
+          childLeftYear: input.childLeftYear ?? null,
           initiatedBy: FamilyLinkInitiator.PARENT,
         },
         select: { id: true },

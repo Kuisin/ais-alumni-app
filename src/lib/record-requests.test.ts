@@ -8,124 +8,95 @@ import {
   toRoleUpdate,
 } from "./record-requests";
 
-describe("record correction requests", () => {
+describe("record correction requests (inputs only; status is derived)", () => {
   const row = {
     cohort: 5,
     yearsFrom: 2008,
-    yearsTo: 2014,
-    lastDivision: "HIGH_SCHOOL",
-    graduationOrLeaveYear: 2014,
-    didGraduate: true,
+    yearsTo: null,
     subjects: null,
-    currentGrade: null,
     studentIdNo: null,
   };
 
-  it("snapshots only the role's fields", () => {
+  it("snapshots only the role's correctable inputs", () => {
     expect(snapshot("FORMER_STUDENT", row)).toEqual({
       cohort: 5,
       yearsFrom: 2008,
-      lastDivision: "HIGH_SCHOOL",
-      graduationOrLeaveYear: 2014,
-      didGraduate: true,
+      yearsTo: null,
+      studentIdNo: null,
     });
     expect(snapshot("TEACHER", row)).toEqual({
       yearsFrom: 2008,
-      yearsTo: 2014,
+      yearsTo: null,
       subjects: null,
     });
     expect(hasRecord("CURRENT_PARENT")).toBe(false);
+    expect(hasRecord("FORMER_PARENT")).toBe(false);
   });
 
   it("parses form strings and diffs against the current record", () => {
     const current = snapshot("FORMER_STUDENT", row);
-    const form = {
+    const r = parseRecordForm("FORMER_STUDENT", {
       ...toFormValues("FORMER_STUDENT", current),
       cohort: "6",
-      graduationOrLeaveYear: "2015",
-      didGraduate: "false",
-    };
-    const r = parseRecordForm("FORMER_STUDENT", form);
+      yearsTo: "2013",
+    });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(diffRecord(current, r.values)).toEqual({
-      cohort: 6,
-      graduationOrLeaveYear: 2015,
-      didGraduate: false,
-    });
+    expect(diffRecord(current, r.values)).toEqual({ cohort: 6, yearsTo: 2013 });
   });
 
   it("returns an empty diff when nothing changed", () => {
-    const current = snapshot("FORMER_STUDENT", row);
+    const current = snapshot("CURRENT_STUDENT", row);
     const r = parseRecordForm(
-      "FORMER_STUDENT",
-      toFormValues("FORMER_STUDENT", current),
+      "CURRENT_STUDENT",
+      toFormValues("CURRENT_STUDENT", current),
     );
     expect(r.ok && diffRecord(current, r.values)).toEqual({});
   });
 
-  it("orders a former student's joined year before their leaving year", () => {
+  it("validates years and their order", () => {
     expect(
-      parseRecordForm("FORMER_STUDENT", {
-        cohort: "",
-        yearsFrom: "2014",
-        lastDivision: "",
-        graduationOrLeaveYear: "2010",
-        didGraduate: "",
+      parseRecordForm("TEACHER", {
+        yearsFrom: "2010",
+        yearsTo: "",
+        subjects: " ",
       }),
-    ).toEqual({ ok: false, errors: { graduationOrLeaveYear: "yearsOrder" } });
-  });
-
-  it("maps an approved change to the role row", async () => {
-    const data = await toRoleUpdate(
-      "FORMER_STUDENT",
-      { cohort: 6, graduationOrLeaveYear: 2015 },
-      async (n) => `cohort-${n}`,
-    );
-    expect(data).toEqual({
-      cohortId: "cohort-6",
-      graduationOrLeaveYear: 2015,
-      yearsTo: 2015,
-    });
-    expect(
-      await toRoleUpdate("CURRENT_STUDENT", { cohort: null }, async () => "x"),
-    ).toEqual({ cohortId: null });
-  });
-
-  it("treats blanks as null and validates years, order and grades", () => {
-    const r = parseRecordForm("TEACHER", {
-      yearsFrom: "2010",
-      yearsTo: "",
-      subjects: " ",
-    });
-    expect(r).toEqual({
+    ).toEqual({
       ok: true,
       values: { yearsFrom: 2010, yearsTo: null, subjects: null },
     });
     expect(
       parseRecordForm("FORMER_STUDENT", {
+        cohort: "",
         yearsFrom: "2014",
-        lastDivision: "",
-        graduationOrLeaveYear: "20x",
-        didGraduate: "",
+        yearsTo: "2010",
+        studentIdNo: "",
       }),
     ).toEqual({
       ok: false,
-      errors: { graduationOrLeaveYear: "invalidYear" },
+      errors: { yearsTo: "yearsOrder" },
     });
     expect(
-      parseRecordForm("CURRENT_STUDENT", {
-        currentGrade: "13",
-        studentIdNo: "",
+      parseRecordForm("TEACHER", {
+        yearsFrom: "20x",
+        yearsTo: "",
+        subjects: "",
       }),
-    ).toEqual({ ok: false, errors: { currentGrade: "invalidGrade" } });
+    ).toEqual({
+      ok: false,
+      errors: { yearsFrom: "invalidYear" },
+    });
+  });
+
+  it("maps an approved change to the role row", async () => {
     expect(
-      parseRecordForm("FORMER_STUDENT", {
-        yearsFrom: "",
-        lastDivision: "COLLEGE",
-        graduationOrLeaveYear: "",
-        didGraduate: "",
-      }).ok,
-    ).toBe(false);
+      await toRoleUpdate(
+        { cohort: 6, yearsTo: 2013 },
+        async (n) => `cohort-${n}`,
+      ),
+    ).toEqual({ cohortId: "cohort-6", yearsTo: 2013 });
+    expect(await toRoleUpdate({ cohort: null }, async () => "x")).toEqual({
+      cohortId: null,
+    });
   });
 });

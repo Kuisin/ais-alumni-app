@@ -16,12 +16,12 @@ test("member requests an AIS record correction and an admin approves it", async 
     await expect(withdraw).toHaveCount(0);
   }
 
-  const reason = `Smoke test ${Date.now()}: wrong graduation year`;
+  const reason = `Smoke test ${Date.now()}: wrong joining year`;
   await member.getByText("Request a correction").first().click();
-  const yearInput = member.getByLabel("Graduation / leaving year");
-  // A different year after hanako joined (2009), so there is a real change.
-  const current = Number(await yearInput.inputValue()) || 2015;
-  const year = String(current >= 2024 ? 2015 : current + 1);
+  const yearInput = member.getByLabel("Joined (year)");
+  // A different joining year, so there is a real change.
+  const current = Number(await yearInput.inputValue()) || 2009;
+  const year = String(current >= 2012 ? 2008 : current + 1);
   await yearInput.fill(year);
   await member.getByLabel("Reason").fill(reason);
   await member.getByRole("button", { name: "Send request" }).click();

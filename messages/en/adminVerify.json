@@ -59,7 +59,9 @@
     "evidence": "Documents",
     "noEvidence": "No documents uploaded.",
     "linkExpiry": "Links are valid for 15 minutes. Reload the page for new links.",
-    "deleteAfter": "deleted after {date}"
+    "deleteAfter": "deleted after {date}",
+    "status": "Status",
+    "oldFormat": "This application was sent with the earlier form; see the applicant's profile for details."
   },
   "roster": {
     "title": "Roster",
@@ -120,8 +122,8 @@
   },
   "aisRecord": {
     "title": "AIS record",
-    "description": "Correct the former student’s AIS record if needed.",
-    "save": "Save AIS record"
+    "description": "Current / former status and grade are worked out from the 学年 and years. Edit them in the member editor.",
+    "edit": "Edit the member's roles"
   },
   "decision": {
     "title": "Decision",

@@ -91,7 +91,21 @@
     "yearsToAny": "To (year)",
     "yearsFromAny": "From (year)",
     "teacherStatus": "Status",
-    "teacherStatusHint": "Former teachers lose teacher access (e.g. seeing students, 教職員・管理者)."
+    "teacherStatusHint": "Former teachers lose teacher access (e.g. seeing students, 教職員・管理者).",
+    "derivedLabel": "Worked out",
+    "joinedYear": "Joined (year)",
+    "leftYear": "Left (year)",
+    "leftYearTeacherHint": "Empty = still at AIS",
+    "leftYearStudentHint": "Only if they left before graduating; empty = at AIS or graduated",
+    "derivedGraduated": "Graduated {year}",
+    "derivedLeft": "Left in {year} (before graduating)",
+    "parentDerived": "Whether a parent is current or former follows their children (family links).",
+    "addTypes": {
+      "CURRENT_STUDENT": "Student / Alumni",
+      "CURRENT_PARENT": "Parent",
+      "TEACHER": "Teacher / Staff"
+    },
+    "schoolEmailVerified": "Verified"
   },
   "status": {
     "title": "Account status",

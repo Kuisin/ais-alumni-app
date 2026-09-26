@@ -4,42 +4,52 @@ import { bestRosterMatch, type RosterApplicant } from "./roster";
 import type { VerificationData } from "./schema";
 
 /**
- * Compare an application with unclaimed roster rows of the applicant's role
+ * Compare an application with unclaimed roster rows of the applicant's
  * kinds (§6.4.1). Returns null when the roster has no rows to compare with
  * (the roster is optional, Open Q1).
  */
 export async function computeRosterMatch(
   data: VerificationData,
 ): Promise<{ rowId: string; score: number } | null> {
-  const dob = new Date(`${data.dateOfBirth}T00:00:00Z`);
   const base = {
     // Non-null: last/first romaji are required by the schema.
     nameRomaji: data.nameRomaji ?? "",
     nameKanji: data.nameKanji,
     nameAtAis: data.nameAtAis,
-    dateOfBirth: dob,
+    dateOfBirth: new Date(`${data.dateOfBirth}T00:00:00Z`),
   };
-  const applicants: Partial<Record<RoleKey, RosterApplicant>> = {};
-  for (const role of data.roles) {
-    if (role === RoleKey.FORMER_STUDENT && data.formerStudent) {
-      applicants[role] = {
+  // Roster rows use role kinds; a student may be listed as current or former.
+  const candidates: { kinds: RoleKey[]; applicant: RosterApplicant }[] = [];
+  if (data.student) {
+    candidates.push({
+      kinds: [RoleKey.FORMER_STUDENT, RoleKey.CURRENT_STUDENT],
+      applicant: {
         ...base,
-        yearsFrom: data.formerStudent.yearsFrom,
-        yearsTo: data.formerStudent.graduationOrLeaveYear,
-      };
-    } else if (role === RoleKey.TEACHER && data.teacher) {
-      applicants[role] = {
+        yearsFrom: data.student.joinedYear,
+        yearsTo: data.student.leftYear,
+      },
+    });
+  }
+  if (data.teacher) {
+    candidates.push({
+      kinds: [RoleKey.TEACHER],
+      applicant: {
         ...base,
-        yearsFrom: data.teacher.yearsFrom,
-        yearsTo: data.teacher.yearsTo,
-      };
-    } else {
-      applicants[role] = base;
-    }
+        yearsFrom: data.teacher.joinedYear,
+        yearsTo: data.teacher.leftYear,
+      },
+    });
+  }
+  if (data.parent) {
+    candidates.push({
+      kinds: [RoleKey.CURRENT_PARENT, RoleKey.FORMER_PARENT],
+      applicant: base,
+    });
   }
 
+  const kinds = candidates.flatMap((c) => c.kinds);
   const rows = await db.rosterEntry.findMany({
-    where: { kind: { in: data.roles }, claimedByUserId: null },
+    where: { kind: { in: kinds }, claimedByUserId: null },
     select: {
       id: true,
       kind: true,
@@ -53,12 +63,10 @@ export async function computeRosterMatch(
   if (!rows.length) return null;
 
   let best: { rowId: string; score: number } | null = null;
-  for (const role of data.roles) {
-    const applicant = applicants[role];
-    if (!applicant) continue;
+  for (const c of candidates) {
     const m = bestRosterMatch(
-      applicant,
-      rows.filter((r) => r.kind === role),
+      c.applicant,
+      rows.filter((r) => c.kinds.includes(r.kind)),
     );
     if (m && (!best || m.score > best.score)) best = m;
   }

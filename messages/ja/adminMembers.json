@@ -91,7 +91,21 @@
     "yearsToAny": "在籍終了（年）",
     "yearsFromAny": "在籍開始（年）",
     "teacherStatus": "ステータス",
-    "teacherStatusHint": "元教職員には教職員としての権限（生徒の閲覧、教職員・管理者など）がありません。"
+    "teacherStatusHint": "元教職員には教職員としての権限（生徒の閲覧、教職員・管理者など）がありません。",
+    "derivedLabel": "自動判定",
+    "joinedYear": "入った年",
+    "leftYear": "離れた年",
+    "leftYearTeacherHint": "空欄 = 現職",
+    "leftYearStudentHint": "卒業前に離れた場合のみ。空欄 = 在校中または卒業",
+    "derivedGraduated": "{year}年 卒業",
+    "derivedLeft": "{year}年 退学（卒業前）",
+    "parentDerived": "保護者の在校・卒業はお子さま（家族の連携）から自動で判定されます。",
+    "addTypes": {
+      "CURRENT_STUDENT": "在校生・卒業生",
+      "CURRENT_PARENT": "保護者",
+      "TEACHER": "教職員"
+    },
+    "schoolEmailVerified": "確認済み"
   },
   "status": {
     "title": "アカウントの状態",

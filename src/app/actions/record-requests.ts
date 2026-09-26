@@ -25,6 +25,7 @@ import {
   toRoleUpdate,
 } from "@/lib/record-requests";
 import { AuthError, actionActive, actionAdmin } from "@/lib/session";
+import { syncMemberStatus } from "@/lib/status-sync";
 import { appUrl } from "@/lib/urls";
 
 export type RecordRequestFormState = {
@@ -180,15 +181,15 @@ export async function decideRecordRequestAction(
     if (!req || req.status !== ChangeRequestStatus.PENDING) return null;
     if (approved) {
       // 学年 numbers become cohort rows (created on first use).
-      const data = await toRoleUpdate(
-        req.role,
-        req.proposed as RecordValues,
-        (n) => ensureCohort(n, tx),
+      const data = await toRoleUpdate(req.proposed as RecordValues, (n) =>
+        ensureCohort(n, tx),
       );
       await tx.userRole.update({
         where: { userId_role: { userId: req.userId, role: req.role } },
         data,
       });
+      // Status, grade and graduation follow from the corrected inputs.
+      await syncMemberStatus(req.userId, tx);
     }
     return tx.recordChangeRequest.update({
       where: { id },

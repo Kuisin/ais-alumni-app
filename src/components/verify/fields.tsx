@@ -14,8 +14,6 @@ export function fieldId(path: string): string {
 
 export type Errors = Record<string, string>;
 
-const GRADES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const; // 0 = K
-
 function useError(errors: Errors, path: string): string | null {
   const t = useTranslations("verify");
   const code = errors[path];
@@ -89,6 +87,7 @@ export function YearInput({
   errors,
   required = true,
   disabled,
+  hint,
 }: {
   path: string;
   label: ReactNode;
@@ -97,12 +96,14 @@ export function YearInput({
   errors: Errors;
   required?: boolean;
   disabled?: boolean;
+  hint?: ReactNode;
 }) {
   const error = useError(errors, path);
   return (
     <Field
       id={fieldId(path)}
-      label={label}
+      label={required ? label : <OptionalLabel>{label}</OptionalLabel>}
+      hint={hint}
       required={required && !disabled}
       error={error}
     >
@@ -119,42 +120,6 @@ export function YearInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
-      )}
-    </Field>
-  );
-}
-
-export function GradeSelect({
-  path,
-  label,
-  value,
-  onChange,
-  errors,
-}: {
-  path: string;
-  label: ReactNode;
-  value: string;
-  onChange: (v: string) => void;
-  errors: Errors;
-}) {
-  const t = useTranslations("verify");
-  const tr = useTranslations("roles");
-  const error = useError(errors, path);
-  return (
-    <Field id={fieldId(path)} label={label} required error={error}>
-      {(aria) => (
-        <Select
-          {...aria}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          <option value="">{t("select")}</option>
-          {GRADES.map((g) => (
-            <option key={g} value={String(g)}>
-              {tr("grade", { grade: g })}
-            </option>
-          ))}
-        </Select>
       )}
     </Field>
   );
@@ -219,6 +184,7 @@ export function CohortPicker({
   errors,
   cohorts,
   defaultFilter,
+  required = false,
 }: {
   path: string;
   value: string;
@@ -226,6 +192,7 @@ export function CohortPicker({
   errors: Errors;
   cohorts: CohortChoice[];
   defaultFilter: "graduated" | "current" | "all";
+  required?: boolean;
 }) {
   const t = useTranslations("verify");
   const error = useError(errors, path);
@@ -265,7 +232,14 @@ export function CohortPicker({
       </fieldset>
       <Field
         id={fieldId(path)}
-        label={<OptionalLabel>{t("fields.cohort")}</OptionalLabel>}
+        label={
+          required ? (
+            t("fields.cohort")
+          ) : (
+            <OptionalLabel>{t("fields.cohort")}</OptionalLabel>
+          )
+        }
+        required={required}
         hint={t("hints.cohort")}
         error={error}
       >
@@ -275,7 +249,9 @@ export function CohortPicker({
             value={value}
             onChange={(e) => onChange(e.target.value)}
           >
-            <option value="">{t("cohortNotListed")}</option>
+            <option value="">
+              {required ? t("select") : t("cohortNotListed")}
+            </option>
             {shown.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}

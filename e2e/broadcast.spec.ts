@@ -35,10 +35,10 @@ test("admin appoints a class representative who notifies their class", async ({
   // Represent 第6期 (ken's class) for this test.
   await leader
     .getByLabel("学年 (class)")
-    .selectOption({ label: "Class 6 (elementary 2011–2017)" });
+    .selectOption({ label: "Class 6 (graduated 2017)" });
   await leader.getByRole("button", { name: "Assign" }).click();
   await expect(
-    leader.getByText("Assigned · Class 6 (elementary 2011–2017)"),
+    leader.getByText("Assigned · Class 6 (graduated 2017)"),
   ).toBeVisible();
 
   await member.goto("/en/app/notify");

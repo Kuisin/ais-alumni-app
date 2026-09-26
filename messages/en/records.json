@@ -13,16 +13,13 @@
   "history": "Past requests",
   "hints": {
     "reason": "Tell the committee what is wrong, e.g. \"I left in 2015, not 2014.\"",
-    "teacherYearsTo": "Leave empty if you still work at AIS."
+    "teacherYearsTo": "Leave empty if you still work at AIS.",
+    "studentYearsTo": "Only if you left before graduating; leave empty if you graduated or are still at AIS."
   },
   "fields": {
-    "yearsFrom": "From (year)",
-    "yearsTo": "To (year)",
-    "lastDivision": "Last division",
-    "graduationOrLeaveYear": "Graduation / leaving year",
-    "didGraduate": "Graduated from AIS",
+    "yearsFrom": "Joined (year)",
+    "yearsTo": "Left (year)",
     "subjects": "Subjects / grades taught",
-    "currentGrade": "Current grade",
     "studentIdNo": "Student ID",
     "cohort": "学年 (class)"
   },

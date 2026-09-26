@@ -86,7 +86,17 @@ export default async function AdminMemberPage({
   const roles = [...user.roles].sort(
     (a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role),
   );
-  const available = roleOrder.filter((r) => !roles.some((x) => x.role === r));
+  // Add by type (student / parent / teacher); current vs former is derived.
+  const has = (keys: RoleKey[]) => roles.some((x) => keys.includes(x.role));
+  const available: RoleKey[] = [
+    ...(has([RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT])
+      ? []
+      : [RoleKey.CURRENT_STUDENT]),
+    ...(has([RoleKey.CURRENT_PARENT, RoleKey.FORMER_PARENT])
+      ? []
+      : [RoleKey.CURRENT_PARENT]),
+    ...(has([RoleKey.TEACHER]) ? [] : [RoleKey.TEACHER]),
+  ];
   const roleKeys = roles.map((r) => r.role);
   const positions = await db.userPosition.findMany({
     where: { userId: user.id },

@@ -7,13 +7,18 @@ import {
   AccountState,
   OtpPurpose,
   RoleKey,
-  TeacherStatus,
   VerificationStatus,
 } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import {
+  childIsCurrent,
+  parentRole,
+  studentRoleFields,
+  teacherFields,
+} from "@/lib/member-status";
 import { AuthError, actionUser, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { deletePrivate, putPrivate } from "@/lib/storage";
@@ -156,7 +161,7 @@ export async function submitVerificationAction(
 
       await saveRoles(tx, user, data, schoolEmailVerified);
 
-      const answers: StoredAnswers = { version: 1, ...omitEvidence(data) };
+      const answers: StoredAnswers = { version: 2, ...omitEvidence(data) };
       const request = await tx.verificationRequest.upsert({
         where: { userId: user.id },
         create: {
@@ -247,89 +252,90 @@ async function isSchoolEmailVerified(
   return otp !== null;
 }
 
+/**
+ * Roles from the chosen types. Current vs former (and grade, graduation,
+ * last division) are derived from the 学年 and years (src/lib/school.ts),
+ * never picked by hand.
+ */
 async function saveRoles(
   tx: Prisma.TransactionClient,
   user: CurrentUser,
   data: VerificationData,
   schoolEmailVerified: boolean,
 ): Promise<void> {
-  // Applicants are never ACTIVE here, so dropping deselected roles is safe.
-  await tx.userRole.deleteMany({
-    where: { userId: user.id, role: { notIn: data.roles } },
-  });
   const now = new Date();
-  // 学年 rows are created the first time someone is assigned to them.
-  const cohort = async (n: number | null) =>
-    n === null ? null : ensureCohort(n, tx);
-  for (const role of data.roles) {
-    let fields: Omit<Prisma.UserRoleUncheckedCreateInput, "userId" | "role"> =
-      {};
-    if (role === RoleKey.TEACHER && data.teacher) {
-      fields = {
-        yearsFrom: data.teacher.yearsFrom,
-        yearsTo: data.teacher.yearsTo,
-        subjects: data.teacher.subjects,
-        // No end year = still at AIS (現職).
-        teacherStatus:
-          data.teacher.yearsTo === null
-            ? TeacherStatus.CURRENT
-            : TeacherStatus.FORMER,
-        schoolEmail: data.teacher.schoolEmail,
-        schoolEmailVerified,
-      };
-    } else if (role === RoleKey.CURRENT_STUDENT && data.currentStudent) {
-      fields = {
-        cohortId: await cohort(data.currentStudent.cohortNumber),
-        currentGrade: data.currentStudent.grade,
-        studentIdNo: data.currentStudent.studentIdNo,
-      };
-    } else if (role === RoleKey.FORMER_STUDENT && data.formerStudent) {
-      const prev = user.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
-      const f = data.formerStudent;
-      fields = {
-        cohortId: await cohort(f.cohortNumber),
-        yearsFrom: f.yearsFrom,
-        // One end year: when they graduated or left.
-        yearsTo: f.graduationOrLeaveYear,
-        lastDivision: f.lastDivision,
-        graduationOrLeaveYear: f.graduationOrLeaveYear,
-        didGraduate: f.didGraduate,
-        currentStage: f.currentStage,
-        currentStageUpdatedAt:
-          prev?.currentStage === f.currentStage
-            ? (prev.currentStageUpdatedAt ?? now)
-            : now,
-      };
-    } else if (role === RoleKey.FORMER_PARENT && data.formerParent) {
-      const years = data.formerParent.children;
-      fields = {
-        yearsFrom: Math.min(...years.map((c) => c.yearsFrom)),
-        yearsTo: Math.max(...years.map((c) => c.yearsTo)),
-      };
-    }
+  const keep: RoleKey[] = [];
+  const cohortEnd = async (n: number) => {
+    const id = await ensureCohort(n, tx);
+    const row = await tx.cohort.findUniqueOrThrow({
+      where: { id },
+      select: { elementaryEndYear: true },
+    });
+    return { id, end: row.elementaryEndYear };
+  };
+  const upsert = async (
+    role: RoleKey,
+    fields: Omit<Prisma.UserRoleUncheckedCreateInput, "userId" | "role">,
+  ) => {
+    keep.push(role);
     await tx.userRole.upsert({
       where: { userId_role: { userId: user.id, role } },
       create: { userId: user.id, role, ...fields },
       update: fields,
     });
+  };
+
+  if (data.student) {
+    const st = data.student;
+    const c = await cohortEnd(st.cohortNumber);
+    const { role, ...fields } = studentRoleFields(
+      c.end,
+      st.joinedYear,
+      st.leftYear,
+      now,
+    );
+    await upsert(role, {
+      ...fields,
+      cohortId: c.id,
+      studentIdNo: st.studentIdNo,
+    });
   }
+  if (data.teacher) {
+    const t = data.teacher;
+    await upsert(RoleKey.TEACHER, {
+      ...teacherFields(t.joinedYear, t.leftYear, now),
+      subjects: t.subjects,
+      schoolEmail: t.schoolEmail,
+      schoolEmailVerified,
+    });
+  }
+  if (data.parent) {
+    const current = [];
+    for (const child of data.parent.children) {
+      const c = await cohortEnd(child.cohortNumber);
+      current.push(childIsCurrent(c.end, child.leftYear, now));
+    }
+    await upsert(parentRole(current), {});
+  }
+  // Applicants are never ACTIVE here, so dropping other roles is safe.
+  await tx.userRole.deleteMany({
+    where: { userId: user.id, role: { notIn: keep } },
+  });
 }
 
 /**
- * Parents list their children (§6.2, §8). Each becomes an unconfirmed
- * FamilyLink with only childName; the child's account is linked later from
- * the family screens. Names already linked are skipped on resubmission.
+ * Parents list their children (§6.2, §8) with each child's 学年 and leave
+ * year. Each becomes an unconfirmed FamilyLink (childName only); the child's
+ * account can be linked later from the family screen. Children already
+ * listed (same name) are updated on resubmission.
  */
 async function saveChildren(
   tx: Prisma.TransactionClient,
   user: CurrentUser,
   data: VerificationData,
 ): Promise<void> {
-  const names = [
-    ...(data.currentParent?.children.map((c) => c.name) ?? []),
-    ...(data.formerParent?.children.map((c) => c.name) ?? []),
-  ];
-  if (!names.length) return;
+  const children = data.parent?.children ?? [];
+  if (!children.length) return;
 
   let familyId = user.familyId;
   if (!familyId) {
@@ -341,21 +347,31 @@ async function saveChildren(
     s.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
   const links = await tx.familyLink.findMany({
     where: { parentId: user.id },
-    select: { childName: true },
+    select: { id: true, childName: true },
   });
-  const have = new Set(links.map((l) => key(l.childName ?? "")));
-  for (const name of names) {
-    if (have.has(key(name))) continue;
-    have.add(key(name));
-    await tx.familyLink.create({
+  const byName = new Map(links.map((l) => [key(l.childName ?? ""), l.id]));
+  for (const child of children) {
+    const childCohortId = await ensureCohort(child.cohortNumber, tx);
+    const existing = byName.get(key(child.name));
+    if (existing) {
+      await tx.familyLink.update({
+        where: { id: existing },
+        data: { childCohortId, childLeftYear: child.leftYear },
+      });
+      continue;
+    }
+    const created = await tx.familyLink.create({
       data: {
         familyId,
         parentId: user.id,
-        childName: name,
+        childName: child.name,
         childId: null,
+        childCohortId,
+        childLeftYear: child.leftYear,
         initiatedBy: "PARENT",
       },
     });
+    byName.set(key(child.name), created.id);
   }
 }
 

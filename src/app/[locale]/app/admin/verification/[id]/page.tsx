@@ -7,7 +7,6 @@ import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/field";
 import {
   AddVoucherButton,
-  AisRecordForm,
   DecisionForm,
 } from "@/components/verify/admin-forms";
 import { AnswersView } from "@/components/verify/answers-view";
@@ -109,7 +108,7 @@ export default async function VerificationDetailPage({
   const minor = isMinor({ roles, dateOfBirth: user.dateOfBirth });
   const parentConfirmed = user.childLinks.some((l) => l.confirmedAt);
   const teacher = user.roles.find((r) => r.role === RoleKey.TEACHER);
-  const former = user.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
+  const _former = user.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
   const open = request.status === VerificationStatus.PENDING;
   const canAddVoucher =
     open || request.status === VerificationStatus.NEEDS_INFO;
@@ -415,18 +414,15 @@ export default async function VerificationDetailPage({
         ) : null}
       </Section>
 
-      {former ? (
-        <Section title={t("aisRecord.title")}>
-          <p className="text-sm text-slate-600">{t("aisRecord.description")}</p>
-          <AisRecordForm
-            userId={user.id}
-            requestId={request.id}
-            lastDivision={former.lastDivision}
-            graduationOrLeaveYear={former.graduationOrLeaveYear}
-            didGraduate={former.didGraduate}
-          />
-        </Section>
-      ) : null}
+      <Section title={t("aisRecord.title")}>
+        <p className="text-sm text-slate-600">{t("aisRecord.description")}</p>
+        <Link
+          href={`/app/admin/members/${user.id}#roles`}
+          className="mt-2 inline-block text-sm font-medium text-brand-700 underline"
+        >
+          {t("aisRecord.edit")}
+        </Link>
+      </Section>
 
       <Section title={t("decision.title")}>
         {open ? (

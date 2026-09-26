@@ -2,6 +2,14 @@ import { useTranslations } from "next-intl";
 import type { RoleKey } from "@/generated/prisma/enums";
 import type { RecordField } from "@/lib/record-requests";
 
+const KNOWN_FIELDS = new Set<string>([
+  "cohort",
+  "yearsFrom",
+  "yearsTo",
+  "subjects",
+  "studentIdNo",
+] satisfies RecordField[]);
+
 /** Human-readable value of one AIS record field. */
 export function RecordValue({
   field,
@@ -15,7 +23,7 @@ export function RecordValue({
   /** 学年 number → label */
   cohortLabels?: Record<string, string>;
 }) {
-  const tr = useTranslations("roles");
+  const _tr = useTranslations("roles");
   const tc = useTranslations("common");
   if (value === null || value === undefined || value === "") {
     // A teacher with no end year is still at AIS.
@@ -31,10 +39,6 @@ export function RecordValue({
           tc("cohortNumber", { number: String(value) })}
       </>
     );
-  if (field === "lastDivision") return <>{tr(`division.${value as string}`)}</>;
-  if (field === "didGraduate") return <>{value ? tc("yes") : tc("no")}</>;
-  if (field === "currentGrade")
-    return <>{tr("grade", { grade: String(value) })}</>;
   return <>{String(value)}</>;
 }
 
@@ -67,29 +71,35 @@ export function RecordDiff({
         </tr>
       </thead>
       <tbody>
-        {Object.keys(proposed).map((f) => (
-          <tr key={f} className="border-t border-slate-100">
-            <th scope="row" className="py-1.5 pr-3 font-normal text-slate-700">
-              {t(`fields.${f}`)}
-            </th>
-            <td className="py-1.5 pr-3 text-slate-500 line-through decoration-slate-400">
-              <RecordValue
-                field={f as RecordField}
-                value={current[f]}
-                role={role}
-                cohortLabels={cohortLabels}
-              />
-            </td>
-            <td className="py-1.5 font-semibold text-brand-800">
-              <RecordValue
-                field={f as RecordField}
-                value={proposed[f]}
-                role={role}
-                cohortLabels={cohortLabels}
-              />
-            </td>
-          </tr>
-        ))}
+        {Object.keys(proposed)
+          // Requests from older forms may carry fields that no longer exist.
+          .filter((f) => KNOWN_FIELDS.has(f))
+          .map((f) => (
+            <tr key={f} className="border-t border-slate-100">
+              <th
+                scope="row"
+                className="py-1.5 pr-3 font-normal text-slate-700"
+              >
+                {t(`fields.${f}`)}
+              </th>
+              <td className="py-1.5 pr-3 text-slate-500 line-through decoration-slate-400">
+                <RecordValue
+                  field={f as RecordField}
+                  value={current[f]}
+                  role={role}
+                  cohortLabels={cohortLabels}
+                />
+              </td>
+              <td className="py-1.5 font-semibold text-brand-800">
+                <RecordValue
+                  field={f as RecordField}
+                  value={proposed[f]}
+                  role={role}
+                  cohortLabels={cohortLabels}
+                />
+              </td>
+            </tr>
+          ))}
       </tbody>
     </table>
   );

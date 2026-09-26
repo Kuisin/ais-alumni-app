@@ -9,16 +9,11 @@ import {
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { Division, type RoleKey } from "@/generated/prisma/enums";
+import type { RoleKey } from "@/generated/prisma/enums";
 import type { CohortChoice } from "@/lib/cohorts";
 import type { RecordField } from "@/lib/record-requests";
 
-const YEAR_FIELDS = new Set<RecordField>([
-  "yearsFrom",
-  "yearsTo",
-  "graduationOrLeaveYear",
-]);
-const GRADES = Array.from({ length: 13 }, (_, i) => i);
+const YEAR_FIELDS = new Set<RecordField>(["yearsFrom", "yearsTo"]);
 
 /** Proposed values for one role's record, prefilled with the current ones. */
 export function RecordRequestForm({
@@ -33,7 +28,7 @@ export function RecordRequestForm({
   cohorts: CohortChoice[];
 }) {
   const t = useTranslations("records");
-  const tr = useTranslations("roles");
+  const _tr = useTranslations("roles");
   const tc = useTranslations("common");
   const [state, action] = useActionState<RecordRequestFormState, FormData>(
     submitRecordRequestAction,
@@ -53,8 +48,12 @@ export function RecordRequestForm({
           id={id(f)}
           label={t(`fields.${f}`)}
           hint={
-            f === "yearsTo" && role === "TEACHER"
-              ? t("hints.teacherYearsTo")
+            f === "yearsTo"
+              ? t(
+                  role === "TEACHER"
+                    ? "hints.teacherYearsTo"
+                    : "hints.studentYearsTo",
+                )
               : undefined
           }
           error={err(f)}
@@ -82,51 +81,6 @@ export function RecordRequestForm({
                 <option key={c.value} value={c.value}>
                   {c.label}
                   {c.graduated ? "" : ` · ${t("cohortCurrent")}`}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-      );
-    }
-    if (f === "lastDivision") {
-      return (
-        <Field key={f} id={id(f)} label={t(`fields.${f}`)} error={err(f)}>
-          {(a) => (
-            <Select {...a} name={f} defaultValue={values[f]}>
-              <option value="">—</option>
-              {Object.values(Division).map((d) => (
-                <option key={d} value={d}>
-                  {tr(`division.${d}`)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-      );
-    }
-    if (f === "didGraduate") {
-      return (
-        <Field key={f} id={id(f)} label={t(`fields.${f}`)} error={err(f)}>
-          {(a) => (
-            <Select {...a} name={f} defaultValue={values[f]}>
-              <option value="">—</option>
-              <option value="true">{tc("yes")}</option>
-              <option value="false">{tc("no")}</option>
-            </Select>
-          )}
-        </Field>
-      );
-    }
-    if (f === "currentGrade") {
-      return (
-        <Field key={f} id={id(f)} label={t(`fields.${f}`)} error={err(f)}>
-          {(a) => (
-            <Select {...a} name={f} defaultValue={values[f]}>
-              <option value="">—</option>
-              {GRADES.map((g) => (
-                <option key={g} value={String(g)}>
-                  {tr("grade", { grade: String(g) })}
                 </option>
               ))}
             </Select>

@@ -67,6 +67,7 @@ export default async function LandingPage({
             ))}
           </ul>
           <p className="text-sm text-slate-600">{t("membersOnly")}</p>
+          <p className="text-sm text-slate-600">{t("operatedBy")}</p>
         </section>
 
         <Card className="space-y-5">

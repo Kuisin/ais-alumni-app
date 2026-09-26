@@ -13,16 +13,13 @@
   "history": "これまでの依頼",
   "hints": {
     "reason": "どこが誤っているかを入力してください。例：「2014年ではなく2015年に退学しました」",
-    "teacherYearsTo": "現在もAISに勤務している場合は空欄にしてください。"
+    "teacherYearsTo": "現在もAISに勤務している場合は空欄にしてください。",
+    "studentYearsTo": "卒業前にAISを離れた場合のみ。卒業した・在校中の場合は空欄にしてください。"
   },
   "fields": {
-    "yearsFrom": "在籍開始（年）",
-    "yearsTo": "在籍終了（年）",
-    "lastDivision": "最後に在籍した課程",
-    "graduationOrLeaveYear": "卒業・退学年",
-    "didGraduate": "AISを卒業",
+    "yearsFrom": "入った年",
+    "yearsTo": "離れた年",
     "subjects": "担当教科・学年",
-    "currentGrade": "現在の学年",
     "studentIdNo": "学籍番号",
     "cohort": "学年"
   },

@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
-import {
-  deleteCohortAction,
-  setCohortGraduatedAction,
-} from "@/app/actions/admin-cohorts";
+import { getLocale, getTranslations } from "next-intl/server";
+import { deleteCohortAction } from "@/app/actions/admin-cohorts";
 import { CohortEditForm } from "@/components/cohorts/cohort-forms";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { cohortLabel } from "@/lib/cohorts";
 import { db } from "@/lib/db";
+import { isClassGraduated } from "@/lib/school";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("cohorts");
@@ -17,6 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Admin: 学年 list (layout enforces admin). */
 export default async function CohortsPage() {
   const t = await getTranslations("cohorts");
+  const locale = (await getLocale()) === "en" ? "en" : "ja";
   const cohorts = await db.cohort.findMany({
     orderBy: { number: "desc" },
     include: {
@@ -40,14 +40,18 @@ export default async function CohortsPage() {
                     <span className="text-lg font-bold">
                       {t("numberValue", { number: c.number })}
                     </span>
+                    {/* Status and grade are computed from the end year. */}
                     <span className="text-sm text-slate-600">
-                      {t("elementary", {
-                        start: c.elementaryStartYear,
-                        end: c.elementaryEndYear,
-                      })}
+                      {cohortLabel(c, locale)}
                     </span>
-                    <Badge tone={c.graduated ? "slate" : "green"}>
-                      {c.graduated
+                    <Badge
+                      tone={
+                        isClassGraduated(c.elementaryEndYear)
+                          ? "slate"
+                          : "green"
+                      }
+                    >
+                      {isClassGraduated(c.elementaryEndYear)
                         ? t("status.graduated")
                         : t("status.current")}
                     </Badge>
@@ -55,17 +59,6 @@ export default async function CohortsPage() {
                       {t("members", { count: c._count.roles })}
                     </span>
                   </div>
-                  <form
-                    action={setCohortGraduatedAction.bind(
-                      null,
-                      c.id,
-                      !c.graduated,
-                    )}
-                  >
-                    <SubmitButton variant="secondary">
-                      {c.graduated ? t("markCurrent") : t("markGraduated")}
-                    </SubmitButton>
-                  </form>
                 </div>
                 {c.note ? (
                   <p className="text-sm text-slate-700">{c.note}</p>

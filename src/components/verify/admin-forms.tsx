@@ -6,12 +6,10 @@ import {
   type AdminActionState,
   addVoucherAction,
   decideVerificationAction,
-  updateAisRecordAction,
 } from "@/app/actions/admin-verify";
 import { Alert } from "@/components/ui/card";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Field, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { Division } from "@/generated/prisma/enums";
 
 function Status({ state }: { state: AdminActionState }) {
   const t = useTranslations("adminVerify");
@@ -91,100 +89,6 @@ export function DecisionForm({ requestId }: { requestId: string }) {
   );
 }
 
-/** Admin correction of the FORMER_STUDENT AIS record (§7). */
-export function AisRecordForm({
-  userId,
-  requestId,
-  lastDivision,
-  graduationOrLeaveYear,
-  didGraduate,
-}: {
-  userId: string;
-  requestId: string;
-  lastDivision: Division | null;
-  graduationOrLeaveYear: number | null;
-  didGraduate: boolean | null;
-}) {
-  const t = useTranslations("adminVerify");
-  const tv = useTranslations("verify");
-  const tr = useTranslations("roles");
-  const [state, action] = useActionState<AdminActionState, FormData>(
-    updateAisRecordAction,
-    null,
-  );
-  const err = (k: string) =>
-    state?.errors?.[k] ? tv(`errors.${state.errors[k]}`) : null;
-
-  return (
-    <form action={action} className="space-y-4">
-      <input type="hidden" name="userId" value={userId} />
-      <input type="hidden" name="requestId" value={requestId} />
-      <Field
-        id="ais-lastDivision"
-        label={tv("fields.lastDivision")}
-        required
-        error={err("lastDivision")}
-      >
-        {(aria) => (
-          <Select
-            {...aria}
-            name="lastDivision"
-            defaultValue={lastDivision ?? ""}
-          >
-            <option value="">{tv("select")}</option>
-            {Object.values(Division).map((d) => (
-              <option key={d} value={d}>
-                {tr(`division.${d}`)}
-              </option>
-            ))}
-          </Select>
-        )}
-      </Field>
-      <Field
-        id="ais-year"
-        label={tv("fields.graduationOrLeaveYear")}
-        required
-        error={err("graduationOrLeaveYear")}
-      >
-        {(aria) => (
-          <Input
-            {...aria}
-            name="graduationOrLeaveYear"
-            type="number"
-            inputMode="numeric"
-            defaultValue={graduationOrLeaveYear ?? ""}
-          />
-        )}
-      </Field>
-      <Field
-        id="ais-didGraduate"
-        label={tv("fields.didGraduate")}
-        required
-        error={err("didGraduate")}
-      >
-        {(aria) => (
-          <Select
-            {...aria}
-            name="didGraduate"
-            defaultValue={
-              didGraduate === true ? "yes" : didGraduate === false ? "no" : ""
-            }
-          >
-            <option value="">{tv("select")}</option>
-            <option value="yes">{tv("didGraduate.yes")}</option>
-            <option value="no">{tv("didGraduate.no")}</option>
-          </Select>
-        )}
-      </Field>
-      <SubmitButton variant="secondary" pendingText={t("saving")}>
-        {t("aisRecord.save")}
-      </SubmitButton>
-      <Status state={state} />
-    </form>
-  );
-}
-
-/** "Ask this member" button for a manual voucher (§6.4.2). */
 export function AddVoucherButton({
   requestId,
   voucherId,

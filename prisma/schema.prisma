@@ -42,7 +42,11 @@ enum RoleKey {
   FORMER_PARENT
 }
 
+// AIS has kindergarten and elementary only (AIS_DIVISIONS in src/lib/school.ts).
+// JUNIOR_HIGH / HIGH_SCHOOL are deprecated: kept until the code on main stops
+// writing them, then removed in a later release (expand → contract).
 enum Division {
+  KINDERGARTEN
   ELEMENTARY
   JUNIOR_HIGH
   HIGH_SCHOOL
@@ -223,18 +227,23 @@ enum FamilyLinkInitiator {
 }
 
 model FamilyLink {
-  id          String              @id @default(cuid())
-  familyId    String
-  family      Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  parentId    String
-  parent      User                @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
-  childId     String? // null if child has no account yet
-  child       User?               @relation("child", fields: [childId], references: [id], onDelete: Cascade)
-  childName   String?
-  initiatedBy FamilyLinkInitiator @default(PARENT)
-  confirmedAt DateTime?
-  confirmedBy String? // userId or "ADMIN"
-  createdAt   DateTime            @default(now())
+  id            String              @id @default(cuid())
+  familyId      String
+  family        Family              @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  parentId      String
+  parent        User                @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
+  childId       String? // null if child has no account yet
+  child         User?               @relation("child", fields: [childId], references: [id], onDelete: Cascade)
+  childName     String?
+  // The child's 学年 and the year they left AIS early (if any); a parent is
+  // "current" while any child is a current student (src/lib/school.ts).
+  childCohortId String?
+  childCohort   Cohort?             @relation(fields: [childCohortId], references: [id], onDelete: SetNull)
+  childLeftYear Int?
+  initiatedBy   FamilyLinkInitiator @default(PARENT)
+  confirmedAt   DateTime?
+  confirmedBy   String? // userId or "ADMIN"
+  createdAt     DateTime            @default(now())
 
   @@index([parentId])
   @@index([childId])
@@ -506,18 +515,19 @@ model Broadcast {
   @@index([senderId, createdAt])
 }
 
-// Added: 学年 (class), managed by admins. Numbered 第N期 by the year the class
-// finishes 6th grade (finishing in 2016 = 第5期; see src/lib/cohorts.ts).
+// Added: 学年 (class), created on first use. Numbered 第N期 by the year the
+// class finishes 6th grade (2016 = 第5期). Grade and graduation are computed
+// from elementaryEndYear and today's date (src/lib/school.ts).
 model Cohort {
   id                  String         @id @default(cuid())
   number              Int            @unique // 第N期
   elementaryStartYear Int
   elementaryEndYear   Int // year the class finishes 6th grade
-  graduated           Boolean        @default(false) // class-level 卒業済み / 在校中
   note                String?
   roles               UserRole[]
   positions           UserPosition[]
   broadcasts          Broadcast[]
+  childLinks          FamilyLink[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 }

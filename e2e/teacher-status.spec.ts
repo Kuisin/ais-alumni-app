@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { signInWithEmail, uniqueEmail } from "./helpers";
 
-test("former teacher signs up; status shows in the admin member list", async ({
+test("teacher with a leave year is registered as former automatically", async ({
   browser,
 }) => {
   const email = uniqueEmail("teacher");
@@ -10,6 +10,8 @@ test("former teacher signs up; status shows in the admin member list", async ({
   await signInWithEmail(member, email);
   await member.getByRole("button", { name: "Skip for now" }).click();
 
+  await member.getByRole("checkbox", { name: /Teacher \/ Staff/ }).check();
+  await member.getByRole("button", { name: "Next" }).click();
   await member
     .getByRole("textbox", { name: "Last name", exact: true })
     .fill(lastName);
@@ -17,15 +19,17 @@ test("former teacher signs up; status shows in the admin member list", async ({
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Teacher");
   await member.getByLabel("Date of birth").fill("1970-05-05");
-  await member.getByRole("checkbox", { name: "Teacher / Staff" }).check();
   await member.getByRole("button", { name: "Next" }).click();
 
-  await member.getByRole("radio", { name: "Former teacher / staff" }).check();
-  await member.getByLabel("From (year)").fill("2005");
-  await member.getByLabel("To (year)").fill("2015");
-  await member.getByLabel("Subjects / grades taught").fill("Math, G9–12");
+  // Former/current comes from the leave year — no manual status.
+  await member.getByLabel("Year you started").fill("2005");
+  await member.getByLabel("Year you left").fill("2015");
+  await expect(
+    member.getByText("former teacher / staff (left in 2015)"),
+  ).toBeVisible();
+  await member.getByLabel("Subjects / grades taught").fill("Math");
   await member.getByRole("button", { name: "Next" }).click();
-  await member.getByRole("button", { name: "Submit" }).click();
+  await member.getByRole("button", { name: "Submit application" }).click();
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/status/);
 
   const admin = await browser.newPage();

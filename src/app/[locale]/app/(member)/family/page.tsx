@@ -10,6 +10,7 @@ import { FamilySearch } from "@/components/family/family-search";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FamilyLinkInitiator, type Locale } from "@/generated/prisma/enums";
+import { loadCohortChoices } from "@/lib/cohorts-db";
 import {
   canClaim,
   canConfirm,
@@ -199,7 +200,13 @@ export default async function FamilyPage({ searchParams }: Props) {
             <h3 className="mb-3 font-semibold">
               {t("claimChild.manualTitle")}
             </h3>
-            <ChildNameForm />
+            <ChildNameForm
+              cohorts={
+                await loadCohortChoices(
+                  (await getLocale()) === "en" ? "en" : "ja",
+                )
+              }
+            />
           </div>
         </Card>
       ) : null}

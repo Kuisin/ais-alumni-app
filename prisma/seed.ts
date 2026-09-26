@@ -7,7 +7,8 @@
  */
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { defaultCohort } from "../src/lib/cohorts";
+import { defaultCohort, elementaryEndFor } from "../src/lib/cohorts";
+import { studentRoleFields } from "../src/lib/member-status";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -29,7 +30,11 @@ async function main() {
         lastNameRomaji: "Admin",
         firstNameRomaji: "AIS",
         nameRomaji: "AIS Admin",
-        roles: { create: [{ role: "TEACHER", yearsFrom: 2010 }] },
+        roles: {
+          create: [
+            { role: "TEACHER", yearsFrom: 2010, teacherStatus: "CURRENT" },
+          ],
+        },
       },
     });
     console.log(`Admin ready: ${admin.primaryEmail} (${admin.id})`);
@@ -115,13 +120,13 @@ async function main() {
         roles: {
           create: [
             {
-              role: "FORMER_STUDENT",
+              // Status, graduation and division derived as in the app.
+              ...studentRoleFields(
+                elementaryEndFor(m.cohort),
+                elementaryEndFor(m.cohort) - 7,
+                null,
+              ),
               cohortId: await cohortId(m.cohort),
-              yearsFrom: m.year - 6,
-              yearsTo: m.year,
-              lastDivision: "HIGH_SCHOOL",
-              graduationOrLeaveYear: m.year,
-              didGraduate: true,
               currentStage: m.stage,
               currentStageUpdatedAt: new Date(),
               currentStageDetail: "Nagoya",

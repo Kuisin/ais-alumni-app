@@ -1,6 +1,6 @@
 {
   "title": "学年 (classes)",
-  "description": "A 学年 is created automatically the first time a member or class representative is assigned to it. Numbers follow the year the class finishes 6th grade (2016 = 第5期). You can adjust years, mark a class as graduated, or delete unused ones.",
+  "description": "A 学年 is created automatically the first time someone is assigned to it. It's numbered by the year the class finishes 6th grade (2016 = 第5期), and its grade and graduation update on their own each April. You can adjust years or delete unused classes.",
   "save": "Save",
   "edit": "Edit",
   "delete": "Delete class",
@@ -13,14 +13,11 @@
     "graduated": "Graduated",
     "current": "At AIS"
   },
-  "markGraduated": "Mark as graduated",
-  "markCurrent": "Mark as at AIS",
   "fields": {
     "number": "Class number",
     "elementaryStartYear": "Elementary start year",
     "elementaryEndYear": "Year they finish 6th grade",
-    "note": "Note (optional)",
-    "graduated": "This class has graduated"
+    "note": "Note (optional)"
   },
   "hints": {
     "start": "Suggested: six years earlier.",

@@ -1,14 +1,16 @@
 import { z } from "zod";
-import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
 import { parseCohortNumber } from "@/lib/cohorts";
 import { nameColumns } from "@/lib/names";
 
 /**
- * Verification form (§6.1, §6.2, §7). Shared by the client form (per-step
- * validation) and the server action (authoritative validation). No server
- * imports here.
+ * Sign-up (verification) form, version 2. Shared by the client wizard
+ * (per-step validation) and the server action (authoritative validation).
+ * No server imports here. Error messages are i18n keys under
+ * `verify.errors.*`.
  *
- * Error messages are i18n keys under `verify.errors.*`.
+ * Members say what they are (student / parent / teacher) and give their
+ * 学年 and years; whether they are current or former, their grade and
+ * graduation are worked out automatically (src/lib/school.ts).
  */
 
 export const EVIDENCE_MAX_FILES = 3;
@@ -22,27 +24,18 @@ export const MAX_CHILDREN = 8;
 export const MIN_YEAR = 1950;
 
 export function maxYear(now: Date = new Date()): number {
-  return now.getUTCFullYear() + 1;
+  return now.getUTCFullYear() + 10;
 }
 
-export const ROLE_ORDER: readonly RoleKey[] = [
-  RoleKey.FORMER_STUDENT,
-  RoleKey.FORMER_PARENT,
-  RoleKey.TEACHER,
-  RoleKey.CURRENT_STUDENT,
-  RoleKey.CURRENT_PARENT,
-];
+/** What someone is at AIS; the exact role (current/former) is derived. */
+export const MEMBER_TYPES = ["STUDENT", "PARENT", "TEACHER"] as const;
+export type MemberType = (typeof MEMBER_TYPES)[number];
 
-/** Form section key for each role. */
-export const ROLE_SECTION = {
+const SECTION = {
+  STUDENT: "student",
+  PARENT: "parent",
   TEACHER: "teacher",
-  CURRENT_STUDENT: "currentStudent",
-  CURRENT_PARENT: "currentParent",
-  FORMER_STUDENT: "formerStudent",
-  FORMER_PARENT: "formerParent",
-} as const satisfies Record<RoleKey, string>;
-
-export type RoleSection = (typeof ROLE_SECTION)[RoleKey];
+} as const;
 
 // ---------------------------------------------------------------------------
 // Primitive helpers
@@ -60,20 +53,38 @@ function toNumber(v: unknown): unknown {
   return v;
 }
 
-const intIn = (min: number, max: number, code: string) =>
-  z.preprocess(
-    toNumber,
-    z.number({ error: "required" }).int(code).min(min, code).max(max, code),
-  );
+const yearNumber = () =>
+  z
+    .number({ error: "required" })
+    .int("invalidYear")
+    .min(MIN_YEAR, "invalidYear")
+    .max(maxYear(), "invalidYear");
+const year = () => z.preprocess(toNumber, yearNumber());
+// Empty → null (the preprocess turns "" into undefined before .optional()).
+const optionalYear = () =>
+  z.preprocess(toNumber, yearNumber().optional()).transform((v) => v ?? null);
 
-const year = () => intIn(MIN_YEAR, maxYear(), "invalidYear");
-const grade = () => intIn(0, 12, "invalidGrade");
+/** 学年 as its 第N期 number (the class row is created on first use). */
+const cohortNumber = () =>
+  z
+    .string({ error: "required" })
+    .trim()
+    .transform((v, ctx) => {
+      const n = parseCohortNumber(v);
+      if (n === null || n === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: n === null ? "cohortRequired" : "invalid",
+        });
+        return z.NEVER;
+      }
+      return n;
+    });
 
 const isoDate = z
   .string()
   .trim()
   .min(1, "required")
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "invalidDate")
   .refine((s) => {
     const d = new Date(`${s}T00:00:00Z`);
     return (
@@ -84,23 +95,50 @@ const isoDate = z
     );
   }, "invalidDate");
 
-function yearsOrdered(
-  v: { yearsFrom: number; yearsTo: number | null },
+function leftAfterJoined(
+  v: { joinedYear: number; leftYear: number | null },
   ctx: z.RefinementCtx,
 ) {
-  if (v.yearsTo !== null && v.yearsTo < v.yearsFrom) {
-    ctx.addIssue({ code: "custom", path: ["yearsTo"], message: "yearsOrder" });
+  if (v.leftYear !== null && v.leftYear < v.joinedYear) {
+    ctx.addIssue({ code: "custom", path: ["leftYear"], message: "yearsOrder" });
   }
 }
 
 // ---------------------------------------------------------------------------
-// Role sections (§6.2)
+// Sections
+
+export const studentSchema = z
+  .object({
+    cohortNumber: cohortNumber(),
+    joinedYear: year(),
+    /** Left AIS before graduating (empty = still at AIS or graduated). */
+    leftYear: optionalYear(),
+    studentIdNo: optionalText(50),
+    homeroomTeacher: optionalText(),
+    /** Classmates the committee may ask to confirm (optional). */
+    classmates: z
+      .array(text())
+      .max(2)
+      .default([])
+      .transform((a) => a.filter(Boolean)),
+  })
+  .superRefine(leftAfterJoined);
+
+export const childSchema = z.object({
+  name: requiredText(),
+  cohortNumber: cohortNumber(),
+  leftYear: optionalYear(),
+});
+
+export const parentSchema = z.object({
+  children: z.array(childSchema).min(1, "childrenRequired").max(MAX_CHILDREN),
+});
 
 export const teacherSchema = z
   .object({
-    yearsFrom: year(),
-    yearsTo: z.preprocess(toNumber, z.number().int().optional()),
-    present: z.boolean().default(false),
+    joinedYear: year(),
+    /** Year they left AIS (empty = still working at AIS). */
+    leftYear: optionalYear(),
     subjects: requiredText(300),
     schoolEmail: z
       .string()
@@ -110,116 +148,7 @@ export const teacherSchema = z
       .transform((v) => (v ? v.toLowerCase() : null))
       .pipe(z.email("invalidEmail").nullable()),
   })
-  .transform((v, ctx) => {
-    let yearsTo: number | null = null;
-    if (!v.present) {
-      if (v.yearsTo === undefined) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["yearsTo"],
-          message: "required",
-        });
-        return z.NEVER;
-      }
-      if (v.yearsTo < MIN_YEAR || v.yearsTo > maxYear()) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["yearsTo"],
-          message: "invalidYear",
-        });
-        return z.NEVER;
-      }
-      yearsTo = v.yearsTo;
-    }
-    return {
-      yearsFrom: v.yearsFrom,
-      yearsTo,
-      subjects: v.subjects,
-      schoolEmail: v.schoolEmail,
-    };
-  })
-  .superRefine(yearsOrdered);
-
-/**
- * 学年 as its 第N期 number; optional ("not listed / not sure"). The class
- * row is created on first use (ensureCohort).
- */
-const cohortNumber = () =>
-  z
-    .string()
-    .trim()
-    .optional()
-    .transform((v, ctx) => {
-      const n = parseCohortNumber(v ?? "");
-      if (n === undefined) {
-        ctx.addIssue({ code: "custom", message: "invalid" });
-        return z.NEVER;
-      }
-      return n;
-    });
-
-export const currentStudentSchema = z.object({
-  cohortNumber: cohortNumber(),
-  grade: grade(),
-  homeroomTeacher: requiredText(),
-  studentIdNo: optionalText(50),
-});
-
-export const currentChildSchema = z.object({
-  name: requiredText(),
-  grade: grade(),
-  homeroomTeacher: optionalText(),
-});
-
-export const currentParentSchema = z.object({
-  children: z
-    .array(currentChildSchema)
-    .min(1, "childrenRequired")
-    .max(MAX_CHILDREN),
-});
-
-export const formerStudentSchema = z
-  .object({
-    cohortNumber: cohortNumber(),
-    // Joined AIS; the end of their time at AIS is graduationOrLeaveYear.
-    yearsFrom: year(),
-    lastDivision: z.enum(Division, { error: "required" }),
-    graduationOrLeaveYear: year(),
-    didGraduate: z
-      .enum(["yes", "no"], { error: "required" })
-      .transform((v) => v === "yes"),
-    homeroomTeacher: optionalText(),
-    classmates: z
-      .array(text())
-      .max(2)
-      .transform((a) => a.filter(Boolean))
-      .refine((a) => a.length >= 1, "classmateRequired"),
-    currentStage: z.enum(LifeStage, { error: "required" }),
-  })
-  .superRefine((v, ctx) => {
-    if (v.graduationOrLeaveYear < v.yearsFrom) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["graduationOrLeaveYear"],
-        message: "yearsOrder",
-      });
-    }
-  });
-
-export const formerChildSchema = z
-  .object({
-    name: requiredText(),
-    yearsFrom: year(),
-    yearsTo: year(),
-  })
-  .superRefine(yearsOrdered);
-
-export const formerParentSchema = z.object({
-  children: z
-    .array(formerChildSchema)
-    .min(1, "childrenRequired")
-    .max(MAX_CHILDREN),
-});
+  .superRefine(leftAfterJoined);
 
 export const evidenceItemSchema = z.object({
   key: z.string().min(1).max(500),
@@ -245,6 +174,10 @@ export function safeFileName(name: string): string {
 export function verificationSchema(opts: { requireKanji: boolean }) {
   return z
     .object({
+      types: z
+        .array(z.enum(MEMBER_TYPES))
+        .min(1, "typesRequired")
+        .transform((t) => MEMBER_TYPES.filter((k) => t.includes(k))),
       lastNameRomaji: requiredText(50),
       firstNameRomaji: requiredText(50),
       middleNameRomaji: optionalText(50),
@@ -252,38 +185,31 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
       firstNameKanji: opts.requireKanji ? requiredText(50) : optionalText(50),
       nameAtAis: optionalText(100),
       dateOfBirth: isoDate,
-      roles: z
-        .array(z.enum(RoleKey))
-        .min(1, "rolesRequired")
-        .transform((r) => ROLE_ORDER.filter((k) => r.includes(k))),
       locale: z.enum(["ja", "en"]),
+      student: studentSchema.optional(),
+      parent: parentSchema.optional(),
       teacher: teacherSchema.optional(),
-      currentStudent: currentStudentSchema.optional(),
-      currentParent: currentParentSchema.optional(),
-      formerStudent: formerStudentSchema.optional(),
-      formerParent: formerParentSchema.optional(),
       evidence: z
         .array(evidenceItemSchema)
         .max(EVIDENCE_MAX_FILES, "tooManyFiles")
         .default([]),
     })
     .superRefine((v, ctx) => {
-      for (const role of v.roles) {
-        const section = ROLE_SECTION[role];
-        if (!v[section])
+      for (const type of v.types) {
+        if (!v[SECTION[type]]) {
           ctx.addIssue({
             code: "custom",
-            path: [section],
+            path: [SECTION[type]],
             message: "required",
           });
+        }
       }
     })
     .transform((v) => {
-      // Drop sections for roles that were not selected.
-      // Also add the combined display names (nameRomaji / nameKanji).
+      // Drop sections for types that were not chosen; add combined names.
       const out = { ...v, ...nameColumns(v) };
-      for (const role of Object.keys(ROLE_SECTION) as RoleKey[]) {
-        if (!v.roles.includes(role)) delete out[ROLE_SECTION[role]];
+      for (const type of MEMBER_TYPES) {
+        if (!v.types.includes(type)) delete out[SECTION[type]];
       }
       return out;
     });
@@ -292,23 +218,19 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
 export type VerificationData = z.output<ReturnType<typeof verificationSchema>>;
 
 /** What is stored in VerificationRequest.answers. */
-export type StoredAnswers = Omit<VerificationData, "evidence"> & { version: 1 };
+export type StoredAnswers = Omit<VerificationData, "evidence"> & { version: 2 };
 
 // ---------------------------------------------------------------------------
 // Client form state (string-valued so inputs stay controlled)
 
-export type CurrentChildState = {
+export type ChildState = {
   name: string;
-  grade: string;
-  homeroomTeacher: string;
-};
-export type FormerChildState = {
-  name: string;
-  yearsFrom: string;
-  yearsTo: string;
+  cohortNumber: string;
+  leftYear: string;
 };
 
 export type VerifyFormState = {
+  types: MemberType[];
   lastNameRomaji: string;
   firstNameRomaji: string;
   middleNameRomaji: string;
@@ -316,49 +238,34 @@ export type VerifyFormState = {
   firstNameKanji: string;
   nameAtAis: string;
   dateOfBirth: string;
-  roles: RoleKey[];
   locale: "ja" | "en";
+  student: {
+    cohortNumber: string;
+    joinedYear: string;
+    leftYear: string;
+    studentIdNo: string;
+    homeroomTeacher: string;
+    classmates: [string, string];
+  };
+  parent: { children: ChildState[] };
   teacher: {
-    yearsFrom: string;
-    yearsTo: string;
-    present: boolean;
+    joinedYear: string;
+    leftYear: string;
     subjects: string;
     schoolEmail: string;
   };
-  currentStudent: {
-    cohortNumber: string;
-    grade: string;
-    homeroomTeacher: string;
-    studentIdNo: string;
-  };
-  currentParent: { children: CurrentChildState[] };
-  formerStudent: {
-    cohortNumber: string;
-    yearsFrom: string;
-    lastDivision: string;
-    graduationOrLeaveYear: string;
-    didGraduate: "" | "yes" | "no";
-    homeroomTeacher: string;
-    classmates: [string, string];
-    currentStage: string;
-  };
-  formerParent: { children: FormerChildState[] };
   evidence: EvidenceItem[];
 };
 
-export const emptyCurrentChild = (): CurrentChildState => ({
+export const emptyChild = (): ChildState => ({
   name: "",
-  grade: "",
-  homeroomTeacher: "",
-});
-export const emptyFormerChild = (): FormerChildState => ({
-  name: "",
-  yearsFrom: "",
-  yearsTo: "",
+  cohortNumber: "",
+  leftYear: "",
 });
 
 export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
   return {
+    types: [],
     lastNameRomaji: "",
     firstNameRomaji: "",
     middleNameRomaji: "",
@@ -366,79 +273,40 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
     firstNameKanji: "",
     nameAtAis: "",
     dateOfBirth: "",
-    roles: [],
     locale,
-    teacher: {
-      yearsFrom: "",
-      yearsTo: "",
-      present: false,
-      subjects: "",
-      schoolEmail: "",
-    },
-    currentStudent: {
+    student: {
       cohortNumber: "",
-      grade: "",
-      homeroomTeacher: "",
+      joinedYear: "",
+      leftYear: "",
       studentIdNo: "",
-    },
-    currentParent: { children: [emptyCurrentChild()] },
-    formerStudent: {
-      cohortNumber: "",
-      yearsFrom: "",
-      lastDivision: "",
-      graduationOrLeaveYear: "",
-      didGraduate: "",
       homeroomTeacher: "",
       classmates: ["", ""],
-      currentStage: "",
     },
-    formerParent: { children: [emptyFormerChild()] },
+    parent: { children: [emptyChild()] },
+    teacher: { joinedYear: "", leftYear: "", subjects: "", schoolEmail: "" },
     evidence: [],
   };
 }
 
-/** The JSON the client posts: only sections for the selected roles. */
+/** The JSON the client posts: only sections for the chosen types. */
 export function toPayload(state: VerifyFormState): Record<string, unknown> {
-  const {
-    teacher,
-    currentStudent,
-    currentParent,
-    formerStudent,
-    formerParent,
-    ...common
-  } = state;
-  const sections = {
-    teacher,
-    currentStudent,
-    currentParent,
-    formerStudent,
-    formerParent,
-  };
+  const { student, parent, teacher, ...common } = state;
+  const sections = { student, parent, teacher };
   const out: Record<string, unknown> = { ...common };
-  for (const role of state.roles) {
-    const key = ROLE_SECTION[role];
-    out[key] = sections[key];
-  }
+  for (const type of state.types) out[SECTION[type]] = sections[SECTION[type]];
   return out;
 }
 
+type Obj = Record<string, unknown>;
+const obj = (v: unknown): Obj =>
+  v && typeof v === "object" && !Array.isArray(v) ? (v as Obj) : {};
+const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const s = (v: unknown): string =>
-  typeof v === "string" ? v : typeof v === "number" ? String(v) : "";
-
-function obj(v: unknown): Record<string, unknown> {
-  return v && typeof v === "object" && !Array.isArray(v)
-    ? (v as Record<string, unknown>)
-    : {};
-}
-
-function arr(v: unknown): unknown[] {
-  return Array.isArray(v) ? v : [];
-}
+  v === null || v === undefined ? "" : String(v);
 
 /**
- * Prefill for NEEDS_INFO resubmissions (§6.4): convert stored answers (numbers,
- * nulls) back into form state. Lenient — unknown/missing fields fall back to
- * defaults so older answer shapes never crash the form.
+ * Stored answers → form state (NEEDS_INFO resubmission). Answers from the
+ * older (version 1) form are not mapped; the member re-enters the details.
  */
 export function answersToFormState(
   answers: unknown,
@@ -447,19 +315,17 @@ export function answersToFormState(
 ): VerifyFormState {
   const base = emptyFormState(locale);
   const a = obj(answers);
-  const roleSet = new Set<string>(Object.values(RoleKey));
-  const t = obj(a.teacher);
-  const cs = obj(a.currentStudent);
-  const fs = obj(a.formerStudent);
-  const cpChildren = arr(obj(a.currentParent).children).map(obj);
-  const fpChildren = arr(obj(a.formerParent).children).map(obj);
-  const classmates = arr(fs.classmates).map(s);
-  const hasTeacher = Object.keys(t).length > 0;
-
+  if (a.version !== 2) return { ...base, evidence };
+  const st = obj(a.student);
+  const tc = obj(a.teacher);
+  const children = arr(obj(a.parent).children).map(obj);
+  const classmates = arr(st.classmates).map(s);
+  const types = arr(a.types).filter((t): t is MemberType =>
+    (MEMBER_TYPES as readonly string[]).includes(String(t)),
+  );
   return {
     ...base,
-    // Answers saved before names were split have no parts; the page fills
-    // those from the user's current name (see onboarding/verify/page.tsx).
+    types,
     lastNameRomaji: s(a.lastNameRomaji),
     firstNameRomaji: s(a.firstNameRomaji),
     middleNameRomaji: s(a.middleNameRomaji),
@@ -467,62 +333,38 @@ export function answersToFormState(
     firstNameKanji: s(a.firstNameKanji),
     nameAtAis: s(a.nameAtAis),
     dateOfBirth: s(a.dateOfBirth),
-    roles: arr(a.roles).filter(
-      (r): r is RoleKey => typeof r === "string" && roleSet.has(r),
-    ),
-    locale: a.locale === "en" || a.locale === "ja" ? a.locale : locale,
-    teacher: hasTeacher
-      ? {
-          yearsFrom: s(t.yearsFrom),
-          yearsTo: s(t.yearsTo),
-          present: t.yearsTo === null || t.yearsTo === undefined,
-          subjects: s(t.subjects),
-          schoolEmail: s(t.schoolEmail),
-        }
-      : base.teacher,
-    currentStudent: {
-      cohortNumber: s(cs.cohortNumber),
-      grade: s(cs.grade),
-      homeroomTeacher: s(cs.homeroomTeacher),
-      studentIdNo: s(cs.studentIdNo),
-    },
-    currentParent: {
-      children: cpChildren.length
-        ? cpChildren.map((c) => ({
-            name: s(c.name),
-            grade: s(c.grade),
-            homeroomTeacher: s(c.homeroomTeacher),
-          }))
-        : base.currentParent.children,
-    },
-    formerStudent: {
-      cohortNumber: s(fs.cohortNumber),
-      yearsFrom: s(fs.yearsFrom),
-      lastDivision: s(fs.lastDivision),
-      graduationOrLeaveYear: s(fs.graduationOrLeaveYear),
-      didGraduate:
-        fs.didGraduate === true ? "yes" : fs.didGraduate === false ? "no" : "",
-      homeroomTeacher: s(fs.homeroomTeacher),
+    locale: a.locale === "en" ? "en" : a.locale === "ja" ? "ja" : locale,
+    student: {
+      cohortNumber: s(st.cohortNumber),
+      joinedYear: s(st.joinedYear),
+      leftYear: s(st.leftYear),
+      studentIdNo: s(st.studentIdNo),
+      homeroomTeacher: s(st.homeroomTeacher),
       classmates: [classmates[0] ?? "", classmates[1] ?? ""],
-      currentStage: s(fs.currentStage),
     },
-    formerParent: {
-      children: fpChildren.length
-        ? fpChildren.map((c) => ({
+    parent: {
+      children: children.length
+        ? children.map((c) => ({
             name: s(c.name),
-            yearsFrom: s(c.yearsFrom),
-            yearsTo: s(c.yearsTo),
+            cohortNumber: s(c.cohortNumber),
+            leftYear: s(c.leftYear),
           }))
-        : base.formerParent.children,
+        : base.parent.children,
+    },
+    teacher: {
+      joinedYear: s(tc.joinedYear),
+      leftYear: s(tc.leftYear),
+      subjects: s(tc.subjects),
+      schoolEmail: s(tc.schoolEmail),
     },
     evidence,
   };
 }
 
 // ---------------------------------------------------------------------------
-// Errors
+// Errors and steps
 
-/** Flatten Zod issues into { "formerStudent.yearsTo": "invalidYear" } (first wins). */
+/** Flatten Zod issues into { "student.leftYear": "yearsOrder" } (first wins). */
 export function issuesToErrors(
   issues: readonly z.core.$ZodIssue[],
 ): Record<string, string> {
@@ -538,13 +380,12 @@ const KNOWN_CODES = new Set([
   "required",
   "tooLong",
   "invalidYear",
-  "invalidGrade",
   "invalidDate",
   "invalidEmail",
   "yearsOrder",
-  "rolesRequired",
+  "typesRequired",
+  "cohortRequired",
   "childrenRequired",
-  "classmateRequired",
   "tooManyFiles",
 ]);
 
@@ -552,22 +393,15 @@ function normalizeMessage(message: string): string {
   return KNOWN_CODES.has(message) ? message : "invalid";
 }
 
-/** Form steps (§14 screen 4). Used to scope per-step validation. */
-export const STEPS = ["basics", "roles", "evidence"] as const;
+/** Wizard steps: who you are → about you → details → review & send. */
+export const STEPS = ["type", "basics", "details", "review"] as const;
 export type Step = (typeof STEPS)[number];
 
 export function stepOfPath(path: string): Step {
   const head = path.split(".")[0];
-  if (
-    [
-      "teacher",
-      "currentStudent",
-      "currentParent",
-      "formerStudent",
-      "formerParent",
-    ].includes(head)
-  )
-    return "roles";
-  if (head === "evidence") return "evidence";
+  if (head === "types") return "type";
+  if (head === "student" || head === "parent" || head === "teacher")
+    return "details";
+  if (head === "evidence") return "review";
   return "basics";
 }

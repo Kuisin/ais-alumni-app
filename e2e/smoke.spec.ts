@@ -68,8 +68,11 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/line/);
   await member.getByRole("button", { name: "Skip for now" }).click();
 
-  // 2. Verification form.
+  // 2. Sign-up wizard: who you are → basics → details → review.
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/verify/);
+  await member.getByRole("checkbox", { name: /Student \/ Alumni/ }).check();
+  await member.getByRole("button", { name: "Next" }).click();
+
   await member
     .getByRole("textbox", { name: "Last name", exact: true })
     .fill(lastName);
@@ -77,26 +80,21 @@ test("email sign-up → verification → admin approval → member dashboard", a
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Smoke");
   await member.getByLabel("Date of birth").fill("1996-04-02");
-  await member
-    .getByRole("checkbox", { name: "Former student / Alumni" })
-    .check();
   await member.getByRole("button", { name: "Next" }).click();
-  // 学年: every class is offered (created on first use); the 卒業済み /
-  // 在校中 toggle filters the list. 第3期 finished 6th grade in 2014.
+
+  // 学年: every class is offered (created on first use); the Graduated /
+  // At AIS toggle filters the list. 第3期 finished 6th grade in 2014.
   await member.getByText("Graduated", { exact: true }).click();
   await member
     .getByRole("combobox", { name: /学年/ })
-    .selectOption({ label: "Class 3 (elementary 2008–2014)" });
-  // One pair of years: joined, and graduated / left.
-  await expect(member.getByLabel("To (year)")).toHaveCount(0);
-  await member.getByLabel("From (year)").fill("2008");
-  await member.getByLabel("Last division attended").selectOption("HIGH_SCHOOL");
-  await member.getByLabel("Graduation / leaving year").fill("2014");
-  await member.getByRole("radio", { name: "Yes, I graduated" }).check();
-  await member.getByLabel("Classmate 1").fill("Hanako Suzuki");
-  await member.getByLabel("What are you doing now?").selectOption("WORKING");
+    .selectOption({ label: "Class 3 (graduated 2014)" });
+  await member.getByLabel("Year you joined AIS").fill("2008");
+  // Status is worked out automatically and previewed.
+  await expect(
+    member.getByText("You'll be registered as a graduate (2014)"),
+  ).toBeVisible();
   await member.getByRole("button", { name: "Next" }).click();
-  await member.getByRole("button", { name: "Submit" }).click();
+  await member.getByRole("button", { name: "Submit application" }).click();
 
   // 3. Pending review; member pages stay closed.
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/status/);

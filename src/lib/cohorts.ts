@@ -1,6 +1,14 @@
+import {
+  classGradeNow,
+  elementaryEndForGrade,
+  isClassGraduated,
+  YOUNGEST_GRADE,
+} from "@/lib/school";
+
 /**
- * 学年 (classes). Numbered 第N期 by the year the class finishes 6th grade:
- * finishing in 2016 = 第5期, so 第1期 finished in 2012.
+ * 学年 (classes). Numbered 第N期 by the year the class finishes 6th grade
+ * (graduates from AIS): 2016 = 第5期, so 第1期 finished in 2012. Rows are
+ * created on first use (ensureCohort); grade and graduation are computed.
  */
 export const FIRST_COHORT_ELEMENTARY_END = 2012;
 
@@ -12,36 +20,14 @@ export function elementaryEndFor(number: number): number {
   return FIRST_COHORT_ELEMENTARY_END + number - 1;
 }
 
-/** Suggested elementary start year: six school years before the end year. */
+/** Elementary start (1st grade, April): six school years before the end. */
 export function suggestedStartYear(elementaryEndYear: number): number {
   return elementaryEndYear - 6;
 }
 
-/**
- * Assumption: the AIS school year starts in August (Japan time), so in
- * Aug–Dec the current school year ends next calendar year.
- */
-export function schoolYearEnd(now: Date = new Date()): number {
-  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return jst.getUTCMonth() >= 7
-    ? jst.getUTCFullYear() + 1
-    : jst.getUTCFullYear();
-}
-
-/** Newest class currently at AIS: this year's 1st graders (finish G6 in 5 years). */
+/** Newest class at AIS: this year's 年少 (youngest kindergarten year). */
 export function latestCohortNumber(now: Date = new Date()): number {
-  return cohortNumberFor(schoolYearEnd(now) + 5);
-}
-
-/**
- * Default class status: graduated once its high-school graduation (6 years
- * after finishing 6th grade) is in a past school year. Admins can override.
- */
-export function defaultGraduated(
-  elementaryEndYear: number,
-  now: Date = new Date(),
-): boolean {
-  return elementaryEndYear + 6 < schoolYearEnd(now);
+  return cohortNumberFor(elementaryEndForGrade(YOUNGEST_GRADE, now));
 }
 
 export type CohortLike = {
@@ -49,15 +35,40 @@ export type CohortLike = {
   number: number;
   elementaryStartYear: number;
   elementaryEndYear: number;
-  graduated: boolean;
 };
 
-/** "第5期（小学校 2010–2016）" / "Class 5 (elementary 2010–2016)" */
-export function cohortLabel(c: CohortLike, locale: "ja" | "en"): string {
-  const years = `${c.elementaryStartYear}–${c.elementaryEndYear}`;
+/** "小学3年生" / "年長"; English "Grade 3" / "Kindergarten (year 3)". */
+export function gradeLabel(grade: number, locale: "ja" | "en"): string {
+  if (grade >= 1)
+    return locale === "ja" ? `小学${grade}年生` : `Grade ${grade}`;
+  const k = ["年少", "年中", "年長"][grade + 2] ?? "幼稚部";
+  return locale === "ja" ? k : `Kindergarten (year ${grade + 3})`;
+}
+
+/**
+ * "第5期（2016年 小学校卒業）" · "第21期（現在 小学1年生）"
+ * "Class 5 (graduated 2016)" · "Class 21 (now Grade 1)"
+ */
+export function cohortLabel(
+  c: Pick<CohortLike, "number" | "elementaryEndYear">,
+  locale: "ja" | "en",
+  now: Date = new Date(),
+): string {
+  const end = c.elementaryEndYear;
+  if (isClassGraduated(end, now)) {
+    return locale === "ja"
+      ? `第${c.number}期（${end}年 小学校卒業）`
+      : `Class ${c.number} (graduated ${end})`;
+  }
+  const grade = classGradeNow(end, now);
+  if (grade !== null) {
+    return locale === "ja"
+      ? `第${c.number}期（現在 ${gradeLabel(grade, locale)}）`
+      : `Class ${c.number} (now ${gradeLabel(grade, locale)})`;
+  }
   return locale === "ja"
-    ? `第${c.number}期（小学校 ${years}）`
-    : `Class ${c.number} (elementary ${years})`;
+    ? `第${c.number}期（${end}年 卒業予定）`
+    : `Class ${c.number} (graduating ${end})`;
 }
 
 /** Short form for badges: "第5期" / "Class 5". */
@@ -73,13 +84,14 @@ export type CohortOption = { id: string; label: string; graduated: boolean };
 export function cohortOptions(
   cohorts: CohortLike[],
   locale: "ja" | "en",
+  now: Date = new Date(),
 ): CohortOption[] {
   return [...cohorts]
     .sort((a, b) => a.number - b.number)
     .map((c) => ({
       id: c.id,
-      label: cohortLabel(c, locale),
-      graduated: c.graduated,
+      label: cohortLabel(c, locale, now),
+      graduated: isClassGraduated(c.elementaryEndYear, now),
     }));
 }
 
@@ -96,26 +108,24 @@ export function parseCohortNumber(v: unknown): number | null | undefined {
     : undefined;
 }
 
-/** Defaults for a 学年 created on first use. */
-export function defaultCohort(number: number, now: Date = new Date()) {
+/** Row values for a 学年 created on first use. */
+export function defaultCohort(number: number) {
   const end = elementaryEndFor(number);
   return {
     number,
     elementaryEndYear: end,
     elementaryStartYear: suggestedStartYear(end),
-    graduated: defaultGraduated(end, now),
   };
 }
 
 export type CohortChoice = { value: string; label: string; graduated: boolean };
 
 /**
- * Every selectable 学年 (第1期 … this year's 1st graders, plus any created
- * later), newest first. Existing rows supply their own years/status; others
- * use the defaults they'd be created with.
+ * Every selectable 学年: 第1期 … this year's 年少 (plus any created later),
+ * newest first.
  */
 export function cohortChoices(
-  existing: CohortLike[],
+  existing: Pick<CohortLike, "number" | "elementaryEndYear">[],
   locale: "ja" | "en",
   now: Date = new Date(),
 ): CohortChoice[] {
@@ -126,11 +136,11 @@ export function cohortChoices(
   );
   const out: CohortChoice[] = [];
   for (let n = max; n >= 1; n--) {
-    const c = byNumber.get(n) ?? { id: "", ...defaultCohort(n, now) };
+    const c = byNumber.get(n) ?? defaultCohort(n);
     out.push({
       value: String(n),
-      label: cohortLabel(c, locale),
-      graduated: c.graduated,
+      label: cohortLabel(c, locale, now),
+      graduated: isClassGraduated(c.elementaryEndYear, now),
     });
   }
   return out;

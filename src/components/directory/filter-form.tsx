@@ -1,10 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { buttonClass } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
-import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
+import { LifeStage, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import type { CohortOption } from "@/lib/cohorts";
 import { type DirectoryFilters, MAX_YEAR, MIN_YEAR } from "@/lib/directory";
+import { AIS_DIVISIONS } from "@/lib/school";
 
 /** Plain GET form so filtering works without JavaScript (§10.1). */
 export async function DirectoryFilterForm({
@@ -92,7 +93,7 @@ export async function DirectoryFilterForm({
                 defaultValue={filters.division ?? ""}
               >
                 <option value="">{t("filters.any")}</option>
-                {Object.values(Division).map((d) => (
+                {AIS_DIVISIONS.map((d) => (
                   <option key={d} value={d}>
                     {tr(`division.${d}`)}
                   </option>

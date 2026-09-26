@@ -28,7 +28,7 @@
   },
   "privacy": {
     "title": "Privacy notice",
-    "intro": "The AIS Alumni Committee runs this site to keep the Aichi International School community connected. This notice explains what personal information we collect and how we use it, in line with Japan's Act on the Protection of Personal Information (APPI).",
+    "intro": "This site is run independently by the AIS Alumni Committee, a volunteer group of AIS graduates, to connect alumni, parents and teachers. It is not an official service of Aichi International School, and the school is not involved in running it or in handling your data. This policy explains, under Japan's Act on the Protection of Personal Information (APPI), what personal information the Committee collects and how it is used.",
     "collected": {
       "title": "What we collect",
       "items": [
@@ -73,5 +73,6 @@
       "body": "For questions about this notice or your personal information, please contact the AIS Alumni Committee."
     },
     "updated": "Last updated: September 2026"
-  }
+  },
+  "operatedBy": "Run by the AIS Alumni Committee, a volunteer group of graduates (not an official school service)."
 }

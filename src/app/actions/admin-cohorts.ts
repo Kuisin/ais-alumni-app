@@ -86,19 +86,6 @@ export async function updateCohortAction(
   return { ok: true, message: "saved" };
 }
 
-export async function setCohortGraduatedAction(
-  id: string,
-  graduated: boolean,
-): Promise<void> {
-  const me = await actionAdmin();
-  await db.cohort.update({ where: { id }, data: { graduated } });
-  await audit(me.id, graduated ? "cohort.graduated" : "cohort.reopened", {
-    type: "Cohort",
-    id,
-  });
-  refresh();
-}
-
 /** Only unused 学年 can be deleted (no members, leaders or notifications). */
 export async function deleteCohortAction(id: string): Promise<void> {
   const me = await actionAdmin();

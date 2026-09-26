@@ -1,6 +1,6 @@
 {
-  "title": "Verify your connection to AIS",
-  "description": "Tell us how you are connected to Aichi International School. A committee member reviews every application, usually within a few days.",
+  "title": "Getting started",
+  "description": "Answer a few questions to register. It takes about 3 minutes.",
   "resubmitDescription": "Please update your application and send it again.",
   "needsInfo": {
     "title": "The committee needs a little more information:"
@@ -8,9 +8,10 @@
   "progressLabel": "Progress",
   "stepOf": "Step {n} of {total}",
   "steps": {
-    "basics": "About you",
-    "roles": "Your AIS details",
-    "evidence": "Documents & review"
+    "basics": "Basics",
+    "type": "You",
+    "details": "At AIS",
+    "review": "Review"
   },
   "fixErrors": "{count, plural, one {Please fix 1 field.} other {Please fix # fields.}}",
   "serverErrors": {
@@ -49,9 +50,13 @@
     "middleNameRomaji": "Middle name",
     "lastNameKanji": "Last name (姓)",
     "firstNameKanji": "First name (名)",
-    "cohort": "Your 学年 (class)",
+    "cohort": "学年 (class)",
     "cohortFilter": "Show classes",
-    "teacherStatus": "Status"
+    "teacherStatus": "Status",
+    "joinedYear": "Year you joined AIS",
+    "leftYearStudent": "Year you left AIS",
+    "joinedYearTeacher": "Year you started",
+    "leftYearTeacher": "Year you left"
   },
   "hints": {
     "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",
@@ -63,8 +68,11 @@
     "subjects": "e.g. Math, G9–12",
     "schoolEmail": "If you have an AIS email address, we can send it a code to confirm your role faster.",
     "parentConfirmation": "Student accounts must also be confirmed by a parent or guardian with an AIS Alumni account, or by the committee.",
-    "classmates": "We may ask these members to confirm that they know you. Please give 1–2 names.",
-    "cohort": "Classes are numbered by the year they finished 6th grade (2016 = 第5期). Choose the class you belong to, even if you joined or left AIS in a different year."
+    "classmates": "If you add them, we can ask classmates or teachers to confirm you, which can speed up approval.",
+    "cohort": "Classes are numbered by the year they finish 6th grade (2016 = 第5期). If you joined or left partway, choose the class you were in.",
+    "types": "You can ask the committee to change this later.",
+    "leftYearStudent": "Only if you left AIS before graduating. Leave empty if you're still at AIS or graduated.",
+    "leftYearTeacher": "Leave empty if you still work at AIS."
   },
   "didGraduate": {
     "yes": "Yes, I graduated",
@@ -81,13 +89,15 @@
     "invalidGrade": "Choose a grade.",
     "invalidDate": "Enter a valid date.",
     "invalidEmail": "Enter a valid email address.",
-    "yearsOrder": "The end year must be the same as or after the start year.",
+    "yearsOrder": "The year you left must be the same as or after the year you joined.",
     "rolesRequired": "Choose at least one.",
     "childrenRequired": "Add at least one child.",
     "classmateRequired": "Enter at least one classmate’s name.",
     "tooManyFiles": "You can upload up to 3 files.",
     "evidenceInvalid": "One of the files could not be verified. Please remove it and upload it again.",
-    "invalid": "This value is not valid."
+    "invalid": "This value is not valid.",
+    "typesRequired": "Choose at least one.",
+    "cohortRequired": "Choose a class."
   },
   "evidence": {
     "label": "Supporting documents (optional)",
@@ -126,7 +136,11 @@
   "review": {
     "title": "Check your answers",
     "files": "Documents",
-    "note": "After you submit, a committee member will review your application. We’ll let you know the result by email (and LINE if connected)."
+    "note": "After you send it, a committee member will review it. We'll let you know by email (and LINE, if linked).",
+    "types": "You are",
+    "children": "Children",
+    "edit": "Review from the start",
+    "addDocuments": "Add ID documents (optional)"
   },
   "back": "Back",
   "next": "Next",
@@ -137,5 +151,45 @@
     "graduated": "Graduated",
     "current": "At AIS",
     "all": "All"
+  },
+  "stepTitles": {
+    "type": "Who are you?",
+    "basics": "Your name and birthday",
+    "details": "Tell us about your time at AIS",
+    "review": "Check and send"
+  },
+  "stepIntros": {
+    "type": "Choose everything that applies — for example an alumnus whose child now attends AIS can pick both.",
+    "basics": "The committee uses this to confirm who you are. Your birthday is never shown to other members.",
+    "details": "Just give your class (学年) and years — whether you're a current student or an alumnus, and your grade, are worked out automatically.",
+    "review": "If everything looks right, send it. The committee will review it and let you know."
+  },
+  "types": {
+    "STUDENT": {
+      "title": "Student / Alumni",
+      "description": "You attend or attended AIS"
+    },
+    "PARENT": {
+      "title": "Parent",
+      "description": "Your child attends or attended AIS"
+    },
+    "TEACHER": {
+      "title": "Teacher / Staff",
+      "description": "You work or worked at AIS"
+    }
+  },
+  "sections": {
+    "student": "Tell us your class and the year you joined AIS.",
+    "studentMore": "Help us confirm you faster (optional)",
+    "parent": "Add each child who attends or attended AIS.",
+    "teacher": "Tell us when you worked at AIS and what you taught."
+  },
+  "preview": {
+    "current": "You'll be registered as a current student ({grade})",
+    "upcoming": "You'll be registered as an incoming student",
+    "graduated": "You'll be registered as a graduate ({year})",
+    "left": "You'll be registered as a former student (left in {year})",
+    "teacherCurrent": "You'll be registered as current teacher / staff",
+    "teacherFormer": "You'll be registered as former teacher / staff (left in {year})"
   }
 }

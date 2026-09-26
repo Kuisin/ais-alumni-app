@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
 import {
   AccountState,
   Division,
@@ -24,6 +25,7 @@ import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { AuthError, actionAdmin } from "@/lib/session";
 import { canTransition } from "@/lib/state-machine";
+import { syncMemberStatus } from "@/lib/status-sync";
 import { appUrl } from "@/lib/urls";
 
 export type MergeSide = {
@@ -199,7 +201,6 @@ const roleSchema = z.object({
     }
     return n;
   }),
-  teacherStatus: optEnum(TeacherStatus),
   yearsFrom: optInt(1950, 2100),
   yearsTo: optInt(1950, 2100),
   subjects: optText(200),
@@ -209,18 +210,17 @@ const roleSchema = z.object({
     .transform((v) => (v === "" ? null : normalizeEmail(v)))
     .pipe(z.email().nullable())
     .nullable(),
-  currentGrade: optInt(0, 12),
   studentIdNo: optText(40),
-  lastDivision: optEnum(Division),
-  graduationOrLeaveYear: optInt(1950, 2100),
-  didGraduate: z
-    .enum(["", "yes", "no"])
-    .transform((v) => (v === "" ? null : v === "yes"))
-    .nullable(),
   currentStage: optEnum(LifeStage),
   currentStageDetail: optText(200),
 });
 
+/**
+ * Save a role's inputs (学年, joined / left years, …). Current vs former,
+ * grade and graduation are recomputed by syncMemberStatus, so an admin never
+ * sets them by hand. Adding "student" / "parent" creates the current role,
+ * which the sync moves to former when appropriate.
+ */
 export async function saveMemberRoleAction(
   _prev: AdminMemberFormState,
   fd: FormData,
@@ -233,16 +233,11 @@ export async function saveMemberRoleAction(
       userId: str(fd, "userId"),
       role: str(fd, "role"),
       cohortNumber: raw("cohortNumber"),
-      teacherStatus: raw("teacherStatus"),
       yearsFrom: raw("yearsFrom"),
       yearsTo: raw("yearsTo"),
       subjects: raw("subjects"),
       schoolEmail: raw("schoolEmail"),
-      currentGrade: raw("currentGrade"),
       studentIdNo: raw("studentIdNo"),
-      lastDivision: raw("lastDivision"),
-      graduationOrLeaveYear: raw("graduationOrLeaveYear"),
-      didGraduate: raw("didGraduate"),
       currentStage: raw("currentStage"),
       currentStageDetail: raw("currentStageDetail"),
     });
@@ -253,6 +248,12 @@ export async function saveMemberRoleAction(
       };
     }
     const d = parsed.data;
+    if (d.yearsFrom !== null && d.yearsTo !== null && d.yearsTo < d.yearsFrom) {
+      return {
+        error: tc("errors.validation"),
+        fieldErrors: { yearsTo: "yearsOrder" },
+      };
+    }
     const target = await db.user.findUnique({
       where: { id: d.userId },
       select: { id: true },
@@ -261,74 +262,52 @@ export async function saveMemberRoleAction(
 
     const isStudent =
       d.role === RoleKey.CURRENT_STUDENT || d.role === RoleKey.FORMER_STUDENT;
-    const hasYears =
-      d.role === RoleKey.TEACHER ||
-      d.role === RoleKey.FORMER_STUDENT ||
-      d.role === RoleKey.FORMER_PARENT;
-    // 学年 rows are created the first time someone is assigned to them.
-    const cohortId =
-      isStudent && d.cohortNumber !== null
-        ? await ensureCohort(d.cohortNumber)
-        : null;
-    // Only the fields relevant to the role are written; others are cleared.
-    const data = {
-      cohortId,
-      teacherStatus:
-        d.role === RoleKey.TEACHER
-          ? (d.teacherStatus ?? TeacherStatus.CURRENT)
-          : null,
-      yearsFrom: hasYears ? d.yearsFrom : null,
-      // Former students have one end year: graduation / leaving year.
-      yearsTo:
-        d.role === RoleKey.FORMER_STUDENT
-          ? d.graduationOrLeaveYear
-          : hasYears
-            ? d.yearsTo
-            : null,
-      subjects: d.role === RoleKey.TEACHER ? d.subjects : null,
-      schoolEmail: d.role === RoleKey.TEACHER ? d.schoolEmail : null,
-      currentGrade: d.role === RoleKey.CURRENT_STUDENT ? d.currentGrade : null,
-      studentIdNo: d.role === RoleKey.CURRENT_STUDENT ? d.studentIdNo : null,
-      lastDivision: d.role === RoleKey.FORMER_STUDENT ? d.lastDivision : null,
-      graduationOrLeaveYear:
-        d.role === RoleKey.FORMER_STUDENT ? d.graduationOrLeaveYear : null,
-      didGraduate: d.role === RoleKey.FORMER_STUDENT ? d.didGraduate : null,
-      currentStage: d.role === RoleKey.FORMER_STUDENT ? d.currentStage : null,
-      currentStageDetail:
-        d.role === RoleKey.FORMER_STUDENT ? d.currentStageDetail : null,
-    };
+    const isTeacher = d.role === RoleKey.TEACHER;
     const existing = await db.userRole.findUnique({
       where: { userId_role: { userId: d.userId, role: d.role } },
     });
-    const stageChanged = existing?.currentStage !== data.currentStage;
-    // Assumption: an admin-edited school email is treated as unverified
-    // unless it is unchanged.
-    const schoolEmailVerified =
-      Boolean(existing?.schoolEmailVerified) &&
-      existing?.schoolEmail === data.schoolEmail;
+    let data: Prisma.UserRoleUncheckedUpdateInput = {};
+    if (isStudent) {
+      data = {
+        // 学年 rows are created the first time someone is assigned to them.
+        cohortId:
+          d.cohortNumber !== null ? await ensureCohort(d.cohortNumber) : null,
+        yearsFrom: d.yearsFrom,
+        yearsTo: d.yearsTo,
+        studentIdNo: d.studentIdNo,
+        ...(d.role === RoleKey.FORMER_STUDENT
+          ? {
+              currentStage: d.currentStage,
+              currentStageDetail: d.currentStageDetail,
+              ...(existing?.currentStage !== d.currentStage
+                ? { currentStageUpdatedAt: d.currentStage ? new Date() : null }
+                : {}),
+            }
+          : {}),
+      };
+    } else if (isTeacher) {
+      data = {
+        yearsFrom: d.yearsFrom,
+        yearsTo: d.yearsTo,
+        subjects: d.subjects,
+        schoolEmail: d.schoolEmail,
+        // Assumption: an admin-edited school email is unverified unless unchanged.
+        schoolEmailVerified:
+          Boolean(existing?.schoolEmailVerified) &&
+          existing?.schoolEmail === d.schoolEmail,
+      };
+    }
     await db.userRole.upsert({
       where: { userId_role: { userId: d.userId, role: d.role } },
-      create: {
-        userId: d.userId,
-        role: d.role,
-        ...data,
-        currentStageUpdatedAt: data.currentStage ? new Date() : null,
-      },
-      update: {
-        ...data,
-        schoolEmailVerified,
-        ...(stageChanged
-          ? { currentStageUpdatedAt: data.currentStage ? new Date() : null }
-          : {}),
-      },
+      create: { userId: d.userId, role: d.role, ...(data as object) },
+      update: data,
     });
+    await syncMemberStatus(d.userId);
     await audit(
       admin.id,
       existing ? "member.role_updated" : "member.role_added",
       { ...USER, id: d.userId },
-      {
-        role: d.role,
-      },
+      { role: d.role },
     );
     refresh();
     return { ok: true, message: tc("saved") };

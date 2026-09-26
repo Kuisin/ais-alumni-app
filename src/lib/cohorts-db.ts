@@ -18,7 +18,6 @@ export const listCohorts = cache(async (): Promise<CohortLike[]> => {
       number: true,
       elementaryStartYear: true,
       elementaryEndYear: true,
-      graduated: true,
     },
   });
 });

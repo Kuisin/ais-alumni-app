@@ -2,12 +2,15 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
+import { parseCohortNumber } from "@/lib/cohorts";
+import { ensureCohort } from "@/lib/cohorts-db";
 import {
   confirmFamilyLink,
   createFamilyLink,
   removePendingFamilyLink,
 } from "@/lib/family";
 import { AuthError, actionActive } from "@/lib/session";
+import { syncMemberStatus } from "@/lib/status-sync";
 
 /** Messages are keys in the "family" namespace. */
 export type FamilyActionState = { ok: boolean; message: string } | null;
@@ -19,6 +22,19 @@ const ClaimSchema = z.object({
 });
 const ChildNameSchema = z.object({
   childName: z.string().trim().min(1).max(100),
+  cohortNumber: z.string().transform((v, ctx) => {
+    const n = parseCohortNumber(v);
+    if (n == null) {
+      ctx.addIssue({ code: "custom", message: "cohort" });
+      return z.NEVER;
+    }
+    return n;
+  }),
+  leftYear: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || /^\d{4}$/.test(v))
+    .transform((v) => (v ? Number(v) : null)),
 });
 const LinkSchema = z.object({ linkId: id });
 
@@ -63,13 +79,19 @@ export async function claimChildByNameAction(
   if (!me) return { ok: false, message: "errors.notAllowed" };
   const parsed = ChildNameSchema.safeParse({
     childName: field(formData, "childName"),
+    cohortNumber: field(formData, "cohortNumber"),
+    leftYear: field(formData, "leftYear"),
   });
   if (!parsed.success) return { ok: false, message: "errors.invalid" };
   const res = await createFamilyLink(me, {
     direction: "child",
     childName: parsed.data.childName,
+    childCohortId: await ensureCohort(parsed.data.cohortNumber),
+    childLeftYear: parsed.data.leftYear,
   });
   if (!res.ok) return { ok: false, message: `errors.${res.error}` };
+  // Parent status (current / former) follows the child's class.
+  await syncMemberStatus(me.id);
   refresh();
   return { ok: true, message: "sentAdmin" };
 }

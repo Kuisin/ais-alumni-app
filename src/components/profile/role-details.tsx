@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/card";
 import { RoleKey } from "@/generated/prisma/enums";
+import { gradeLabel } from "@/lib/cohorts";
 import { cohortShortLabels } from "@/lib/cohorts-db";
 import type { PublicCard } from "@/lib/directory";
 
@@ -55,7 +56,12 @@ async function roleFacts(r: RoleRow, withStage: boolean): Promise<string[]> {
       break;
     case RoleKey.CURRENT_STUDENT:
       if (r.currentGrade !== null)
-        facts.push(tr("grade", { grade: r.currentGrade }));
+        facts.push(
+          gradeLabel(
+            r.currentGrade,
+            (await getLocale()) === "en" ? "en" : "ja",
+          ),
+        );
       break;
     case RoleKey.FORMER_STUDENT:
       if (r.graduationOrLeaveYear !== null) {

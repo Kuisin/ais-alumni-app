@@ -53,7 +53,7 @@ Feature branches are not deployed. `dev` currently shares the production databas
    record Vercel shows (CNAME `ais` → `cname.vercel-dns.com` at kai-lab.net's DNS).
 4. **Blob** — create a *private* Blob store in region Tokyo (`hnd1`) and connect it to the project (`BLOB_READ_WRITE_TOKEN`).
 5. **Environment variables** — everything in `.env.example`. Generate `AUTH_SECRET` and `CRON_SECRET` with `openssl rand -base64 32`.
-6. **Resend** — add the `ais.kai-lab.net` domain with region **Tokyo (ap-northeast-1)**, add its SPF/DKIM DNS records, set `EMAIL_FROM`.
+6. **Resend** — sending domain `kai-lab.net` (region **Tokyo, ap-northeast-1**, verified); `EMAIL_FROM` is `AIS Alumni <ais-alumni@kai-lab.net>`.
 7. **Google OAuth** — authorized redirect URI `https://ais.kai-lab.net/api/auth/callback/google`.
 8. **LINE** — under ONE LINE provider (so user IDs match, §5.1):
    - *LINE Login channel*: callback URLs `https://ais.kai-lab.net/api/auth/callback/line`

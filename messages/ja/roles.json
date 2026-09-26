@@ -27,5 +27,13 @@
     "ACTIVE": "有効",
     "REJECTED": "却下",
     "DEACTIVATED": "無効"
+  },
+  "teacherStatus": {
+    "CURRENT": "現職の教職員",
+    "FORMER": "元教職員"
+  },
+  "teacherStatusShort": {
+    "CURRENT": "現職",
+    "FORMER": "元教職員"
   }
 }

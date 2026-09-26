@@ -27,5 +27,13 @@
     "ACTIVE": "Active",
     "REJECTED": "Rejected",
     "DEACTIVATED": "Deactivated"
+  },
+  "teacherStatus": {
+    "CURRENT": "Current teacher / staff",
+    "FORMER": "Former teacher / staff"
+  },
+  "teacherStatusShort": {
+    "CURRENT": "Current",
+    "FORMER": "Former"
   }
 }

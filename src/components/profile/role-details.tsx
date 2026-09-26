@@ -40,6 +40,11 @@ async function roleFacts(r: RoleRow, withStage: boolean): Promise<string[]> {
   }
   switch (r.role) {
     case RoleKey.TEACHER:
+      facts.push(
+        tr(
+          `teacherStatusShort.${r.teacherStatus === "FORMER" ? "FORMER" : "CURRENT"}`,
+        ),
+      );
       if (r.yearsFrom !== null) {
         facts.push(
           r.yearsTo !== null

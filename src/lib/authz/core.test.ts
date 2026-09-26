@@ -20,6 +20,7 @@ const viewer = (o: Partial<Viewer> = {}): Viewer => ({
   state: AccountState.ACTIVE,
   isAdmin: false,
   roles: [RoleKey.FORMER_STUDENT],
+  currentTeacher: false,
   familyId: null,
   ...o,
 });
@@ -155,7 +156,12 @@ describe("canViewProfile (minors, blocks, state)", () => {
   });
   it("shows minors to teachers and family", () => {
     expect(
-      canViewProfile(viewer({ roles: [RoleKey.TEACHER] }), minor, rel(), NOW),
+      canViewProfile(
+        viewer({ roles: [RoleKey.TEACHER], currentTeacher: true }),
+        minor,
+        rel(),
+        NOW,
+      ),
     ).toBe(true);
     expect(
       canViewProfile(
@@ -182,6 +188,14 @@ describe("canViewProfile (minors, blocks, state)", () => {
 });
 
 describe("canRequestFollow", () => {
+  it("gives former teachers no access to minors", () => {
+    const minor = target({ roles: [RoleKey.CURRENT_STUDENT] });
+    const former = viewer({ roles: [RoleKey.TEACHER], currentTeacher: false });
+    expect(canViewProfile(former, minor, rel(), NOW)).toBe(false);
+    expect(canRequestFollow(former, minor, rel(), NOW)).toMatchObject({
+      reason: "minor",
+    });
+  });
   it("blocks adults following minors, except teachers", () => {
     const minor = target({ roles: [RoleKey.CURRENT_STUDENT] });
     expect(canRequestFollow(viewer(), minor, rel(), NOW)).toEqual({
@@ -189,7 +203,12 @@ describe("canRequestFollow", () => {
       reason: "minor",
     });
     expect(
-      canRequestFollow(viewer({ roles: [RoleKey.TEACHER] }), minor, rel(), NOW),
+      canRequestFollow(
+        viewer({ roles: [RoleKey.TEACHER], currentTeacher: true }),
+        minor,
+        rel(),
+        NOW,
+      ),
     ).toEqual({ ok: true });
   });
   it("rejects self, duplicates, blocked and family", () => {

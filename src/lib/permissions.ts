@@ -4,7 +4,7 @@ import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
  * Positions and the permissions they grant (pure; unit-tested).
  *
  * - Admin: may notify anyone.
- * - TEACHER_MANAGER (requires the TEACHER role): may notify all members,
+ * - TEACHER_MANAGER (requires a current teacher, status 現職): may notify all members,
  *   selected roles, or any class.
  * - STUDENT_LEADER (requires a student role): may notify their own 学年
  *   (`cohortId`), i.e. students who selected that class.
@@ -14,6 +14,8 @@ export type Holder = {
   state: AccountState;
   isAdmin: boolean;
   roles: readonly RoleKey[];
+  /** TEACHER role with status 現職 */
+  currentTeacher: boolean;
   positions: readonly { position: PositionKey; cohortId: string | null }[];
 };
 
@@ -30,9 +32,10 @@ const STUDENT_ROLES: readonly RoleKey[] = [
 export function positionEligible(
   position: PositionKey,
   roles: readonly RoleKey[],
+  currentTeacher: boolean,
 ): boolean {
   if (position === PositionKey.TEACHER_MANAGER)
-    return roles.includes(RoleKey.TEACHER);
+    return roles.includes(RoleKey.TEACHER) && currentTeacher;
   return roles.some((r) => STUDENT_ROLES.includes(r));
 }
 
@@ -41,7 +44,7 @@ export function broadcastRights(h: Holder): BroadcastRight[] {
   const rights: BroadcastRight[] = [];
   if (h.isAdmin) rights.push({ kind: "ANY", position: null });
   for (const p of h.positions) {
-    if (!positionEligible(p.position, h.roles)) continue;
+    if (!positionEligible(p.position, h.roles, h.currentTeacher)) continue;
     if (p.position === PositionKey.TEACHER_MANAGER) {
       rights.push({ kind: "ANY", position: PositionKey.TEACHER_MANAGER });
     } else if (p.cohortId !== null) {

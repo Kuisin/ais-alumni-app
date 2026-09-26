@@ -10,13 +10,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
+import {
+  Division,
+  LifeStage,
+  RoleKey,
+  TeacherStatus,
+} from "@/generated/prisma/enums";
 import type { CohortOption } from "@/lib/cohorts";
 import { AdminFormResult } from "./form-result";
 
 export type RoleValues = {
   role: RoleKey;
   cohortId: string | null;
+  teacherStatus: TeacherStatus | null;
   yearsFrom: number | null;
   yearsTo: number | null;
   subjects: string | null;
@@ -94,6 +100,27 @@ function RoleFields({
   if (role === RoleKey.TEACHER) {
     return (
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Field
+            id={id("teacherStatus")}
+            label={t("teacherStatus")}
+            hint={t("teacherStatusHint")}
+          >
+            {(a) => (
+              <Select
+                {...a}
+                name="teacherStatus"
+                defaultValue={values?.teacherStatus ?? TeacherStatus.CURRENT}
+              >
+                {Object.values(TeacherStatus).map((st) => (
+                  <option key={st} value={st}>
+                    {tr(`teacherStatus.${st}`)}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        </div>
         <Field id={id("yearsFrom")} label={t("yearsFrom")}>
           {(a) => (
             <Input

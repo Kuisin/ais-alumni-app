@@ -10,6 +10,8 @@ export type Viewer = {
   state: AccountState;
   isAdmin: boolean;
   roles: readonly RoleKey[];
+  /** TEACHER role with status 現職; former teachers get no teacher access. */
+  currentTeacher: boolean;
   familyId: string | null;
 };
 
@@ -72,7 +74,7 @@ export function canViewProfile(
   if (target.state !== AccountState.ACTIVE) return false;
   if (rel.blocked) return false;
   if (isMinor(target, now)) {
-    return sameFamily(viewer, target) || viewer.roles.includes(RoleKey.TEACHER);
+    return sameFamily(viewer, target) || viewer.currentTeacher;
   }
   return true;
 }
@@ -120,7 +122,7 @@ export function canRequestFollow(
   // Family members already have following status with each other.
   if (sameFamily(viewer, target)) return { ok: false, reason: "family" };
   if (rel.follow) return { ok: false, reason: "already" };
-  if (isMinor(target, now) && !viewer.roles.includes(RoleKey.TEACHER))
+  if (isMinor(target, now) && !viewer.currentTeacher)
     return { ok: false, reason: "minor" };
   return { ok: true };
 }

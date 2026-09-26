@@ -2,7 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
-import { blockedUserIds } from "@/lib/authz";
+import { blockedUserIds, isCurrentTeacher } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import {
@@ -29,6 +29,7 @@ export async function getBroadcastRights(
     state: user.state,
     isAdmin: user.isAdmin,
     roles: user.roles.map((r) => r.role),
+    currentTeacher: isCurrentTeacher(user.roles),
     positions,
   });
 }

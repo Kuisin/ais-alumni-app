@@ -1,6 +1,6 @@
 import type { VercelConfig } from "@vercel/config/v1";
 
-// Production domain: ais.kai-lab.net (added in the Vercel dashboard).
+// Domains: ais.kai-lab.net → main (production), ais-dev.kai-lab.net → dev.
 // Everything runs in Tokyo: functions (hnd1), Supabase Postgres
 // (ap-northeast-1), Vercel Blob (hnd1) and Resend sending (ap-northeast-1).
 // Cron schedules are UTC.
@@ -8,6 +8,10 @@ export const config: VercelConfig = {
   framework: "nextjs",
   buildCommand: "prisma migrate deploy && next build",
   regions: ["hnd1"],
+  // Deploy only main (production, ais.kai-lab.net) and dev (ais-dev.kai-lab.net).
+  // Other branches have no env vars; exit 0 tells Vercel to skip the build.
+  ignoreCommand:
+    'if [ "$VERCEL_GIT_COMMIT_REF" = "main" ] || [ "$VERCEL_GIT_COMMIT_REF" = "dev" ]; then exit 1; else exit 0; fi',
   crons: [
     // 09:00 JST daily: 7-day and 1-day event reminders (§10.3)
     { path: "/api/cron/reminders", schedule: "0 0 * * *" },

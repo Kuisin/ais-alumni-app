@@ -23,6 +23,16 @@ server console and written to `.data/dev-mail/<address>.txt`. Without
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit), `pnpm build && pnpm test:e2e` (Playwright smoke tests).
 
+## Branches & environments
+
+| Branch | Deploys to | Who merges |
+|---|---|---|
+| `main` | https://ais.kai-lab.net (production) | maintainer, via the auto-created "Release: dev → main" PR |
+| `dev` | https://ais-dev.kai-lab.net | via PR from a feature branch (CI must pass) |
+
+GitHub rulesets require PRs on both branches, and `main` only accepts PRs from `dev`.
+Feature branches are not deployed. `dev` currently shares the production database.
+
 ## Deploying to Vercel (everything in Tokyo)
 
 | Service | Region |

@@ -59,6 +59,8 @@ test("email sign-up → verification → admin approval → member dashboard", a
   browser,
 }) => {
   const email = uniqueEmail("alumni");
+  // Unique per run so leftovers from earlier runs can't be picked by mistake.
+  const lastName = `Tester${Date.now() % 1_000_000}`;
   const member = await browser.newPage();
 
   // 1. Email OTP sign-up lands on the skippable LINE step.
@@ -70,7 +72,7 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/verify/);
   await member
     .getByRole("textbox", { name: "Last name", exact: true })
-    .fill("Tester");
+    .fill(lastName);
   await member
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Smoke");
@@ -99,7 +101,7 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await signInWithEmail(admin, ADMIN);
   await admin.goto("/en/app/admin/verification");
   await admin
-    .getByRole("link", { name: /Smoke Tester/ })
+    .getByRole("link", { name: new RegExp(`Smoke ${lastName}`) })
     .first()
     .click();
   await admin.getByRole("radio", { name: "Approve" }).check();

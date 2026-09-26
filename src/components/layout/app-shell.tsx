@@ -32,6 +32,10 @@ export async function AppShell({
   ];
   const adminNav: NavItem[] = [
     { href: "/app/admin/verification", label: t("adminNav.verification") },
+    {
+      href: "/app/admin/record-requests",
+      label: t("adminNav.recordRequests"),
+    },
     { href: "/app/admin/members", label: t("adminNav.members") },
     { href: "/app/admin/events", label: t("adminNav.events") },
     { href: "/app/admin/news", label: t("adminNav.news") },

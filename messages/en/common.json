@@ -61,7 +61,8 @@
     "news": "News",
     "roster": "Roster",
     "stats": "Stats",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "recordRequests": "Record corrections"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",

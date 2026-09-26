@@ -90,20 +90,22 @@ model User {
 
   roles          UserRole[]
   accounts       Account[]
-  verification   VerificationRequest? @relation("applicant")
+  verification   VerificationRequest?  @relation("applicant")
   reviewed       VerificationRequest[] @relation("reviewer")
-  followsOut     Follow[]             @relation("follower")
-  followsIn      Follow[]             @relation("followee")
-  blocksOut      Block[]              @relation("blocker")
-  blocksIn       Block[]              @relation("blocked")
+  followsOut     Follow[]              @relation("follower")
+  followsIn      Follow[]              @relation("followee")
+  blocksOut      Block[]               @relation("blocker")
+  blocksIn       Block[]               @relation("blocked")
   rsvps          Rsvp[]
-  parentLinks    FamilyLink[]         @relation("parent")
-  childLinks     FamilyLink[]         @relation("child")
+  parentLinks    FamilyLink[]          @relation("parent")
+  childLinks     FamilyLink[]          @relation("child")
   vouchesGiven   Vouch[]
   notifications  NotificationLog[]
   eventsCreated  Event[]
   newsCreated    NewsPost[]
   auditActions   AuditLog[]
+  recordRequests RecordChangeRequest[] @relation("recordRequester")
+  recordReviews  RecordChangeRequest[] @relation("recordReviewer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -409,4 +411,33 @@ model AuditLog {
 
   @@index([createdAt])
   @@index([targetType, targetId])
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// Added: a member's request to correct their AIS record (在籍情報), which only
+// admins can edit. `current` is a snapshot at request time; `proposed` holds
+// only the fields the member wants changed (see src/lib/record-requests.ts).
+model RecordChangeRequest {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation("recordRequester", fields: [userId], references: [id], onDelete: Cascade)
+  role       RoleKey
+  current    Json
+  proposed   Json
+  reason     String
+  status     ChangeRequestStatus @default(PENDING)
+  reviewerId String?
+  reviewer   User?               @relation("recordReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote String?
+  createdAt  DateTime            @default(now())
+  decidedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
 }

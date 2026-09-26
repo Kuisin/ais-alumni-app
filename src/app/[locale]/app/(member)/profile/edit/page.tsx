@@ -86,6 +86,12 @@ export default async function ProfileEditPage() {
         </h2>
         <p className="mb-3 text-sm text-slate-600">{t("recordReadOnly")}</p>
         <AisRecord roles={me.roles} />
+        <Link
+          href="/app/profile/record"
+          className={buttonClass("secondary", "mt-4")}
+        >
+          {t("requestRecordCorrection")}
+        </Link>
       </Card>
 
       <Card>

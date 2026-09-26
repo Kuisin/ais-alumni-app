@@ -160,5 +160,34 @@
       "subject": "AIS同窓会のアカウントが再開されました",
       "text": "おかえりなさい！AIS同窓会のアカウントが再開されました。"
     }
+  },
+  "positions": {
+    "title": "役職",
+    "held": "任命済み",
+    "heldCohort": "任命済み・{year}年卒",
+    "grant": "任命する",
+    "update": "更新",
+    "remove": "解除",
+    "cohortYear": "担当学年（卒業年）",
+    "names": {
+      "TEACHER_MANAGER": "教職員・管理者",
+      "STUDENT_LEADER": "学年代表"
+    },
+    "descriptions": {
+      "TEACHER_MANAGER": "すべての会員、選択した立場、または任意の学年にお知らせを送れます（1日20件まで）。",
+      "STUDENT_LEADER": "自分の学年の会員にお知らせを送れます（1週間に5件まで）。"
+    },
+    "requires": {
+      "TEACHER_MANAGER": "教職員の立場が必要です。",
+      "STUDENT_LEADER": "在校生または卒業生の立場が必要です。"
+    },
+    "granted": "役職を任命しました。",
+    "removed": "役職を解除しました。",
+    "errors": {
+      "forbidden": "この操作を行う権限がありません。",
+      "invalid": "入力内容を確認してください。",
+      "notEligible": "この役職に必要な立場がありません。",
+      "cohortYear": "担当学年を4桁の卒業年で入力してください。"
+    }
   }
 }

@@ -22,6 +22,7 @@ export const NAMESPACES = [
   "directory",
   "profile",
   "records",
+  "broadcast",
   "follows",
   "family",
   "settings",

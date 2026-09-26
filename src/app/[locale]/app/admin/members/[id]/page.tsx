@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AUDIT_ROW_INCLUDE, AuditList } from "@/components/admin/audit-list";
 import { MemberMerge } from "@/components/admin/member-merge";
+import { MemberPositionControl } from "@/components/admin/member-positions";
 import { MemberProfileForm } from "@/components/admin/member-profile-form";
 import {
   AddRoleForm,
@@ -13,11 +14,12 @@ import {
   MemberStateControl,
 } from "@/components/admin/member-status";
 import { Alert, Badge, Card, PageHeader } from "@/components/ui/card";
-import { AccountState, RoleKey } from "@/generated/prisma/enums";
+import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
 import { namePartsOf } from "@/lib/names";
+import { classOf, positionEligible } from "@/lib/permissions";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -83,6 +85,18 @@ export default async function AdminMemberPage({
     (a, b) => roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role),
   );
   const available = roleOrder.filter((r) => !roles.some((x) => x.role === r));
+  const roleKeys = roles.map((r) => r.role);
+  const positions = await db.userPosition.findMany({
+    where: { userId: user.id },
+    select: { position: true, cohortYear: true },
+  });
+  // Suggested class for a student leader: their graduation year, or the
+  // expected one for a current student.
+  const former = roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
+  const current = roles.find((r) => r.role === RoleKey.CURRENT_STUDENT);
+  const defaultCohort =
+    former?.graduationOrLeaveYear ??
+    (current?.currentGrade != null ? classOf(current.currentGrade) : null);
   const lineStatus = !user.lineUserId
     ? t("line.notLinked")
     : user.lineFollowing
@@ -250,6 +264,25 @@ export default async function AdminMemberPage({
           />
         </Section>
       </div>
+
+      <Section id="positions" title={t("positions.title")}>
+        <div className="space-y-3">
+          {Object.values(PositionKey).map((p) => {
+            const held = positions.find((x) => x.position === p);
+            return (
+              <MemberPositionControl
+                key={p}
+                userId={user.id}
+                position={p}
+                held={Boolean(held)}
+                cohortYear={held?.cohortYear ?? null}
+                defaultCohortYear={defaultCohort}
+                eligible={positionEligible(p, roleKeys)}
+              />
+            );
+          })}
+        </div>
+      </Section>
 
       <Section id="merge" title={t("merge.title")}>
         <p className="mb-4 text-sm text-slate-600">{t("merge.description")}</p>

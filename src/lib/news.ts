@@ -103,7 +103,7 @@ export async function sendNewsNotification(
         return {
           subject: t("notify.subject", { title }),
           text: markdownToPlain(body, 200) || t("notify.fallbackText"),
-          url: appUrl(`/${locale}/news/${post.id}`),
+          url: appUrl(`/${locale}/app/news/${post.id}`),
         };
       },
     });

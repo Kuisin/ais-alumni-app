@@ -114,7 +114,7 @@ export async function DirectoryFilterForm({
           <button type="submit" className={buttonClass("primary")}>
             {t("filters.apply")}
           </button>
-          <Link href="/directory" className={buttonClass("secondary")}>
+          <Link href="/app/directory" className={buttonClass("secondary")}>
             {t("filters.clear")}
           </Link>
         </div>

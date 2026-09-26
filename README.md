@@ -30,7 +30,9 @@ Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit), `pnpm build && pnpm t
 | `main` | https://ais.kai-lab.net (production) | maintainer, via the auto-created "Release: dev → main" PR |
 | `dev` | https://ais-dev.kai-lab.net | via PR from a feature branch (CI must pass) |
 
-GitHub rulesets require PRs on both branches, and `main` only accepts PRs from `dev`.
+GitHub rulesets require PRs on both branches, and `main` only accepts PRs from `dev`, merged with a merge commit (not squash).
+
+URLs: `/<locale>` is the public landing page; the app (sign-in, onboarding, member and admin screens) is under `/<locale>/app`.
 Feature branches are not deployed. `dev` currently shares the production database.
 
 ## Deploying to Vercel (everything in Tokyo)

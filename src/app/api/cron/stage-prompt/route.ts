@@ -63,7 +63,7 @@ export async function GET(request: Request) {
           dedupe: true,
           render: async (locale) => {
             const t = await getTranslatorFor(locale, "settings");
-            const url = appUrl(`/${locale}/profile/edit#stage`);
+            const url = appUrl(`/${locale}/app/profile/edit#stage`);
             if (!stage) {
               return {
                 subject: t("notify.stagePrompt.subject"),

@@ -6,6 +6,12 @@
 - Agents/LLMs work on feature branches and open PRs **into `dev` only**. An agent may merge its own PR into `dev` once CI passes.
 - **Never merge into `main`, never open PRs into `main`, never push to `dev`/`main` directly.** The maintainer merges `dev` → `main` via the auto-created "Release: dev → main" PR.
 - Rulesets on GitHub require PRs on both branches; `main` only accepts PRs from `dev` (Branch policy check).
+- Release PRs (`dev` → `main`) must use a **merge commit** (enforced on `main`). A squash merge would leave `main` with a commit `dev` lacks and make every later release PR conflict. Feature PRs into `dev` may be squashed.
+
+# URL layout
+
+- `/<locale>` — public landing page; `/<locale>/privacy` — privacy notice.
+- `/<locale>/app` — sign-in; everything else (onboarding, member, admin) is under `/<locale>/app/...` (`src/app/[locale]/app/`).
 
 # Database migrations (LLM-owned)
 

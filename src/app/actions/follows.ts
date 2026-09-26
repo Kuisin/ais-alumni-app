@@ -108,7 +108,7 @@ export async function blockAction(formData: FormData): Promise<void> {
   const ok = await blockUser(me, parsed.data.targetId);
   if (!ok) return;
   const locale = await getLocale();
-  redirect({ href: "/follows?tab=blocked", locale });
+  redirect({ href: "/app/follows?tab=blocked", locale });
 }
 
 export async function unblockAction(formData: FormData): Promise<void> {

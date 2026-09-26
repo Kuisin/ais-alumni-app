@@ -43,8 +43,9 @@ async function admin(): Promise<CurrentUser | null> {
 }
 
 function revalidate(requestId?: string) {
-  revalidatePath("/[locale]/admin/verification", "page");
-  if (requestId) revalidatePath("/[locale]/admin/verification/[id]", "page");
+  revalidatePath("/[locale]/app/admin/verification", "page");
+  if (requestId)
+    revalidatePath("/[locale]/app/admin/verification/[id]", "page");
 }
 
 // ---------------------------------------------------------------------------
@@ -175,10 +176,10 @@ export async function decideVerificationAction(
               : "needsInfo";
         const path =
           decision === "APPROVE"
-            ? "/dashboard"
+            ? "/app/dashboard"
             : decision === "REJECT"
-              ? "/onboarding/status"
-              : "/onboarding/verify";
+              ? "/app/onboarding/status"
+              : "/app/onboarding/verify";
         return {
           subject: t(`notify.${k}.subject`),
           text: note

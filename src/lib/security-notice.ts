@@ -27,7 +27,7 @@ export async function notifySignInMethodAdded(
           text: t("notify.methodAdded.text", {
             method: t(`methods.${provider}`),
           }),
-          url: appUrl(`/${locale}/settings`),
+          url: appUrl(`/${locale}/app/settings`),
         };
       },
     });

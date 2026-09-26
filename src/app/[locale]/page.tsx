@@ -1,127 +1,158 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import {
-  emailSignInAction,
-  signInWithGoogle,
-  signInWithLine,
-} from "@/app/actions/auth";
 import { AppShell } from "@/components/layout/app-shell";
 import { buttonClass } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Link, redirect } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { homePathFor } from "@/lib/state-machine";
-import { AuthErrorAlert, authErrorKey } from "./auth/_components/auth-error";
-import { OtpEmailForm } from "./auth/_components/otp-email-form";
 
-/** Landing + sign-in (§4, §14 screen 1). Signed-in users go to their home. */
-export default async function LandingPage({
+const FEATURES = [
+  "directory",
+  "events",
+  "news",
+  "line",
+  "privacy",
+  "family",
+] as const;
+const STEPS = ["signup", "verify", "approved"] as const;
+
+export async function generateMetadata({
   params,
-  searchParams,
-}: PageProps<"/[locale]">) {
+}: PageProps<"/[locale]">): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "home" });
+  return { title: { absolute: t("metaTitle") } };
+}
+
+/**
+ * Public landing page. The app itself (sign-in, onboarding, member and admin
+ * screens) lives under /app; "Sign up" and "Log in" both go to the sign-in
+ * page there, since signing in for the first time creates the account.
+ */
+export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const rawError = (await searchParams).error;
-  const user = await getCurrentUser();
-  if (user) {
-    // Auth.js sends errors to pages.signIn ("/"). A signed-in user who hit one
-    // while linking a provider (e.g. OAuthAccountNotLinked) must still see it.
-    if (typeof rawError === "string" && rawError) {
-      return redirect({
-        href: { pathname: "/auth/error", query: { error: rawError } },
-        locale,
-      });
-    }
-    return redirect({ href: homePathFor(user), locale });
-  }
+  const [t, user] = await Promise.all([
+    getTranslations("home"),
+    getCurrentUser(),
+  ]);
 
-  const error = authErrorKey(rawError);
-  const t = await getTranslations("landing");
+  const actions = user ? (
+    <Link href="/app" className={buttonClass("primary", "px-6 text-base")}>
+      {t("hero.openApp")}
+    </Link>
+  ) : (
+    <>
+      <Link href="/app" className={buttonClass("primary", "px-6 text-base")}>
+        {t("hero.signUp")}
+      </Link>
+      <Link href="/app" className={buttonClass("secondary", "px-6 text-base")}>
+        {t("hero.logIn")}
+      </Link>
+    </>
+  );
 
   return (
-    <AppShell user={null} variant="onboarding">
-      <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2 md:items-start md:gap-12">
-        <section aria-labelledby="landing-title" className="space-y-4 md:pt-6">
+    <AppShell user={user} variant="onboarding">
+      <div className="space-y-16 pb-8">
+        <section
+          aria-labelledby="hero-title"
+          className="pt-6 text-center sm:pt-12"
+        >
+          <p className="text-sm font-semibold uppercase tracking-wide text-brand-700">
+            {t("hero.eyebrow")}
+          </p>
           <h1
-            id="landing-title"
-            className="text-3xl font-bold tracking-tight text-brand-800 sm:text-4xl"
+            id="hero-title"
+            className="mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl"
           >
-            {t("title")}
+            {t("hero.title")}
           </h1>
-          <p className="text-lg text-slate-700">{t("lead")}</p>
-          <ul className="space-y-3 text-slate-700">
-            {(["directory", "events", "news"] as const).map((key) => (
-              <li key={key} className="flex gap-3">
-                <span
-                  aria-hidden="true"
-                  className="mt-2 inline-block size-2 shrink-0 rounded-full bg-brand-700"
-                />
-                <span>
-                  <span className="font-semibold text-slate-900">
-                    {t(`features.${key}.title`)}
-                  </span>
-                  <span className="block text-sm">
-                    {t(`features.${key}.body`)}
-                  </span>
-                </span>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-700">
+            {t("hero.lead")}
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            {actions}
+          </div>
+          {user ? (
+            <p className="mt-3 text-sm text-slate-600">
+              {t("hero.signedInAs")}
+            </p>
+          ) : null}
+        </section>
+
+        <section aria-labelledby="features-title">
+          <h2 id="features-title" className="text-center text-2xl font-bold">
+            {t("features.title")}
+          </h2>
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((key) => (
+              <li
+                key={key}
+                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <h3 className="font-semibold text-brand-800">
+                  {t(`features.items.${key}.title`)}
+                </h3>
+                <p className="mt-2 text-sm text-slate-700">
+                  {t(`features.items.${key}.body`)}
+                </p>
               </li>
             ))}
           </ul>
-          <p className="text-sm text-slate-600">{t("membersOnly")}</p>
         </section>
 
-        <Card className="space-y-5">
-          <div>
-            <h2 className="text-xl font-bold">{t("signIn.title")}</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              {t("signIn.subtitle")}
-            </p>
-          </div>
-
-          {error ? <AuthErrorAlert error={error} /> : null}
-
-          <div className="space-y-3">
-            <form action={signInWithLine}>
-              <button type="submit" className={buttonClass("line", "w-full")}>
-                {t("signIn.line")}
-              </button>
-            </form>
-            <form action={signInWithGoogle}>
-              <button
-                type="submit"
-                className={buttonClass("secondary", "w-full")}
-              >
-                {t("signIn.google")}
-              </button>
-            </form>
-            <p className="text-xs text-slate-600">{t("signIn.lineNote")}</p>
-          </div>
-
-          <div
-            className="flex items-center gap-3 text-xs text-slate-500"
-            aria-hidden="true"
-          >
-            <span className="h-px flex-1 bg-slate-200" />
-            {t("signIn.or")}
-            <span className="h-px flex-1 bg-slate-200" />
-          </div>
-
-          <section aria-labelledby="email-signin-title" className="space-y-3">
-            <h3 id="email-signin-title" className="text-sm font-semibold">
-              {t("signIn.emailTitle")}
-            </h3>
-            <OtpEmailForm action={emailSignInAction} />
-          </section>
-
-          <p className="border-t border-slate-100 pt-4 text-xs text-slate-600">
-            {t.rich("signIn.privacy", {
-              link: (chunks) => (
-                <Link href="/privacy" className="text-brand-700 underline">
-                  {chunks}
-                </Link>
-              ),
-            })}
+        <section aria-labelledby="steps-title">
+          <h2 id="steps-title" className="text-center text-2xl font-bold">
+            {t("steps.title")}
+          </h2>
+          <ol className="mt-6 grid gap-4 sm:grid-cols-3">
+            {STEPS.map((key, i) => (
+              <li key={key} className="flex gap-4 rounded-xl bg-brand-50 p-5">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-700 font-bold text-white"
+                >
+                  {i + 1}
+                </span>
+                <div>
+                  <h3 className="font-semibold">
+                    {t(`steps.items.${key}.title`)}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {t(`steps.items.${key}.body`)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-slate-600">
+            <span className="font-semibold text-slate-800">
+              {t("audience.title")}:{" "}
+            </span>
+            {t("audience.body")}
           </p>
-        </Card>
+        </section>
+
+        <section
+          aria-labelledby="cta-title"
+          className="rounded-2xl bg-brand-700 px-6 py-10 text-center text-white"
+        >
+          <h2 id="cta-title" className="text-2xl font-bold">
+            {t("cta.title")}
+          </h2>
+          <p className="mt-2 text-brand-100">{t("cta.body")}</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/app"
+              className={buttonClass(
+                "secondary",
+                "border-white px-6 text-base",
+              )}
+            >
+              {user ? t("hero.openApp") : t("hero.signUp")}
+            </Link>
+          </div>
+        </section>
       </div>
     </AppShell>
   );

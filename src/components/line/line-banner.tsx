@@ -53,7 +53,7 @@ export async function LineBanner({ user }: { user: CurrentUser }) {
           </a>
         ) : (
           <a
-            href={lineLinkStartUrl(user.id, "/dashboard", locale)}
+            href={lineLinkStartUrl(user.id, "/app/dashboard", locale)}
             className={buttonClass("line")}
           >
             {t("linkButton")}

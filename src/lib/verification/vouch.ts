@@ -154,7 +154,7 @@ export async function notifyVoucher(vouchId: string): Promise<void> {
           text: years
             ? t("notify.bodyYears", { name, years })
             : t("notify.body", { name }),
-          url: appUrl(`/${locale}/vouch/${vouch.id}`),
+          url: appUrl(`/${locale}/app/vouch/${vouch.id}`),
         };
       },
     });

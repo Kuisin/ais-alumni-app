@@ -75,7 +75,7 @@ export async function updateLanguageAction(
     return { error: await errorText(e) };
   }
   // Navigate to the same page in the new locale (outside try: redirect throws).
-  redirect({ href: "/settings?saved=language", locale });
+  redirect({ href: "/app/settings?saved=language", locale });
   return {};
 }
 
@@ -120,7 +120,9 @@ export async function updateNotifyViaAction(
 export async function linkGoogleAction(): Promise<void> {
   await guard();
   const locale = await getLocale();
-  await signIn("google", { redirectTo: `/${locale}/settings?google=linked` });
+  await signIn("google", {
+    redirectTo: `/${locale}/app/settings?google=linked`,
+  });
 }
 
 const removeSchema = z.object({ provider: z.enum(["google", "line"]) });
@@ -189,7 +191,7 @@ export async function removeSignInMethodAction(
           text: tr("notify.methodRemoved.text", {
             method: tr(`methods.${provider}`),
           }),
-          url: appUrl(`/${locale}/settings`),
+          url: appUrl(`/${locale}/app/settings`),
         };
       },
     }).catch((e) => console.error("[settings] notify failed", e));
@@ -309,7 +311,7 @@ export async function emailChangeAction(
       );
 
       const tr = await getTranslatorFor(user.locale, "settings");
-      const settingsUrl = appUrl(`/${user.locale}/settings`);
+      const settingsUrl = appUrl(`/${user.locale}/app/settings`);
       const sends: Promise<void>[] = [
         sendEmail({
           to: email,

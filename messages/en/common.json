@@ -64,5 +64,14 @@
     "audit": "Audit log"
   },
   "notFoundTitle": "Page not found",
-  "goHome": "Go to home"
+  "goHome": "Go to home",
+  "names": {
+    "romaji": "Name (romaji)",
+    "kanji": "Name (kanji / kana)",
+    "lastNameRomaji": "Last name",
+    "firstNameRomaji": "First name",
+    "middleNameRomaji": "Middle name (optional)",
+    "lastNameKanji": "Last name (姓)",
+    "firstNameKanji": "First name (名)"
+  }
 }

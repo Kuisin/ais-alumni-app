@@ -13,7 +13,8 @@ export async function computeRosterMatch(
 ): Promise<{ rowId: string; score: number } | null> {
   const dob = new Date(`${data.dateOfBirth}T00:00:00Z`);
   const base = {
-    nameRomaji: data.nameRomaji,
+    // Non-null: last/first romaji are required by the schema.
+    nameRomaji: data.nameRomaji ?? "",
     nameKanji: data.nameKanji,
     nameAtAis: data.nameAtAis,
     dateOfBirth: dob,

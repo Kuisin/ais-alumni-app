@@ -64,5 +64,14 @@
     "audit": "操作ログ"
   },
   "notFoundTitle": "ページが見つかりません",
-  "goHome": "ホームへ"
+  "goHome": "ホームへ",
+  "names": {
+    "romaji": "氏名（ローマ字）",
+    "kanji": "氏名（漢字・かな）",
+    "lastNameRomaji": "姓（Last name）",
+    "firstNameRomaji": "名（First name）",
+    "middleNameRomaji": "ミドルネーム（任意）",
+    "lastNameKanji": "姓",
+    "firstNameKanji": "名"
+  }
 }

@@ -10,7 +10,8 @@ import {
 
 function filled() {
   const s = emptyFormState("en");
-  s.nameRomaji = "Taro Yamada";
+  s.lastNameRomaji = "Yamada";
+  s.firstNameRomaji = "Taro";
   s.dateOfBirth = "2000-04-02";
   s.roles = ["FORMER_STUDENT", "TEACHER"];
   s.formerStudent = {
@@ -49,6 +50,8 @@ describe("verification schema (§6)", () => {
     expect(r.data.teacher).toMatchObject({ yearsTo: null, schoolEmail: null });
     expect(r.data.currentParent).toBeUndefined();
     expect(r.data.nameKanji).toBeNull();
+    expect(r.data.nameRomaji).toBe("Taro Yamada");
+    expect(r.data.middleNameRomaji).toBeNull();
   });
 
   it("requires kanji for the Japanese UI and role sections for selected roles", () => {
@@ -61,7 +64,8 @@ describe("verification schema (§6)", () => {
     expect(r.success).toBe(false);
     if (r.success) return;
     const errors = issuesToErrors(r.error.issues);
-    expect(errors.nameKanji).toBe("required");
+    expect(errors.lastNameKanji).toBe("required");
+    expect(errors.firstNameKanji).toBe("required");
     expect(errors["currentParent.children.0.name"]).toBe("required");
     expect(errors["currentParent.children.0.grade"]).toBe("required");
   });

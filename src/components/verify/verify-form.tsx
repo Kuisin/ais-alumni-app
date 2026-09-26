@@ -17,6 +17,7 @@ import { Alert } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { RoleKey } from "@/generated/prisma/enums";
+import { composeKanji, composeRomaji } from "@/lib/names";
 import {
   issuesToErrors,
   ROLE_ORDER,
@@ -209,27 +210,69 @@ export function VerifyForm({
 
       {step === "basics" ? (
         <div className="space-y-4">
-          <TextInput
-            path="nameRomaji"
-            label={t("fields.nameRomaji")}
-            hint={t("hints.nameRomaji")}
-            required
-            autoComplete="name"
-            lang="en"
-            value={state.nameRomaji}
-            onChange={(v) => set("nameRomaji", v)}
-            errors={errors}
-          />
-          <TextInput
-            path="nameKanji"
-            label={t("fields.nameKanji")}
-            hint={t("hints.nameKanji")}
-            required={uiLocale === "ja"}
-            lang="ja"
-            value={state.nameKanji}
-            onChange={(v) => set("nameKanji", v)}
-            errors={errors}
-          />
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-semibold text-slate-800">
+              {t("fields.nameRomaji")}
+            </legend>
+            <p className="text-sm text-slate-600">{t("hints.nameRomaji")}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextInput
+                path="lastNameRomaji"
+                label={t("fields.lastNameRomaji")}
+                required
+                autoComplete="family-name"
+                lang="en"
+                value={state.lastNameRomaji}
+                onChange={(v) => set("lastNameRomaji", v)}
+                errors={errors}
+              />
+              <TextInput
+                path="firstNameRomaji"
+                label={t("fields.firstNameRomaji")}
+                required
+                autoComplete="given-name"
+                lang="en"
+                value={state.firstNameRomaji}
+                onChange={(v) => set("firstNameRomaji", v)}
+                errors={errors}
+              />
+            </div>
+            <TextInput
+              path="middleNameRomaji"
+              label={t("fields.middleNameRomaji")}
+              autoComplete="additional-name"
+              lang="en"
+              value={state.middleNameRomaji}
+              onChange={(v) => set("middleNameRomaji", v)}
+              errors={errors}
+            />
+          </fieldset>
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-semibold text-slate-800">
+              {t("fields.nameKanji")}
+            </legend>
+            <p className="text-sm text-slate-600">{t("hints.nameKanji")}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextInput
+                path="lastNameKanji"
+                label={t("fields.lastNameKanji")}
+                required={uiLocale === "ja"}
+                lang="ja"
+                value={state.lastNameKanji}
+                onChange={(v) => set("lastNameKanji", v)}
+                errors={errors}
+              />
+              <TextInput
+                path="firstNameKanji"
+                label={t("fields.firstNameKanji")}
+                required={uiLocale === "ja"}
+                lang="ja"
+                value={state.firstNameKanji}
+                onChange={(v) => set("firstNameKanji", v)}
+                errors={errors}
+              />
+            </div>
+          </fieldset>
           <TextInput
             path="nameAtAis"
             label={t("fields.nameAtAis")}
@@ -393,11 +436,11 @@ export function VerifyForm({
             </h3>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
               <dt className="text-slate-600">{t("fields.nameRomaji")}</dt>
-              <dd>{state.nameRomaji}</dd>
-              {state.nameKanji ? (
+              <dd>{composeRomaji(state)}</dd>
+              {composeKanji(state) ? (
                 <>
                   <dt className="text-slate-600">{t("fields.nameKanji")}</dt>
-                  <dd>{state.nameKanji}</dd>
+                  <dd>{composeKanji(state)}</dd>
                 </>
               ) : null}
               <dt className="text-slate-600">{t("fields.dateOfBirth")}</dt>

@@ -17,6 +17,7 @@ import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
+import { namePartsOf } from "@/lib/names";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -158,8 +159,7 @@ export default async function AdminMemberPage({
         <MemberProfileForm
           userId={user.id}
           values={{
-            nameRomaji: user.nameRomaji ?? "",
-            nameKanji: user.nameKanji ?? "",
+            ...namePartsOf(user),
             nameAtAis: user.nameAtAis ?? "",
             dateOfBirth: user.dateOfBirth
               ? user.dateOfBirth.toISOString().slice(0, 10)

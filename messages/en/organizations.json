@@ -1,0 +1,29 @@
+{
+  "title": "Schools & companies",
+  "description": "Schools and companies used in members' education and work history. Merge duplicates and fix names here.",
+  "tabsLabel": "Type",
+  "tabs": {
+    "school": "Schools",
+    "company": "Companies"
+  },
+  "search": "Search",
+  "searchPlaceholder": "Search by name",
+  "empty": "Nothing found.",
+  "members": "{count, plural, one {# member} other {# members}}",
+  "manage": "Edit / merge",
+  "rename": "Name",
+  "save": "Save name",
+  "mergeInto": "Merge into (the correct one)",
+  "merge": "Merge this entry",
+  "mergeHelp": "If this is a duplicate, pick the correct entry. Its members move there and this one is removed.",
+  "delete": "Delete (unused)",
+  "renamed": "Renamed.",
+  "merged": "Merged.",
+  "errors": {
+    "forbidden": "You don't have permission to do that.",
+    "invalid": "Please check the input.",
+    "exists": "That name already exists — merge instead.",
+    "pickTarget": "Pick the entry to merge into from the list.",
+    "sameTarget": "Can't merge an entry into itself."
+  }
+}

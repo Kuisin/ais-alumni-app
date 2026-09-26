@@ -12,7 +12,8 @@
     "contact": "Contact & links",
     "photo": "Profile photo",
     "basic": "Basic information",
-    "follows": "Follow requests"
+    "follows": "Follow requests",
+    "history": "Education & work"
   },
   "fields": {
     "nameRomaji": "Name (romaji)",
@@ -85,5 +86,7 @@
     "fileSize": "The image must be 2 MB or smaller.",
     "fileType": "Please choose a JPG or PNG image."
   },
-  "requestRecordCorrection": "Request a correction"
+  "requestRecordCorrection": "Request a correction",
+  "historyIntro": "Adding your schools and jobs after AIS helps classmates find you.",
+  "editHistory": "Edit education & work"
 }

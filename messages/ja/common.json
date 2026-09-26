@@ -64,7 +64,8 @@
     "stats": "統計",
     "audit": "操作ログ",
     "recordRequests": "在籍情報の修正",
-    "cohorts": "学年"
+    "cohorts": "学年",
+    "organizations": "学校・会社"
   },
   "notFoundTitle": "ページが見つかりません",
   "goHome": "ホームへ",

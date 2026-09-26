@@ -118,6 +118,8 @@ model User {
   positions      UserPosition[]        @relation("positionHolder")
   positionGrants UserPosition[]        @relation("positionGrantor")
   broadcasts     Broadcast[]
+  education      EducationEntry[]
+  work           WorkEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -530,4 +532,75 @@ model Cohort {
   childLinks          FamilyLink[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
+}
+
+// Added: 学歴 / 職歴 lists on the profile. Ongoing entries (no end year)
+// also set the member's current stage automatically.
+enum EducationLevel {
+  JUNIOR_HIGH
+  HIGH_SCHOOL
+  UNIVERSITY
+  GRADUATE_SCHOOL
+  VOCATIONAL
+  OTHER
+}
+
+// Who can see an entry: every member, or only accepted followers (+ family).
+enum HistoryVisibility {
+  MEMBERS
+  FOLLOWERS
+}
+
+model EducationEntry {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level      EducationLevel
+  schoolId   String
+  school     School            @relation(fields: [schoolId], references: [id])
+  field      String? // department / major
+  startYear  Int?
+  endYear    Int? // null = still attending
+  visibility HistoryVisibility @default(MEMBERS)
+  createdAt  DateTime          @default(now())
+
+  @@index([userId])
+  @@index([schoolId])
+}
+
+model WorkEntry {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId  String
+  company    Company           @relation(fields: [companyId], references: [id])
+  title      String? // position / department
+  startYear  Int?
+  endYear    Int? // null = current job
+  visibility HistoryVisibility @default(FOLLOWERS)
+  createdAt  DateTime          @default(now())
+
+  @@index([userId])
+  @@index([companyId])
+}
+
+// Added: shared lists of schools and companies used by 学歴 / 職歴. Members
+// pick an existing one (search) or add a new one; admins rename / merge.
+// nameKey (normalized name) prevents near-duplicate entries.
+model School {
+  id          String           @id @default(cuid())
+  name        String
+  nameKey     String           @unique
+  createdById String?
+  entries     EducationEntry[]
+  createdAt   DateTime         @default(now())
+}
+
+model Company {
+  id          String      @id @default(cuid())
+  name        String
+  nameKey     String      @unique
+  createdById String?
+  entries     WorkEntry[]
+  createdAt   DateTime    @default(now())
 }

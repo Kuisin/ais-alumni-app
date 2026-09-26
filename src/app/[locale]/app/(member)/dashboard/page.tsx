@@ -3,6 +3,7 @@ import { ActionItem, DashboardSection } from "@/components/dashboard/section";
 import { EventCard } from "@/components/events/event-card";
 import { LineBanner } from "@/components/line/line-banner";
 import { NewsCard } from "@/components/news/news-card";
+import { SetupChecklist } from "@/components/setup/setup-checklist";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import {
   FamilyLinkInitiator,
@@ -15,6 +16,8 @@ import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
 import { publishedWhere, targetRolesWhere } from "@/lib/news";
 import { requireActive } from "@/lib/session";
+import { setupProgress } from "@/lib/setup";
+import { loadSetupChecklist } from "@/lib/setup-db";
 
 export async function generateMetadata({
   params,
@@ -104,6 +107,9 @@ export default async function DashboardPage({
       }),
     ]);
 
+  const setup = await loadSetupChecklist(user);
+  const setupDone = setupProgress(setup).complete;
+
   const hasTodos =
     followRequests > 0 || vouches.length > 0 || familyLinks.length > 0;
 
@@ -111,9 +117,13 @@ export default async function DashboardPage({
     <>
       <PageHeader title={t("greeting", { name: displayName(user, locale) })} />
 
-      <div className="mb-6 empty:hidden">
-        <LineBanner user={user} />
-      </div>
+      {setupDone ? (
+        <div className="mb-6 empty:hidden">
+          <LineBanner user={user} />
+        </div>
+      ) : (
+        <SetupChecklist items={setup} />
+      )}
 
       {hasTodos ? (
         <section aria-labelledby="todo-heading" className="mb-6">

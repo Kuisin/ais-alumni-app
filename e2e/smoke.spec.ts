@@ -98,6 +98,13 @@ test("email sign-up → verification → admin approval → member dashboard", a
 
   // 3. Pending review; member pages stay closed.
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/status/);
+  // Setup checklist: email + form done, approval and LINE still open.
+  const setup = member.getByRole("region", { name: "Getting set up" });
+  await expect(setup.getByText("2 of 4 done")).toBeVisible();
+  await expect(setup.getByRole("link", { name: "Link LINE" })).toHaveAttribute(
+    "href",
+    /onboarding\/status#line/,
+  );
   await member.goto("/en/app/directory");
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/status/);
 
@@ -122,6 +129,11 @@ test("email sign-up → verification → admin approval → member dashboard", a
   // 5. Member now reaches the dashboard and directory.
   await member.goto("/en/app/dashboard");
   await expect(member).toHaveURL(/\/en\/app\/dashboard/);
+  // After approval the checklist grows to the profile tasks.
+  const checklist = member.getByRole("region", { name: "Getting set up" });
+  await expect(checklist.getByText("3 of 8 done")).toBeVisible();
+  await checklist.getByRole("link", { name: "Add", exact: true }).click();
+  await expect(member).toHaveURL(/\/en\/app\/profile\/history/);
   await member.goto("/en/app/directory");
   await expect(member.getByText("Hanako Suzuki").first()).toBeVisible();
 });

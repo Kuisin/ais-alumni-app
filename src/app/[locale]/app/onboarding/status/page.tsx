@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { LineLinkPanel } from "@/components/line/line-link-panel";
+import { SetupChecklist } from "@/components/setup/setup-checklist";
 import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { AccountState } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { parseLinkOutcome } from "@/lib/line-link";
 import { requireState } from "@/lib/session";
+import { loadSetupChecklist } from "@/lib/setup-db";
 
 export async function generateMetadata({
   params,
@@ -50,6 +52,9 @@ export default async function OnboardingStatusPage({
   return (
     <>
       <PageHeader title={t(`status.${state}.title`)} />
+      {state === "PENDING_REVIEW" ? (
+        <SetupChecklist items={await loadSetupChecklist(user)} />
+      ) : null}
       <Card className="space-y-4">
         <p>
           <Badge tone={TONE[state]}>{tRoles(`state.${state}`)}</Badge>
@@ -97,7 +102,7 @@ export default async function OnboardingStatusPage({
       </Card>
 
       {wantsLine ? (
-        <Card className="mt-4 space-y-3">
+        <Card id="line" className="mt-4 scroll-mt-20 space-y-3">
           <h2 className="font-semibold">{t("status.lineTitle")}</h2>
           <p className="text-sm text-slate-700">{t("status.lineBody")}</p>
           <LineLinkPanel

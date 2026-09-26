@@ -43,7 +43,11 @@ async function requestCode(
     locale,
     userId,
   });
-  if (!result.ok) return { step: "code", email, error: "rate_limited" };
+  if (!result.ok) {
+    return result.error === "send_failed"
+      ? { step: "email", email, error: "send_failed" }
+      : { step: "code", email, error: "rate_limited" };
+  }
   return { step: "code", email, notice: resend ? "resent" : "sent" };
 }
 

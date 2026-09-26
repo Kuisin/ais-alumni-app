@@ -23,7 +23,9 @@ export function generateCode(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
 
-export type IssueResult = { ok: true } | { ok: false; error: "rate_limited" };
+export type IssueResult =
+  | { ok: true }
+  | { ok: false; error: "rate_limited" | "send_failed" };
 
 /** Create and email a 6-digit code. Rate-limited per email + purpose. */
 export async function issueOtp(params: {
@@ -63,11 +65,19 @@ export async function issueOtp(params: {
   });
 
   const t = await getTranslatorFor(params.locale, "email");
-  await sendEmail({
-    to: email,
-    subject: t("otp.subject", { code }),
-    text: t("otp.body", { code, minutes: OTP_TTL_MS / 60000 }),
-  });
+  try {
+    await sendEmail({
+      to: email,
+      subject: t("otp.subject", { code }),
+      text: t("otp.body", { code, minutes: OTP_TTL_MS / 60000 }),
+    });
+  } catch (e) {
+    // Email provider down or misconfigured: drop the unsent code so it
+    // doesn't count toward the rate limit, and let the form say so.
+    console.error("[otp] failed to send code", e);
+    await db.otpCode.delete({ where: { id: row.id } });
+    return { ok: false, error: "send_failed" };
+  }
   return { ok: true };
 }
 

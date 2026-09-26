@@ -261,7 +261,10 @@ export async function emailChangeAction(
         return {
           step: intent === "resend" ? "code" : "email",
           email,
-          error: tc("errors.rateLimited"),
+          error:
+            res.error === "send_failed"
+              ? tc("errors.emailSendFailed")
+              : tc("errors.rateLimited"),
         };
       return { step: "code", email, message: t("email.codeSent", { email }) };
     }

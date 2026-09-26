@@ -23,6 +23,7 @@ export type OtpFormState = {
     | "invalid_email"
     | "invalid_code_format"
     | "rate_limited"
+    | "send_failed"
     | "invalid"
     | "expired"
     | "too_many_attempts"
@@ -74,6 +75,9 @@ async function requestSignInCode(
     purpose: OtpPurpose.SIGN_IN,
     locale: await currentLocale(),
   });
+  if (!result.ok && result.error === "send_failed") {
+    return { step: "email", email, error: "send_failed" };
+  }
   if (!result.ok) {
     // Rate limiting means a code was sent recently (e.g. the page was
     // reloaded), so let the user enter that one.

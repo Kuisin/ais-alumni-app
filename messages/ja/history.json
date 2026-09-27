@@ -34,7 +34,9 @@
     "endYear": "終了年",
     "visibility": "公開範囲",
     "industry": "業種",
-    "industryDetail": "業種（詳細）"
+    "industryDetail": "業種（詳細）",
+    "jobType": "職種",
+    "jobTypeDetail": "職種（詳細）"
   },
   "hints": {
     "endYear": {
@@ -79,8 +81,11 @@
   },
   "yearPlaceholder": "例: 2020",
   "close": "閉じる",
-  "industryHint": "大分類を選ぶと、詳細を選べます。",
   "industryNone": "選択しない",
   "industryDetailAny": "詳細は選択しない",
-  "industryPickGroup": "先に業種を選んでください"
+  "twoLevelHint": "大分類を選ぶと、詳細を選べます。",
+  "pickGroup": {
+    "industry": "先に業種を選んでください",
+    "jobType": "先に職種を選んでください"
+  }
 }

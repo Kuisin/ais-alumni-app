@@ -5,6 +5,7 @@ import {
   LifeStage,
 } from "@/generated/prisma/enums";
 import { isIndustryCode } from "@/lib/industries";
+import { isJobTypeCode } from "@/lib/job-types";
 import { calendarYear } from "@/lib/school";
 
 /**
@@ -56,6 +57,13 @@ export const workSchema = z
       .trim()
       .max(40)
       .refine((v) => !v || isIndustryCode(v), "invalid")
+      .transform((v) => v || null),
+    /** 職種 code (src/lib/job-types.ts); empty = not given */
+    jobType: z
+      .string()
+      .trim()
+      .max(40)
+      .refine((v) => !v || isJobTypeCode(v), "invalid")
       .transform((v) => v || null),
     startYear: year,
     endYear: year,

@@ -34,7 +34,9 @@
     "endYear": "End year",
     "visibility": "Visible to",
     "industry": "Industry",
-    "industryDetail": "Industry (detail)"
+    "industryDetail": "Industry (detail)",
+    "jobType": "Job type",
+    "jobTypeDetail": "Job type (detail)"
   },
   "hints": {
     "endYear": {
@@ -79,8 +81,11 @@
   },
   "yearPlaceholder": "e.g. 2020",
   "close": "Close",
-  "industryHint": "Pick a category, then optionally the detail.",
   "industryNone": "Not specified",
   "industryDetailAny": "No detail",
-  "industryPickGroup": "Choose an industry first"
+  "twoLevelHint": "Pick a category, then optionally the detail.",
+  "pickGroup": {
+    "industry": "Choose an industry first",
+    "jobType": "Choose a job type first"
+  }
 }

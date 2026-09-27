@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { avatarSrc } from "@/components/profile/avatar-src";
-import { ChatGroupKind } from "@/generated/prisma/enums";
+import { ChatGroupKind, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
 import {
@@ -28,6 +28,10 @@ export type ChatMessageView = {
   name: string;
   /** signed photo URL, or null (initials) */
   avatar: string | null;
+  /** 第N期 of the sender (students / graduates), shown next to the name */
+  cohort: number | null;
+  /** the sender is a 学年代表 */
+  rep: boolean;
   body: string;
   createdAt: string;
   deleted: boolean;
@@ -39,6 +43,31 @@ export type ChatMessageView = {
 
 const Id = z.string().min(1).max(64);
 
+const STUDENT_ROLE_KEYS: RoleKey[] = [
+  RoleKey.CURRENT_STUDENT,
+  RoleKey.FORMER_STUDENT,
+];
+
+/** Sender details shown in a talk: name, photo, 第N期, 学年代表. */
+const SENDER_SELECT = {
+  id: true,
+  nameRomaji: true,
+  nameKanji: true,
+  avatarUrl: true,
+  roles: {
+    where: {
+      role: { in: STUDENT_ROLE_KEYS },
+      cohortId: { not: null },
+    },
+    select: { cohort: { select: { number: true } } },
+    take: 1,
+  },
+  positions: {
+    where: { position: PositionKey.STUDENT_LEADER },
+    select: { id: true },
+  },
+} as const;
+
 const MESSAGE_SELECT = {
   id: true,
   userId: true,
@@ -47,7 +76,7 @@ const MESSAGE_SELECT = {
   deletedAt: true,
   mentionUserIds: true,
   mentionAll: true,
-  user: { select: { nameRomaji: true, nameKanji: true, avatarUrl: true } },
+  user: { select: SENDER_SELECT },
 } as const;
 
 type MessageRow = {
@@ -62,6 +91,8 @@ type MessageRow = {
     nameRomaji: string | null;
     nameKanji: string | null;
     avatarUrl: string | null;
+    roles: { cohort: { number: number } | null }[];
+    positions: { id: string }[];
   };
 };
 
@@ -71,6 +102,8 @@ function toView(m: MessageRow): ChatMessageView {
     userId: m.userId,
     name: m.user.nameRomaji ?? m.user.nameKanji ?? "—",
     avatar: avatarSrc(m.user.avatarUrl),
+    cohort: m.user.roles[0]?.cohort?.number ?? null,
+    rep: m.user.positions.length > 0,
     body: m.deletedAt ? "" : m.body,
     createdAt: m.createdAt.toISOString(),
     deleted: m.deletedAt !== null,

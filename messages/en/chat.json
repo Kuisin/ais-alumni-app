@@ -16,7 +16,8 @@
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "{cohort}",
     "COHORT_PARENTS": "{cohort} parents",
-    "ADULTS": "18 and over"
+    "ADULTS": "18 and over",
+    "CLASS_REPS": "Class reps"
   },
   "groupHints": {
     "TEACHERS": "Everyone who teaches or taught at AIS",
@@ -26,7 +27,8 @@
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "Students and graduates of this class",
     "COHORT_PARENTS": "Parents of children in this class",
-    "ADULTS": "Students and graduates join on the April 1 after they turn 18"
+    "ADULTS": "Students and graduates join on the April 1 after they turn 18",
+    "CLASS_REPS": "Class representatives of every year"
   },
   "room": {
     "back": "All chats",
@@ -98,5 +100,6 @@
   "mention": {
     "subject": "[AIS Alumni] {name} mentioned you in a chat",
     "text": "{name} mentioned you in a chat.\nPlease open the app to read it."
-  }
+  },
+  "rep": "Class rep"
 }

@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { chatMessagesAction, chatReadStateAction } from "@/app/actions/chat";
 import { ChatRoom } from "@/components/chat/chat-room";
 import { avatarSrc } from "@/components/profile/avatar-src";
-import { ChatGroupKind } from "@/generated/prisma/enums";
+import { ChatGroupKind, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { GROUP_SELECT } from "@/lib/chat-db";
 import { chatGroupName } from "@/lib/chat-labels";
 import { db } from "@/lib/db";
@@ -29,6 +29,20 @@ async function loadGroup(id: string, viewer: { id: string; isAdmin: boolean }) {
                 nameRomaji: true,
                 nameKanji: true,
                 avatarUrl: true,
+                roles: {
+                  where: {
+                    role: {
+                      in: [RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT],
+                    },
+                    cohortId: { not: null },
+                  },
+                  select: { cohort: { select: { number: true } } },
+                  take: 1,
+                },
+                positions: {
+                  where: { position: PositionKey.STUDENT_LEADER },
+                  select: { id: true },
+                },
               },
             },
           },
@@ -82,6 +96,8 @@ export default async function ChatRoomPage({
     id: u.id,
     name: u.nameRomaji ?? u.nameKanji ?? "—",
     avatar: avatarSrc(u.avatarUrl),
+    cohort: u.roles[0]?.cohort?.number ?? null,
+    rep: u.positions.length > 0,
   }));
   const other = members.find((m) => m.id !== user.id);
   // A 1:1 talk stops when either side has blocked the other.

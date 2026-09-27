@@ -67,7 +67,44 @@ function merge(
   );
 }
 
-export type RoomMember = { id: string; name: string; avatar: string | null };
+export type RoomMember = {
+  id: string;
+  name: string;
+  avatar: string | null;
+  /** 第N期 (students / graduates) */
+  cohort?: number | null;
+  /** 学年代表 */
+  rep?: boolean;
+};
+
+/** 「第5期」「学年代表」 next to a name. */
+function MemberTags({
+  cohort,
+  rep,
+  className,
+}: {
+  cohort?: number | null;
+  rep?: boolean;
+  className?: string;
+}) {
+  const t = useTranslations("chat");
+  const locale = useLocale();
+  if (!cohort && !rep) return null;
+  return (
+    <span className={cn("inline-flex flex-wrap gap-1", className)}>
+      {cohort ? (
+        <span className="rounded bg-slate-200 px-1.5 text-[10px] leading-4 font-medium text-slate-700">
+          {locale === "en" ? `Class ${cohort}` : `第${cohort}期`}
+        </span>
+      ) : null}
+      {rep ? (
+        <span className="rounded bg-brand-100 px-1.5 text-[10px] leading-4 font-semibold text-brand-800">
+          {t("rep")}
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 /**
  * A talk, styled like LINE: full screen on phones with its own header,
@@ -132,6 +169,7 @@ export function ChatRoom({
   const [activeSuggestion, setActiveSuggestion] = useState(0);
   const allLabel = t("mentionAll");
   const others = members.filter((m) => m.id !== me);
+  const partner = direct ? others[0] : undefined;
   const namesById = new Map(members.map((m) => [m.id, m.name]));
   // @mention picker: 全員 (group chats) and the other members.
   const q = caret >= 0 ? mentionQuery(text, caret) : null;
@@ -373,12 +411,17 @@ export function ChatRoom({
         >
           <ChevronLeft aria-hidden="true" className="size-6" />
         </Link>
-        <h1 className="min-w-0 flex-1 truncate py-3 text-lg font-bold">
-          {title}
-          {!direct ? (
-            <span className="ml-1 font-normal">({memberCount})</span>
+        <div className="min-w-0 flex-1 py-2">
+          <h1 className="truncate text-lg font-bold">
+            {title}
+            {!direct ? (
+              <span className="ml-1 font-normal">({memberCount})</span>
+            ) : null}
+          </h1>
+          {direct && partner ? (
+            <MemberTags cohort={partner.cohort} rep={partner.rep} />
           ) : null}
-        </h1>
+        </div>
         <span
           className="mr-1 inline-flex items-center"
           title={live ? t("live") : t("polling")}
@@ -409,7 +452,8 @@ export function ChatRoom({
                   {members.map((m) => (
                     <li key={m.id} className="flex items-center gap-2">
                       <Avatar src={m.avatar} name={m.name} size={28} />
-                      <span className="truncate">{m.name}</span>
+                      <span className="min-w-0 truncate">{m.name}</span>
+                      <MemberTags cohort={m.cohort} rep={m.rep} />
                     </li>
                   ))}
                 </ul>
@@ -511,8 +555,9 @@ export function ChatRoom({
                       )}
                     >
                       {!mine && runStart && !direct ? (
-                        <span className="mb-0.5 px-1 text-xs font-medium text-slate-600">
+                        <span className="mb-0.5 flex flex-wrap items-center gap-1 px-1 text-xs font-medium text-slate-600">
                           {m.name}
+                          <MemberTags cohort={m.cohort} rep={m.rep} />
                         </span>
                       ) : null}
                       <div

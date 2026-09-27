@@ -188,6 +188,38 @@ test("mention a member with @ (and they're told)", async ({ browser }) => {
   expect(notice).not.toContain("see you!");
 });
 
+test("学年代表 get their group, and tags show 期 and 学年代表", async ({
+  page,
+}) => {
+  // A 第5期 graduate made 学年代表 for their class.
+  const stamp = Date.now();
+  const rep = await createActiveGraduate(`Rep R${stamp}`, "1993-05-05");
+  await sql(
+    `UPDATE "UserRole" SET "cohortId" = (SELECT id FROM "Cohort" WHERE number = 5)
+     WHERE "userId" = $1`,
+    [rep.id],
+  );
+  await sql(
+    `INSERT INTO "UserPosition" (id, "userId", position, "cohortId")
+     VALUES ($1, $2, 'STUDENT_LEADER', (SELECT id FROM "Cohort" WHERE number = 5))`,
+    [`pos${stamp}`, rep.id],
+  );
+  await signInWithEmail(page, rep.email);
+  await page.goto("/en/app/chat");
+  const reps = page.getByRole("link", { name: /^Class reps/ });
+  await expect(reps).toBeVisible();
+  await reps.click();
+  await page.locator('summary[aria-label="Menu"]').click();
+  const me = page.getByRole("listitem").filter({ hasText: `R${stamp}, Rep` });
+  await expect(me.getByText("Class 5", { exact: true })).toBeVisible();
+  await expect(me.getByText("Class rep", { exact: true })).toBeVisible();
+
+  // Without the position they leave the group.
+  await sql(`DELETE FROM "UserPosition" WHERE id = $1`, [`pos${stamp}`]);
+  await page.goto("/en/app/chat");
+  await expect(page.getByRole("link", { name: /^Class reps/ })).toHaveCount(0);
+});
+
 async function sql(text: string, values: unknown[]) {
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();

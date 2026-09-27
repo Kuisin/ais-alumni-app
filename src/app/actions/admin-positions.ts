@@ -5,6 +5,7 @@ import { z } from "zod";
 import { PositionKey } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { isCurrentTeacher } from "@/lib/authz";
+import { syncChatMembership } from "@/lib/chat-db";
 import { parseCohortNumber } from "@/lib/cohorts";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -50,6 +51,7 @@ export async function setMemberPositionAction(
       { type: "User", id: userId },
       { position },
     );
+    await syncChatMembership(userId).catch(() => {}); // leaves 学年代表 chat
     refresh();
     return { ok: true, message: "removed" };
   }
@@ -85,6 +87,7 @@ export async function setMemberPositionAction(
     { type: "User", id: userId },
     { position, cohortId },
   );
+  await syncChatMembership(userId).catch(() => {}); // joins 学年代表 chat
   refresh();
   return { ok: true, message: "granted" };
 }

@@ -9,7 +9,7 @@
 export type IndustryItem = { code: string; ja: string; en: string };
 export type IndustryGroup = IndustryItem & { children: IndustryItem[] };
 
-const g = (
+export const twoLevelGroup = (
   code: string,
   ja: string,
   en: string,
@@ -24,6 +24,8 @@ const g = (
     en: cen,
   })),
 });
+
+const g = twoLevelGroup;
 
 export const INDUSTRIES: IndustryGroup[] = [
   g("MFR", "メーカー", "Manufacturers", [
@@ -304,30 +306,34 @@ export const INDUSTRIES: IndustryGroup[] = [
   ]),
 ];
 
-const BY_CODE = new Map<string, { group: IndustryGroup; item: IndustryItem }>();
-for (const group of INDUSTRIES) {
-  BY_CODE.set(group.code, { group, item: group });
-  for (const item of group.children) BY_CODE.set(item.code, { group, item });
+/** Lookups for a two-level list (業種, 職種). */
+export function twoLevelLookup(list: IndustryGroup[]) {
+  const byCode = new Map<
+    string,
+    { group: IndustryGroup; item: IndustryItem }
+  >();
+  for (const group of list) {
+    byCode.set(group.code, { group, item: group });
+    for (const item of group.children) byCode.set(item.code, { group, item });
+  }
+  return {
+    isCode: (code: string) => byCode.has(code),
+    /** The 大分類 code of a stored code ("ICT-01" → "ICT"). */
+    groupOf: (code: string | null | undefined) =>
+      code ? (byCode.get(code)?.group.code ?? "") : "",
+    /** "大分類 › 詳細" (or just the 大分類), null if unknown. */
+    label: (code: string | null | undefined, locale: "ja" | "en") => {
+      const hit = code ? byCode.get(code) : undefined;
+      if (!hit) return null;
+      const name = (x: IndustryItem) => (locale === "en" ? x.en : x.ja);
+      return hit.item === hit.group
+        ? name(hit.group)
+        : `${name(hit.group)} › ${name(hit.item)}`;
+    },
+  };
 }
 
-export function isIndustryCode(code: string): boolean {
-  return BY_CODE.has(code);
-}
-
-/** The 大分類 code of a stored code ("G-software" → "G"). */
-export function industryGroupOf(code: string | null | undefined): string {
-  return code ? (BY_CODE.get(code)?.group.code ?? "") : "";
-}
-
-/** "IT・通信 › ソフトウェア・SaaS" (or just the 大分類), null if unknown. */
-export function industryLabel(
-  code: string | null | undefined,
-  locale: "ja" | "en",
-): string | null {
-  const hit = code ? BY_CODE.get(code) : undefined;
-  if (!hit) return null;
-  const name = (x: IndustryItem) => (locale === "en" ? x.en : x.ja);
-  return hit.item === hit.group
-    ? name(hit.group)
-    : `${name(hit.group)} › ${name(hit.item)}`;
-}
+const industries = twoLevelLookup(INDUSTRIES);
+export const isIndustryCode = industries.isCode;
+export const industryGroupOf = industries.groupOf;
+export const industryLabel = industries.label;

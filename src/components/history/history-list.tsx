@@ -4,7 +4,7 @@ import type {
   HistoryVisibility,
 } from "@/generated/prisma/enums";
 import { isOngoing, sortHistory } from "@/lib/history";
-import { industryLabel } from "@/lib/industries";
+import { WorkTags } from "./work-tags";
 
 type Edu = {
   id: string;
@@ -20,6 +20,7 @@ type Job = {
   company: { name: string };
   title: string | null;
   industry?: string | null;
+  jobType?: string | null;
   startYear: number | null;
   endYear: number | null;
   visibility: HistoryVisibility;
@@ -63,11 +64,11 @@ export async function HistoryList({
             {sortHistory(work).map((e) => (
               <li key={e.id} className="animate-rise">
                 <p className="font-medium">{e.company.name}</p>
-                {industryLabel(e.industry, locale) ? (
-                  <p className="text-xs text-slate-500">
-                    {industryLabel(e.industry, locale)}
-                  </p>
-                ) : null}
+                <WorkTags
+                  industry={e.industry}
+                  jobType={e.jobType}
+                  locale={locale}
+                />
                 <p className="text-sm text-slate-600">
                   {e.title ? `${e.title} · ` : ""}
                   {years(e)}

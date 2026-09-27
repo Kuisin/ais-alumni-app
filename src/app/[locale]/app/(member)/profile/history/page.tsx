@@ -3,13 +3,13 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { deleteHistoryAction } from "@/app/actions/history";
 import { AddHistory } from "@/components/history/add-history";
 import { HistoryForm } from "@/components/history/history-form";
+import { WorkTags } from "@/components/history/work-tags";
 import { BackLink } from "@/components/ui/back-link";
 import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ViewEdit } from "@/components/ui/view-edit";
 import { db } from "@/lib/db";
 import { isOngoing, sortHistory } from "@/lib/history";
-import { industryLabel } from "@/lib/industries";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -74,10 +74,12 @@ export default async function HistoryPage() {
                           : (e.title ?? "")}{" "}
                         · {years(e)}
                       </p>
-                      {"industry" in e && industryLabel(e.industry, lang) ? (
-                        <p className="text-xs text-slate-500">
-                          {industryLabel(e.industry, lang)}
-                        </p>
+                      {"industry" in e ? (
+                        <WorkTags
+                          industry={e.industry}
+                          jobType={e.jobType}
+                          locale={lang}
+                        />
                       ) : null}
                     </div>
                   }

@@ -35,7 +35,7 @@
     "placeholder": "Write a message",
     "send": "Send",
     "sending": "Sending…",
-    "enterHint": "Enter to send, Shift+Enter for a new line",
+    "enterHint": "Enter adds a new line; press Send to send (or Ctrl/⌘+Enter on a keyboard). Type @ to mention someone.",
     "older": "Show earlier messages",
     "unreadDivider": "Unread",
     "deleted": "This message was deleted",
@@ -60,7 +60,10 @@
     "direct": "One-to-one chat",
     "blockedNotice": "You can't exchange messages with this member.",
     "copy": "Copy",
-    "close": "Close"
+    "close": "Close",
+    "mentionList": "Mention someone",
+    "mentionAll": "all",
+    "mentionAllHint": "Everyone in this group"
   },
   "digest": {
     "subject": "[AIS Alumni] You have unread chat messages",
@@ -90,5 +93,10 @@
       "blocked": "You can't chat with this member.",
       "forbidden": "The chat couldn't be opened."
     }
+  },
+  "mentionedYou": "[Mentioned you]",
+  "mention": {
+    "subject": "[AIS Alumni] {name} mentioned you in a chat",
+    "text": "{name} mentioned you in a chat.\nPlease open the app to read it."
   }
 }

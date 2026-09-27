@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { ChatGroupKind, RoleKey } from "@/generated/prisma/enums";
-import { desiredGroups, directKey, isAdult, latestApril1 } from "./chat";
+import {
+  applyMention,
+  desiredGroups,
+  directKey,
+  isAdult,
+  latestApril1,
+  mentionQuery,
+  mentionsIn,
+  splitMentions,
+} from "./chat";
 
 describe("chat groups", () => {
   it("puts a graduate in 卒業生＋元在校生 and their class", () => {
@@ -70,5 +79,37 @@ describe("1:1 talks", () => {
   it("have one key per pair, whoever starts", () => {
     expect(directKey("b", "a")).toBe("DIRECT:a:b");
     expect(directKey("a", "b")).toBe(directKey("b", "a"));
+  });
+});
+
+describe("mentions", () => {
+  it("finds the @query being typed", () => {
+    expect(mentionQuery("hi @Suz", 7)).toEqual({ start: 3, query: "Suz" });
+    expect(mentionQuery("@", 1)).toEqual({ start: 0, query: "" });
+    expect(mentionQuery("mail@example", 12)).toBeNull();
+    expect(mentionQuery("hi @Suz\nnext", 12)).toBeNull();
+  });
+
+  it("inserts the name and works out who is mentioned", () => {
+    const r = applyMention("hi @Suz and", 3, 7, "Suzuki, Hanako");
+    expect(r).toEqual({ text: "hi @Suzuki, Hanako  and", caret: 19 });
+    const members = [
+      { id: "h", name: "Suzuki, Hanako" },
+      { id: "t", name: "Tanaka, Ken" },
+    ];
+    expect(mentionsIn(r.text, members, ["全員", "all"])).toEqual({
+      userIds: ["h"],
+      all: false,
+    });
+    expect(mentionsIn("@全員 集合！", members, ["全員", "all"]).all).toBe(true);
+  });
+
+  it("splits a message for highlighting, longest name first", () => {
+    expect(splitMentions("@Ann, B and @Ann hi", ["Ann", "Ann, B"])).toEqual([
+      { text: "@Ann, B", mention: true },
+      { text: " and ", mention: false },
+      { text: "@Ann", mention: true },
+      { text: " hi", mention: false },
+    ]);
   });
 });

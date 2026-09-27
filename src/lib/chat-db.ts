@@ -139,6 +139,21 @@ export async function chatUnreadByGroup(
   return new Map(rows.map((r) => [r.groupId, Number(r.n)]));
 }
 
+/** Chats with an unread message that mentions the member (or @全員). */
+export async function chatMentionedGroups(
+  userId: string,
+): Promise<Set<string>> {
+  const rows = await db.$queryRaw<{ groupId: string }[]>`
+    SELECT DISTINCT m."groupId"
+    FROM "ChatMessage" m
+    JOIN "ChatMember" cm ON cm."groupId" = m."groupId" AND cm."userId" = ${userId}
+    WHERE m."createdAt" > cm."lastReadAt"
+      AND m."userId" <> ${userId}
+      AND m."deletedAt" IS NULL
+      AND (m."mentionAll" OR ${userId} = ANY(m."mentionUserIds"))`;
+  return new Set(rows.map((r) => r.groupId));
+}
+
 export const GROUP_SELECT = {
   id: true,
   kind: true,

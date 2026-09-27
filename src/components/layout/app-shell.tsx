@@ -47,6 +47,7 @@ import { hasStaffAccess, type StaffAccess } from "@/lib/permissions";
 import { channelTopic } from "@/lib/realtime";
 import type { CurrentUser } from "@/lib/session";
 import { LocaleSwitcher } from "./locale-switcher";
+import { NavTracker } from "./nav-history";
 import { Dropdown, NavLink } from "./nav-link";
 
 type NavItem = {
@@ -161,9 +162,15 @@ export async function AppShell({
     : [];
   const withRealtime = (node: ReactNode) =>
     live ? (
-      <RealtimeProvider topics={realtimeTopics}>{node}</RealtimeProvider>
+      <RealtimeProvider topics={realtimeTopics}>
+        <NavTracker />
+        {node}
+      </RealtimeProvider>
     ) : (
-      node
+      <>
+        <NavTracker />
+        {node}
+      </>
     );
 
   const primary: NavItem[] = [
@@ -616,11 +623,23 @@ export async function AppShell({
           <ul className="mx-auto grid max-w-lg grid-cols-6">
             {[
               ...primary.slice(0, 5),
-              { ...accountItems[0], label: t("nav.profileShort") },
-            ].map((item) => (
+              // マイページ is also home to follows, family, invite, settings.
+              {
+                ...accountItems[0],
+                label: t("nav.profileShort"),
+                count: followRequests,
+                also: [
+                  "/app/follows",
+                  "/app/family",
+                  "/app/invite",
+                  "/app/settings",
+                ],
+              },
+            ].map((item: NavItem & { also?: string[] }) => (
               <li key={item.href}>
                 <NavLink
                   href={item.href}
+                  also={item.also}
                   className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-slate-600 [&_svg]:size-5"
                   activeClassName="text-brand-700"
                 >
@@ -638,7 +657,7 @@ export async function AppShell({
                   {item.label}
                   {item.count ? (
                     <span className="sr-only">
-                      {` (${t("nav.unread", { count: item.count })})`}
+                      {` (${t(item.also ? "nav.pending" : "nav.unread", { count: item.count })})`}
                     </span>
                   ) : null}
                 </NavLink>

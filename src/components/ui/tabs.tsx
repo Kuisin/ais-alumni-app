@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "./cn";
 import { LinkPendingBar } from "./link-pending";
+import { KeepActiveTabVisible } from "./tabs-scroll";
 
 export type TabItem = {
   href: ComponentProps<typeof Link>["href"];
@@ -62,6 +63,7 @@ export function Tabs({
           <LinkPendingBar className="inset-x-0 -bottom-0.5 bg-brand-700" />
         </Link>
       ))}
+      <KeepActiveTabVisible />
     </nav>
   );
 }

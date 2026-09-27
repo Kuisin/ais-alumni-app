@@ -4,6 +4,7 @@ import { AddHistory } from "@/components/history/add-history";
 import { HistoryForm } from "@/components/history/history-form";
 import { WorkTags } from "@/components/history/work-tags";
 import { Alert, Badge, Card } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ViewEdit } from "@/components/ui/view-edit";
 import { db } from "@/lib/db";
@@ -100,16 +101,23 @@ export async function HistoryEditor({
                   }
                 >
                   <HistoryForm kind={kind} values={e} userId={target} />
-                  <form
+                  <ConfirmForm
+                    message={t("deleteConfirm")}
                     action={deleteHistoryAction.bind(
                       null,
                       kind,
                       e.id,
                       target ?? "",
                     )}
+                    className="border-t border-slate-100 pt-3"
                   >
-                    <SubmitButton variant="ghost">{t("delete")}</SubmitButton>
-                  </form>
+                    <SubmitButton
+                      variant="ghost"
+                      className="text-red-700 hover:bg-red-50"
+                    >
+                      {t("delete")}
+                    </SubmitButton>
+                  </ConfirmForm>
                 </ViewEdit>
               </li>
             ))}

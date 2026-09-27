@@ -53,9 +53,9 @@ export default async function RecordPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <BackLink href="/app/profile/edit">{t("backToProfile")}</BackLink>
+        <BackLink href="/app/profile#record">{t("backToProfile")}</BackLink>
         <PageHeader title={t("title")} description={t("description")} />
       </div>
 

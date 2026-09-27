@@ -1,13 +1,13 @@
 import { Cake } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cancelBirthDateRequestAction } from "@/app/actions/birth-date-requests";
-import { Badge, Card } from "@/components/ui/card";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { EditableCard } from "@/components/ui/view-edit";
 import { ChangeRequestStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import type { CurrentUser } from "@/lib/session";
 import { BirthDateRequestForm } from "./birth-date-request-form";
+import { RequestStatus } from "./request-status";
 
 /** The member's birth date (UTC midnight → that calendar day). */
 export function formatBirthDate(d: Date, locale: "ja" | "en"): string {
@@ -25,80 +25,61 @@ export function formatBirthDate(d: Date, locale: "ja" | "en"): string {
  */
 export async function BirthDateCard({ me }: { me: CurrentUser }) {
   const t = await getTranslations("profile.birthDate");
+  const tp = await getTranslations("profile");
   const ts = await getTranslations("profile.nameRequest.status");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
   const latest = await db.birthDateRequest.findFirst({
     where: { userId: me.id },
     orderBy: { createdAt: "desc" },
   });
-  const pending =
-    latest?.status === ChangeRequestStatus.PENDING ? latest : null;
+  const pending = latest?.status === ChangeRequestStatus.PENDING;
 
   return (
-    <Card id="birth-date" className="scroll-mt-20 space-y-4">
-      <div>
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Cake aria-hidden="true" className="size-4 text-slate-500" />
-          {t("title")}
-        </h2>
-        <p className="mt-1 text-sm text-slate-600">{t("lockedNote")}</p>
-      </div>
-      <p className="text-lg font-medium">
-        {me.dateOfBirth ? (
-          formatBirthDate(me.dateOfBirth, locale)
-        ) : (
-          <span className="text-slate-500">{t("notSet")}</span>
-        )}
-      </p>
-      {!me.dateOfBirth ? (
-        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          {t("notSetHint")}
-        </p>
-      ) : null}
-
-      {pending ? (
-        <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-          <p className="flex flex-wrap items-center gap-2 font-medium text-amber-900">
-            <Badge tone="amber">{ts("PENDING")}</Badge>
-            {t("pendingSince", {
-              date: formatDate(pending.createdAt, locale),
-              value: formatBirthDate(pending.proposed, locale),
-            })}
-          </p>
-          <form action={cancelBirthDateRequestAction}>
-            <input type="hidden" name="id" value={pending.id} />
-            <SubmitButton variant="secondary" className="px-3 text-xs">
-              {t("cancel")}
-            </SubmitButton>
-          </form>
-        </div>
-      ) : (
+    <EditableCard
+      id="birth-date"
+      icon={<Cake />}
+      title={t("title")}
+      description={t("lockedNote")}
+      editLabel={me.dateOfBirth ? tp("requestChange") : tp("requestAdd")}
+      savedMessage={tp("birthDate.submitted")}
+      canEdit={!pending}
+      view={
         <>
-          {latest && latest.status !== ChangeRequestStatus.CANCELLED ? (
-            <p className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-              <Badge
-                tone={
-                  latest.status === ChangeRequestStatus.APPROVED
-                    ? "green"
-                    : "red"
-                }
-              >
-                {ts(latest.status)}
-              </Badge>
-              {latest.reviewNote ? (
-                <span>
-                  {t("reviewNote")}: {latest.reviewNote}
-                </span>
-              ) : null}
+          <p className="text-lg font-medium">
+            {me.dateOfBirth ? (
+              formatBirthDate(me.dateOfBirth, locale)
+            ) : (
+              <span className="text-slate-500">{t("notSet")}</span>
+            )}
+          </p>
+          {!me.dateOfBirth && !pending ? (
+            <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+              {t("notSetHint")}
             </p>
           ) : null}
-          <BirthDateRequestForm
-            current={
-              me.dateOfBirth ? me.dateOfBirth.toISOString().slice(0, 10) : ""
+          <RequestStatus
+            latest={latest}
+            pendingText={
+              latest
+                ? t("pendingSince", {
+                    date: formatDate(latest.createdAt, locale),
+                    value: formatBirthDate(latest.proposed, locale),
+                  })
+                : ""
             }
+            statusLabel={(s) => ts(s)}
+            reviewNoteLabel={t("reviewNote")}
+            withdrawLabel={t("cancel")}
+            withdrawAction={cancelBirthDateRequestAction}
           />
         </>
-      )}
-    </Card>
+      }
+    >
+      <BirthDateRequestForm
+        current={
+          me.dateOfBirth ? me.dateOfBirth.toISOString().slice(0, 10) : ""
+        }
+      />
+    </EditableCard>
   );
 }

@@ -13,7 +13,8 @@
     "photo": "プロフィール写真",
     "basic": "基本情報",
     "follows": "フォローリクエスト",
-    "history": "学歴・職歴"
+    "history": "学歴・職歴",
+    "account": "アカウント"
   },
   "fields": {
     "nameRomaji": "氏名（ローマ字）",
@@ -200,7 +201,8 @@
       "x": "X",
       "website": "ウェブサイト",
       "currentStageDetail": "現在の状況の詳細"
-    }
+    },
+    "noneShared": "フォロワーに公開している項目はありません（家族と委員会だけが見られます）。"
   },
   "photo": {
     "gender": "性別",
@@ -216,7 +218,8 @@
     "visibility": "写真の公開範囲",
     "onlyConnected": "家族とつながりのある人だけ",
     "everyone": "会員全員",
-    "genderLabel": "アイコン"
+    "genderLabel": "アイコン",
+    "change": "写真を変更"
   },
   "gender": {
     "title": "性別",
@@ -245,6 +248,14 @@
       "unchanged": "現在の性別と同じです。",
       "pending": "確認中の申請があります。結果をお待ちください。",
       "alreadySet": "性別はすでに登録されています。変更は申請してください。"
-    }
-  }
+    },
+    "openSetOnce": "登録する"
+  },
+  "requestChange": "変更を申請",
+  "requestAdd": "登録を申請",
+  "photoRemoveConfirm": "プロフィール写真を削除しますか？",
+  "requestCorrection": "修正を依頼",
+  "changeInSettings": "設定で変更",
+  "emailHint": "ログイン用コードと大切なお知らせの送り先です。",
+  "accountHint": "フォロー・家族・招待・通知などの設定"
 }

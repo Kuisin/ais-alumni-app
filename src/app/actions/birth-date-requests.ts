@@ -183,7 +183,7 @@ export async function decideBirthDateRequestAction(
       ? "BIRTH_DATE_REQUEST_APPROVED"
       : "BIRTH_DATE_REQUEST_REJECTED",
     refId: id,
-    path: "/app/profile/edit#birth-date",
+    path: "/app/profile#birth-date",
     note: note || null,
   }).catch((e) => console.error("[birth-date] member notify failed", e));
   refresh();

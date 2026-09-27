@@ -44,6 +44,7 @@ export async function FamilySearch({
                 type="search"
                 name={param}
                 defaultValue={q}
+                className="scroll-mt-24"
                 minLength={2}
                 maxLength={100}
                 autoComplete="off"

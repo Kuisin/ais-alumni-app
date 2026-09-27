@@ -22,10 +22,10 @@ test("birth date: add a missing one or correct it via the committee", async ({
 
   const member = await browser.newPage();
   await signInWithEmail(member, grad.email);
-  await member.goto("/en/app/profile/edit");
+  await member.goto("/en/app/profile");
   const card = member.locator("#birth-date");
   await expect(card.getByText("Not registered", { exact: true })).toBeVisible();
-  await card.getByRole("button", { name: "Request to add it" }).click();
+  await card.getByRole("button", { name: "Request to add" }).click();
   await card.getByLabel("Date of birth").fill("1994-06-06");
   await card.getByRole("button", { name: "Send request" }).click();
   await expect(
@@ -51,15 +51,15 @@ test("birth date: add a missing one or correct it via the committee", async ({
   );
   expect(groups.map((g) => g.kind)).toContain("ADULTS");
 
-  await member.goto("/en/app/profile/edit");
+  await member.goto("/en/app/profile");
   await expect(card.getByText("June 6, 1994", { exact: true })).toBeVisible();
-  // Shown on their own profile page too.
+  // Their own member page is the same profile.
   await member.goto(`/en/app/members/${grad.id}`);
-  await expect(member.getByText("June 6, 1994", { exact: true })).toBeVisible();
+  await expect(member).toHaveURL(/\/en\/app\/profile$/);
 
   // Correcting a recorded date needs a reason.
-  await member.goto("/en/app/profile/edit");
-  await card.getByRole("button", { name: "Request a correction" }).click();
+  await member.goto("/en/app/profile");
+  await card.getByRole("button", { name: "Request a change" }).click();
   await card.getByLabel("Date of birth").fill("1994-06-07");
   await card.getByRole("button", { name: "Send request" }).click();
   await expect(card.getByText("Please give a reason.")).toBeVisible();

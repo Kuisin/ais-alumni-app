@@ -44,7 +44,7 @@ export function EventCard({
             {formatDateTime(event.startsAt, locale)}
           </time>
         </p>
-        <h3 className="mt-1 font-semibold text-slate-900">
+        <h3 className="mt-1 font-semibold break-words text-slate-900">
           {title.text || t("untitled")}
           <FallbackTag fallback={title.fallback} />
         </h3>

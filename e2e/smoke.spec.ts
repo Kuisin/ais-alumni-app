@@ -172,7 +172,7 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(names.getByText("Recommended", { exact: true })).toBeVisible();
   await expect(names.getByRole("link", { name: "Add name" })).toHaveAttribute(
     "href",
-    /\/app\/profile\/edit#name$/,
+    /\/app\/profile#edit-name$/,
   );
   await checklist.getByRole("link", { name: "Add", exact: true }).click();
   await expect(member).toHaveURL(/\/en\/app\/profile\/history/);

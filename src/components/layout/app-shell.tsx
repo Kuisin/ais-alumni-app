@@ -15,6 +15,7 @@ import {
   LogOut,
   MailPlus,
   Megaphone,
+  MessageCircle,
   MessagesSquare,
   Newspaper,
   Route,
@@ -313,6 +314,11 @@ export async function AppShell({
                 href: "/app/admin/news",
                 label: t("adminNav.news"),
                 icon: <Newspaper className={ICON} />,
+              },
+              {
+                href: "/app/admin/line",
+                label: t("adminNav.line"),
+                icon: <MessageCircle className={ICON} />,
               },
             ]
           : []),

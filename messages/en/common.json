@@ -79,7 +79,8 @@
     "teachers": "Teachers",
     "destinations": "Destinations",
     "nameRequests": "Name & birth date",
-    "support": "Support requests"
+    "support": "Support requests",
+    "line": "LINE menu"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",

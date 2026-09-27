@@ -79,7 +79,8 @@
     "teachers": "教職員",
     "destinations": "進路",
     "nameRequests": "氏名・生年月日",
-    "support": "お問い合わせ"
+    "support": "お問い合わせ",
+    "line": "LINEメニュー"
   },
   "notFoundTitle": "ページが見つかりません",
   "goHome": "ホームへ",

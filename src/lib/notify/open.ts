@@ -49,7 +49,11 @@ export async function openNotificationLink(
 
   const target = new URL(`/${locale}${link.path}`, url.origin);
   const ua = request.headers.get("user-agent") ?? "";
-  if (PREVIEW_BOT.test(ua)) {
+  // ?go=1: the preview page's own redirect (a person, whatever the UA says).
+  const go = url.searchParams.get("go") === "1";
+  if (!go && PREVIEW_BOT.test(ua)) {
+    const goUrl = new URL(url.pathname, url.origin);
+    goUrl.searchParams.set("go", "1");
     const t = await getTranslatorFor(locale, "notifications");
     const image = new URL(`/n/${token}/og?l=${locale}`, url.origin).toString();
     const title = `${text.title} | ${t("preview.brand")}`;
@@ -64,11 +68,16 @@ export async function openNotificationLink(
 <meta property="og:url" content="${esc(url.toString())}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="robots" content="noindex">
-</head><body><a href="${esc(target.toString())}">${esc(t("preview.open"))}</a></body></html>`;
+<script>location.replace(${JSON.stringify(goUrl.toString()).replaceAll("<", "\\u003c")})</script>
+</head><body><a href="${esc(goUrl.toString())}">${esc(t("preview.open"))}</a></body></html>`;
+    // Never cached: a cached preview page must not be served to the person
+    // who then taps the link (LINE fetches the preview first). If a person
+    // does get this page, the script sends them on (crawlers don't run it).
     return new Response(html, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "private, no-store",
+        Vary: "User-Agent",
       },
     });
   }
@@ -94,5 +103,8 @@ export async function openNotificationLink(
       )
       .catch(() => undefined);
   }
-  return NextResponse.redirect(target, 302);
+  const res = NextResponse.redirect(target, 302);
+  res.headers.set("Cache-Control", "private, no-store");
+  res.headers.set("Vary", "User-Agent");
+  return res;
 }

@@ -63,6 +63,15 @@ test("reserved news is sent when due, only to the chosen audience", async ({
   });
   const html = await preview.text();
   expect(html).toContain('property="og:image"');
+  // Never cached, and a person who gets it anyway is sent on (?go=1).
+  expect(preview.headers()["cache-control"]).toContain("no-store");
+  expect(html).toContain("location.replace(");
+  const onward = await page.request.get(`/n/${code}/${token}?go=1`, {
+    headers: { "User-Agent": "facebookexternalhit/1.1;line-poker/1.0" },
+    maxRedirects: 0,
+  });
+  expect(onward.status()).toBe(302);
+  expect(onward.headers().location).toContain(`/app/news/${postId}`);
   expect(html).not.toContain("Secret body text");
   const card = await page.request.get(`/n/${token}/og`);
   expect(card.headers()["content-type"]).toContain("image/png");
@@ -94,7 +103,7 @@ test("reserved news is sent when due, only to the chosen audience", async ({
   expect(await ogTitle()).toBe("新しいニュースがあります");
   await rdb.end();
   expect(receipt.rows[0].openedAt).not.toBeNull();
-  expect(receipt.rows[0].opens).toBe(1);
+  expect(receipt.rows[0].opens).toBeGreaterThanOrEqual(1);
   await page.goto(`/en/app/admin/news/${postId}`);
   await expect(
     page.getByRole("heading", { name: "Notification opens" }),

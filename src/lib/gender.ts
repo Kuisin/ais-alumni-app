@@ -8,7 +8,7 @@ export function isGender(v: unknown): v is Gender {
 
 /** Default icons (public/avatars). */
 export function defaultAvatar(gender: string | null | undefined): string {
-  if (gender === "MALE") return "/avatars/default-male.svg";
-  if (gender === "FEMALE") return "/avatars/default-female.svg";
+  if (gender === "MALE") return "/avatars/default-male.jpg";
+  if (gender === "FEMALE") return "/avatars/default-female.jpg";
   return "/avatars/default.svg";
 }

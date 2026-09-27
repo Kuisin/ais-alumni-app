@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { RoleKey } from "@/generated/prisma/enums";
+import { syncChatMembership } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import {
   childIsCurrent,
@@ -16,7 +17,7 @@ type Client = Prisma.TransactionClient | typeof db;
 /**
  * Recompute a member's automatic statuses (§ current/former, grade,
  * graduation) from their 学年 and leave years, and their children's for
- * parents. Called after any save and daily by /api/cron/sync-status, so
+ * parents, then their group chats. Called after any save and daily by /api/cron/sync-status, so
  * people move from current to former (and up a grade) on their own.
  * Returns true if anything changed.
  */
@@ -117,6 +118,8 @@ export async function syncMemberStatus(
   }
   // 現在の状況 follows 学歴・職歴 (e.g. a school's end year has passed).
   if (await syncStageFromHistory(userId, client, now)) changed = true;
+  // Group chats follow type, 学年 and state (e.g. just approved).
+  await syncChatMembership(userId, client, now);
   return changed;
 }
 

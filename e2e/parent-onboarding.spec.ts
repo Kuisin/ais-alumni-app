@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { Client } from "pg";
 import {
   asListed,
   createActiveGraduate,
@@ -19,6 +20,21 @@ async function startParentApplication(page: Page, lastName: string) {
     .fill("Parent");
   await page.getByLabel("Date of birth").fill("1980-01-01");
   await page.getByRole("button", { name: "Next" }).click();
+}
+
+async function chatGroupsOf(nameRomaji: string): Promise<string[]> {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const r = await db.query(
+      `SELECT g.kind FROM "ChatMember" m JOIN "ChatGroup" g ON g.id = m."groupId"
+       JOIN "User" u ON u.id = m."userId" WHERE u."nameRomaji" = $1`,
+      [nameRomaji],
+    );
+    return r.rows.map((x) => x.kind as string);
+  } finally {
+    await db.end();
+  }
 }
 
 async function searchQueue(admin: Page, lastName: string) {
@@ -73,6 +89,12 @@ test("parent registers a new child; approving the child lets the parent in", asy
   await expect(
     admin.getByText("This application has been decided."),
   ).toBeVisible();
+
+  // Approval puts the parent in their group chats straight away (checked in
+  // the database, before any visit to the chat page).
+  expect(await chatGroupsOf(`${lastName}, Parent`)).toContain(
+    "CURRENT_PARENTS",
+  );
 
   // The parent is in; the child is approved and managed by the parent.
   await parent.goto("/en/app/family");

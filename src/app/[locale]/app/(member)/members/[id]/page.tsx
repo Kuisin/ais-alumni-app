@@ -1,4 +1,3 @@
-import { Pencil, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -15,10 +14,10 @@ import {
   SOCIAL_KEYS,
 } from "@/components/profile/social-links";
 import { Avatar } from "@/components/ui/avatar";
-import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, Card } from "@/components/ui/card";
+import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
-import { Link } from "@/i18n/navigation";
+import { redirect } from "@/i18n/navigation";
 import { roleLabelKey } from "@/lib/audience";
 import {
   canRequestFollow,
@@ -40,27 +39,6 @@ import { displayName, otherNames } from "@/lib/format";
 import { visibleHistory } from "@/lib/history";
 import { requireActive } from "@/lib/session";
 
-/** Own profile: a missing section with a link to where it's filled in. */
-function EmptySection({
-  text,
-  href,
-  action,
-}: {
-  text: string;
-  href: string;
-  action: string;
-}) {
-  return (
-    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-slate-500">{text}</p>
-      <Link href={href} className={buttonClass("secondary", "shrink-0")}>
-        <Plus aria-hidden="true" className="size-4" />
-        {action}
-      </Link>
-    </div>
-  );
-}
-
 type Props = { params: Promise<{ locale: string; id: string }> };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -71,6 +49,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function MemberProfilePage({ params }: Props) {
   const { id } = await params;
   const me = await requireActive();
+  // My own profile (with its edit buttons) lives at /app/profile.
+  if (id === me.id)
+    redirect({ href: "/app/profile", locale: await getLocale() });
   const view = await getProfileForViewer(me, id);
   if (!view) notFound();
   // 学歴・職歴: "followers only" entries need follower or family access.
@@ -91,6 +72,7 @@ export default async function MemberProfilePage({ params }: Props) {
 
   const t = await getTranslations("profile");
   const tf = await getTranslations("follows");
+  const tc = await getTranslations("common");
   const tr = await getTranslations("roles");
   const locale = (await getLocale()) as Locale;
   const p = view.public;
@@ -163,7 +145,12 @@ export default async function MemberProfilePage({ params }: Props) {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-2xl space-y-4">
+      <div>
+        <HistoryBackLink fallback="/app/directory">
+          {tc("back")}
+        </HistoryBackLink>
+      </div>
       <Card className="relative">
         {!view.isSelf && !myBlock ? (
           <div className="absolute top-2 right-2">
@@ -201,17 +188,6 @@ export default async function MemberProfilePage({ params }: Props) {
             />
           </div>
         </div>
-        {view.isSelf ? (
-          <div className="mt-4 sm:absolute sm:top-4 sm:right-4 sm:mt-0">
-            <Link
-              href="/app/profile/edit"
-              className={buttonClass("secondary", "w-full sm:w-auto")}
-            >
-              <Pencil aria-hidden="true" className="size-4" />
-              {t("editProfile")}
-            </Link>
-          </div>
-        ) : null}
         {followState || myBlock ? (
           <div className="mt-4 flex flex-wrap items-start justify-center gap-2 sm:justify-start">
             {followState ? (
@@ -236,15 +212,6 @@ export default async function MemberProfilePage({ params }: Props) {
         <Card>
           <h2 className="mb-2 text-lg font-semibold">{t("sections.about")}</h2>
           <p className="whitespace-pre-line text-slate-800">{p.bio}</p>
-        </Card>
-      ) : view.isSelf ? (
-        <Card>
-          <h2 className="mb-2 text-lg font-semibold">{t("sections.about")}</h2>
-          <EmptySection
-            text={t("emptyPrompt.bio")}
-            href="/app/profile/edit"
-            action={t("emptyPrompt.bioAction")}
-          />
         </Card>
       ) : null}
 
@@ -279,17 +246,6 @@ export default async function MemberProfilePage({ params }: Props) {
             {t("sections.history")}
           </h2>
           <HistoryList education={history.education} work={history.work} />
-        </Card>
-      ) : view.isSelf ? (
-        <Card>
-          <h2 className="mb-2 text-lg font-semibold">
-            {t("sections.history")}
-          </h2>
-          <EmptySection
-            text={t("emptyPrompt.history")}
-            href="/app/profile/history"
-            action={t("emptyPrompt.historyAction")}
-          />
         </Card>
       ) : null}
 
@@ -364,18 +320,20 @@ export default async function MemberProfilePage({ params }: Props) {
                 </dd>
               </div>
             ))}
-            {!priv.email &&
-            !priv.phone &&
-            !priv.lineDisplayName &&
-            !Object.keys(social).length ? (
-              <p className="text-slate-600">
-                {view.access === "followers"
-                  ? t("noContactFollowers")
-                  : t("noContact")}
-              </p>
-            ) : null}
           </dl>
-        ) : (
+        ) : null}
+        {priv &&
+        !priv.email &&
+        !priv.phone &&
+        !priv.lineDisplayName &&
+        !Object.keys(social).length ? (
+          <p className="text-slate-600">
+            {view.access === "followers"
+              ? t("noContactFollowers")
+              : t("noContact")}
+          </p>
+        ) : null}
+        {priv ? null : (
           <Alert tone="info">
             <p className="font-semibold">{t("locked.title")}</p>
             <p className="mt-1">

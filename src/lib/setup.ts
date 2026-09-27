@@ -61,7 +61,7 @@ export function setupChecklist(i: SetupInput): SetupItem[] {
     key: "names",
     done: i.hasKanjiName,
     href: i.active
-      ? "/app/profile/edit#name"
+      ? "/app/profile#edit-name"
       : i.submitted
         ? null
         : "/app/onboarding/verify",
@@ -71,8 +71,8 @@ export function setupChecklist(i: SetupInput): SetupItem[] {
   // Profile tasks need an approved account.
   if (i.active)
     items.push(
-      { key: "photo", done: i.hasAvatar, href: "/app/profile/edit" },
-      { key: "bio", done: i.hasBio, href: "/app/profile/edit" },
+      { key: "photo", done: i.hasAvatar, href: "/app/profile#edit-photo" },
+      { key: "bio", done: i.hasBio, href: "/app/profile#edit-about" },
       { key: "history", done: i.hasHistory, href: "/app/profile/history" },
       { key: "follow", done: i.followsSomeone, href: "/app/directory" },
     );

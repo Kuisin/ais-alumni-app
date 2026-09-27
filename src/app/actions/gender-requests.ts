@@ -182,7 +182,7 @@ export async function decideGenderRequestAction(
   await notify(request.user, {
     kind: approved ? "GENDER_REQUEST_APPROVED" : "GENDER_REQUEST_REJECTED",
     refId: id,
-    path: "/app/profile/edit#gender",
+    path: "/app/profile#gender",
     note: note || null,
   }).catch((e) => console.error("[gender] member notify failed", e));
   refresh();

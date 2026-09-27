@@ -11,6 +11,7 @@ import { FamilySearch } from "@/components/family/family-search";
 import { HandoverPanel } from "@/components/family/handover-panel";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FamilyLinkInitiator, type Locale } from "@/generated/prisma/enums";
 import { loadCohortChoices } from "@/lib/cohorts-db";
@@ -126,12 +127,15 @@ export default async function FamilyPage({ searchParams }: Props) {
                             <input type="hidden" name="linkId" value={l.id} />
                             <SubmitButton>{t("confirm")}</SubmitButton>
                           </form>
-                          <form action={removeFamilyLinkAction}>
+                          <ConfirmForm
+                            message={t("declineConfirm")}
+                            action={removeFamilyLinkAction}
+                          >
                             <input type="hidden" name="linkId" value={l.id} />
                             <SubmitButton variant="secondary">
                               {t("decline")}
                             </SubmitButton>
-                          </form>
+                          </ConfirmForm>
                         </>
                       }
                     />
@@ -241,10 +245,13 @@ export default async function FamilyPage({ searchParams }: Props) {
                     <div className="mt-1">{status(l)}</div>
                   </div>
                   {!l.confirmedAt && mine ? (
-                    <form action={removeFamilyLinkAction}>
+                    <ConfirmForm
+                      message={t("cancelConfirm")}
+                      action={removeFamilyLinkAction}
+                    >
                       <input type="hidden" name="linkId" value={l.id} />
                       <SubmitButton variant="ghost">{t("cancel")}</SubmitButton>
-                    </form>
+                    </ConfirmForm>
                   ) : null}
                 </li>
               );

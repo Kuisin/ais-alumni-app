@@ -15,9 +15,9 @@ export default async function HistoryPage() {
   const me = await requireActive();
   const t = await getTranslations("history");
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <BackLink href="/app/profile/edit">{t("backToProfile")}</BackLink>
+        <BackLink href="/app/profile#history">{t("backToProfile")}</BackLink>
         <PageHeader title={t("title")} description={t("description")} />
       </div>
       <HistoryEditor userId={me.id} />

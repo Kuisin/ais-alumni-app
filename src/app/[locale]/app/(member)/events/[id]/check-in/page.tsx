@@ -36,7 +36,7 @@ export default async function CheckInPage({
   if (!(await canCheckIn(user, id))) {
     return (
       <div className="space-y-4">
-        <BackLink href={`/app/events/${id}`}>{t("backToList")}</BackLink>
+        <BackLink href="/app/events">{t("backToList")}</BackLink>
         <Alert tone="warning">{t("checkIn.staffOnly")}</Alert>
       </div>
     );

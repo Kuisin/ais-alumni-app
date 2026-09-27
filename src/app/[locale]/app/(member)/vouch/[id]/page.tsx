@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { BackLink } from "@/components/ui/back-link";
 import { Card, PageHeader } from "@/components/ui/card";
 import { VouchAnswerForm } from "@/components/verify/vouch-answer";
 import { VerificationStatus } from "@/generated/prisma/enums";
@@ -26,6 +27,7 @@ export default async function VouchPage({ params }: Props) {
   const lang = locale === "en" ? "en" : "ja";
   const user = await requireActive();
   const t = await getTranslations("vouch");
+  const tc = await getTranslations("common");
 
   const vouch = await db.vouch.findUnique({
     where: { id },
@@ -56,6 +58,7 @@ export default async function VouchPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-xl">
+      <BackLink href="/app/dashboard">{tc("nav.dashboard")}</BackLink>
       <PageHeader title={t("title")} description={t("intro")} />
       <Card className="space-y-4">
         <div>

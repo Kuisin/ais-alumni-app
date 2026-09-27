@@ -50,8 +50,8 @@ test("photos: default icon for strangers; connections or everyone when public", 
   // The owner shows the photo to everyone.
   const ownerPage = await browser.newPage();
   await signInWithEmail(ownerPage, owner.email);
-  await ownerPage.goto("/en/app/profile/edit");
-  const settings = ownerPage.locator("#photo-settings");
+  await ownerPage.goto("/en/app/profile");
+  const settings = ownerPage.locator("#photo");
   await settings.getByRole("button", { name: "Edit", exact: true }).click();
   await settings
     .getByRole("checkbox", { name: /^Show my photo to every member/ })
@@ -71,9 +71,10 @@ test("gender is fixed: set once if missing, then changed by request", async ({
   const m = await createActiveGraduate(`Gen Req${stamp}`, "1990-03-03");
   const page = await browser.newPage();
   await signInWithEmail(page, m.email);
-  await page.goto("/en/app/profile/edit#gender");
+  await page.goto("/en/app/profile#edit-gender");
   const card = page.locator("#gender");
-  // Not given yet (joined before it was asked): set it once.
+  // Not given yet (joined before it was asked): set it once. #edit-gender
+  // (as linked from the setup checklist) opens the card's form directly.
   await card.getByLabel(/^Gender/).selectOption("MALE");
   await card.getByRole("button", { name: "Save", exact: true }).click();
   await expect(card.getByText("Your gender has been saved.")).toBeVisible();

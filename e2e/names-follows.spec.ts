@@ -8,13 +8,16 @@ test("approved names are locked; a name change goes through the committee", asyn
   const member = await createActiveGraduate(`Taro ${last}`, "1995-05-05");
   const page = await browser.newPage();
   await signInWithEmail(page, member.email);
-  await page.goto("/en/app/profile/edit");
+  await page.goto("/en/app/profile");
 
   // No editable name fields on the profile, only a request.
   await expect(
     page.getByRole("textbox", { name: "Last name", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Request a name change" }).click();
+  await page
+    .locator("#name")
+    .getByRole("button", { name: "Request a change" })
+    .click();
 
   // Kanji needs its katakana reading; hiragana is converted to katakana.
   await page
@@ -34,6 +37,8 @@ test("approved names are locked; a name change goes through the committee", asyn
     await expect(kana).toHaveValue("やまだ", { timeout: 500 });
   }).toPass();
   await page.getByRole("button", { name: "Send request" }).click();
+  // The card closes to its view: sent, and pending review.
+  await expect(page.getByText(/Request sent/)).toBeVisible();
   await expect(page.getByText(/The committee will check it/)).toBeVisible();
 
   // The committee approves and the new name applies.

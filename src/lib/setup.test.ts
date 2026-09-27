@@ -113,7 +113,7 @@ describe("sso readiness", async () => {
       href: "/app/onboarding/verify",
     });
     expect(at({ submitted: true })?.href).toBeNull();
-    expect(at({ active: true })?.href).toBe("/app/profile/edit#name");
+    expect(at({ active: true })?.href).toBe("/app/profile#edit-name");
     expect(at({ hasKanjiName: true })?.done).toBe(true);
   });
 });

@@ -120,5 +120,7 @@
       "subject": "AIS Alumni: take over your account",
       "text": "{parent} is handing over the AIS Alumni account they registered for {child} to you.\nOpen the link below and press “Take over my account” to sign in with this email (valid for 7 days).\nIf this wasn't expected, ignore this email."
     }
-  }
+  },
+  "declineConfirm": "Decline this request?",
+  "cancelConfirm": "Cancel this request?"
 }

@@ -30,7 +30,9 @@
       "NONE": "Nowhere (no LINE or email)"
     },
     "save": "Save notification setting",
-    "categories": "Notifications to receive"
+    "categories": "Notifications to receive",
+    "editChannel": "Change how",
+    "editCategories": "Choose notifications"
   },
   "line": {
     "title": "LINE",
@@ -84,7 +86,8 @@
       "invalidCode": "That code isn't correct.",
       "expired": "That code has expired. Please request a new one.",
       "tooMany": "Too many wrong attempts. Please request a new code."
-    }
+    },
+    "change": "Change"
   },
   "export": {
     "title": "Download your data",

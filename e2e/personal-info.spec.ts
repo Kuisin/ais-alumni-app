@@ -47,7 +47,7 @@ test("personal details: family sees all, followers only what's shared", async ({
   // The owner shares the phone number with followers.
   const ownerPage = await browser.newPage();
   await signInWithEmail(ownerPage, owner.email);
-  await ownerPage.goto("/en/app/profile/edit");
+  await ownerPage.goto("/en/app/profile");
   const section = ownerPage.locator("#follower-fields");
   await section.getByRole("button", { name: "Edit", exact: true }).click();
   const phoneBox = section.getByRole("checkbox", { name: /^Phone/ });

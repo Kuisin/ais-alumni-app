@@ -17,7 +17,7 @@ import {
 } from "@/components/settings/sign-in-methods";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
-import { ViewEdit } from "@/components/ui/view-edit";
+import { EditableCard, ViewEdit } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
 import {
   canRemoveSignInMethod,
@@ -137,23 +137,20 @@ export default async function SettingsPage({
       ) : null}
 
       <div className="space-y-6">
-        <SettingsSection
+        <EditableCard
           id="language"
           title={t("language.title")}
           description={t("language.description")}
+          view={
+            <p className="text-sm">
+              {t("language.current", {
+                language: t(`language.${user.locale}`),
+              })}
+            </p>
+          }
         >
-          <ViewEdit
-            view={
-              <p className="text-sm">
-                {t("language.current", {
-                  language: t(`language.${user.locale}`),
-                })}
-              </p>
-            }
-          >
-            <LanguageForm current={user.locale} />
-          </ViewEdit>
-        </SettingsSection>
+          <LanguageForm current={user.locale} />
+        </EditableCard>
 
         <SettingsSection
           id="notifications"
@@ -161,6 +158,7 @@ export default async function SettingsPage({
           description={t("notifications.description")}
         >
           <ViewEdit
+            editLabel={t("notifications.editChannel")}
             view={
               <p className="text-sm">
                 {t("notifications.current", {
@@ -172,6 +170,8 @@ export default async function SettingsPage({
             <NotifyForm current={user.notifyVia} />
           </ViewEdit>
           <ViewEdit
+            editLabel={t("notifications.editCategories")}
+            className="border-t border-slate-100 pt-4"
             view={
               <div className="space-y-1 text-sm">
                 <p className="font-medium">{t("notifications.categories")}</p>
@@ -257,13 +257,22 @@ export default async function SettingsPage({
           <SignInMethods rows={rows} email={user.primaryEmail} />
         </SettingsSection>
 
-        <SettingsSection
+        <EditableCard
           id="email"
           title={t("email.title")}
           description={t("email.description")}
+          editLabel={t("email.change")}
+          view={
+            <p className="text-sm">
+              <span className="text-slate-600">{t("email.current")}: </span>
+              <span className="font-medium break-all">
+                {user.primaryEmail ?? "—"}
+              </span>
+            </p>
+          }
         >
-          <EmailChangeForm current={user.primaryEmail} />
-        </SettingsSection>
+          <EmailChangeForm />
+        </EditableCard>
 
         <SettingsSection
           id="data"

@@ -1,27 +1,26 @@
 "use client";
 
-import { PenLine } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import {
   type NameRequestState,
   type NameValues,
   submitNameRequestAction,
 } from "@/app/actions/name-requests";
 import { NameFields } from "@/components/names/name-fields";
-import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 
-/** Opens a form proposing new name parts plus a reason for the committee. */
+/** New name parts plus a reason for the committee (inside the name EditableCard). */
 export function NameRequestForm({ values }: { values: NameValues }) {
   const t = useTranslations("profile");
   const tv = useTranslations("verify.errors");
-  const [open, setOpen] = useState(false);
   const [state, action] = useActionState<NameRequestState, FormData>(
     submitNameRequestAction,
     null,
   );
+  useCloseOnSave(state, state?.ok ? t(state.message) : undefined);
   const err = (k: string) => {
     const code =
       state?.fieldErrors?.[
@@ -33,26 +32,8 @@ export function NameRequestForm({ values }: { values: NameValues }) {
       : t("errors.invalid");
   };
 
-  if (state?.ok) {
-    return (
-      <p aria-live="polite" className="text-sm text-green-800">
-        {t(state.message)}
-      </p>
-    );
-  }
-  if (!open) {
-    return (
-      <Button variant="secondary" onClick={() => setOpen(true)}>
-        <PenLine aria-hidden="true" className="size-4" />
-        {t("nameRequest.open")}
-      </Button>
-    );
-  }
   return (
-    <form
-      action={action}
-      className="animate-rise space-y-4 border-t border-slate-100 pt-4"
-    >
+    <form action={action} className="space-y-4">
       <p className="text-sm text-slate-600">{t("nameRequest.intro")}</p>
       <NameFields
         idPrefix="nr-"
@@ -96,14 +77,9 @@ export function NameRequestForm({ values }: { values: NameValues }) {
           {t(state.message)}
         </p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        <SubmitButton className="w-full sm:w-auto">
-          {t("nameRequest.submit")}
-        </SubmitButton>
-        <Button variant="ghost" onClick={() => setOpen(false)}>
-          {t("nameRequest.close")}
-        </Button>
-      </div>
+      <SubmitButton className="w-full sm:w-auto">
+        {t("nameRequest.submit")}
+      </SubmitButton>
     </form>
   );
 }

@@ -107,6 +107,7 @@ export async function submitVerificationAction(
   // Evidence: keys must be under this user's prefix and actually stored.
   const keptKeys = new Set(existing?.evidence.map((e) => e.storageKey) ?? []);
   const newEvidence: EvidenceItem[] = [];
+  const keptKinds = new Map<string, EvidenceItem["kind"]>();
   const seen = new Set<string>();
   for (const item of data.evidence) {
     if (seen.has(item.key)) continue;
@@ -118,7 +119,10 @@ export async function submitVerificationAction(
         errors: { evidence: "evidenceInvalid" },
       };
     }
-    if (keptKeys.has(item.key)) continue;
+    if (keptKeys.has(item.key)) {
+      keptKinds.set(item.key, item.kind);
+      continue;
+    }
     const stat = await statEvidence(item.key);
     if (!stat || !evidenceAcceptable(stat)) {
       return {
@@ -198,9 +202,17 @@ export async function submitVerificationAction(
           where: { id: { in: removedEvidence.map((e) => e.id) } },
         });
       }
+      // Files kept from an earlier submission may have changed type.
+      for (const [storageKey, kind] of keptKinds) {
+        await tx.verificationEvidence.updateMany({
+          where: { requestId: request.id, storageKey },
+          data: { kind },
+        });
+      }
       if (newEvidence.length) {
         await tx.verificationEvidence.createMany({
           data: newEvidence.map((e) => ({
+            kind: e.kind,
             requestId: request.id,
             storageKey: e.key,
             fileName: e.fileName,
@@ -364,6 +376,7 @@ export async function uploadEvidenceAction(
     return {
       ok: true,
       item: {
+        kind: formData.get("kind") === "DIPLOMA" ? "DIPLOMA" : "OTHER",
         key,
         fileName: file.name.slice(0, 200) || "file",
         mimeType: file.type,

@@ -49,18 +49,19 @@ function join(parts: (string | null)[], sep: string): string | null {
   return v || null;
 }
 
-/** "First Middle Last", e.g. "Taro Yamada" or "Emma Rose Brown". */
+/**
+ * "Last, First Middle", e.g. "Yamada, Taro" or "Brown, Emma Rose". The
+ * romaji name is the one shown everywhere (all languages), and lists sort by
+ * it, i.e. by family name.
+ */
 export function composeRomaji(
   p: Pick<NameParts, "lastNameRomaji" | "firstNameRomaji" | "middleNameRomaji">,
 ): string | null {
-  return join(
-    [
-      clean(p.firstNameRomaji),
-      clean(p.middleNameRomaji),
-      clean(p.lastNameRomaji),
-    ],
+  const given = join(
+    [clean(p.firstNameRomaji), clean(p.middleNameRomaji)],
     " ",
   );
+  return join([clean(p.lastNameRomaji), given], ", ");
 }
 
 /** "姓 名", e.g. "山田 太郎". */

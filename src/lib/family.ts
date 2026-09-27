@@ -24,6 +24,7 @@ import { toKatakana } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
 import { appUrl } from "@/lib/urls";
+import { isCjk } from "@/lib/verification/roster";
 
 /** Families and parent/child links (§8). */
 
@@ -139,10 +140,20 @@ export function exactNameMatch(
 ): boolean {
   const n = normalizeName(q);
   if (!n) return false;
+  // Romaji in any order, with or without the comma ("Suzuki, Hanako" =
+  // "Hanako Suzuki"); kanji with or without spaces.
+  const key = (s: string) =>
+    isCjk(s)
+      ? s.replace(/ /g, "")
+      : s.replace(/,/g, " ").split(/\s+/).filter(Boolean).sort().join(" ");
   return [u.nameRomaji, u.nameKanji, u.nameAtAis].some((x) => {
     if (!x) return false;
     const m = normalizeName(x);
-    return m === n || m.replace(/ /g, "") === n.replace(/ /g, "");
+    return (
+      m === n ||
+      m.replace(/ /g, "") === n.replace(/ /g, "") ||
+      (key(m) !== "" && key(m) === key(n))
+    );
   });
 }
 

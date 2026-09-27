@@ -41,7 +41,7 @@ test("approved names are locked; a name change goes through the committee", asyn
   await signInWithEmail(admin, "admin@example.com");
   await admin.goto("/en/app/admin/name-requests");
   const card = admin
-    .locator("div.rounded-xl", { hasText: `Taro ${last}` })
+    .locator("div.rounded-xl", { hasText: `${last}, Taro` })
     .filter({ has: admin.getByRole("button") })
     .first();
   await expect(card.getByText("ヤマダ")).toBeVisible();
@@ -51,7 +51,7 @@ test("approved names are locked; a name change goes through the committee", asyn
 
   await page.reload();
   const name = page.getByRole("definition");
-  await expect(name.filter({ hasText: `Taro ${last}x` })).toBeVisible();
+  await expect(name.filter({ hasText: `${last}x, Taro` })).toBeVisible();
   await expect(name.filter({ hasText: "ヤマダ" })).toBeVisible();
 });
 

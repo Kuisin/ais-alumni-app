@@ -13,6 +13,7 @@ import {
   EVIDENCE_MAX_FILES,
   EVIDENCE_TYPES,
   type EvidenceItem,
+  type EvidenceKindValue,
   safeFileName,
 } from "@/lib/verification/schema";
 
@@ -42,19 +43,28 @@ export function EvidenceUploader({
   items,
   onChange,
   error,
+  kind = "OTHER",
+  max = EVIDENCE_MAX_FILES,
+  label,
+  hint,
 }: {
   userId: string;
   useBlob: boolean;
+  /** files of this kind only */
   items: EvidenceItem[];
   onChange: (items: EvidenceItem[]) => void;
   error?: string;
+  kind?: EvidenceKindValue;
+  max?: number;
+  label?: string;
+  hint?: string;
 }) {
   const t = useTranslations("verify");
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const busy = status.kind === "uploading";
-  const remaining = EVIDENCE_MAX_FILES - items.length;
+  const remaining = max - items.length;
 
   async function uploadOne(file: File): Promise<EvidenceItem | null> {
     if (!(EVIDENCE_TYPES as readonly string[]).includes(file.type)) {
@@ -78,6 +88,7 @@ export function EvidenceUploader({
           },
         );
         return {
+          kind,
           key: blob.pathname,
           fileName: file.name.slice(0, 200),
           mimeType: file.type as EvidenceItem["mimeType"],
@@ -86,6 +97,7 @@ export function EvidenceUploader({
       }
       const fd = new FormData();
       fd.set("file", file);
+      fd.set("kind", kind);
       const res = await uploadEvidenceAction(fd);
       if (!res.ok) {
         setStatus({ kind: "error", code: res.error, name: file.name });
@@ -133,10 +145,10 @@ export function EvidenceUploader({
           htmlFor={inputId}
           className="block text-sm font-medium text-slate-800"
         >
-          {t("evidence.label")}
+          {label ?? t("evidence.label")}
         </label>
         <p id={`${inputId}-hint`} className="text-sm text-slate-600">
-          {t("evidence.hint", { max: EVIDENCE_MAX_FILES })}
+          {hint ?? t("evidence.hint", { max })}
         </p>
       </div>
 
@@ -172,7 +184,7 @@ export function EvidenceUploader({
           id={inputId}
           type="file"
           accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
-          multiple
+          multiple={max > 1}
           disabled={busy}
           aria-describedby={`${inputId}-hint${error ? ` ${inputId}-error` : ""}`}
           aria-invalid={error ? true : undefined}

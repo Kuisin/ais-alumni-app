@@ -83,7 +83,7 @@ export async function createActiveMember(nameRomaji: string): Promise<string> {
     await db.query(
       `INSERT INTO "User" (id, "primaryEmail", state, "nameRomaji", "firstNameRomaji", "lastNameRomaji", "updatedAt")
        VALUES ($1, $2, 'ACTIVE', $3, $4, $5, now())`,
-      [id, uniqueEmail("e2e-member"), nameRomaji, first, last],
+      [id, uniqueEmail("e2e-member"), asListed(nameRomaji), first, last],
     );
     return id;
   } finally {
@@ -105,7 +105,7 @@ export async function createActiveGraduate(
     await db.query(
       `INSERT INTO "User" (id, "primaryEmail", "emailVerifiedAt", state, "nameRomaji", "firstNameRomaji", "lastNameRomaji", "dateOfBirth", "updatedAt")
        VALUES ($1, $2, now(), 'ACTIVE', $3, $4, $5, $6, now())`,
-      [id, email, nameRomaji, first, last, dateOfBirth],
+      [id, email, asListed(nameRomaji), first, last, dateOfBirth],
     );
     await db.query(
       `INSERT INTO "UserRole" (id, "userId", role, "didGraduate") VALUES ($1, $2, 'FORMER_STUDENT', true)`,
@@ -115,4 +115,10 @@ export async function createActiveGraduate(
   } finally {
     await db.end();
   }
+}
+
+/** "First Last" → how the app lists it: "Last, First". */
+export function asListed(firstLast: string): string {
+  const [first, ...rest] = firstLast.split(" ");
+  return rest.length ? `${rest.join(" ")}, ${first}` : first;
 }

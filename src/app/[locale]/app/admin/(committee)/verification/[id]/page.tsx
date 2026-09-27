@@ -412,6 +412,9 @@ export default async function VerificationDetailPage({
                     >
                       {e.fileName}
                     </a>
+                    {e.kind === "DIPLOMA" ? (
+                      <Badge tone="green">{t("badges.diploma")}</Badge>
+                    ) : null}
                     <span className="text-xs text-slate-500">
                       {e.mimeType} · {formatSize(e.size)}
                       {e.deleteAfter

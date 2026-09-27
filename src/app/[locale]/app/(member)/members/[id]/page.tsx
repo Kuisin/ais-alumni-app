@@ -92,7 +92,7 @@ export default async function MemberProfilePage({ params }: Props) {
   const locale = (await getLocale()) as Locale;
   const p = view.public;
   const name = displayName(p, locale);
-  const altName = locale === "ja" && p.nameKanji ? p.nameRomaji : p.nameKanji;
+  const altName = p.nameRomaji ? p.nameKanji : null;
 
   // Non-private columns needed to decide which relationship controls to show.
   const [counts, theirFollow] = await Promise.all([

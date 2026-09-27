@@ -29,6 +29,8 @@ function filled() {
     subjects: "Math",
     schoolEmail: "",
   };
+  // 第5期 graduated: a diploma (or saying it's unavailable) is required.
+  s.diplomaUnavailable = true;
   return s;
 }
 
@@ -63,7 +65,7 @@ describe("verification schema (sign-up wizard)", () => {
       schoolEmail: null,
     });
     expect(r.data.parent).toBeUndefined();
-    expect(r.data.nameRomaji).toBe("Taro Yamada");
+    expect(r.data.nameRomaji).toBe("Yamada, Taro");
   });
 
   it("requires a type, フリガナ with kanji, and a 学年 for students", () => {
@@ -189,5 +191,39 @@ describe("フリガナ", () => {
     expect(bad.success).toBe(false);
     if (!bad.success)
       expect(issuesToErrors(bad.error.issues).firstNameKana).toBe("kanaOnly");
+  });
+});
+
+describe("卒業証書", () => {
+  it("is required from graduates unless they don't have it", () => {
+    const s = filled();
+    s.diplomaUnavailable = false;
+    let r = verificationSchema({ requireKanji: false }).safeParse(toPayload(s));
+    expect(r.success).toBe(false);
+    if (!r.success)
+      expect(issuesToErrors(r.error.issues).diploma).toBe("diplomaRequired");
+    s.evidence = [
+      {
+        kind: "DIPLOMA",
+        key: "evidence/u/d.png",
+        fileName: "d.png",
+        mimeType: "image/png",
+        size: 10,
+      },
+    ];
+    r = verificationSchema({ requireKanji: false }).safeParse(toPayload(s));
+    expect(r.success).toBe(true);
+  });
+
+  it("isn't asked of current students", () => {
+    const s = filled();
+    s.diplomaUnavailable = false;
+    s.types = ["STUDENT"];
+    s.student.cohortNumber = "22";
+    s.student.joinedYear = "2024";
+    const r = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(r.success).toBe(true);
   });
 });

@@ -94,6 +94,22 @@ test("email sign-up → verification → admin approval → member dashboard", a
     member.getByText("You'll be registered as a graduate (2014)"),
   ).toBeVisible();
   await member.getByRole("button", { name: "Next" }).click();
+
+  // Graduates upload their 卒業証書 (or say they don't have it).
+  await member.getByRole("button", { name: "Submit application" }).click();
+  await expect(
+    member.getByText("Upload your diploma, or tick").first(),
+  ).toBeVisible();
+  await member.getByLabel("Diploma file").setInputFiles({
+    name: "diploma.png",
+    mimeType: "image/png",
+    // 1×1 PNG
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await expect(member.getByText("diploma.png")).toBeVisible();
   await member.getByRole("button", { name: "Submit application" }).click();
 
   // 3. Pending review; member pages stay closed.
@@ -116,9 +132,10 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await admin.getByRole("searchbox", { name: "Search" }).fill(lastName);
   await admin.getByRole("button", { name: "Search" }).click();
   await admin
-    .getByRole("link", { name: new RegExp(`Smoke ${lastName}`) })
+    .getByRole("link", { name: new RegExp(`${lastName}, Smoke`) })
     .first()
     .click();
+  await expect(admin.getByText("Diploma").first()).toBeVisible();
   await admin.getByRole("radio", { name: "Approve" }).check();
   await admin.getByRole("button", { name: "Approve" }).click();
   await expect(
@@ -139,5 +156,5 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(member).toHaveURL(/\/en\/app\/profile\/history/);
   // Search: test members from earlier runs fill the first page.
   await member.goto("/en/app/directory?q=Hanako");
-  await expect(member.getByText("Hanako Suzuki").first()).toBeVisible();
+  await expect(member.getByText("Suzuki, Hanako").first()).toBeVisible();
 });

@@ -31,7 +31,8 @@
     "parentUnconfirmed": "No parent confirmation",
     "rosterMatch": "Roster match {score}",
     "vouchCounts": "Vouches: {yes} yes · {no} no · {unsure} unsure · {pending} waiting",
-    "noVouches": "No vouches"
+    "noVouches": "No vouches",
+    "diploma": "Diploma"
   },
   "status": {
     "PENDING": "Pending",

@@ -70,11 +70,16 @@ export function toJstLocalInput(date: Date): string {
 }
 
 /** ja shows kanji/kana if present, else romaji; en shows romaji (§12). */
+/**
+ * The name shown across the app: the romaji name ("Last, First") in every
+ * language, so members are listed the same way for everyone. The kanji name
+ * is shown as secondary text where there is room. `locale` is kept for
+ * callers; it no longer changes the result.
+ */
 export function displayName(
   user: { nameRomaji: string | null; nameKanji: string | null },
-  locale: Locale,
+  _locale?: Locale,
 ): string {
-  if (locale === "ja" && user.nameKanji) return user.nameKanji;
   return user.nameRomaji ?? user.nameKanji ?? "—";
 }
 

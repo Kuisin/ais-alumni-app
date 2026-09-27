@@ -1,5 +1,6 @@
 "use client";
 
+import { GraduationCap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   type FormEvent,
@@ -9,6 +10,7 @@ import {
   useState,
 } from "react";
 import {
+  checkManagedDuplicateAction,
   type SubmitVerificationState,
   submitVerificationAction,
 } from "@/app/actions/verify";
@@ -16,9 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import type { CohortChoice } from "@/lib/cohorts";
+import { type CohortChoice, parseCohortNumber } from "@/lib/cohorts";
 import { composeKanji, composeRomaji } from "@/lib/names";
 import {
+  applicantGraduated,
   issuesToErrors,
   MEMBER_TYPES,
   type MemberType,
@@ -98,6 +101,37 @@ export function VerifyForm({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const step = STEPS[stepIndex];
 
+  // Students: a parent may already have registered them (exact name + birth
+  // date). They can still continue; the committee merges the two.
+  const [registeredByParent, setRegisteredByParent] = useState(false);
+  const isStudent = state.types.includes("STUDENT");
+  useEffect(() => {
+    if (step !== "details" || !isStudent || !state.dateOfBirth) return;
+    let live = true;
+    checkManagedDuplicateAction({
+      lastNameRomaji: state.lastNameRomaji,
+      firstNameRomaji: state.firstNameRomaji,
+      lastNameKanji: state.lastNameKanji,
+      firstNameKanji: state.firstNameKanji,
+      dateOfBirth: state.dateOfBirth,
+    })
+      .then((found) => {
+        if (live) setRegisteredByParent(found);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [
+    step,
+    isStudent,
+    state.lastNameRomaji,
+    state.firstNameRomaji,
+    state.lastNameKanji,
+    state.firstNameKanji,
+    state.dateOfBirth,
+  ]);
+
   // Server-side validation errors: show them on the step they belong to.
   useEffect(() => {
     if (!serverState?.errors) return;
@@ -163,6 +197,16 @@ export function VerifyForm({
 
   const errorCount = Object.keys(errors).length;
   const progress = ((stepIndex + 1) / STEPS.length) * 100;
+
+  // 卒業証書: asked of graduates (worked out from the 学年 and leave year).
+  const isGraduate =
+    state.types.includes("STUDENT") &&
+    applicantGraduated(
+      parseCohortNumber(state.student.cohortNumber) ?? null,
+      state.student.leftYear ? Number(state.student.leftYear) : null,
+    );
+  const diplomaItems = state.evidence.filter((e) => e.kind === "DIPLOMA");
+  const otherItems = state.evidence.filter((e) => e.kind !== "DIPLOMA");
 
   return (
     <form
@@ -325,7 +369,6 @@ export function VerifyForm({
                 <TextInput
                   path="lastNameKanji"
                   label={t("fields.lastNameKanji")}
-                  required={uiLocale === "ja"}
                   lang="ja"
                   value={state.lastNameKanji}
                   onChange={(v) => set("lastNameKanji", v)}
@@ -334,10 +377,29 @@ export function VerifyForm({
                 <TextInput
                   path="firstNameKanji"
                   label={t("fields.firstNameKanji")}
-                  required={uiLocale === "ja"}
                   lang="ja"
                   value={state.firstNameKanji}
                   onChange={(v) => set("firstNameKanji", v)}
+                  errors={errors}
+                />
+                <TextInput
+                  path="lastNameKana"
+                  label={t("fields.lastNameKana")}
+                  required={Boolean(state.lastNameKanji.trim())}
+                  lang="ja"
+                  placeholder={t("placeholders.lastNameKana")}
+                  value={state.lastNameKana}
+                  onChange={(v) => set("lastNameKana", v)}
+                  errors={errors}
+                />
+                <TextInput
+                  path="firstNameKana"
+                  label={t("fields.firstNameKana")}
+                  required={Boolean(state.firstNameKanji.trim())}
+                  lang="ja"
+                  placeholder={t("placeholders.firstNameKana")}
+                  value={state.firstNameKana}
+                  onChange={(v) => set("firstNameKana", v)}
                   errors={errors}
                 />
               </div>
@@ -385,6 +447,14 @@ export function VerifyForm({
 
         {step === "details" ? (
           <div className="space-y-6">
+            {state.types.includes("STUDENT") && registeredByParent ? (
+              <Alert tone="warning">
+                <span className="font-semibold">
+                  {t("parentRegistered.title")}
+                </span>{" "}
+                {t("parentRegistered.body")}
+              </Alert>
+            ) : null}
             {state.types.includes("STUDENT") ? (
               <StudentSection
                 value={state.student}
@@ -466,9 +536,72 @@ export function VerifyForm({
               </Button>
             </section>
 
+            {isGraduate ? (
+              <section
+                aria-labelledby="diploma-title"
+                className="space-y-3 rounded-2xl border-2 border-brand-200 bg-white p-4"
+              >
+                <h3
+                  id="diploma-title"
+                  className="flex items-center gap-2 font-semibold"
+                >
+                  <GraduationCap
+                    aria-hidden="true"
+                    className="size-5 text-brand-700"
+                  />
+                  {t("diploma.title")}
+                  {state.diplomaUnavailable ? null : (
+                    <span className="text-red-700" aria-hidden="true">
+                      *
+                    </span>
+                  )}
+                </h3>
+                <p className="text-sm text-slate-600">{t("diploma.intro")}</p>
+                {state.diplomaUnavailable ? null : (
+                  <EvidenceUploader
+                    userId={userId}
+                    useBlob={useBlob}
+                    kind="DIPLOMA"
+                    max={1}
+                    label={t("diploma.label")}
+                    hint={t("diploma.hint")}
+                    items={diplomaItems}
+                    onChange={(items) =>
+                      set("evidence", [...otherItems, ...items])
+                    }
+                    error={errors.diploma ?? errors.evidence}
+                  />
+                )}
+                {errors.diploma ? (
+                  <p id="diploma-error" className="text-sm text-red-700">
+                    {t(`errors.${errors.diploma}`)}
+                  </p>
+                ) : null}
+                <label className="flex min-h-11 items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-5 shrink-0"
+                    checked={state.diplomaUnavailable}
+                    onChange={(e) =>
+                      set("diplomaUnavailable", e.currentTarget.checked)
+                    }
+                  />
+                  <span>
+                    {t("diploma.unavailable")}
+                    <span className="block text-slate-500">
+                      {t("diploma.unavailableHint")}
+                    </span>
+                  </span>
+                </label>
+              </section>
+            ) : null}
+
             <details
               className="rounded-2xl border border-slate-200 bg-white p-4"
-              open={state.evidence.length > 0}
+              open={
+                otherItems.length > 0 ||
+                (isGraduate && state.diplomaUnavailable)
+              }
             >
               <summary className="cursor-pointer font-medium text-brand-700">
                 {t("review.addDocuments")}
@@ -477,8 +610,10 @@ export function VerifyForm({
                 <EvidenceUploader
                   userId={userId}
                   useBlob={useBlob}
-                  items={state.evidence}
-                  onChange={(items) => set("evidence", items)}
+                  items={otherItems}
+                  onChange={(items) =>
+                    set("evidence", [...diplomaItems, ...items])
+                  }
                   error={errors.evidence}
                 />
               </div>

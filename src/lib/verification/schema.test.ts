@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   answersToFormState,
+  emptyChild,
   emptyFormState,
   issuesToErrors,
   stepOfPath,
@@ -28,13 +29,24 @@ function filled() {
     subjects: "Math",
     schoolEmail: "",
   };
+  // 第5期 graduated: a diploma (or saying it's unavailable) is required.
+  s.diplomaUnavailable = true;
   return s;
 }
 
 describe("verification schema (sign-up wizard)", () => {
   it("accepts a complete form and keeps only chosen sections", () => {
     const s = filled();
-    s.parent.children = [{ name: "Child", cohortNumber: "20", leftYear: "" }];
+    s.parent.children = [
+      {
+        ...emptyChild("new"),
+        lastNameRomaji: "Yamada",
+        firstNameRomaji: "Jiro",
+        dateOfBirth: "2018-05-05",
+        cohortNumber: "20",
+        joinedYear: "2021",
+      },
+    ];
     const r = verificationSchema({ requireKanji: false }).safeParse(
       toPayload(s),
     );
@@ -53,29 +65,34 @@ describe("verification schema (sign-up wizard)", () => {
       schoolEmail: null,
     });
     expect(r.data.parent).toBeUndefined();
-    expect(r.data.nameRomaji).toBe("Taro Yamada");
+    expect(r.data.nameRomaji).toBe("Yamada, Taro");
   });
 
-  it("requires a type, kanji for the Japanese UI and a 学年 for students", () => {
+  it("requires a type, フリガナ with kanji, and a 学年 for students", () => {
     const s = filled();
     s.types = [];
+    // Kanji is optional (international students), but needs its フリガナ.
+    s.lastNameKanji = "山田";
     let r = verificationSchema({ requireKanji: true }).safeParse(toPayload(s));
     expect(r.success).toBe(false);
     if (r.success) return;
     let errors = issuesToErrors(r.error.issues);
     expect(errors.types).toBe("typesRequired");
-    expect(errors.lastNameKanji).toBe("required");
+    expect(errors.lastNameKanji).toBeUndefined();
+    expect(errors.lastNameKana).toBe("kanaRequired");
 
     s.types = ["STUDENT", "PARENT"];
     s.student.cohortNumber = "";
-    s.parent.children = [{ name: "", cohortNumber: "", leftYear: "" }];
+    s.parent.children = [emptyChild("new"), emptyChild("existing")];
     r = verificationSchema({ requireKanji: false }).safeParse(toPayload(s));
     expect(r.success).toBe(false);
     if (r.success) return;
     errors = issuesToErrors(r.error.issues);
     expect(errors["student.cohortNumber"]).toBe("cohortRequired");
-    expect(errors["parent.children.0.name"]).toBe("required");
+    expect(errors["parent.children.0.lastNameRomaji"]).toBe("required");
+    expect(errors["parent.children.0.dateOfBirth"]).toBe("required");
     expect(errors["parent.children.0.cohortNumber"]).toBe("cohortRequired");
+    expect(errors["parent.children.1.existingUserId"]).toBe("childNotSelected");
   });
 
   it("left year can't be before joining", () => {
@@ -116,5 +133,97 @@ describe("verification schema (sign-up wizard)", () => {
     expect(stepOfPath("lastNameRomaji")).toBe("basics");
     expect(stepOfPath("parent.children.0.name")).toBe("details");
     expect(stepOfPath("evidence")).toBe("review");
+  });
+});
+
+describe("parent children", () => {
+  it("accepts a registered child picked by id", () => {
+    const s = filled();
+    s.types = ["PARENT"];
+    s.parent.children = [
+      { ...emptyChild("existing"), existingUserId: "u1", name: "鈴木花子" },
+    ];
+    const r = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(r.success).toBe(true);
+    if (!r.success) return;
+    expect(r.data.parent?.children[0]).toEqual({
+      mode: "existing",
+      existingUserId: "u1",
+      name: "鈴木花子",
+    });
+  });
+
+  it("maps older name-only answers into the new-child form", () => {
+    const state = answersToFormState(
+      {
+        version: 2,
+        types: ["PARENT"],
+        parent: { children: [{ name: "山田次郎", cohortNumber: 20 }] },
+      },
+      "ja",
+    );
+    expect(state.parent.children[0]).toMatchObject({
+      mode: "new",
+      lastNameKanji: "山田次郎",
+      cohortNumber: "20",
+    });
+  });
+});
+
+describe("フリガナ", () => {
+  it("accepts katakana, converts hiragana and rejects romaji", () => {
+    const s = filled();
+    s.lastNameKanji = "山田";
+    s.firstNameKanji = "太郎";
+    s.lastNameKana = "やまだ";
+    s.firstNameKana = "ﾀﾛｳ";
+    const ok = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.nameKana).toBe("ヤマダ タロウ");
+    s.firstNameKana = "Taro";
+    const bad = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(bad.success).toBe(false);
+    if (!bad.success)
+      expect(issuesToErrors(bad.error.issues).firstNameKana).toBe("kanaOnly");
+  });
+});
+
+describe("卒業証書", () => {
+  it("is required from graduates unless they don't have it", () => {
+    const s = filled();
+    s.diplomaUnavailable = false;
+    let r = verificationSchema({ requireKanji: false }).safeParse(toPayload(s));
+    expect(r.success).toBe(false);
+    if (!r.success)
+      expect(issuesToErrors(r.error.issues).diploma).toBe("diplomaRequired");
+    s.evidence = [
+      {
+        kind: "DIPLOMA",
+        key: "evidence/u/d.png",
+        fileName: "d.png",
+        mimeType: "image/png",
+        size: 10,
+      },
+    ];
+    r = verificationSchema({ requireKanji: false }).safeParse(toPayload(s));
+    expect(r.success).toBe(true);
+  });
+
+  it("isn't asked of current students", () => {
+    const s = filled();
+    s.diplomaUnavailable = false;
+    s.types = ["STUDENT"];
+    s.student.cohortNumber = "22";
+    s.student.joinedYear = "2024";
+    const r = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(r.success).toBe(true);
   });
 });

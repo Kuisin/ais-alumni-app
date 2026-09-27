@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createActiveMember, signInWithEmail } from "./helpers";
+import { asListed, createActiveMember, signInWithEmail } from "./helpers";
 
 // Seeded demo member ken (SEED_DEMO=1) acts as the registrar; the teacher is
 // a throwaway member so seeded roles stay unchanged.
@@ -14,7 +14,7 @@ test("teacher registrar marks a member as a current teacher and back", async ({
   await signInWithEmail(admin, "admin@example.com");
   await admin.goto("/en/app/admin/members?q=ken");
   await admin
-    .getByRole("link", { name: /Ken Tanaka/ })
+    .getByRole("link", { name: /Tanaka, Ken/ })
     .first()
     .click();
   await expect(admin.getByRole("heading", { name: "Positions" })).toBeVisible();
@@ -48,13 +48,13 @@ test("teacher registrar marks a member as a current teacher and back", async ({
   await ken
     .getByRole("region", { name: "Add a current teacher" })
     .getByRole("listitem")
-    .filter({ hasText: name })
+    .filter({ hasText: asListed(name) })
     .getByRole("button", { name: "Make current" })
     .click();
   const row = ken
     .getByRole("region", { name: /Current teachers/ })
     .getByRole("listitem")
-    .filter({ hasText: name });
+    .filter({ hasText: asListed(name) });
   await expect(row).toHaveCount(1);
   await row.getByRole("button", { name: "Move to former" }).click();
   await expect(row).toHaveCount(0);

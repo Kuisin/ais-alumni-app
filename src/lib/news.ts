@@ -1,17 +1,11 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
-import {
-  audienceWhere,
-  effectiveAudiences,
-  membersInAudiences,
-  type Targeted,
-} from "@/lib/audience";
+import { audienceWhere, type Targeted } from "@/lib/audience";
 import { db } from "@/lib/db";
-import { localized } from "@/lib/format";
-import { markdownToPlain } from "@/lib/markdown";
+import { audienceUserWhere, specFromPost } from "@/lib/news-audience";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 export const NEWS_PAGE_SIZE = 10;
 export const EVENTS_PAGE_SIZE = 20;
@@ -24,11 +18,11 @@ export const COVER_TYPES = { "image/jpeg": "jpg", "image/png": "png" } as const;
 /** DB filter for events and news a viewer may see (src/lib/audience.ts). */
 export const targetRolesWhere = audienceWhere;
 
-/** Published = publishedAt set and not in the future. */
+/** Published = publishedAt set, not in the future, and not archived. */
 export function publishedWhere(
   now: Date = new Date(),
 ): Prisma.NewsPostWhereInput {
-  return { publishedAt: { lte: now } };
+  return { publishedAt: { lte: now }, archivedAt: null };
 }
 
 export type NewsStatus = "draft" | "scheduled" | "published";
@@ -47,12 +41,14 @@ export function newsStatus(
  * (they can *see* everything, but are not spammed with every announcement).
  */
 export async function targetedRecipients(
-  target: Targeted,
+  target: Targeted & { audience?: unknown },
 ): Promise<NotifyUser[]> {
   return db.user.findMany({
     where: {
       state: AccountState.ACTIVE,
-      ...membersInAudiences(effectiveAudiences(target)),
+      ...audienceUserWhere(
+        specFromPost({ audience: target.audience ?? null, ...target }),
+      ),
     },
     select: NOTIFY_USER_SELECT,
   });
@@ -69,7 +65,12 @@ export async function sendNewsNotification(
   now: Date = new Date(),
 ): Promise<{ recipients: number } | null> {
   const claimed = await db.newsPost.updateMany({
-    where: { id: postId, notifiedAt: null, publishedAt: { lte: now } },
+    where: {
+      id: postId,
+      notifiedAt: null,
+      archivedAt: null,
+      publishedAt: { lte: now },
+    },
     data: { notifiedAt: now },
   });
   if (claimed.count === 0) return null;
@@ -81,14 +82,13 @@ export async function sendNewsNotification(
       kind: "NEWS",
       refId: post.id,
       dedupe: true,
+      // No content in the notification; the post is read in the app.
       render: async (locale) => {
         const t = await getTranslatorFor(locale, "news");
-        const title = localized(post.titleJa, post.titleEn, locale).text;
-        const body = localized(post.bodyJa, post.bodyEn, locale).text;
         return {
-          subject: t("notify.subject", { title }),
-          text: markdownToPlain(body, 200) || t("notify.fallbackText"),
-          url: appUrl(`/${locale}/app/news/${post.id}`),
+          subject: t("notify.contentlessSubject"),
+          text: t("notify.contentlessText"),
+          url: publicUrl(`/${locale}/app/news/${post.id}`),
         };
       },
     });
@@ -118,6 +118,9 @@ export async function dueScheduledNews(
   return db.newsPost.findMany({
     where: {
       notifiedAt: null,
+      archivedAt: null,
+      // Reserved with "notify" on (off = publish in the app only).
+      notifyOnPublish: true,
       publishedAt: {
         lte: now,
         gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),

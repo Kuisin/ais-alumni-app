@@ -42,6 +42,7 @@ export const toTarget: (user: UserWithRoles) => Target = (user) => ({
   roles: user.roles.map((r) => r.role),
   dateOfBirth: user.dateOfBirth,
   familyId: user.familyId,
+  managed: user.managedById !== null,
 });
 
 export async function loadRelationship(

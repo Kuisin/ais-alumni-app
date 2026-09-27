@@ -6,19 +6,34 @@ import { db } from "@/lib/db";
  * RSVPs and family links, then deletes `fromId` and records a UserMerge row so
  * live sessions for `fromId` resolve to `toId`.
  */
+/** Thrown when a merge would keep a parent-managed account over one the member signs in to. */
+export class MergeKeepsManagedError extends Error {
+  constructor() {
+    super(
+      "Keep the account the member signs in to, not the parent-managed one",
+    );
+  }
+}
+
 export async function mergeUsers(fromId: string, toId: string): Promise<void> {
   if (fromId === toId) throw new Error("Cannot merge a user into itself");
   await db.$transaction(async (tx) => {
     const [from, to] = await Promise.all([
       tx.user.findUniqueOrThrow({
         where: { id: fromId },
-        include: { roles: true },
+        include: { roles: true, _count: { select: { accounts: true } } },
       }),
       tx.user.findUniqueOrThrow({
         where: { id: toId },
         include: { roles: true },
       }),
     ]);
+    // A parent-managed account (no sign-in) must not absorb the member's own
+    // account; keep theirs instead.
+    const fromSignsIn = Boolean(
+      from.primaryEmail || from.lineUserId || from._count.accounts > 0,
+    );
+    if (to.managedById && fromSignsIn) throw new MergeKeepsManagedError();
 
     await tx.account.updateMany({
       where: { userId: fromId },
@@ -130,7 +145,17 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
               lastNameKanji: from.lastNameKanji,
               firstNameKanji: from.firstNameKanji,
               nameKanji: from.nameKanji,
+              lastNameKana: from.lastNameKana,
+              firstNameKana: from.firstNameKana,
+              nameKana: from.nameKana,
             }),
+        ...(to.nameKanji && !to.nameKana && from.nameKana
+          ? {
+              lastNameKana: from.lastNameKana,
+              firstNameKana: from.firstNameKana,
+              nameKana: from.nameKana,
+            }
+          : {}),
         nameAtAis: to.nameAtAis ?? from.nameAtAis,
         dateOfBirth: to.dateOfBirth ?? from.dateOfBirth,
         avatarUrl: to.avatarUrl ?? from.avatarUrl,

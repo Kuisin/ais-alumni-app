@@ -1,3 +1,4 @@
+import { Mail } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { ActionItem, DashboardSection } from "@/components/dashboard/section";
 import { EventCard } from "@/components/events/event-card";
@@ -10,11 +11,12 @@ import {
   FollowStatus,
   VerificationStatus,
 } from "@/generated/prisma/enums";
-import { toViewer } from "@/lib/authz";
+import { Link } from "@/i18n/navigation";
+import { readNewsIds, unreadCounts } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
-import { publishedWhere, targetRolesWhere } from "@/lib/news";
+import { filterByAudience, visibleNews } from "@/lib/news-visibility";
 import { requireActive } from "@/lib/session";
 import { setupProgress } from "@/lib/setup";
 import { loadSetupChecklist } from "@/lib/setup-db";
@@ -35,43 +37,47 @@ export default async function DashboardPage({
   const locale = asLocale((await params).locale);
   const user = await requireActive();
   const t = await getTranslations("dashboard");
+  const tn = await getTranslations("news");
   const now = new Date();
-  const target = targetRolesWhere(toViewer(user));
 
-  const [events, news, followRequests, vouches, familyLinks] =
+  const [events, news, followRequests, vouches, familyLinks, unread] =
     await Promise.all([
-      db.event.findMany({
-        where: {
-          AND: [
-            target,
-            { OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }] },
-          ],
-        },
-        orderBy: { startsAt: "asc" },
-        take: 3,
-        select: {
-          id: true,
-          titleJa: true,
-          titleEn: true,
-          startsAt: true,
-          location: true,
-          rsvps: { where: { userId: user.id }, select: { answer: true } },
-        },
-      }),
-      db.newsPost.findMany({
-        where: { AND: [target, publishedWhere(now)] },
-        orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-        take: 3,
-        select: {
-          id: true,
-          titleJa: true,
-          titleEn: true,
-          bodyJa: true,
-          bodyEn: true,
-          pinned: true,
-          publishedAt: true,
-        },
-      }),
+      db.event
+        .findMany({
+          where: {
+            OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }],
+          },
+          orderBy: { startsAt: "asc" },
+          take: 200,
+          select: {
+            audience: true,
+            targetAudiences: true,
+            targetRoles: true,
+            id: true,
+            titleJa: true,
+            titleEn: true,
+            startsAt: true,
+            location: true,
+            rsvps: { where: { userId: user.id }, select: { answer: true } },
+          },
+        })
+        // Same audience conditions as ニュース.
+        .then(async (rows) => (await filterByAudience(user, rows)).slice(0, 3)),
+      visibleNews(user, now).then((v) =>
+        db.newsPost.findMany({
+          where: { id: { in: v.slice(0, 3).map((p) => p.id) } },
+          orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
+          select: {
+            id: true,
+            titleJa: true,
+            titleEn: true,
+            bodyJa: true,
+            bodyEn: true,
+            pinned: true,
+            publishedAt: true,
+          },
+        }),
+      ),
       db.follow.count({
         where: { followeeId: user.id, status: FollowStatus.REQUESTED },
       }),
@@ -105,7 +111,12 @@ export default async function DashboardPage({
           child: { select: NAME },
         },
       }),
+      unreadCounts(user),
     ]);
+  const readNews = await readNewsIds(
+    user.id,
+    news.map((p) => p.id),
+  );
 
   const setup = await loadSetupChecklist(user);
   const setupDone = setupProgress(setup).complete;
@@ -163,6 +174,19 @@ export default async function DashboardPage({
         </section>
       ) : null}
 
+      {unread.messages > 0 ? (
+        <Link
+          href="/app/news?tab=messages"
+          className="mb-6 flex min-h-11 items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 font-medium text-brand-900 hover:bg-brand-100"
+        >
+          <Mail aria-hidden="true" className="size-5 shrink-0" />
+          <span className="flex-1">
+            {tn("messages.newCount", { count: unread.messages })}
+          </span>
+          <span aria-hidden="true">→</span>
+        </Link>
+      ) : null}
+
       <div className="grid gap-6 md:grid-cols-2">
         <DashboardSection
           id="events-heading"
@@ -198,7 +222,16 @@ export default async function DashboardPage({
             <ul className="space-y-3">
               {news.map((p) => (
                 <li key={p.id}>
-                  <NewsCard post={p} locale={locale} excerpt={false} />
+                  <NewsCard
+                    post={p}
+                    locale={locale}
+                    excerpt={false}
+                    unread={
+                      !readNews.has(p.id) &&
+                      !!p.publishedAt &&
+                      p.publishedAt >= user.createdAt
+                    }
+                  />
                 </li>
               ))}
             </ul>

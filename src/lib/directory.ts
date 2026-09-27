@@ -17,6 +17,7 @@ import {
   type Viewer,
 } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { toKatakana } from "@/lib/names";
 
 /**
  * Member directory (§10.1). Only public-tier columns are ever selected here;
@@ -180,6 +181,7 @@ export function buildDirectoryWhere(
         { nameRomaji: { contains: token, mode: "insensitive" } },
         { nameKanji: { contains: token, mode: "insensitive" } },
         { nameAtAis: { contains: token, mode: "insensitive" } },
+        { nameKana: { contains: toKatakana(token) } },
       ],
     });
   }
@@ -205,6 +207,7 @@ export function buildDirectoryWhere(
     const notMinor: Prisma.UserWhereInput = {
       AND: [
         { roles: { none: { role: RoleKey.CURRENT_STUDENT } } },
+        { managedById: null },
         {
           OR: [
             { dateOfBirth: null },

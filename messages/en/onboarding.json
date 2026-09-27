@@ -37,6 +37,17 @@
     "DEACTIVATED": {
       "title": "Your account is deactivated",
       "body": "This account is currently deactivated, so you can't use the member site."
+    },
+    "parentWaiting": {
+      "title": "Waiting for your child's approval",
+      "body": "Your parent account opens as soon as one of your children is approved and your relationship is confirmed.",
+      "children": "Your children",
+      "state": {
+        "review": "Being reviewed by the committee",
+        "needsConfirm": "Waiting for your child to confirm",
+        "approved": "Approved",
+        "rejected": "Not approved"
+      }
     }
   }
 }

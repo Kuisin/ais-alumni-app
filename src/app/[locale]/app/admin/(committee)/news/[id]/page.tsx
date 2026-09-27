@@ -1,18 +1,25 @@
-import { Eye } from "lucide-react";
+import { Archive, ArchiveRestore, Eye } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { deleteNewsAction } from "@/app/actions/admin-content";
+import {
+  deleteNewsAction,
+  setNewsArchivedAction,
+} from "@/app/actions/admin-content";
+import { NewsReadsCard } from "@/components/admin/news-reads-card";
 import { NewsForm } from "@/components/news/news-form";
 import { NotifyPanel } from "@/components/news/notify-panel";
 import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
-import { Alert, PageHeader } from "@/components/ui/card";
+import { Alert, Badge, PageHeader } from "@/components/ui/card";
+import { cn } from "@/components/ui/cn";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Link } from "@/i18n/navigation";
-import { effectiveAudiences } from "@/lib/audience";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { localized, toJstLocalInput } from "@/lib/format";
 import { newsStatus } from "@/lib/news";
+import { specFromPost } from "@/lib/news-audience";
 import { requireAdmin } from "@/lib/session";
 import { signedFileUrl } from "@/lib/storage";
 
@@ -37,6 +44,16 @@ export default async function AdminNewsEditPage({
   if (!post) notFound();
   const t = await getTranslations("adminContent");
   const status = newsStatus(post);
+  const audience = specFromPost(post);
+  const [cohorts, members] = await Promise.all([
+    loadCohortOptions(locale),
+    audience.userIds.length
+      ? db.user.findMany({
+          where: { id: { in: audience.userIds } },
+          select: { id: true, nameRomaji: true, nameKanji: true },
+        })
+      : [],
+  ]);
 
   return (
     <>
@@ -52,18 +69,39 @@ export default async function AdminNewsEditPage({
           description={
             <span className="flex flex-wrap gap-1">
               <NewsStatusBadges post={post} />
+              {post.archivedAt ? (
+                <Badge tone="amber">{t("news.archivedBadge")}</Badge>
+              ) : null}
             </span>
           }
           actions={
-            status === "published" ? (
-              <Link
-                href={`/app/news/${post.id}`}
-                className={buttonClass("secondary")}
-              >
-                <Eye aria-hidden="true" className="size-4" />
-                {t("news.viewAsMember")}
-              </Link>
-            ) : null
+            <>
+              {status === "published" && !post.archivedAt ? (
+                <Link
+                  href={`/app/news/${post.id}`}
+                  className={buttonClass("secondary")}
+                >
+                  <Eye aria-hidden="true" className="size-4" />
+                  {t("news.viewAsMember")}
+                </Link>
+              ) : null}
+              <form action={setNewsArchivedAction}>
+                <input type="hidden" name="id" value={post.id} />
+                <input
+                  type="hidden"
+                  name="archive"
+                  value={post.archivedAt ? "0" : "1"}
+                />
+                <SubmitButton variant="secondary">
+                  {post.archivedAt ? (
+                    <ArchiveRestore aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Archive aria-hidden="true" className="size-4" />
+                  )}
+                  {post.archivedAt ? t("news.restore") : t("news.archive")}
+                </SubmitButton>
+              </form>
+            </>
           }
         />
       </div>
@@ -80,15 +118,28 @@ export default async function AdminNewsEditPage({
       ) : null}
 
       {/* Notify panel first in DOM so phones see it (and its confirm step)
-          before the long form; on xl it is a sticky right column. */}
+          before the long form; on xl it is a right column, sticky unless
+          the (possibly long) read list sits under it. */}
       <div className="space-y-8 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-6 xl:space-y-0">
-        <aside className="xl:sticky xl:top-20 xl:col-start-2 xl:row-start-1">
-          <NotifyPanel
-            post={post}
-            status={status}
-            confirm={sp.notify === "1"}
-            locale={locale}
-          />
+        <aside
+          className={cn(
+            "space-y-6 xl:col-start-2 xl:row-start-1",
+            status !== "published" && "xl:sticky xl:top-20",
+          )}
+        >
+          {post.archivedAt ? (
+            <Alert tone="warning">{t("news.archivedHint")}</Alert>
+          ) : (
+            <NotifyPanel
+              post={post}
+              status={status}
+              confirm={sp.notify === "1"}
+              locale={locale}
+            />
+          )}
+          {status === "published" ? (
+            <NewsReadsCard post={post} locale={locale} />
+          ) : null}
         </aside>
 
         <section
@@ -105,16 +156,24 @@ export default async function AdminNewsEditPage({
               titleEn: post.titleEn ?? "",
               bodyJa: post.bodyJa ?? "",
               bodyEn: post.bodyEn ?? "",
-              publishedAt: post.publishedAt
-                ? toJstLocalInput(post.publishedAt)
-                : "",
+              status,
+              sendAt:
+                status === "scheduled" && post.publishedAt
+                  ? toJstLocalInput(post.publishedAt)
+                  : "",
+              notifyOnPublish: post.notifyOnPublish,
               pinned: post.pinned,
-              targetAudiences: effectiveAudiences(post),
+              audience,
+              audienceMembers: members.map((m) => ({
+                id: m.id,
+                name: m.nameRomaji ?? m.nameKanji ?? "—",
+                kanji: m.nameRomaji ? m.nameKanji : null,
+              })),
               coverPreviewUrl: post.coverUrl
                 ? signedFileUrl(post.coverUrl)
                 : null,
-              notified: post.notifiedAt !== null,
             }}
+            cohorts={cohorts}
             deleteAction={{
               action: deleteNewsAction,
               message: t("news.deleteConfirm"),

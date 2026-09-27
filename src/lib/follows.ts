@@ -6,6 +6,7 @@ import {
   canRequestFollow,
   type FollowDenial,
   loadRelationship,
+  sameFamily,
   shouldAutoAccept,
   toTarget,
   toViewer,
@@ -15,7 +16,7 @@ import { PUBLIC_CARD_SELECT } from "@/lib/directory";
 import { displayName } from "@/lib/format";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /** Follow requests and blocks (§9.2). */
 
@@ -38,6 +39,38 @@ export function formerStudentYear(
     roles.find((r) => r.role === RoleKey.FORMER_STUDENT)
       ?.graduationOrLeaveYear ?? null
   );
+}
+
+/**
+ * Follow-button state, Instagram-style:
+ * - following:  my follow is ACCEPTED (「フォロー中」, unfollow with a confirm)
+ * - requested:  my request is pending (「リクエスト済み」, cancels)
+ * - followBack: I don't follow them but they follow me (「フォローバック」)
+ * - none:       neither (「フォローする」)
+ * A follow-back still sends a normal request (auto-accept rules apply as
+ * usual), so their privacy is kept.
+ */
+export type FollowUiState = "none" | "followBack" | "requested" | "following";
+
+/**
+ * Map (my follow of them, their follow of me) to a button state. `canRequest`
+ * is `canRequestFollow(...).ok`; when I have no follow row and may not send
+ * one (minor, inactive, blocked, family…) there is no button (null).
+ */
+export function followButtonState(
+  mine: FollowStatus | null,
+  theirs: FollowStatus | null,
+  canRequest = true,
+): FollowUiState | null {
+  if (mine === FollowStatus.ACCEPTED) return "following";
+  if (mine === FollowStatus.REQUESTED) return "requested";
+  if (!canRequest) return null;
+  return theirs === FollowStatus.ACCEPTED ? "followBack" : "none";
+}
+
+/** They follow me (accepted); shown as 「フォローされています」. */
+export function followsMe(theirs: FollowStatus | null): boolean {
+  return theirs === FollowStatus.ACCEPTED;
 }
 
 export type FollowRequestResult =
@@ -119,7 +152,7 @@ export async function requestFollow(
             name,
           }),
           text: t(auto ? "notify.autoText" : "notify.requestText", { name }),
-          url: appUrl(
+          url: publicUrl(
             `/${locale}/app/follows?tab=${auto ? "followers" : "incoming"}`,
           ),
         };
@@ -154,7 +187,7 @@ export async function acceptFollow(
         return {
           subject: t("notify.acceptedSubject", { name }),
           text: t("notify.acceptedText", { name }),
-          url: appUrl(`/${locale}/app/members/${me.id}`),
+          url: publicUrl(`/${locale}/app/members/${me.id}`),
         };
       },
     });
@@ -273,3 +306,117 @@ export async function loadFollowLists(meId: string) {
 }
 
 export type FollowLists = Awaited<ReturnType<typeof loadFollowLists>>;
+
+/** Status of the follow row follower → followee, if any. */
+export async function loadFollowStatus(
+  followerId: string,
+  followeeId: string,
+): Promise<FollowStatus | null> {
+  if (followerId === followeeId) return null;
+  const f = await db.follow.findUnique({
+    where: { followerId_followeeId: { followerId, followeeId } },
+    select: { status: true },
+  });
+  return f?.status ?? null;
+}
+
+/** Instagram-style counts: accepted follows only. */
+export async function loadFollowCounts(
+  userId: string,
+): Promise<{ followers: number; following: number }> {
+  const [followers, following] = await Promise.all([
+    db.follow.count({
+      where: { followeeId: userId, status: FollowStatus.ACCEPTED },
+    }),
+    db.follow.count({
+      where: { followerId: userId, status: FollowStatus.ACCEPTED },
+    }),
+  ]);
+  return { followers, following };
+}
+
+/**
+ * My follow-button state toward each of `ids` (null = no button), applying
+ * the same rules as requestFollow: blocks, family, minors / parent-managed
+ * accounts and inactive accounts.
+ */
+export async function loadFollowButtonStates(
+  me: CurrentUser,
+  ids: readonly string[],
+  now: Date = new Date(),
+): Promise<Map<string, FollowUiState | null>> {
+  const out = new Map<string, FollowUiState | null>();
+  const others = [...new Set(ids)].filter((id) => id !== me.id);
+  if (others.length === 0) return out;
+  const [users, mine, theirs, blocks] = await Promise.all([
+    db.user.findMany({
+      where: { id: { in: others } },
+      select: {
+        id: true,
+        state: true,
+        familyId: true,
+        dateOfBirth: true,
+        managedById: true,
+        roles: { select: { role: true } },
+      },
+    }),
+    db.follow.findMany({
+      where: { followerId: me.id, followeeId: { in: others } },
+      select: { followeeId: true, status: true },
+    }),
+    db.follow.findMany({
+      where: { followeeId: me.id, followerId: { in: others } },
+      select: { followerId: true, status: true },
+    }),
+    db.block.findMany({
+      where: {
+        OR: [
+          { blockerId: me.id, blockedId: { in: others } },
+          { blockedId: me.id, blockerId: { in: others } },
+        ],
+      },
+      select: { blockerId: true, blockedId: true },
+    }),
+  ]);
+  const mineBy = new Map(mine.map((f) => [f.followeeId, f.status]));
+  const theirsBy = new Map(theirs.map((f) => [f.followerId, f.status]));
+  const blocked = new Set(
+    blocks.map((b) => (b.blockerId === me.id ? b.blockedId : b.blockerId)),
+  );
+  const viewer = toViewer(me);
+  for (const u of users) {
+    const isBlocked = blocked.has(u.id);
+    if (isBlocked || sameFamily(me, u)) {
+      out.set(u.id, null);
+      continue;
+    }
+    const rel = { follow: mineBy.get(u.id) ?? null, blocked: isBlocked };
+    const check = canRequestFollow(
+      viewer,
+      {
+        id: u.id,
+        state: u.state,
+        roles: u.roles.map((r) => r.role),
+        dateOfBirth: u.dateOfBirth,
+        familyId: u.familyId,
+        managed: u.managedById !== null,
+      },
+      rel,
+      now,
+    );
+    out.set(
+      u.id,
+      followButtonState(rel.follow, theirsBy.get(u.id) ?? null, check.ok),
+    );
+  }
+  return out;
+}
+
+/** A follow of mine I just accepted, for the inline follow-back offer. */
+export async function loadAcceptedFollower(meId: string, followId: string) {
+  const f = await db.follow.findFirst({
+    where: { id: followId, followeeId: meId, status: FollowStatus.ACCEPTED },
+    select: { follower: { select: PUBLIC_CARD_SELECT } },
+  });
+  return f?.follower ?? null;
+}

@@ -14,14 +14,24 @@ import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import {
-  childIsCurrent,
   parentRole,
   studentRoleFields,
   teacherFields,
 } from "@/lib/member-status";
+import {
+  childrenCurrent,
+  findManagedMatches,
+  findRegisteredChildren,
+  notifyChildConfirmations,
+  type ParentOutcome,
+  type RegisteredChild,
+  saveParentChildren,
+  settleParentFromChildren,
+} from "@/lib/parent-onboarding";
 import { AuthError, actionUser, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { deletePrivate, putPrivate } from "@/lib/storage";
+import { notifyParentOutcomes } from "@/lib/verification/decision-notify";
 import {
   evidenceAcceptable,
   isEvidenceType,
@@ -101,6 +111,7 @@ export async function submitVerificationAction(
   // Evidence: keys must be under this user's prefix and actually stored.
   const keptKeys = new Set(existing?.evidence.map((e) => e.storageKey) ?? []);
   const newEvidence: EvidenceItem[] = [];
+  const keptKinds = new Map<string, EvidenceItem["kind"]>();
   const seen = new Set<string>();
   for (const item of data.evidence) {
     if (seen.has(item.key)) continue;
@@ -112,7 +123,10 @@ export async function submitVerificationAction(
         errors: { evidence: "evidenceInvalid" },
       };
     }
-    if (keptKeys.has(item.key)) continue;
+    if (keptKeys.has(item.key)) {
+      keptKinds.set(item.key, item.kind);
+      continue;
+    }
     const stat = await statEvidence(item.key);
     if (!stat || !evidenceAcceptable(stat)) {
       return {
@@ -137,6 +151,8 @@ export async function submitVerificationAction(
   const schoolEmailVerified = await isSchoolEmailVerified(user, data);
 
   let requestId: string;
+  let childLinksToConfirm: string[] = [];
+  let settled: ParentOutcome | null = null;
   try {
     assertTransition(user.state, AccountState.PENDING_REVIEW);
     requestId = await db.$transaction(async (tx) => {
@@ -149,6 +165,9 @@ export async function submitVerificationAction(
           middleNameRomaji: data.middleNameRomaji,
           lastNameKanji: data.lastNameKanji,
           firstNameKanji: data.firstNameKanji,
+          lastNameKana: data.lastNameKana,
+          firstNameKana: data.firstNameKana,
+          nameKana: data.nameKana,
           nameRomaji: data.nameRomaji,
           nameKanji: data.nameKanji,
           nameAtAis: data.nameAtAis,
@@ -162,6 +181,8 @@ export async function submitVerificationAction(
       await saveRoles(tx, user, data, schoolEmailVerified);
 
       const answers: StoredAnswers = { version: 2, ...omitEvidence(data) };
+      // Parents alone aren't reviewed: they follow their children's approval.
+      const followsChildren = data.types.every((x) => x === "PARENT");
       const request = await tx.verificationRequest.upsert({
         where: { userId: user.id },
         create: {
@@ -169,6 +190,7 @@ export async function submitVerificationAction(
           answers: answers as Prisma.InputJsonValue,
           rosterScore: roster?.score ?? null,
           rosterRowId: roster?.rowId ?? null,
+          followsChildren,
         },
         // Resubmission after NEEDS_INFO keeps the original submittedAt so the
         // queue stays first-come-first-served; reviewNote is kept for context.
@@ -179,6 +201,7 @@ export async function submitVerificationAction(
           status: VerificationStatus.PENDING,
           decidedAt: null,
           reviewerId: null,
+          followsChildren,
         },
         select: { id: true },
       });
@@ -188,9 +211,17 @@ export async function submitVerificationAction(
           where: { id: { in: removedEvidence.map((e) => e.id) } },
         });
       }
+      // Files kept from an earlier submission may have changed type.
+      for (const [storageKey, kind] of keptKinds) {
+        await tx.verificationEvidence.updateMany({
+          where: { requestId: request.id, storageKey },
+          data: { kind },
+        });
+      }
       if (newEvidence.length) {
         await tx.verificationEvidence.createMany({
           data: newEvidence.map((e) => ({
+            kind: e.kind,
             requestId: request.id,
             storageKey: e.key,
             fileName: e.fileName,
@@ -200,7 +231,11 @@ export async function submitVerificationAction(
         });
       }
 
-      await saveChildren(tx, user, data);
+      childLinksToConfirm = data.parent
+        ? await saveParentChildren(tx, user, data.parent.children, data.locale)
+        : [];
+      // A child approved earlier may already let the parent in.
+      settled = await settleParentFromChildren(tx, user.id);
       return request.id;
     });
   } catch (e) {
@@ -214,6 +249,9 @@ export async function submitVerificationAction(
     );
   }
   // Vouch requests (§6.4.2) are best-effort; a failure must not undo the submission.
+  // Registered children are asked to confirm the parent (best-effort).
+  await notifyChildConfirmations(user, childLinksToConfirm);
+  if (settled) await notifyParentOutcomes([settled]);
   await createVouchesForRequest(requestId).catch((e) =>
     console.error("[verify] vouches failed", e),
   );
@@ -310,69 +348,15 @@ async function saveRoles(
     });
   }
   if (data.parent) {
-    const current = [];
-    for (const child of data.parent.children) {
-      const c = await cohortEnd(child.cohortNumber);
-      current.push(childIsCurrent(c.end, child.leftYear, now));
-    }
-    await upsert(parentRole(current), {});
+    await upsert(
+      parentRole(await childrenCurrent(tx, data.parent.children, now)),
+      {},
+    );
   }
   // Applicants are never ACTIVE here, so dropping other roles is safe.
   await tx.userRole.deleteMany({
     where: { userId: user.id, role: { notIn: keep } },
   });
-}
-
-/**
- * Parents list their children (§6.2, §8) with each child's 学年 and leave
- * year. Each becomes an unconfirmed FamilyLink (childName only); the child's
- * account can be linked later from the family screen. Children already
- * listed (same name) are updated on resubmission.
- */
-async function saveChildren(
-  tx: Prisma.TransactionClient,
-  user: CurrentUser,
-  data: VerificationData,
-): Promise<void> {
-  const children = data.parent?.children ?? [];
-  if (!children.length) return;
-
-  let familyId = user.familyId;
-  if (!familyId) {
-    const family = await tx.family.create({ data: {} });
-    familyId = family.id;
-    await tx.user.update({ where: { id: user.id }, data: { familyId } });
-  }
-  const key = (s: string) =>
-    s.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
-  const links = await tx.familyLink.findMany({
-    where: { parentId: user.id },
-    select: { id: true, childName: true },
-  });
-  const byName = new Map(links.map((l) => [key(l.childName ?? ""), l.id]));
-  for (const child of children) {
-    const childCohortId = await ensureCohort(child.cohortNumber, tx);
-    const existing = byName.get(key(child.name));
-    if (existing) {
-      await tx.familyLink.update({
-        where: { id: existing },
-        data: { childCohortId, childLeftYear: child.leftYear },
-      });
-      continue;
-    }
-    const created = await tx.familyLink.create({
-      data: {
-        familyId,
-        parentId: user.id,
-        childName: child.name,
-        childId: null,
-        childCohortId,
-        childLeftYear: child.leftYear,
-        initiatedBy: "PARENT",
-      },
-    });
-    byName.set(key(child.name), created.id);
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -404,6 +388,7 @@ export async function uploadEvidenceAction(
     return {
       ok: true,
       item: {
+        kind: formData.get("kind") === "DIPLOMA" ? "DIPLOMA" : "OTHER",
         key,
         fileName: file.name.slice(0, 200) || "file",
         mimeType: file.type,
@@ -499,4 +484,45 @@ export async function verifySchoolEmailCodeAction(
     ok: false,
     error: res.error === "too_many_attempts" ? "tooManyAttempts" : res.error,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Parents: find a child who is already registered (exact name + birth date)
+
+export async function searchRegisteredChildAction(input: {
+  name: string;
+  dateOfBirth: string;
+}): Promise<RegisteredChild[]> {
+  const user = await applicant();
+  if (!user) return [];
+  const name = String(input?.name ?? "").slice(0, 100);
+  const dateOfBirth = String(input?.dateOfBirth ?? "").slice(0, 10);
+  const locale = user.locale === "en" ? "en" : "ja";
+  return findRegisteredChildren({ name, dateOfBirth }, user.id, locale);
+}
+
+// ---------------------------------------------------------------------------
+// Students: were they already registered by a parent? (exact name + birth date)
+
+export async function checkManagedDuplicateAction(input: {
+  lastNameRomaji: string;
+  firstNameRomaji: string;
+  lastNameKanji: string;
+  firstNameKanji: string;
+  dateOfBirth: string;
+}): Promise<boolean> {
+  const user = await applicant();
+  if (!user) return false;
+  const s = (v: unknown) => String(v ?? "").slice(0, 60);
+  const matches = await findManagedMatches(
+    {
+      names: [
+        `${s(input.firstNameRomaji)} ${s(input.lastNameRomaji)}`,
+        `${s(input.lastNameKanji)}${s(input.firstNameKanji)}`,
+      ],
+      dateOfBirth: s(input.dateOfBirth),
+    },
+    user.id,
+  );
+  return matches.length > 0;
 }

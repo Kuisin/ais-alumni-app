@@ -83,10 +83,59 @@ export async function createActiveMember(nameRomaji: string): Promise<string> {
     await db.query(
       `INSERT INTO "User" (id, "primaryEmail", state, "nameRomaji", "firstNameRomaji", "lastNameRomaji", "updatedAt")
        VALUES ($1, $2, 'ACTIVE', $3, $4, $5, now())`,
-      [id, uniqueEmail("e2e-member"), nameRomaji, first, last],
+      [id, uniqueEmail("e2e-member"), asListed(nameRomaji), first, last],
     );
     return id;
   } finally {
     await db.end();
   }
+}
+
+/** Insert an approved graduate with a birth date and their own sign-in email. */
+export async function createActiveGraduate(
+  nameRomaji: string,
+  dateOfBirth: string,
+): Promise<{ id: string; email: string }> {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const id = `e2e${Date.now()}${Math.floor(Math.random() * 1e4)}`;
+    const email = uniqueEmail("e2e-grad");
+    const [first, last] = nameRomaji.split(" ");
+    await db.query(
+      `INSERT INTO "User" (id, "primaryEmail", "emailVerifiedAt", state, "nameRomaji", "firstNameRomaji", "lastNameRomaji", "dateOfBirth", "updatedAt")
+       VALUES ($1, $2, now(), 'ACTIVE', $3, $4, $5, $6, now())`,
+      [id, email, asListed(nameRomaji), first, last, dateOfBirth],
+    );
+    await db.query(
+      `INSERT INTO "UserRole" (id, "userId", role, "didGraduate") VALUES ($1, $2, 'FORMER_STUDENT', true)`,
+      [`${id}r`, id],
+    );
+    return { id, email };
+  } finally {
+    await db.end();
+  }
+}
+
+/** "First Last" → how the app lists it: "Last, First". */
+export function asListed(firstLast: string): string {
+  const [first, ...rest] = firstLast.split(" ");
+  return rest.length ? `${rest.join(" ")}, ${first}` : first;
+}
+
+/** The first app link in the latest email to this address (dev mailbox). */
+export async function readLink(
+  email: string,
+  pathPart: string,
+): Promise<string> {
+  const file = path.join(MAILBOX, `${email}.txt`);
+  for (let i = 0; i < 50; i++) {
+    try {
+      const body = await readFile(file, "utf8");
+      const m = body.match(new RegExp(`https?://\\S*${pathPart}\\S*`));
+      if (m) return new URL(m[0]).pathname;
+    } catch {}
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  throw new Error(`No ${pathPart} link emailed to ${email}`);
 }

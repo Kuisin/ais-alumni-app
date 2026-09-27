@@ -1,15 +1,20 @@
 import { ChevronRight, Newspaper, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { TargetBadges } from "@/components/events/target-badges";
+import { ReadMeter, readPercent } from "@/components/admin/read-receipts";
+import { AudienceSummary } from "@/components/news/audience-summary";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { Pager, parsePage } from "@/components/news/pager";
 import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
-import { Alert, EmptyState, PageHeader } from "@/components/ui/card";
+import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui/card";
+import { Tabs } from "@/components/ui/tabs";
 import { Link } from "@/i18n/navigation";
+import { newsReadStats } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
+import { newsStatus } from "@/lib/news";
+import { specFromPost } from "@/lib/news-audience";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -32,8 +37,13 @@ export default async function AdminNewsPage({
   await requireAdmin();
   const t = await getTranslations("adminContent");
 
+  const archived = sp.archived === "1";
+  const archivedCount = await db.newsPost.count({
+    where: { archivedAt: { not: null } },
+  });
   // Drafts (publishedAt null) first, then newest publish date.
   const rows = await db.newsPost.findMany({
+    where: { archivedAt: archived ? { not: null } : null },
     orderBy: [
       { publishedAt: { sort: "desc", nulls: "first" } },
       { createdAt: "desc" },
@@ -46,12 +56,18 @@ export default async function AdminNewsPage({
       titleEn: true,
       publishedAt: true,
       notifiedAt: true,
+      notifyOnPublish: true,
       pinned: true,
       targetRoles: true,
       targetAudiences: true,
+      audience: true,
     },
   });
   const posts = rows.slice(0, PAGE_SIZE);
+  // Read counts only for live posts; drafts and scheduled ones show none.
+  const stats = await newsReadStats(
+    posts.filter((p) => newsStatus(p) === "published"),
+  );
 
   return (
     <>
@@ -64,6 +80,23 @@ export default async function AdminNewsPage({
             {t("news.new")}
           </Link>
         }
+      />
+      <Tabs
+        label={t("news.archiveTabs")}
+        className="mb-4"
+        items={[
+          {
+            href: "/app/admin/news",
+            label: t("news.tabActive"),
+            active: !archived,
+          },
+          {
+            href: "/app/admin/news?archived=1",
+            label: t("news.tabArchived"),
+            count: archivedCount,
+            active: archived,
+          },
+        ]}
       />
       {sp.deleted === "1" ? (
         <div className="mb-4">
@@ -90,6 +123,7 @@ export default async function AdminNewsPage({
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
           {posts.map((p) => {
             const title = localized(p.titleJa, p.titleEn, locale);
+            const reads = stats.get(p.id);
             return (
               <li key={p.id}>
                 <Link
@@ -99,9 +133,16 @@ export default async function AdminNewsPage({
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <NewsStatusBadges post={p} />
+                      {!p.notifyOnPublish && !p.notifiedAt ? (
+                        <Badge>{t("news.noNotify")}</Badge>
+                      ) : null}
                       {p.publishedAt ? (
                         <span className="ml-1 text-sm text-slate-600">
-                          {formatDateTime(p.publishedAt, locale)}
+                          {newsStatus(p) === "scheduled"
+                            ? t("news.scheduledFor", {
+                                date: formatDateTime(p.publishedAt, locale),
+                              })
+                            : formatDateTime(p.publishedAt, locale)}
                         </span>
                       ) : null}
                     </div>
@@ -110,8 +151,19 @@ export default async function AdminNewsPage({
                       <FallbackTag fallback={title.fallback} />
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      <TargetBadges target={p} />
+                      <AudienceSummary spec={specFromPost(p)} />
                     </div>
+                    {reads ? (
+                      <ReadMeter
+                        className="max-w-60 pt-1"
+                        read={reads.read}
+                        total={reads.audience}
+                        label={t("news.readOf", reads)}
+                        percentLabel={t("reads.percent", {
+                          percent: readPercent(reads.read, reads.audience),
+                        })}
+                      />
+                    ) : null}
                   </div>
                   <ChevronRight
                     aria-hidden="true"

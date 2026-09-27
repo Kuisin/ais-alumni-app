@@ -41,6 +41,8 @@ export function TextInput({
   type = "text",
   autoComplete,
   lang,
+  placeholder,
+  maxLength,
 }: {
   path: string;
   label: ReactNode;
@@ -52,6 +54,8 @@ export function TextInput({
   type?: "text" | "date" | "email";
   autoComplete?: string;
   lang?: string;
+  placeholder?: string;
+  maxLength?: number;
 }) {
   const error = useError(errors, path);
   return (
@@ -68,6 +72,8 @@ export function TextInput({
           type={type}
           autoComplete={autoComplete}
           lang={lang}
+          placeholder={placeholder}
+          maxLength={maxLength}
           value={value}
           max={
             type === "date" ? new Date().toISOString().slice(0, 10) : undefined

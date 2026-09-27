@@ -33,6 +33,7 @@ import { roleLabelKey } from "@/lib/audience";
 import { isCurrentTeacher } from "@/lib/authz";
 import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
 import { namePartsOf } from "@/lib/names";
 import { positionEligible } from "@/lib/permissions";
@@ -339,33 +340,38 @@ export default async function AdminMemberPage({
             icon={<BadgeCheck />}
           >
             <div className="grid gap-3 2xl:grid-cols-2">
-              {Object.values(PositionKey).map((p) => {
-                const held = positions.find((x) => x.position === p);
-                return (
-                  <MemberPositionControl
-                    key={p}
-                    userId={user.id}
-                    position={p}
-                    held={Boolean(held)}
-                    cohortNumber={
-                      held?.cohortId
-                        ? (cohortNumbers.get(held.cohortId) ?? null)
-                        : null
-                    }
-                    defaultCohortNumber={
-                      defaultCohort
-                        ? (cohortNumbers.get(defaultCohort) ?? null)
-                        : null
-                    }
-                    cohorts={cohortChoices}
-                    eligible={positionEligible(
-                      p,
-                      roleKeys,
-                      isCurrentTeacher(roles),
-                    )}
-                  />
-                );
-              })}
+              {Object.values(PositionKey)
+                .filter(
+                  (p) =>
+                    MESSAGES_ENABLED || p === PositionKey.TEACHER_REGISTRAR,
+                )
+                .map((p) => {
+                  const held = positions.find((x) => x.position === p);
+                  return (
+                    <MemberPositionControl
+                      key={p}
+                      userId={user.id}
+                      position={p}
+                      held={Boolean(held)}
+                      cohortNumber={
+                        held?.cohortId
+                          ? (cohortNumbers.get(held.cohortId) ?? null)
+                          : null
+                      }
+                      defaultCohortNumber={
+                        defaultCohort
+                          ? (cohortNumbers.get(defaultCohort) ?? null)
+                          : null
+                      }
+                      cohorts={cohortChoices}
+                      eligible={positionEligible(
+                        p,
+                        roleKeys,
+                        isCurrentTeacher(roles),
+                      )}
+                    />
+                  );
+                })}
             </div>
           </AdminSection>
         </div>

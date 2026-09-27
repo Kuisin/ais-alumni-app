@@ -62,5 +62,58 @@
   "deadlineLeft": {
     "days": "{count, plural, one {# day} other {# days}} left",
     "hours": "{count, plural, one {# hour} other {# hours}} left"
+  },
+  "ticket": {
+    "title": "Your ticket",
+    "hint": "Show this QR code at the reception. A screenshot works too.",
+    "checkedIn": "Checked in ({time})",
+    "qrAlt": "Check-in QR code for {name}"
+  },
+  "checkIn": {
+    "open": "Check-in (staff)",
+    "title": "Check-in",
+    "staffOnly": "Only the event's staff can use this page.",
+    "stats": {
+      "checkedIn": "Checked in",
+      "expected": "Going",
+      "maybe": "Maybe"
+    },
+    "scan": {
+      "title": "Scan a QR code",
+      "start": "Start camera",
+      "stop": "Stop camera",
+      "hint": "Point the camera at the attendee's ticket QR code.",
+      "noCamera": "The camera isn't available. Check the browser's camera permission, or check people in by name below.",
+      "manual": "Enter code",
+      "manualSubmit": "Check in"
+    },
+    "result": {
+      "ok": "Checked in",
+      "already": "Already checked in ({time})",
+      "invalid": "This QR code isn't valid",
+      "notInvited": "This member isn't invited to this event",
+      "forbidden": "You can't check people in",
+      "notFound": "Event not found",
+      "walkIn": "No RSVP",
+      "guests": "+{count} guests"
+    },
+    "list": {
+      "title": "Attendees",
+      "filter": "Filter by name",
+      "all": "All",
+      "waiting": "Not yet",
+      "done": "Checked in",
+      "empty": "No attendees match",
+      "checkIn": "Check in",
+      "undo": "Undo",
+      "undoConfirm": "Undo the check-in of {name}?",
+      "at": "Checked in {time}"
+    },
+    "search": {
+      "title": "Walk-ins (no RSVP)",
+      "label": "Search by name",
+      "hint": "Find invited members who didn't RSVP and check them in.",
+      "noResults": "No one found"
+    }
   }
 }

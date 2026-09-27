@@ -12,7 +12,7 @@ import { Field, Input, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import {
   type Division,
-  LifeStage,
+  type LifeStage,
   RoleKey,
   TeacherStatus,
 } from "@/generated/prisma/enums";
@@ -181,34 +181,14 @@ function RoleFields({
             <legend className="mb-2 text-sm font-semibold text-slate-700">
               {t("currentStatus")}
             </legend>
-            <Field id={id("currentStage")} label={t("currentStage")}>
-              {(a) => (
-                <Select
-                  {...a}
-                  name="currentStage"
-                  defaultValue={s(values?.currentStage)}
-                >
-                  <option value="">{t("unknown")}</option>
-                  {Object.values(LifeStage).map((st) => (
-                    <option key={st} value={st}>
-                      {tr(`stage.${st}`)}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-            <Field
-              id={id("currentStageDetail")}
-              label={t("currentStageDetail")}
-            >
-              {(a) => (
-                <Input
-                  {...a}
-                  name="currentStageDetail"
-                  defaultValue={s(values?.currentStageDetail)}
-                />
-              )}
-            </Field>
+            <p className="text-sm sm:col-span-2">
+              {values?.currentStage
+                ? `${tr(`stage.${values.currentStage}`)}${values.currentStageDetail ? `（${values.currentStageDetail}）` : ""}`
+                : t("unknown")}
+              <span className="mt-1 block text-xs text-slate-500">
+                {t("stageFromHistory")}
+              </span>
+            </p>
           </fieldset>
         ) : null}
       </div>

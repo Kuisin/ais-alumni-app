@@ -38,6 +38,7 @@ export default async function VerifyPage({ params }: Props) {
   });
 
   const evidence: EvidenceItem[] = (request?.evidence ?? []).map((e) => ({
+    kind: e.kind,
     key: e.storageKey,
     fileName: e.fileName,
     mimeType: e.mimeType as EvidenceItem["mimeType"],

@@ -59,7 +59,8 @@
     "profileShort": "Me",
     "adminModeShort": "Admin",
     "memberModeShort": "Member",
-    "pending": "{count} waiting"
+    "pending": "{count} waiting",
+    "unread": "{count} unread"
   },
   "adminNav": {
     "verification": "Verification",
@@ -73,13 +74,14 @@
     "cohorts": "Classes",
     "organizations": "Schools & companies",
     "teachers": "Teachers",
-    "destinations": "Destinations"
+    "destinations": "Destinations",
+    "nameRequests": "Name changes"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",
   "names": {
     "romaji": "Name (romaji)",
-    "kanji": "Name (kanji / kana)",
+    "kanji": "Name in kanji and katakana reading (optional)",
     "lastNameRomaji": "Last name",
     "firstNameRomaji": "First name",
     "middleNameRomaji": "Middle name (optional)",
@@ -90,8 +92,15 @@
       "firstNameRomaji": "e.g. Taro",
       "middleNameRomaji": "e.g. James",
       "lastNameKanji": "e.g. 山田",
-      "firstNameKanji": "e.g. 太郎"
-    }
+      "firstNameKanji": "e.g. 太郎",
+      "lastNameKana": "e.g. ヤマダ",
+      "firstNameKana": "e.g. タロウ"
+    },
+    "lastNameKana": "Last name in katakana (フリガナ)",
+    "firstNameKana": "First name in katakana (フリガナ)",
+    "kanaHint": "If you have a kanji name, add its katakana reading. Leave these empty if you don't have a kanji name.",
+    "kanjiShort": "Kanji",
+    "kanaShort": "Katakana"
   },
   "cohortNumber": "Class {number}",
   "adminGroups": {

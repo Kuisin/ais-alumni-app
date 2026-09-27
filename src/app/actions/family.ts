@@ -4,13 +4,16 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { parseCohortNumber } from "@/lib/cohorts";
 import { ensureCohort } from "@/lib/cohorts-db";
+import { db } from "@/lib/db";
 import {
   confirmFamilyLink,
   createFamilyLink,
   removePendingFamilyLink,
 } from "@/lib/family";
+import { settleParentFromChildren } from "@/lib/parent-onboarding";
 import { AuthError, actionActive } from "@/lib/session";
 import { syncMemberStatus } from "@/lib/status-sync";
+import { notifyParentOutcomes } from "@/lib/verification/decision-notify";
 
 /** Messages are keys in the "family" namespace. */
 export type FamilyActionState = { ok: boolean; message: string } | null;
@@ -102,7 +105,19 @@ export async function confirmFamilyLinkAction(
   const me = await actionActive();
   const parsed = LinkSchema.safeParse({ linkId: field(formData, "linkId") });
   if (!parsed.success) return;
-  await confirmFamilyLink(me, parsed.data.linkId);
+  if (await confirmFamilyLink(me, parsed.data.linkId)) {
+    // A parent waiting on this child may now get access.
+    const link = await db.familyLink.findUnique({
+      where: { id: parsed.data.linkId },
+      select: { parentId: true },
+    });
+    const outcome = link
+      ? await db.$transaction((tx) =>
+          settleParentFromChildren(tx, link.parentId),
+        )
+      : null;
+    if (outcome) await notifyParentOutcomes([outcome]);
+  }
   refresh();
 }
 

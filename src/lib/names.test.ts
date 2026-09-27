@@ -2,21 +2,28 @@ import { describe, expect, it } from "vitest";
 import { composeKanji, composeRomaji, nameColumns } from "./names";
 
 describe("names", () => {
-  it("composes romaji as First Middle Last", () => {
+  it("composes romaji as Last, First Middle", () => {
     expect(
       composeRomaji({
         firstNameRomaji: "Taro",
         middleNameRomaji: null,
         lastNameRomaji: "Yamada",
       }),
-    ).toBe("Taro Yamada");
+    ).toBe("Yamada, Taro");
     expect(
       composeRomaji({
         firstNameRomaji: "Emma",
         middleNameRomaji: "Rose",
         lastNameRomaji: "Brown",
       }),
-    ).toBe("Emma Rose Brown");
+    ).toBe("Brown, Emma Rose");
+    expect(
+      composeRomaji({
+        firstNameRomaji: "Emma",
+        middleNameRomaji: null,
+        lastNameRomaji: null,
+      }),
+    ).toBe("Emma");
   });
   it("composes kanji as 姓 名", () => {
     expect(
@@ -38,7 +45,7 @@ describe("names", () => {
       lastNameRomaji: "Yamada",
       middleNameRomaji: null,
       firstNameKanji: null,
-      nameRomaji: "Taro Yamada",
+      nameRomaji: "Yamada, Taro",
       nameKanji: "山田",
     });
   });

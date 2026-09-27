@@ -6,6 +6,7 @@ import { membersInAudiences, rolesForAudiences } from "@/lib/audience";
 import { audit } from "@/lib/audit";
 import { blockedUserIds, isCurrentTeacher } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { displayName } from "@/lib/format";
 import {
   estimateLinePushes,
@@ -21,6 +22,7 @@ import {
   staffAccess,
 } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/session";
+import { publicUrl } from "@/lib/urls";
 
 /** The member's roles and positions, loaded once per request. */
 const loadHolder = cache(async (user: CurrentUser): Promise<Holder> => {
@@ -46,13 +48,16 @@ export async function getBroadcastRights(
 
 /** Which admin-mode pages the member may open. */
 export async function getStaffAccess(user: CurrentUser): Promise<StaffAccess> {
-  return staffAccess(await loadHolder(user));
+  const access = staffAccess(await loadHolder(user));
+  // The send page is hidden while messages are switched off.
+  return MESSAGES_ENABLED ? access : { ...access, broadcast: false };
 }
 
 /**
- * ACTIVE members in the audience, excluding the sender and anyone who has
- * blocked (or been blocked by) the sender. A 学年 (COHORT) audience is the
- * current and former students who selected that class.
+ * ACTIVE members in the audience, excluding anyone who has blocked (or been
+ * blocked by) the sender. The sender is included when they match the
+ * audience, like everyone else. A 学年 (COHORT) audience is the current and
+ * former students who selected that class.
  */
 export async function recipientsWhere(
   senderId: string,
@@ -61,7 +66,7 @@ export async function recipientsWhere(
   const blocked = await blockedUserIds(senderId);
   const base: Prisma.UserWhereInput = {
     state: AccountState.ACTIVE,
-    id: { notIn: [senderId, ...blocked] },
+    ...(blocked.length ? { id: { notIn: blocked } } : {}),
   };
   if (audience.scope === "ALL") {
     return { ...base, ...membersInAudiences(audience.audiences) };
@@ -125,6 +130,11 @@ export async function sendBroadcast(params: {
       emailCount: counts.email,
     },
   });
+  // Inbox rows: the message is read in the app (read receipts).
+  await db.broadcastRecipient.createMany({
+    data: users.map((u) => ({ broadcastId: broadcast.id, userId: u.id })),
+    skipDuplicates: true,
+  });
   await audit(
     sender.id,
     "broadcast.sent",
@@ -139,15 +149,21 @@ export async function sendBroadcast(params: {
     kind: "BROADCAST",
     refId: broadcast.id,
     dedupe: true,
+    // No content in the notification: members open it in the app, which
+    // also records that they read it.
     render: async (locale) => {
       const t = await getTranslatorFor(locale, "broadcast");
       const from = right.position
-        ? t("signature", {
+        ? t("fromPosition", {
             name: displayName(sender, locale),
             position: t(`positions.${right.position}`),
           })
-        : t("signatureCommittee");
-      return { subject: title, text: `${body}\n\n${from}` };
+        : t("fromCommittee");
+      return {
+        subject: t("notifyContentless.subject"),
+        text: t("notifyContentless.text", { from }),
+        url: publicUrl(`/${locale}/app/news/messages/${broadcast.id}`),
+      };
     },
   });
   return { id: broadcast.id, recipients: users.length, ...counts };

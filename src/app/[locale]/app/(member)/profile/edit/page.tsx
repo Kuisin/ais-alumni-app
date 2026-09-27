@@ -2,16 +2,15 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AvatarForm } from "@/components/profile/avatar-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
+import { NameCard } from "@/components/profile/name-card";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { AisRecord } from "@/components/profile/role-details";
 import { parseSocialLinks } from "@/components/profile/social-links";
-import { StageForm } from "@/components/profile/stage-form";
 import { buttonClass } from "@/components/ui/button";
 import { Card, PageHeader } from "@/components/ui/card";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
-import { displayName, formatDate } from "@/lib/format";
-import { namePartsOf } from "@/lib/names";
+import { displayName } from "@/lib/format";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ProfileEditPage() {
   const me = await requireActive();
   const t = await getTranslations("profile");
+  const tr = await getTranslations("roles");
   const locale = (await getLocale()) as Locale;
   const former = me.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
   const social = parseSocialLinks(me.socialLinks);
@@ -49,11 +49,11 @@ export default async function ProfileEditPage() {
         />
       </Card>
 
+      <NameCard me={me} />
+
       <ProfileForm
         showAutoAccept={Boolean(former)}
         values={{
-          ...namePartsOf(me),
-          nameAtAis: me.nameAtAis ?? "",
           bio: me.bio ?? "",
           phone: me.phone ?? "",
           autoAcceptSameYear: me.autoAcceptSameYear,
@@ -66,15 +66,33 @@ export default async function ProfileEditPage() {
           <h2 className="mb-3 text-lg font-semibold">
             {t("sections.currentStage")}
           </h2>
-          <StageForm
-            stage={former.currentStage}
-            detail={former.currentStageDetail ?? ""}
-            updatedLabel={
-              former.currentStageUpdatedAt
-                ? formatDate(former.currentStageUpdatedAt, locale)
-                : null
-            }
-          />
+          {/* 現在の状況 is worked out from 学歴・職歴 (src/lib/stage.ts). */}
+          <p className="text-slate-900">
+            {former.currentStage ? (
+              <>
+                <span className="font-medium">
+                  {tr(`stage.${former.currentStage}`)}
+                </span>
+                {former.currentStageDetail ? (
+                  <span className="text-slate-600">
+                    {" "}
+                    — {former.currentStageDetail}
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              <span className="text-slate-600">{t("stage.none")}</span>
+            )}
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {t("stage.fromHistory")}
+          </p>
+          <Link
+            href="/app/profile/history"
+            className={buttonClass("secondary", "mt-3")}
+          >
+            {t("stage.editHistory")}
+          </Link>
         </Card>
       ) : null}
 

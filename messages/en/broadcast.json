@@ -1,7 +1,7 @@
 {
   "pageTitle": "Send a notification",
-  "descriptionAny": "Send a message to members by LINE (or email if they don't use LINE).",
-  "descriptionLeader": "As class representative, you can send a message to members of your 学年 by LINE (or email).",
+  "descriptionAny": "Send a message to members. They get a notification by LINE (or email if they don't use LINE) and read the message in the app.",
+  "descriptionLeader": "As class representative, you can send a message to members of your 学年. They get a notification by LINE (or email) and read the message in the app.",
   "audience": {
     "label": "Send to",
     "ALL": "All members",
@@ -19,17 +19,17 @@
   },
   "title": "Title",
   "body": "Message",
-  "bodyHint": "Your name and position are added at the end.",
+  "bodyHint": "Your name and position are shown with the message. LINE and email notifications don't include the title or message.",
   "preview": "Check recipients",
   "checking": "Checking…",
-  "confirmSummary": "This will reach {recipients} members: {line} by LINE and {email} by email. Sending uses {line} messages of the LINE monthly quota.",
+  "confirmSummary": "This will reach {recipients} members. {line} get a notification by LINE and {email} by email, then read the message in the app. Sending uses {line} messages of the LINE monthly quota.",
   "send": "Send to {count} members",
   "sending": "Sending…",
   "edit": "Edit",
-  "sentSummary": "Sent to {recipients} members ({line} by LINE, {email} by email).",
+  "sentSummary": "Sent to {recipients} members ({line} notified by LINE, {email} by email). You can see who has read it in the history.",
   "sendAnother": "Send another",
-  "history": "Sent by you",
-  "historyCounts": "{recipients} recipients (LINE {line} / email {email})",
+  "history": "Sent messages",
+  "historyCounts": "Notified {recipients} (LINE {line} / email {email})",
   "signature": "— {name} ({position}), via AIS Alumni",
   "signatureCommittee": "— AIS Alumni Committee",
   "positions": {
@@ -51,5 +51,59 @@
     "noRecipients": "No members match this audience."
   },
   "sent": "Sent.",
-  "charCount": "{count} / {max} characters"
+  "charCount": "{count} / {max} characters",
+  "fromPosition": "{name} ({position})",
+  "fromCommittee": "the AIS Alumni Committee",
+  "notifyContentless": {
+    "subject": "[AIS Alumni] You have a new message",
+    "text": "You have a new message from {from}.\nOpen the app to read it."
+  },
+  "historyMine": "Sent by you",
+  "historyAll": "All senders",
+  "historyTabs": "Messages to show",
+  "historyEmpty": "You haven't sent any messages yet.",
+  "sentBy": "From {name}",
+  "receipts": {
+    "title": "Read receipts",
+    "readOf": "Read {read} / {total}",
+    "percent": "{percent}%",
+    "none": "No read receipts",
+    "legacy": "This message was sent before read receipts were recorded, so there is no read status.",
+    "read": "Read",
+    "unread": "Unread",
+    "noneRead": "No one has read it yet.",
+    "allRead": "Everyone has read it.",
+    "showAll": "Show all ({count} more)"
+  },
+  "detail": {
+    "pageTitle": "Sent message",
+    "back": "Back to Send a notification",
+    "sentAt": "Sent",
+    "audience": "Sent to",
+    "from": "From",
+    "body": "Message"
+  },
+  "manage": {
+    "title": "Manage this message",
+    "archivedBadge": "Archived",
+    "editedBadge": "Edited",
+    "archivedHint": "It's hidden from recipients' “Messages for you”. Restore it to show it again (no new notification).",
+    "saved": "Saved. Recipients see it marked “Edited” (no new notification).",
+    "fieldTitle": "Title",
+    "fieldBody": "Message",
+    "editHint": "Editing doesn't send a new notification.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this message? It disappears for recipients and its read receipts are deleted. This can't be undone.",
+    "errors": {
+      "invalid": "Please check the fields.",
+      "forbidden": "You can't manage this message.",
+      "required": "Required.",
+      "tooLong": "Too long."
+    }
+  }
 }

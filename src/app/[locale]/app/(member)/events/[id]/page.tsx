@@ -1,16 +1,20 @@
+import { ScanLine } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 import { RsvpForm } from "@/components/events/rsvp-form";
+import { TicketCard } from "@/components/events/ticket-card";
 import { LineRsvpPrompt } from "@/components/line/line-rsvp-prompt";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
+import { buttonClass } from "@/components/ui/button";
 import { Alert, Card } from "@/components/ui/card";
 import { RsvpAnswer } from "@/generated/prisma/enums";
-import { isAudienceTargeted } from "@/lib/audience";
-import { toViewer } from "@/lib/authz";
+import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
+import { canCheckIn } from "@/lib/event-staff";
+import { checkInPath } from "@/lib/event-tickets";
 import {
   asLocale,
   isRsvpOpen,
@@ -19,6 +23,7 @@ import {
   rsvpClosesAt,
 } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
+import { inAudience } from "@/lib/news-visibility";
 import { getCurrentUser, requireActive } from "@/lib/session";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -29,7 +34,7 @@ const loadEvent = cache(async (id: string) => {
   const user = await getCurrentUser();
   if (!user || id.length > 64) return null;
   const event = await db.event.findUnique({ where: { id } });
-  if (!event || !isAudienceTargeted(event, toViewer(user))) return null;
+  if (!event || !(await inAudience(user, event))) return null;
   return event;
 });
 
@@ -54,7 +59,7 @@ export default async function EventDetailPage({
   if (!event) notFound();
 
   const t = await getTranslations("events");
-  const [going, mine] = await Promise.all([
+  const [going, mine, checkIn, staff] = await Promise.all([
     db.rsvp.aggregate({
       where: { eventId: id, answer: RsvpAnswer.GOING },
       _count: { _all: true },
@@ -64,6 +69,11 @@ export default async function EventDetailPage({
       where: { eventId_userId: { eventId: id, userId: user.id } },
       select: { answer: true, guests: true },
     }),
+    db.eventCheckIn.findUnique({
+      where: { eventId_userId: { eventId: id, userId: user.id } },
+      select: { checkedInAt: true },
+    }),
+    canCheckIn(user, id),
   ]);
   const goingTotal = going._count._all + (going._sum.guests ?? 0);
   const remaining = remainingSpots(event.capacity, goingTotal);
@@ -93,7 +103,25 @@ export default async function EventDetailPage({
           {title.text || t("untitled")}
           <FallbackTag fallback={title.fallback} />
         </h1>
+        {staff ? (
+          <Link
+            href={checkInPath(event.id)}
+            className={buttonClass("secondary", "mt-3")}
+          >
+            <ScanLine aria-hidden="true" className="size-4" />
+            {t("checkIn.open")}
+          </Link>
+        ) : null}
       </div>
+
+      {(mine && mine.answer !== RsvpAnswer.NOT_GOING) || checkIn ? (
+        <TicketCard
+          eventId={event.id}
+          user={user}
+          checkedInAt={checkIn?.checkedInAt ?? null}
+          locale={locale}
+        />
+      ) : null}
 
       <Card>
         <dl className="grid gap-3 text-sm sm:grid-cols-[10rem_1fr]">

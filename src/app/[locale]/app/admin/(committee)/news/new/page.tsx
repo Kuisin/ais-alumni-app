@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { EMPTY_NEWS, NewsForm } from "@/components/news/news-form";
 import { PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { loadCohortOptions } from "@/lib/cohorts-db";
+import { asLocale } from "@/lib/events";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -12,9 +14,13 @@ export async function generateMetadata({
   return { title: t("news.new") };
 }
 
-export default async function NewNewsPage() {
+export default async function NewNewsPage({
+  params,
+}: PageProps<"/[locale]/app/admin/news/new">) {
+  const locale = asLocale((await params).locale);
   await requireAdmin();
   const t = await getTranslations("adminContent");
+  const cohorts = await loadCohortOptions(locale);
   return (
     <>
       <Link
@@ -26,7 +32,11 @@ export default async function NewNewsPage() {
       <div className="mt-1">
         <PageHeader title={t("news.new")} />
       </div>
-      <NewsForm values={EMPTY_NEWS} cancelHref="/app/admin/news" />
+      <NewsForm
+        values={EMPTY_NEWS}
+        cohorts={cohorts}
+        cancelHref="/app/admin/news"
+      />
     </>
   );
 }

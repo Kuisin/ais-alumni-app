@@ -21,16 +21,17 @@ describe("format (§12)", () => {
     );
     expect(toJstLocalInput(d)).toBe("2026-10-03T14:00");
   });
-  it("picks names by locale", () => {
+  it("shows the romaji name in every language", () => {
     expect(
-      displayName({ nameRomaji: "Taro Yamada", nameKanji: "山田太郎" }, "ja"),
-    ).toBe("山田太郎");
+      displayName({ nameRomaji: "Yamada, Taro", nameKanji: "山田太郎" }, "ja"),
+    ).toBe("Yamada, Taro");
     expect(
-      displayName({ nameRomaji: "Taro Yamada", nameKanji: "山田太郎" }, "en"),
-    ).toBe("Taro Yamada");
-    expect(
-      displayName({ nameRomaji: "Taro Yamada", nameKanji: null }, "ja"),
-    ).toBe("Taro Yamada");
+      displayName({ nameRomaji: "Yamada, Taro", nameKanji: "山田太郎" }, "en"),
+    ).toBe("Yamada, Taro");
+    // Older rows without a romaji name fall back to kanji.
+    expect(displayName({ nameRomaji: null, nameKanji: "山田太郎" }, "ja")).toBe(
+      "山田太郎",
+    );
   });
   it("falls back to the other language with a flag", () => {
     expect(localized(null, "Hello", "ja")).toEqual({

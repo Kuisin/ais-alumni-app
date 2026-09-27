@@ -6,11 +6,12 @@ import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
 import { Badge } from "@/components/ui/card";
-import { isAudienceTargeted } from "@/lib/audience";
-import { toViewer } from "@/lib/authz";
+import { markNewsRead } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDate, localized } from "@/lib/format";
+import { matchesAudience, specFromPost } from "@/lib/news-audience";
+import { newsViewer } from "@/lib/news-visibility";
 import { getCurrentUser, requireActive } from "@/lib/session";
 import { signedFileUrl } from "@/lib/storage";
 
@@ -19,8 +20,9 @@ const loadPost = cache(async (id: string) => {
   const user = await getCurrentUser();
   if (!user || id.length > 64) return null;
   const post = await db.newsPost.findUnique({ where: { id } });
-  if (!post?.publishedAt || post.publishedAt > new Date()) return null;
-  if (!isAudienceTargeted(post, toViewer(user))) return null;
+  if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
+    return null;
+  if (!matchesAudience(specFromPost(post), await newsViewer(user))) return null;
   return post;
 });
 
@@ -40,9 +42,11 @@ export default async function NewsDetailPage({
 }: PageProps<"/[locale]/app/news/[id]">) {
   const { id, locale: rawLocale } = await params;
   const locale = asLocale(rawLocale);
-  await requireActive();
+  const user = await requireActive();
   const post = await loadPost(id);
   if (!post?.publishedAt) notFound();
+  // Published and aimed at this member (checked in loadPost): record the read.
+  await markNewsRead(user.id, post.id);
 
   const t = await getTranslations("news");
   const title = localized(post.titleJa, post.titleEn, locale);

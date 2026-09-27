@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { RsvpAnswer } from "@/generated/prisma/enums";
-import { isAudienceTargeted } from "@/lib/audience";
 import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { checkRsvp, MAX_GUESTS, type RsvpDenial } from "@/lib/events";
+import { inAudience } from "@/lib/news-visibility";
 import { actionActive } from "@/lib/session";
 
 export type RsvpState = {
@@ -41,7 +41,7 @@ export async function rsvpAction(
   const { eventId, answer } = parsed.data;
   // Guests only make sense when attending (or maybe attending).
   const guests = answer === RsvpAnswer.NOT_GOING ? 0 : parsed.data.guests;
-  const viewer = toViewer(user);
+  const _viewer = toViewer(user);
 
   try {
     const outcome = await db.$transaction(async (tx) => {
@@ -56,9 +56,10 @@ export async function rsvpAction(
           capacity: true,
           targetRoles: true,
           targetAudiences: true,
+          audience: true,
         },
       });
-      if (!event || !isAudienceTargeted(event, viewer))
+      if (!event || !(await inAudience(user, event)))
         return "notFound" as const;
 
       const others = await tx.rsvp.aggregate({

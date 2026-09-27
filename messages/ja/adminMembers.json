@@ -115,7 +115,8 @@
       "CURRENT_PARENT": "保護者",
       "TEACHER": "教職員"
     },
-    "schoolEmailVerified": "確認済み"
+    "schoolEmailVerified": "確認済み",
+    "stageFromHistory": "学歴・職歴から自動で計算されます（編集は会員の学歴・職歴で）。"
   },
   "status": {
     "title": "アカウントの状態",
@@ -159,7 +160,8 @@
     "working": "統合しています…",
     "notFound": "そのIDまたはメールアドレスのアカウントが見つかりません。",
     "same": "同じアカウントです。",
-    "notSelf": "ご自身のアカウントを統合して削除することはできません。"
+    "notSelf": "ご自身のアカウントを統合して削除することはできません。",
+    "keepsManaged": "保護者が管理するアカウントは残せません。本人がログインするアカウントを残してください。"
   },
   "audit": {
     "title": "操作履歴",
@@ -221,5 +223,34 @@
       "cohort": "担当する学年を選択してください。"
     },
     "cohort": "担当学年"
+  },
+  "nameRequests": {
+    "title": "氏名の変更",
+    "description": "承認後の氏名は会員自身では変更できません。変更の申請を確認し、承認すると反映されます。",
+    "tabsLabel": "氏名の変更申請",
+    "tabs": {
+      "pending": "確認待ち",
+      "decided": "判断済み"
+    },
+    "emptyPending": "確認待ちの申請はありません。",
+    "emptyHint": "会員がプロフィール編集から氏名の変更を申請すると、ここに表示されます。",
+    "emptyDecided": "判断済みの申請はありません。",
+    "decision": "判断",
+    "decisions": {
+      "APPROVE": "承認して反映",
+      "REJECT": "却下"
+    },
+    "noteOptional": "メモ（任意・会員に送信されます）",
+    "noteRequired": "却下の理由（会員に送信されます）",
+    "submit": {
+      "APPROVE": "承認して反映",
+      "REJECT": "却下する"
+    },
+    "approved": "承認し、氏名を変更しました。",
+    "rejected": "却下しました。",
+    "errors": {
+      "noteRequired": "却下する場合は理由を入力してください。",
+      "decided": "この申請はすでに判断されています。"
+    }
   }
 }

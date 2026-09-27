@@ -111,7 +111,7 @@ export default async function RosterPage() {
 
       <Card className="space-y-4" id="roster-import">
         <h2 className="text-lg font-semibold">{t("roster.importTitle")}</h2>
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <div className="relative overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full text-left text-sm">
             <caption className="bg-slate-50 px-3 py-2 text-left text-sm font-medium text-slate-800">
               {t("roster.spec.title")}

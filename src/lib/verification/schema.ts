@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { parseCohortNumber } from "@/lib/cohorts";
-import { nameColumns } from "@/lib/names";
+import { elementaryEndFor, parseCohortNumber } from "@/lib/cohorts";
+import { kanaPart, nameColumns, requireKanaForKanji } from "@/lib/names";
+import { studentStatus } from "@/lib/school";
 
 /**
  * Sign-up (verification) form, version 2. Shared by the client wizard
@@ -124,11 +125,47 @@ export const studentSchema = z
   })
   .superRefine(leftAfterJoined);
 
-export const childSchema = z.object({
+/**
+ * A child is either already registered (picked by exact name + birth date,
+ * see searchRegisteredChildAction) or new: the parent enters the child's
+ * details and a child account managed by the parent is created. The admin
+ * reviews the children's details (src/app/actions/verify.ts).
+ */
+export const CHILD_MODES = ["new", "existing"] as const;
+export type ChildMode = (typeof CHILD_MODES)[number];
+
+const newChildSchema = z
+  .object({
+    mode: z.literal("new"),
+    lastNameRomaji: requiredText(50),
+    firstNameRomaji: requiredText(50),
+    lastNameKanji: optionalText(50),
+    firstNameKanji: optionalText(50),
+    lastNameKana: kanaPart(),
+    firstNameKana: kanaPart(),
+    dateOfBirth: isoDate,
+    cohortNumber: cohortNumber(),
+    joinedYear: year(),
+    leftYear: optionalYear(),
+    studentIdNo: optionalText(50),
+  })
+  .superRefine((v, ctx) => {
+    leftAfterJoined(v, ctx);
+    requireKanaForKanji(v, ctx);
+  });
+
+const existingChildSchema = z.object({
+  mode: z.literal("existing"),
+  existingUserId: z.string().trim().min(1, "childNotSelected").max(64),
+  /** label shown when picked, e.g. 鈴木花子 */
   name: requiredText(),
-  cohortNumber: cohortNumber(),
-  leftYear: optionalYear(),
 });
+
+export const childSchema = z.discriminatedUnion("mode", [
+  newChildSchema,
+  existingChildSchema,
+]);
+export type ChildData = z.infer<typeof childSchema>;
 
 export const parentSchema = z.object({
   children: z.array(childSchema).min(1, "childrenRequired").max(MAX_CHILDREN),
@@ -150,7 +187,12 @@ export const teacherSchema = z
   })
   .superRefine(leftAfterJoined);
 
+/** 卒業証書 (one file) or other supporting documents (up to 3). */
+export const EVIDENCE_KINDS = ["DIPLOMA", "OTHER"] as const;
+export type EvidenceKindValue = (typeof EVIDENCE_KINDS)[number];
+
 export const evidenceItemSchema = z.object({
+  kind: z.enum(EVIDENCE_KINDS).default("OTHER"),
   key: z.string().min(1).max(500),
   fileName: z.string().trim().min(1).max(200),
   mimeType: z.enum(EVIDENCE_TYPES),
@@ -171,7 +213,7 @@ export function safeFileName(name: string): string {
 // ---------------------------------------------------------------------------
 // Whole form
 
-export function verificationSchema(opts: { requireKanji: boolean }) {
+export function verificationSchema(_opts: { requireKanji: boolean }) {
   return z
     .object({
       types: z
@@ -181,8 +223,12 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
       lastNameRomaji: requiredText(50),
       firstNameRomaji: requiredText(50),
       middleNameRomaji: optionalText(50),
-      lastNameKanji: opts.requireKanji ? requiredText(50) : optionalText(50),
-      firstNameKanji: opts.requireKanji ? requiredText(50) : optionalText(50),
+      // Kanji is optional (e.g. international students); フリガナ is
+      // required with it. `requireKanji` is kept for callers but unused.
+      lastNameKanji: optionalText(50),
+      firstNameKanji: optionalText(50),
+      lastNameKana: kanaPart(),
+      firstNameKana: kanaPart(),
       nameAtAis: optionalText(100),
       dateOfBirth: isoDate,
       locale: z.enum(["ja", "en"]),
@@ -191,10 +237,32 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
       teacher: teacherSchema.optional(),
       evidence: z
         .array(evidenceItemSchema)
-        .max(EVIDENCE_MAX_FILES, "tooManyFiles")
-        .default([]),
+        .default([])
+        .refine(
+          (a) =>
+            a.filter((e) => e.kind === "DIPLOMA").length <= 1 &&
+            a.filter((e) => e.kind === "OTHER").length <= EVIDENCE_MAX_FILES,
+          "tooManyFiles",
+        ),
+      /** a graduate who can't provide their 卒業証書 */
+      diplomaUnavailable: z.boolean().default(false),
     })
     .superRefine((v, ctx) => {
+      requireKanaForKanji(v, ctx);
+      // Graduates upload their 卒業証書 (or say they don't have it).
+      if (
+        v.types.includes("STUDENT") &&
+        v.student &&
+        applicantGraduated(v.student.cohortNumber, v.student.leftYear) &&
+        !v.diplomaUnavailable &&
+        !v.evidence.some((e) => e.kind === "DIPLOMA")
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["diploma"],
+          message: "diplomaRequired",
+        });
+      }
       for (const type of v.types) {
         if (!v[SECTION[type]]) {
           ctx.addIssue({
@@ -217,6 +285,17 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
 
 export type VerificationData = z.output<ReturnType<typeof verificationSchema>>;
 
+/** Whether a student applicant finished 6th grade at AIS (by 学年 and leave year). */
+export function applicantGraduated(
+  cohortNumber: number | null | undefined,
+  leftYear: number | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (cohortNumber == null) return false;
+  return studentStatus(elementaryEndFor(cohortNumber), leftYear ?? null, now)
+    .didGraduate;
+}
+
 /** What is stored in VerificationRequest.answers. */
 export type StoredAnswers = Omit<VerificationData, "evidence"> & { version: 2 };
 
@@ -224,9 +303,22 @@ export type StoredAnswers = Omit<VerificationData, "evidence"> & { version: 2 };
 // Client form state (string-valued so inputs stay controlled)
 
 export type ChildState = {
+  mode: ChildMode;
+  /** existing: the picked member and their label */
+  existingUserId: string;
   name: string;
+  /** new: the child's details */
+  lastNameRomaji: string;
+  firstNameRomaji: string;
+  lastNameKanji: string;
+  firstNameKanji: string;
+  lastNameKana: string;
+  firstNameKana: string;
+  dateOfBirth: string;
   cohortNumber: string;
+  joinedYear: string;
   leftYear: string;
+  studentIdNo: string;
 };
 
 export type VerifyFormState = {
@@ -236,6 +328,8 @@ export type VerifyFormState = {
   middleNameRomaji: string;
   lastNameKanji: string;
   firstNameKanji: string;
+  lastNameKana: string;
+  firstNameKana: string;
   nameAtAis: string;
   dateOfBirth: string;
   locale: "ja" | "en";
@@ -255,12 +349,24 @@ export type VerifyFormState = {
     schoolEmail: string;
   };
   evidence: EvidenceItem[];
+  diplomaUnavailable: boolean;
 };
 
-export const emptyChild = (): ChildState => ({
+export const emptyChild = (mode: ChildMode = "new"): ChildState => ({
+  mode,
+  existingUserId: "",
   name: "",
+  lastNameRomaji: "",
+  firstNameRomaji: "",
+  lastNameKanji: "",
+  firstNameKanji: "",
+  lastNameKana: "",
+  firstNameKana: "",
+  dateOfBirth: "",
   cohortNumber: "",
+  joinedYear: "",
   leftYear: "",
+  studentIdNo: "",
 });
 
 export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
@@ -271,6 +377,8 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
     middleNameRomaji: "",
     lastNameKanji: "",
     firstNameKanji: "",
+    lastNameKana: "",
+    firstNameKana: "",
     nameAtAis: "",
     dateOfBirth: "",
     locale,
@@ -285,6 +393,7 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
     parent: { children: [emptyChild()] },
     teacher: { joinedYear: "", leftYear: "", subjects: "", schoolEmail: "" },
     evidence: [],
+    diplomaUnavailable: false,
   };
 }
 
@@ -331,6 +440,8 @@ export function answersToFormState(
     middleNameRomaji: s(a.middleNameRomaji),
     lastNameKanji: s(a.lastNameKanji),
     firstNameKanji: s(a.firstNameKanji),
+    lastNameKana: s(a.lastNameKana),
+    firstNameKana: s(a.firstNameKana),
     nameAtAis: s(a.nameAtAis),
     dateOfBirth: s(a.dateOfBirth),
     locale: a.locale === "en" ? "en" : a.locale === "ja" ? "ja" : locale,
@@ -345,9 +456,21 @@ export function answersToFormState(
     parent: {
       children: children.length
         ? children.map((c) => ({
+            ...emptyChild(c.mode === "existing" ? "existing" : "new"),
+            existingUserId: s(c.existingUserId),
             name: s(c.name),
+            // Older answers had only a name: start the new form from it.
+            lastNameKanji: s(c.lastNameKanji) || (c.mode ? "" : s(c.name)),
+            lastNameRomaji: s(c.lastNameRomaji),
+            firstNameRomaji: s(c.firstNameRomaji),
+            firstNameKanji: s(c.firstNameKanji),
+            lastNameKana: s(c.lastNameKana),
+            firstNameKana: s(c.firstNameKana),
+            dateOfBirth: s(c.dateOfBirth),
             cohortNumber: s(c.cohortNumber),
+            joinedYear: s(c.joinedYear),
             leftYear: s(c.leftYear),
+            studentIdNo: s(c.studentIdNo),
           }))
         : base.parent.children,
     },
@@ -358,6 +481,7 @@ export function answersToFormState(
       schoolEmail: s(tc.schoolEmail),
     },
     evidence,
+    diplomaUnavailable: a.diplomaUnavailable === true,
   };
 }
 
@@ -386,6 +510,10 @@ const KNOWN_CODES = new Set([
   "typesRequired",
   "cohortRequired",
   "childrenRequired",
+  "childNotSelected",
+  "kanaOnly",
+  "kanaRequired",
+  "diplomaRequired",
   "tooManyFiles",
 ]);
 
@@ -402,6 +530,6 @@ export function stepOfPath(path: string): Step {
   if (head === "types") return "type";
   if (head === "student" || head === "parent" || head === "teacher")
     return "details";
-  if (head === "evidence") return "review";
+  if (head === "evidence" || head === "diploma") return "review";
   return "basics";
 }

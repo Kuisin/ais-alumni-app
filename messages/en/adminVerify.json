@@ -17,7 +17,9 @@
     "next": "Next",
     "pageOf": "Page {page} of {pages}",
     "search": "Search",
-    "searchPlaceholder": "Search by name (romaji or kanji)"
+    "searchPlaceholder": "Search by name (romaji or kanji)",
+    "children": "Children: {names}",
+    "registeredBy": "Registered by parent: {name}"
   },
   "badges": {
     "noRoster": "No roster data",
@@ -30,7 +32,8 @@
     "parentUnconfirmed": "No parent confirmation",
     "rosterMatch": "Roster match {score}",
     "vouchCounts": "Vouches: {yes} yes · {no} no · {unsure} unsure · {pending} waiting",
-    "noVouches": "No vouches"
+    "noVouches": "No vouches",
+    "diploma": "Diploma"
   },
   "status": {
     "PENDING": "Pending",
@@ -202,5 +205,37 @@
       "body": "The committee needs a little more information to verify you. Please update your application from the link below.",
       "bodyWithNote": "The committee needs a little more information to verify you:\n\n{note}\n\nPlease update your application from the link below."
     }
+  },
+  "children": {
+    "title": "Children's AIS records",
+    "description": "Parents aren't reviewed themselves: once a child is approved and the relationship confirmed, the parent's account opens automatically.",
+    "none": "No children listed.",
+    "dob": "Date of birth",
+    "cohort": "Class",
+    "status": "Status",
+    "years": "At AIS",
+    "studentId": "Student ID",
+    "roster": "Roster check",
+    "rosterNone": "No roster data to compare with",
+    "rosterMatch": "Matches the roster ({score})",
+    "rosterWeak": "Weak roster match ({score})",
+    "source": {
+      "created": "Registered by this parent",
+      "registered": "Existing member",
+      "nameOnly": "Name only (older form)",
+      "title": "Source"
+    },
+    "link": {
+      "confirmed": "Relationship confirmed",
+      "onApproval": "Confirmed when the child is approved",
+      "childToConfirm": "Waiting for the child to confirm"
+    },
+    "nameOnlyHint": "Only a name was given (older form). Ask the parent to resubmit, or link them on the family page."
+  },
+  "managedDuplicate": {
+    "title": "A parent already registered this person",
+    "body": "A child account created by a parent has the same name and birth date as this applicant. Merging moves its AIS record and family links into the applicant's account (the applicant's account is kept). Then decide the application as usual.",
+    "registeredBy": "Registered by: {parent}",
+    "merge": "Merge into applicant's account"
   }
 }

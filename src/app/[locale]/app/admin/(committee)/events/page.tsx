@@ -1,6 +1,6 @@
 import { CalendarDays, ChevronRight, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { TargetBadges } from "@/components/events/target-badges";
+import { AudienceSummary } from "@/components/news/audience-summary";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
+import { specFromPost } from "@/lib/news-audience";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -40,6 +41,7 @@ export default async function AdminEventsPage({
     rsvpDeadline: true,
     targetRoles: true,
     targetAudiences: true,
+    audience: true,
     rsvps: { where: { answer: RsvpAnswer.GOING }, select: { guests: true } },
   } as const;
   const [upcoming, past] = await Promise.all([
@@ -116,7 +118,7 @@ export default async function AdminEventsPage({
                             capacity: e.capacity,
                           })}
                     </span>
-                    <TargetBadges target={e} />
+                    <AudienceSummary spec={specFromPost(e)} />
                   </div>
                 </div>
                 <ChevronRight

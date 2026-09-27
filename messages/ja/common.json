@@ -46,7 +46,7 @@
     "dashboard": "ホーム",
     "directory": "名簿",
     "events": "イベント",
-    "news": "お知らせ",
+    "news": "ニュース",
     "follows": "フォローリクエスト",
     "family": "家族",
     "settings": "設定",
@@ -59,13 +59,14 @@
     "profileShort": "マイページ",
     "adminModeShort": "管理",
     "memberModeShort": "会員画面",
-    "pending": "{count}件の対応待ち"
+    "pending": "{count}件の対応待ち",
+    "unread": "未読 {count}件"
   },
   "adminNav": {
     "verification": "本人確認",
     "members": "会員",
     "events": "イベント",
-    "news": "お知らせ",
+    "news": "ニュース",
     "roster": "名簿データ",
     "stats": "統計",
     "audit": "操作ログ",
@@ -73,13 +74,14 @@
     "cohorts": "学年",
     "organizations": "学校・会社",
     "teachers": "教職員",
-    "destinations": "進路"
+    "destinations": "進路",
+    "nameRequests": "氏名の変更"
   },
   "notFoundTitle": "ページが見つかりません",
   "goHome": "ホームへ",
   "names": {
     "romaji": "氏名（ローマ字）",
-    "kanji": "氏名（漢字・かな）",
+    "kanji": "氏名（漢字）・フリガナ（任意）",
     "lastNameRomaji": "姓（Last name）",
     "firstNameRomaji": "名（First name）",
     "middleNameRomaji": "ミドルネーム（任意）",
@@ -90,8 +92,15 @@
       "firstNameRomaji": "例: Taro",
       "middleNameRomaji": "例: James",
       "lastNameKanji": "例: 山田",
-      "firstNameKanji": "例: 太郎"
-    }
+      "firstNameKanji": "例: 太郎",
+      "lastNameKana": "例: ヤマダ",
+      "firstNameKana": "例: タロウ"
+    },
+    "lastNameKana": "セイ（フリガナ）",
+    "firstNameKana": "メイ（フリガナ）",
+    "kanaHint": "漢字の氏名がある方は、フリガナ（カタカナ）も入力してください。漢字の氏名がない方は空欄で構いません。",
+    "kanjiShort": "漢字",
+    "kanaShort": "フリガナ"
   },
   "cohortNumber": "第{number}期",
   "adminGroups": {

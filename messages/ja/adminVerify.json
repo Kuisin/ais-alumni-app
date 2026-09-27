@@ -17,7 +17,9 @@
     "next": "次へ",
     "pageOf": "{page} / {pages} ページ",
     "search": "検索",
-    "searchPlaceholder": "名前で検索（ローマ字・漢字）"
+    "searchPlaceholder": "名前で検索（ローマ字・漢字）",
+    "children": "お子さま：{names}",
+    "registeredBy": "保護者が登録：{name}"
   },
   "badges": {
     "noRoster": "名簿データなし",
@@ -30,7 +32,8 @@
     "parentUnconfirmed": "保護者未確認",
     "rosterMatch": "名簿一致 {score}",
     "vouchCounts": "推薦 承認{yes}・否認{no}・不明{unsure}・未回答{pending}",
-    "noVouches": "推薦なし"
+    "noVouches": "推薦なし",
+    "diploma": "卒業証書あり"
   },
   "status": {
     "PENDING": "審査待ち",
@@ -202,5 +205,37 @@
       "body": "本人確認のため、委員会から追加情報のお願いがあります。下のリンクから申請内容を更新してください。",
       "bodyWithNote": "本人確認のため、委員会から追加情報のお願いがあります：\n\n{note}\n\n下のリンクから申請内容を更新してください。"
     }
+  },
+  "children": {
+    "title": "お子さまの在籍情報",
+    "description": "保護者の方は審査の対象ではありません。お子さまの申請が承認され、親子関係が確定すると、保護者のアカウントも自動で有効になります。",
+    "none": "お子さまが登録されていません。",
+    "dob": "生年月日",
+    "cohort": "学年",
+    "status": "判定",
+    "years": "在籍",
+    "studentId": "生徒番号",
+    "roster": "名簿との照合",
+    "rosterNone": "照合できる名簿データがありません",
+    "rosterMatch": "名簿と一致（{score}点）",
+    "rosterWeak": "一致度が低い（{score}点）",
+    "source": {
+      "created": "保護者が新規登録",
+      "registered": "登録済みの会員",
+      "nameOnly": "名前のみ（旧形式）",
+      "title": "登録方法"
+    },
+    "link": {
+      "confirmed": "親子関係 確認済み",
+      "onApproval": "お子さまの承認で確定",
+      "childToConfirm": "お子さま本人の確認待ち"
+    },
+    "nameOnlyHint": "以前の形式で名前だけが登録されています。保護者に再申請を依頼するか、家族ページで連携してください。"
+  },
+  "managedDuplicate": {
+    "title": "保護者が登録した同一人物のアカウントがあります",
+    "body": "この申請者と氏名・生年月日が一致する、保護者が登録したお子さまのアカウントがあります。統合すると、そのアカウントの在籍情報・家族の連携などが申請者のアカウントに移ります（申請者のアカウントを残します）。統合後に、申請を通常どおり判断してください。",
+    "registeredBy": "登録した保護者：{parent}",
+    "merge": "申請者のアカウントに統合"
   }
 }

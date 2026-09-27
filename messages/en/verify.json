@@ -56,11 +56,13 @@
     "joinedYear": "Year you joined AIS",
     "leftYearStudent": "Year you left AIS",
     "joinedYearTeacher": "Year you started",
-    "leftYearTeacher": "Year you left"
+    "leftYearTeacher": "Year you left",
+    "lastNameKana": "Last name in katakana (フリガナ)",
+    "firstNameKana": "First name in katakana (フリガナ)"
   },
   "hints": {
     "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",
-    "nameKanji": "In kanji or kana, e.g. 山田 / 太郎 or やまだ / たろう.",
+    "nameKanji": "If you have a name in kanji, enter it with its katakana reading (フリガナ). Leave it empty if you don't (e.g. international students).",
     "nameAtAis": "If different from your current name (e.g. maiden name or nickname).",
     "dateOfBirth": "Used only for verification and age-appropriate privacy. Never shown to other members.",
     "roles": "Choose all that apply.",
@@ -97,7 +99,11 @@
     "evidenceInvalid": "One of the files could not be verified. Please remove it and upload it again.",
     "invalid": "This value is not valid.",
     "typesRequired": "Choose at least one.",
-    "cohortRequired": "Choose a class."
+    "cohortRequired": "Choose a class.",
+    "childNotSelected": "Use “Find” to look up your child and select them.",
+    "kanaOnly": "Use katakana (hiragana is converted automatically).",
+    "kanaRequired": "Please add the katakana reading (フリガナ) for your kanji name.",
+    "diplomaRequired": "Upload your diploma, or tick “I don't have my diploma”."
   },
   "evidence": {
     "label": "Supporting documents (optional)",
@@ -181,7 +187,7 @@
   "sections": {
     "student": "Tell us your class and the year you joined AIS.",
     "studentMore": "Help us confirm you faster (optional)",
-    "parent": "Add each child who attends or attended AIS.",
+    "parent": "Add each child who attends or attended AIS. Find a child who is already on AIS Alumni, or register your child if they aren’t yet.",
     "teacher": "Tell us when you worked at AIS and what you taught."
   },
   "preview": {
@@ -191,5 +197,57 @@
     "left": "You'll be registered as a former student (left in {year})",
     "teacherCurrent": "You'll be registered as current teacher / staff",
     "teacherFormer": "You'll be registered as former teacher / staff (left in {year})"
+  },
+  "child": {
+    "reviewNote": "The committee reviews your children’s details, not yours. Your account opens once a child is approved (or, for a registered child, once they confirm you).",
+    "modeLegend": "How would you like to add this child?",
+    "modes": {
+      "existing": {
+        "title": "Already registered",
+        "description": "For example, a graduate with their own account, or a child another parent already registered."
+      },
+      "new": {
+        "title": "Register my child",
+        "description": "We’ll create your child’s record; you manage it. Our committee checks these details."
+      }
+    },
+    "searchIntro": "Your child appears only if their full name (romaji or kanji) and date of birth exactly match their registration.",
+    "searchName": "Child’s full name",
+    "searchNameHint": "In romaji or kanji, as registered. e.g. Hanako Yamada or 山田花子",
+    "dateOfBirth": "Child’s date of birth",
+    "find": "Find",
+    "searching": "Searching…",
+    "found": "{count, plural, one {# match found} other {# matches found}}. Select your child.",
+    "notFound": "No registered member matches this name and date of birth. Check the spelling, or register your child as new.",
+    "switchToNew": "Switch to “Register my child”",
+    "searchIncomplete": "Enter your child’s full name and date of birth.",
+    "searchFailed": "The search didn’t work. Please try again.",
+    "select": "Select",
+    "selected": "Selected",
+    "change": "Change",
+    "changeNamed": "Change selected child ({name})",
+    "confirmNote": "We’ll ask your child (or the parent who manages their account) to confirm that you’re their parent.",
+    "newIntro": "We’ll create your child’s record; you manage it. Our committee checks these details.",
+    "nameRomaji": "Child’s name (romaji)",
+    "nameKanji": "Child’s name (kanji / kana)",
+    "joinedYear": "Year your child joined AIS",
+    "leftYear": "Year your child left AIS",
+    "leftYearHint": "Only if your child left AIS before graduating. Leave empty if they’re still at AIS or graduated."
+  },
+  "placeholders": {
+    "lastNameKana": "e.g. ヤマダ",
+    "firstNameKana": "e.g. タロウ"
+  },
+  "diploma": {
+    "title": "Diploma (卒業証書)",
+    "intro": "If you graduated from AIS, upload a photo or scan of your diploma. The committee uses it to confirm you attended, and deletes it 30 days after deciding.",
+    "label": "Diploma file",
+    "hint": "JPG, PNG or PDF (up to 10 MB). Make sure your name and graduation year are readable.",
+    "unavailable": "I don't have my diploma",
+    "unavailableHint": "If so, add any other document that shows you attended (report card, a yearbook photo, …) below."
+  },
+  "parentRegistered": {
+    "title": "It looks like a parent has already registered you.",
+    "body": "Ask them to send you a link with “Hand over to my child” on their Family page: you'll get the approved record with no new review. You can also continue here; the committee will then combine the two accounts."
   }
 }

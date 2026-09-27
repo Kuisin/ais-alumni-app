@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   FileText,
+  GraduationCap,
   ListChecks,
   Search,
   ShieldCheck,
@@ -18,6 +19,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { VerificationStatus } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { isMinor } from "@/lib/authz/core";
+import { cohortShort } from "@/lib/cohorts";
 import { db } from "@/lib/db";
 import { displayName, formatDateTime } from "@/lib/format";
 import { requireAdmin } from "@/lib/session";
@@ -55,8 +57,10 @@ export default async function VerificationQueuePage({
       : VerificationStatus.PENDING;
   const page = pageParam(sp.page);
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 60);
+  // Parents alone aren't reviewed: they follow their children's approval.
   const where = {
     status,
+    followsChildren: false,
     ...(q
       ? {
           user: {
@@ -86,7 +90,23 @@ export default async function VerificationQueuePage({
             nameRomaji: true,
             nameKanji: true,
             dateOfBirth: true,
+            managedBy: { select: { nameRomaji: true, nameKanji: true } },
             roles: { select: { role: true, schoolEmailVerified: true } },
+            // Parents: the children whose details are being reviewed.
+            parentLinks: {
+              select: {
+                childName: true,
+                child: {
+                  select: {
+                    roles: {
+                      where: { cohortId: { not: null } },
+                      select: { cohort: { select: { number: true } } },
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
             childLinks: {
               where: { confirmedAt: { not: null } },
               select: { id: true },
@@ -96,6 +116,7 @@ export default async function VerificationQueuePage({
         },
         vouches: { select: { answer: true } },
         _count: { select: { evidence: true } },
+        evidence: { where: { kind: "DIPLOMA" }, select: { id: true } },
       },
     }),
     db.verificationRequest.groupBy({
@@ -104,6 +125,7 @@ export default async function VerificationQueuePage({
         status: {
           in: [VerificationStatus.PENDING, VerificationStatus.NEEDS_INFO],
         },
+        followsChildren: false,
       },
       _count: { _all: true },
     }),
@@ -208,6 +230,25 @@ export default async function VerificationQueuePage({
                         <span className="ml-2 text-sm font-normal text-slate-600">
                           {roles.map((role) => tr(`role.${role}`)).join(" · ")}
                         </span>
+                        {r.user.managedBy ? (
+                          <span className="block text-sm font-normal text-slate-600">
+                            {t("queue.registeredBy", {
+                              name: displayName(r.user.managedBy, lang),
+                            })}
+                          </span>
+                        ) : null}
+                        {r.user.parentLinks.length ? (
+                          <span className="block text-sm font-normal text-slate-600">
+                            {t("queue.children", {
+                              names: r.user.parentLinks
+                                .map((l) => {
+                                  const n = l.child?.roles[0]?.cohort?.number;
+                                  return `${l.childName ?? "—"}${n ? `（${cohortShort({ number: n }, lang)}）` : ""}`;
+                                })
+                                .join("、"),
+                            })}
+                          </span>
+                        ) : null}
                       </p>
                       <p className="text-xs whitespace-nowrap text-slate-500 tabular-nums">
                         <time
@@ -259,6 +300,11 @@ export default async function VerificationQueuePage({
                             })
                           : t("badges.noVouches")}
                       </Signal>
+                      {r.evidence.length ? (
+                        <Signal tone="green" icon={<GraduationCap />}>
+                          {t("badges.diploma")}
+                        </Signal>
+                      ) : null}
                       <Signal
                         tone={r._count.evidence > 0 ? "blue" : "dim"}
                         icon={<FileText />}

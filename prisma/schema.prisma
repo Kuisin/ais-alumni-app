@@ -73,15 +73,15 @@ enum LifeStage {
 }
 
 model User {
-  id                    String        @id @default(cuid())
+  id                    String               @id @default(cuid())
   // Nullable (spec says required): a LINE-first sign-up has no verified email
   // until it passes the mandatory OTP step (§4.2). Postgres allows many NULLs
   // under a unique index.
-  primaryEmail          String?       @unique
+  primaryEmail          String?              @unique
   emailVerifiedAt       DateTime?
-  state                 AccountState  @default(UNVERIFIED_EMAIL)
-  isAdmin               Boolean       @default(false)
-  locale                Locale        @default(ja)
+  state                 AccountState         @default(UNVERIFIED_EMAIL)
+  isAdmin               Boolean              @default(false)
+  locale                Locale               @default(ja)
   // Name parts are what members enter. nameRomaji ("First Middle Last") and
   // nameKanji ("姓 名") are the combined display/search names, always
   // recomputed from the parts by src/lib/names.ts when a name is saved.
@@ -90,24 +90,37 @@ model User {
   middleNameRomaji      String?
   lastNameKanji         String?
   firstNameKanji        String?
+  // Added: フリガナ (katakana) for the kanji name, required when kanji is given.
+  lastNameKana          String?
+  firstNameKana         String?
+  nameKana              String?
   nameRomaji            String?
   nameKanji             String?
   nameAtAis             String?
-  dateOfBirth           DateTime?     @db.Date
+  dateOfBirth           DateTime?            @db.Date
   avatarUrl             String?
   bio                   String?
   phone                 String?
   socialLinks           Json?
-  lineUserId            String?       @unique
+  lineUserId            String?              @unique
   lineDisplayName       String?
-  lineFollowing         Boolean       @default(false)
+  lineFollowing         Boolean              @default(false)
   lineBannerDismissedAt DateTime?
   lineOnboardingSeenAt  DateTime?
-  notifyVia             NotifyChannel @default(AUTO)
-  autoAcceptSameYear    Boolean       @default(false)
+  notifyVia             NotifyChannel        @default(AUTO)
+  autoAcceptSameYear    Boolean              @default(false)
   familyId              String?
-  family                Family?       @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  family                Family?              @relation(fields: [familyId], references: [id], onDelete: SetNull)
   deactivatedAt         DateTime?
+  // Added: a child account created by a parent during sign-up. It has no
+  // sign-in of its own; the parent manages it until the child takes it over.
+  managedById           String?
+  managedBy             User?                @relation("managedChildren", fields: [managedById], references: [id], onDelete: SetNull)
+  managedChildren       User[]               @relation("managedChildren")
+  handoversAsChild      ChildHandover[]      @relation("handoverChild")
+  handoversSent         ChildHandover[]      @relation("handoverParent")
+  broadcastInbox        BroadcastRecipient[] @relation("broadcastInbox")
+  newsReads             NewsRead[]           @relation("newsReads")
 
   roles          UserRole[]
   accounts       Account[]
@@ -118,6 +131,9 @@ model User {
   blocksOut      Block[]               @relation("blocker")
   blocksIn       Block[]               @relation("blocked")
   rsvps          Rsvp[]
+  eventStaff     EventStaff[]
+  eventCheckIns  EventCheckIn[]        @relation("CheckedIn")
+  checkInsDone   EventCheckIn[]        @relation("CheckedInBy")
   parentLinks    FamilyLink[]          @relation("parent")
   childLinks     FamilyLink[]          @relation("child")
   vouchesGiven   Vouch[]
@@ -127,6 +143,8 @@ model User {
   auditActions   AuditLog[]
   recordRequests RecordChangeRequest[] @relation("recordRequester")
   recordReviews  RecordChangeRequest[] @relation("recordReviewer")
+  nameRequests   NameChangeRequest[]   @relation("nameRequester")
+  nameReviews    NameChangeRequest[]   @relation("nameReviewer")
   positions      UserPosition[]        @relation("positionHolder")
   positionGrants UserPosition[]        @relation("positionGrantor")
   broadcasts     Broadcast[]
@@ -137,6 +155,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([state])
+  @@index([managedById])
 }
 
 // Auth.js account table (OAuth providers). Email OTP sign-in does not create rows here.
@@ -271,20 +290,23 @@ enum VerificationStatus {
 }
 
 model VerificationRequest {
-  id          String                 @id @default(cuid())
-  userId      String                 @unique
-  user        User                   @relation("applicant", fields: [userId], references: [id], onDelete: Cascade)
-  answers     Json
-  rosterScore Int?
-  rosterRowId String?
-  status      VerificationStatus     @default(PENDING)
-  reviewerId  String?
-  reviewer    User?                  @relation("reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
-  reviewNote  String?
-  submittedAt DateTime               @default(now())
-  decidedAt   DateTime?
-  evidence    VerificationEvidence[]
-  vouches     Vouch[]
+  id              String                 @id @default(cuid())
+  userId          String                 @unique
+  user            User                   @relation("applicant", fields: [userId], references: [id], onDelete: Cascade)
+  answers         Json
+  rosterScore     Int?
+  rosterRowId     String?
+  status          VerificationStatus     @default(PENDING)
+  reviewerId      String?
+  reviewer        User?                  @relation("reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote      String?
+  submittedAt     DateTime               @default(now())
+  decidedAt       DateTime?
+  /// Added: parent-only application. Not reviewed by admins; approved when
+  /// a linked child is approved and the link confirmed (parent-onboarding.ts).
+  followsChildren Boolean                @default(false)
+  evidence        VerificationEvidence[]
+  vouches         Vouch[]
 
   @@index([status, submittedAt])
 }
@@ -297,6 +319,8 @@ model VerificationEvidence {
   fileName    String
   mimeType    String
   size        Int
+  // Added: 卒業証書 (DIPLOMA) or any other supporting document
+  kind        EvidenceKind        @default(OTHER)
   // null while the request is undecided; set to decidedAt + 30 days (§6.3)
   deleteAfter DateTime?
   createdAt   DateTime            @default(now())
@@ -366,7 +390,7 @@ model Block {
 }
 
 model Event {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   titleJa         String?
   titleEn         String?
   bodyJa          String?
@@ -379,12 +403,16 @@ model Event {
   rsvpDeadline    DateTime?
   targetRoles     RoleKey[] // empty = all members
   // Added: preferred over targetRoles when non-empty
-  targetAudiences AudienceKey[] @default([])
+  targetAudiences AudienceKey[]  @default([])
+  // Added: who it's for, same conditions as ニュース (src/lib/news-audience.ts)
+  audience        Json?
   createdById     String
-  createdBy       User          @relation(fields: [createdById], references: [id])
+  createdBy       User           @relation(fields: [createdById], references: [id])
   rsvps           Rsvp[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  staff           EventStaff[]
+  checkIns        EventCheckIn[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([startsAt])
 }
@@ -408,6 +436,32 @@ model Rsvp {
   @@unique([eventId, userId])
 }
 
+/// Members who may check people in at an event (besides admins).
+model EventStaff {
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([eventId, userId])
+  @@index([userId])
+}
+
+/// Attendance: one row when a member's QR ticket is scanned (or staff tick them).
+model EventCheckIn {
+  id            String   @id @default(cuid())
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation("CheckedIn", fields: [userId], references: [id], onDelete: Cascade)
+  checkedInById String?
+  checkedInBy   User?    @relation("CheckedInBy", fields: [checkedInById], references: [id], onDelete: SetNull)
+  checkedInAt   DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
 model NewsPost {
   id              String        @id @default(cuid())
   titleJa         String?
@@ -421,10 +475,19 @@ model NewsPost {
   pinned          Boolean       @default(false)
   publishedAt     DateTime?
   notifiedAt      DateTime? // added: set once the publish notification batch has gone out
+  // Added: hidden from members and never notified; admins can restore it
+  archivedAt      DateTime?
+  // Added: who receives it (src/lib/news-audience.ts AudienceSpec: groups,
+  // 学年, individual members). null = derive from targetAudiences/targetRoles.
+  audience        Json?
+  // Added: send a LINE/email notification when it goes live (now or at the
+  // reserved publishedAt); false = publish in the app only
+  notifyOnPublish Boolean       @default(true)
   createdById     String
   createdBy       User          @relation(fields: [createdById], references: [id])
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  reads           NewsRead[]
 
   @@index([publishedAt])
 }
@@ -517,24 +580,56 @@ enum BroadcastScope {
 
 // Added: notifications sent by members holding a position (history, limits).
 model Broadcast {
-  id              String         @id @default(cuid())
+  id              String               @id @default(cuid())
   senderId        String
-  sender          User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender          User                 @relation(fields: [senderId], references: [id], onDelete: Cascade)
   position        PositionKey? // null when sent by an admin
   scope           BroadcastScope
   targetRoles     RoleKey[] // ALL scope: empty = every member
   // Added: preferred over targetRoles when non-empty
-  targetAudiences AudienceKey[]  @default([])
+  targetAudiences AudienceKey[]        @default([])
   cohortId        String? // COHORT scope: the 学年
-  cohort          Cohort?        @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  cohort          Cohort?              @relation(fields: [cohortId], references: [id], onDelete: SetNull)
   title           String
   body            String
   recipientCount  Int
   lineCount       Int
   emailCount      Int
-  createdAt       DateTime       @default(now())
+  createdAt       DateTime             @default(now())
+  // Added: who received it and who has read it (read receipts)
+  recipients      BroadcastRecipient[]
+  // Added: set when the sender/admin edits it after sending (no re-notify)
+  editedAt        DateTime?
+  // Added: hidden from recipients' inboxes (kept for the sender / admins)
+  archivedAt      DateTime?
 
   @@index([senderId, createdAt])
+}
+
+// Added: one row per member a Broadcast was sent to; readAt = opened in the
+// app. Notifications carry no content, so members read it in the app.
+model BroadcastRecipient {
+  broadcastId String
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("broadcastInbox", fields: [userId], references: [id], onDelete: Cascade)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@id([broadcastId, userId])
+  @@index([userId, readAt])
+}
+
+// Added: members who have opened a news post (read counts for admins).
+model NewsRead {
+  postId String
+  post   NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User     @relation("newsReads", fields: [userId], references: [id], onDelete: Cascade)
+  readAt DateTime @default(now())
+
+  @@id([postId, userId])
+  @@index([userId])
 }
 
 // Added: 学年 (class), created on first use. Numbered 第N期 by the year the
@@ -623,4 +718,48 @@ model Company {
   createdById String?
   entries     WorkEntry[]
   createdAt   DateTime    @default(now())
+}
+
+// Added: names are fixed once a member is approved; changes go through the
+// committee. `current` / `proposed` hold the name parts (src/lib/names.ts).
+model NameChangeRequest {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation("nameRequester", fields: [userId], references: [id], onDelete: Cascade)
+  current    Json
+  proposed   Json
+  reason     String
+  status     ChangeRequestStatus @default(PENDING)
+  reviewerId String?
+  reviewer   User?               @relation("nameReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote String?
+  createdAt  DateTime            @default(now())
+  decidedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+// Added: type of an uploaded verification document.
+enum EvidenceKind {
+  DIPLOMA
+  OTHER
+}
+
+// Added: a parent hands a child account they manage over to the child. The
+// emailed link attaches the child's own email to the account (or merges it
+// into the child's own account if that email is already registered).
+model ChildHandover {
+  id        String    @id @default(cuid())
+  childId   String
+  child     User      @relation("handoverChild", fields: [childId], references: [id], onDelete: Cascade)
+  parentId  String
+  parent    User      @relation("handoverParent", fields: [parentId], references: [id], onDelete: Cascade)
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([childId])
 }

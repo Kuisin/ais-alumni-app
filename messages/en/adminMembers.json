@@ -115,7 +115,8 @@
       "CURRENT_PARENT": "Parent",
       "TEACHER": "Teacher / Staff"
     },
-    "schoolEmailVerified": "Verified"
+    "schoolEmailVerified": "Verified",
+    "stageFromHistory": "Worked out from the member's schools & work."
   },
   "status": {
     "title": "Account status",
@@ -159,7 +160,8 @@
     "working": "Merging…",
     "notFound": "No account found with that ID or email.",
     "same": "That's this same account.",
-    "notSelf": "You can't merge away your own account."
+    "notSelf": "You can't merge away your own account.",
+    "keepsManaged": "Keep the account the member signs in to; a parent-managed account can't absorb it."
   },
   "audit": {
     "title": "Audit trail",
@@ -221,5 +223,34 @@
       "cohort": "Choose the 学年 they represent."
     },
     "cohort": "学年 (class)"
+  },
+  "nameRequests": {
+    "title": "Name changes",
+    "description": "Members can't change their name after approval. Review requests here; approving applies the new name.",
+    "tabsLabel": "Name change requests",
+    "tabs": {
+      "pending": "To review",
+      "decided": "Decided"
+    },
+    "emptyPending": "No requests to review.",
+    "emptyHint": "Requests appear here when members ask for a name change from their profile.",
+    "emptyDecided": "No decided requests.",
+    "decision": "Decision",
+    "decisions": {
+      "APPROVE": "Approve and apply",
+      "REJECT": "Reject"
+    },
+    "noteOptional": "Note (optional, sent to the member)",
+    "noteRequired": "Reason (sent to the member)",
+    "submit": {
+      "APPROVE": "Approve and apply",
+      "REJECT": "Reject"
+    },
+    "approved": "Approved; the name has been updated.",
+    "rejected": "Rejected.",
+    "errors": {
+      "noteRequired": "Please give a reason when rejecting.",
+      "decided": "This request has already been decided."
+    }
   }
 }

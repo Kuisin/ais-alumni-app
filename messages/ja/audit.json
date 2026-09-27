@@ -13,7 +13,7 @@
     "teacher": "教職員の登録",
     "record_request": "在籍情報の修正依頼",
     "event": "イベント",
-    "news": "お知らせ",
+    "news": "ニュース",
     "broadcast": "お知らせ送信",
     "cohort": "学年",
     "roster": "名簿",
@@ -26,7 +26,7 @@
     "User": "会員",
     "VerificationRequest": "入会申請",
     "Event": "イベント",
-    "NewsPost": "お知らせ",
+    "NewsPost": "ニュース",
     "Broadcast": "送信",
     "Cohort": "学年",
     "school": "学校",
@@ -69,10 +69,10 @@
       "csv_export": "参加者CSVを出力"
     },
     "news": {
-      "create": "お知らせを作成",
-      "update": "お知らせを編集",
-      "delete": "お知らせを削除",
-      "notify": "お知らせを通知"
+      "create": "ニュースを作成",
+      "update": "ニュースを編集",
+      "delete": "ニュースを削除",
+      "notify": "ニュースを通知"
     },
     "broadcast": {
       "sent": "お知らせを送信"

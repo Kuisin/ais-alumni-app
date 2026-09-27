@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { ChildrenReview } from "@/components/admin/children-review";
+import { ManagedDuplicate } from "@/components/admin/managed-duplicate";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
@@ -227,6 +229,30 @@ export default async function VerificationDetailPage({
             </dl>
           </Section>
 
+          <ManagedDuplicate
+            requestId={request.id}
+            applicant={{
+              id: user.id,
+              nameRomaji: user.nameRomaji,
+              nameKanji: user.nameKanji,
+              nameAtAis: user.nameAtAis,
+              dateOfBirth: user.dateOfBirth,
+            }}
+          />
+
+          {user.roles.some(
+            (r) =>
+              r.role === RoleKey.CURRENT_PARENT ||
+              r.role === RoleKey.FORMER_PARENT,
+          ) ? (
+            <Section title={t("children.title")}>
+              <p className="text-sm text-slate-600">
+                {t("children.description")}
+              </p>
+              <ChildrenReview parentId={user.id} />
+            </Section>
+          ) : null}
+
           <Section title={t("detail.answers")}>
             <AnswersView answers={request.answers} />
           </Section>
@@ -398,6 +424,9 @@ export default async function VerificationDetailPage({
                     >
                       {e.fileName}
                     </a>
+                    {e.kind === "DIPLOMA" ? (
+                      <Badge tone="green">{t("badges.diploma")}</Badge>
+                    ) : null}
                     <span className="text-xs text-slate-500">
                       {e.mimeType} · {formatSize(e.size)}
                       {e.deleteAfter

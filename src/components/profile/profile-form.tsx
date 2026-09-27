@@ -6,15 +6,12 @@ import {
   type ProfileActionState,
   updateProfileAction,
 } from "@/app/actions/profile";
-import { NameFields } from "@/components/names/name-fields";
 import { Card } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import type { NameParts } from "@/lib/names";
 import { SOCIAL_KEYS, type SocialLinks } from "./social-links";
 
-export type ProfileFormValues = Record<keyof NameParts, string> & {
-  nameAtAis: string;
+export type ProfileFormValues = {
   bio: string;
   phone: string;
   autoAcceptSameYear: boolean;
@@ -57,27 +54,6 @@ export function ProfileForm({
           <legend className="mb-1 text-lg font-semibold">
             {t("sections.basic")}
           </legend>
-          <NameFields
-            values={values}
-            error={(f) =>
-              state?.fields?.includes(f) ? t("errors.invalid") : null
-            }
-          />
-          <Field
-            id="nameAtAis"
-            label={t("fields.nameAtAis")}
-            hint={t("hints.nameAtAis")}
-            error={err("nameAtAis")}
-          >
-            {(a) => (
-              <Input
-                {...a}
-                name="nameAtAis"
-                defaultValue={values.nameAtAis}
-                maxLength={100}
-              />
-            )}
-          </Field>
           <Field
             id="bio"
             label={t("fields.bio")}

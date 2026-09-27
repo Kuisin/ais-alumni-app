@@ -9,13 +9,14 @@ import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, type RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import {
-  AUDIENCE_KEYS,
+  MEMBER_FILTER_OPTIONS,
   parseMemberFilter,
   roleLabelKey,
   roleRowWhere,
 } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
+import { toKatakana } from "@/lib/names";
 
 export async function generateMetadata({
   params,
@@ -72,6 +73,7 @@ export default async function AdminMembersPage({
         { nameRomaji: { contains: q, mode: "insensitive" } },
         { nameKanji: { contains: q, mode: "insensitive" } },
         { nameAtAis: { contains: q, mode: "insensitive" } },
+        { nameKana: { contains: toKatakana(q) } },
         { primaryEmail: { contains: q, mode: "insensitive" } },
         { id: q },
       ],
@@ -230,7 +232,7 @@ export default async function AdminMembersPage({
               </label>
               <Select id="f-role" name="role" defaultValue={role ?? ""}>
                 <option value="">{t("filters.any")}</option>
-                {AUDIENCE_KEYS.map((r) => (
+                {MEMBER_FILTER_OPTIONS.map((r) => (
                   <option key={r} value={r}>
                     {tr(`audience.${r}`)}
                   </option>
@@ -322,7 +324,7 @@ export default async function AdminMembersPage({
           </ul>
 
           {/* lg+: table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
+          <div className="relative hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
             <table className="w-full text-sm">
               <caption className="sr-only">{t("title")}</caption>
               <thead className="bg-slate-50 text-left text-xs text-slate-600">

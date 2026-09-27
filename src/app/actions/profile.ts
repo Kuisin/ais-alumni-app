@@ -14,9 +14,8 @@ import {
   type SocialLinks,
 } from "@/components/profile/social-links";
 import type { Prisma } from "@/generated/prisma/client";
-import { LifeStage, RoleKey } from "@/generated/prisma/enums";
+import { RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
@@ -49,8 +48,9 @@ const socialUrl = z
   .max(SOCIAL_URL_MAX)
   .refine((v) => v === "" || isHttpUrl(v));
 
-const ProfileSchema = nameFormSchema.extend({
-  nameAtAis: optionalText(100),
+// Names are fixed after approval: they change through a name request
+// (src/app/actions/name-requests.ts), never here.
+const ProfileSchema = z.object({
   bio: optionalText(1000),
   phone: optionalText(40).refine((v) => v === null || /^[0-9+\-() ]+$/.test(v)),
   autoAcceptSameYear: z.boolean(),
@@ -59,11 +59,6 @@ const ProfileSchema = nameFormSchema.extend({
   facebook: socialUrl,
   x: socialUrl,
   website: socialUrl,
-});
-
-const StageSchema = z.object({
-  currentStage: z.enum(LifeStage),
-  currentStageDetail: optionalText(200),
 });
 
 async function member(): Promise<CurrentUser | null> {
@@ -84,8 +79,6 @@ export async function updateProfileAction(
   const me = await member();
   if (!me) return FORBIDDEN;
   const parsed = ProfileSchema.safeParse({
-    ...nameFormInput(formData),
-    nameAtAis: field(formData, "nameAtAis"),
     bio: field(formData, "bio"),
     phone: field(formData, "phone"),
     autoAcceptSameYear: formData.get("autoAcceptSameYear") === "on",
@@ -104,8 +97,6 @@ export async function updateProfileAction(
   await db.user.update({
     where: { id: me.id },
     data: {
-      ...nameColumns(d),
-      nameAtAis: d.nameAtAis,
       bio: d.bio,
       phone: d.phone,
       autoAcceptSameYear: d.autoAcceptSameYear,
@@ -165,46 +156,6 @@ export async function removeAvatarAction(): Promise<void> {
   refresh();
 }
 
-function isFormerStudent(me: CurrentUser): boolean {
+function _isFormerStudent(me: CurrentUser): boolean {
   return me.roles.some((r) => r.role === RoleKey.FORMER_STUDENT);
-}
-
-/** Current stage + private detail (§7). Bumps currentStageUpdatedAt. */
-export async function updateStageAction(
-  _prev: ProfileActionState,
-  formData: FormData,
-): Promise<ProfileActionState> {
-  const me = await member();
-  if (!me || !isFormerStudent(me)) return FORBIDDEN;
-  const parsed = StageSchema.safeParse({
-    currentStage: field(formData, "currentStage"),
-    currentStageDetail: field(formData, "currentStageDetail"),
-  });
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: "errors.validation",
-      fields: [...new Set(parsed.error.issues.map((i) => String(i.path[0])))],
-    };
-  }
-  await db.userRole.update({
-    where: { userId_role: { userId: me.id, role: RoleKey.FORMER_STUDENT } },
-    data: { ...parsed.data, currentStageUpdatedAt: new Date() },
-  });
-  refresh();
-  return { ok: true, message: "stageSaved" };
-}
-
-/** "My status is still current" — only bumps currentStageUpdatedAt (§7). */
-export async function confirmStageAction(
-  _prev: ProfileActionState,
-): Promise<ProfileActionState> {
-  const me = await member();
-  if (!me || !isFormerStudent(me)) return FORBIDDEN;
-  await db.userRole.update({
-    where: { userId_role: { userId: me.id, role: RoleKey.FORMER_STUDENT } },
-    data: { currentStageUpdatedAt: new Date() },
-  });
-  refresh();
-  return { ok: true, message: "stageConfirmed" };
 }

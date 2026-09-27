@@ -6,7 +6,7 @@ import { reminderWindows, type Window } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
 import { dueScheduledNews, sendNewsNotification } from "@/lib/news";
 import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /**
  * Daily at 09:00 JST (vercel.ts: "0 0 * * *" UTC).
@@ -65,7 +65,7 @@ async function remind(
                   location: event.location,
                 })
               : t(`${key}.text`, { title, when }),
-            url: appUrl(`/${locale}/app/events/${event.id}`),
+            url: publicUrl(`/${locale}/app/events/${event.id}`),
           };
         },
       });

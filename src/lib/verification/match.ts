@@ -72,3 +72,29 @@ export async function computeRosterMatch(
   }
   return best;
 }
+
+/**
+ * A child's record (entered by a parent) against unclaimed student roster
+ * rows. Returns the best row and score, or null if there is nothing to
+ * compare with.
+ */
+export async function matchStudentRoster(
+  child: RosterApplicant,
+): Promise<{ rowId: string; score: number } | null> {
+  const rows = await db.rosterEntry.findMany({
+    where: {
+      kind: { in: [RoleKey.FORMER_STUDENT, RoleKey.CURRENT_STUDENT] },
+      claimedByUserId: null,
+    },
+    select: {
+      id: true,
+      kind: true,
+      nameRomaji: true,
+      nameKanji: true,
+      dateOfBirth: true,
+      yearsFrom: true,
+      yearsTo: true,
+    },
+  });
+  return rows.length ? bestRosterMatch(child, rows) : null;
+}

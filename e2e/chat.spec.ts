@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { Client } from "pg";
 import { clearMailbox, createActiveGraduate, signInWithEmail } from "./helpers";
 
 const mail = (email: string) =>
@@ -52,10 +53,11 @@ test("graduates are put in their group chat and can talk", async ({
   await expect(hanako.getByText(reply)).toBeVisible({ timeout: 15_000 });
 
   // Authors can delete their messages.
+  // Tap a bubble for its actions (like LINE), then delete.
+  await hanako.getByRole("button", { name: hello }).click();
   hanako.once("dialog", (d) => d.accept());
   await hanako
     .getByRole("button", { name: /^Delete Suzuki, Hanako's message/ })
-    .last()
     .click();
   await expect(hanako.getByText(hello)).toHaveCount(0);
   await expect(
@@ -78,3 +80,73 @@ test("graduates are put in their group chat and can talk", async ({
   expect(digest).toContain("/app/chat");
   expect(digest).not.toContain(late);
 });
+
+test("1:1 talk between mutual followers, with 既読", async ({ browser }) => {
+  const stamp = Date.now();
+  const a = await createActiveGraduate(`Dm A${stamp}`, "1991-01-01");
+  const b = await createActiveGraduate(`Dm B${stamp}`, "1991-02-02");
+  const c = await createActiveGraduate(`Dm C${stamp}`, "1991-03-03");
+  await sql(
+    `INSERT INTO "Follow" (id, "followerId", "followeeId", status) VALUES
+     ($1, $3, $4, 'ACCEPTED'), ($2, $4, $3, 'ACCEPTED')`,
+    [`f1${stamp}`, `f2${stamp}`, a.id, b.id],
+  );
+
+  // A starts the talk from B's profile.
+  const pa = await browser.newPage();
+  await signInWithEmail(pa, a.email);
+  await pa.goto(`/en/app/members/${c.id}`);
+  await expect(pa.getByRole("button", { name: "Message" })).toHaveCount(0);
+  await pa.goto(`/en/app/members/${b.id}`);
+  await pa.getByRole("button", { name: "Message" }).click();
+  await expect(pa).toHaveURL(/\/en\/app\/chat\/[^/]+$/);
+  const talkUrl = pa.url();
+  await expect(
+    pa.getByRole("heading", { name: `B${stamp}, Dm` }),
+  ).toBeVisible();
+  const hi = `Hi B ${stamp}`;
+  await pa.getByLabel("Message", { exact: true }).fill(hi);
+  await pa.getByLabel("Message", { exact: true }).press("Enter");
+  await expect(pa.getByText(hi)).toBeVisible();
+
+  // B finds it under Friends, unread, and reads it; A then sees 既読.
+  const pb = await browser.newPage();
+  await signInWithEmail(pb, b.email);
+  await pb.goto("/en/app/chat");
+  await pb.getByText("Friends", { exact: true }).click();
+  const row = pb.getByRole("link", { name: new RegExp(`^A${stamp}, Dm`) });
+  await expect(row.getByText(hi)).toBeVisible();
+  await expect(row.getByText(/unread$/)).toBeVisible();
+  await row.click();
+  await expect(pb.getByText(hi)).toBeVisible();
+  await expect(pa.getByText("Read", { exact: true })).toBeVisible({
+    timeout: 15_000,
+  });
+
+  // Admins can't open someone else's 1:1 talk.
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  const res = await admin.goto(talkUrl);
+  expect(res?.status()).toBe(404);
+
+  // After a block, nobody can write any more.
+  await sql(
+    `INSERT INTO "Block" (id, "blockerId", "blockedId") VALUES ($1, $2, $3)`,
+    [`b${stamp}`, b.id, a.id],
+  );
+  await pa.reload();
+  await expect(
+    pa.getByText("You can't exchange messages with this member."),
+  ).toBeVisible();
+  await expect(pa.getByLabel("Message", { exact: true })).toHaveCount(0);
+});
+
+async function sql(text: string, values: unknown[]) {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    await db.query(text, values);
+  } finally {
+    await db.end();
+  }
+}

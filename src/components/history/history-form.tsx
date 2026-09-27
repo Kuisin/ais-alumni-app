@@ -36,9 +36,12 @@ export function HistoryForm({
   kind,
   values,
   onSaved,
+  userId,
 }: {
   kind: "education" | "work";
   values?: HistoryValues;
+  /** admins editing another member's history */
+  userId?: string;
   /** called after a successful save */
   onSaved?: () => void;
 }) {
@@ -70,6 +73,7 @@ export function HistoryForm({
       noValidate
     >
       <input type="hidden" name="kind" value={kind} />
+      {userId ? <input type="hidden" name="userId" value={userId} /> : null}
       {values?.id ? <input type="hidden" name="id" value={values.id} /> : null}
       {kind === "education" ? (
         <div className="grid gap-4 sm:grid-cols-2">

@@ -15,7 +15,12 @@ export class MergeKeepsManagedError extends Error {
   }
 }
 
-export async function mergeUsers(fromId: string, toId: string): Promise<void> {
+export async function mergeUsers(
+  fromId: string,
+  toId: string,
+  /** force: an admin chose to keep a parent-managed account anyway */
+  opts: { force?: boolean } = {},
+): Promise<void> {
   if (fromId === toId) throw new Error("Cannot merge a user into itself");
   await db.$transaction(async (tx) => {
     const [from, to] = await Promise.all([
@@ -33,7 +38,15 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
     const fromSignsIn = Boolean(
       from.primaryEmail || from.lineUserId || from._count.accounts > 0,
     );
-    if (to.managedById && fromSignsIn) throw new MergeKeepsManagedError();
+    if (to.managedById && fromSignsIn) {
+      if (!opts.force) throw new MergeKeepsManagedError();
+      // Kept anyway: the member signs in to it now, so the parent no
+      // longer manages it (like a completed handover).
+      await tx.user.update({
+        where: { id: toId },
+        data: { managedById: null },
+      });
+    }
 
     await tx.account.updateMany({
       where: { userId: fromId },

@@ -1,5 +1,6 @@
 import {
   BadgeCheck,
+  Briefcase,
   ChevronRight,
   GraduationCap,
   HeartHandshake,
@@ -31,6 +32,7 @@ import {
   MemberStateControl,
 } from "@/components/admin/member-status";
 import { AdminSection, SectionNav } from "@/components/admin/section-nav";
+import { HistoryEditor } from "@/components/history/history-editor";
 import { AisRecord } from "@/components/profile/role-details";
 import { BackLink } from "@/components/ui/back-link";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
@@ -277,6 +279,11 @@ export default async function AdminMemberPage({
             icon: <GraduationCap className="size-4" />,
           },
           {
+            id: "history",
+            label: t("history.title"),
+            icon: <Briefcase className="size-4" />,
+          },
+          {
             id: "family",
             label: t("family.title"),
             icon: <HeartHandshake className="size-4" />,
@@ -457,6 +464,15 @@ export default async function AdminMemberPage({
                 </details>
               ) : null}
             </div>
+          </AdminSection>
+
+          <AdminSection
+            id="history"
+            title={t("history.title")}
+            icon={<Briefcase />}
+          >
+            <p className="mb-3 text-sm text-slate-600">{t("history.intro")}</p>
+            <HistoryEditor userId={user.id} admin />
           </AdminSection>
 
           <AdminSection

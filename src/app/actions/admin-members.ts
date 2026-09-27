@@ -41,6 +41,8 @@ export type AdminMemberFormState = {
   fieldErrors?: Record<string, string>;
   /** merge flow: both accounts shown for confirmation */
   preview?: { keep: MergeSide; duplicate: MergeSide };
+  /** merge flow: a safety check stopped it; the admin may bypass it */
+  blocked?: "keepsManaged";
 };
 
 async function errorText(e: unknown): Promise<string> {
@@ -570,11 +572,16 @@ export async function mergeMembersAction(
       ]);
       if (!keep || !dup) return { error: tc("errors.notFound") };
 
+      const force = str(fd, "force") === "on";
       try {
-        await mergeUsers(duplicateId, keepId);
+        await mergeUsers(duplicateId, keepId, { force });
       } catch (e) {
         if (e instanceof MergeKeepsManagedError)
-          return { ...prev, error: t("merge.keepsManaged") };
+          return {
+            ...prev,
+            error: t("merge.keepsManaged"),
+            blocked: "keepsManaged",
+          };
         throw e;
       }
       // mergeUsers leaves email/admin/notification settings on the kept
@@ -598,6 +605,7 @@ export async function mergeMembersAction(
         { ...USER, id: keepId },
         {
           duplicateId,
+          ...(force ? { bypassedCheck: "keepsManaged" } : {}),
           duplicateEmail: dup.primaryEmail,
           duplicateName: dup.nameRomaji,
         },

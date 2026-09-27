@@ -108,3 +108,76 @@ test("admins link and unlink family on the member page", async ({
   // Split: no longer the same family.
   expect(b.p === null || b.p !== b.c).toBe(true);
 });
+
+test("admins can merge into a parent-managed account by skipping the check", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const parentId = await createActiveMember(`Mgr Parent${stamp}`);
+  const managedId = await createActiveMember(`Managed Kid${stamp}`);
+  await sql(
+    `UPDATE "User" SET "managedById" = $2, "primaryEmail" = NULL WHERE id = $1`,
+    [managedId, parentId],
+  );
+  const own = await createActiveGraduate(`Own Kid${stamp}`, "2001-01-01");
+
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto(`/en/app/admin/members/${managedId}#merge`);
+  const section = admin.locator("#merge");
+  await section.getByLabel("Other account (ID or email)").fill(own.email);
+  await section.getByText("Keep this account", { exact: true }).click();
+  await section.getByRole("button", { name: "Review merge" }).click();
+  await section.getByRole("button", { name: "Merge accounts" }).click();
+  // Stopped by the check, with the option to skip it.
+  const bypass = section.getByRole("checkbox", {
+    name: /Merge anyway \(skip this check\)/,
+  });
+  await expect(bypass).toBeVisible();
+  await bypass.check();
+  await section.getByRole("button", { name: "Merge accounts" }).click();
+  await expect
+    .poll(async () => {
+      const [r] = await sql<{ email: string | null; managed: string | null }>(
+        `SELECT "primaryEmail" AS email, "managedById" AS managed FROM "User" WHERE id = $1`,
+        [managedId],
+      );
+      return r;
+    })
+    .toEqual({ email: own.email, managed: null });
+});
+
+test("admins edit a member's education and work", async ({ browser }) => {
+  const stamp = Date.now();
+  const m = await createActiveGraduate(`Hist Admin${stamp}`, "1995-01-01");
+  const company = `Admin Added Co ${stamp}`;
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto(`/en/app/admin/members/${m.id}#history`);
+  const section = admin.locator("#history");
+  await section.getByRole("button", { name: "Add a job" }).click();
+  await section
+    .getByRole("combobox", { name: "Company / organization" })
+    .fill(company);
+  await admin.getByRole("option", { name: `＋ Add “${company}”` }).click();
+  await section.getByLabel("Start year").fill("2022");
+  await section.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(section.getByText(company).first()).toBeVisible();
+
+  // Saved on the member (not the admin), and their current status follows.
+  await expect
+    .poll(async () => {
+      const [r] = await sql<{ stage: string | null; n: number }>(
+        `SELECT (SELECT "currentStage"::text FROM "UserRole" WHERE "userId" = $1 AND role = 'FORMER_STUDENT') AS stage,
+                (SELECT count(*)::int FROM "WorkEntry" WHERE "userId" = $1) AS n`,
+        [m.id],
+      );
+      return r;
+    })
+    .toEqual({ stage: "WORKING", n: 1 });
+  const [log] = await sql<{ n: number }>(
+    `SELECT count(*)::int AS n FROM "AuditLog" WHERE action = 'member.history_added' AND "targetId" = $1`,
+    [m.id],
+  );
+  expect(log.n).toBe(1);
+});

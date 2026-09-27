@@ -163,7 +163,11 @@
     "notFound": "No account found with that ID or email.",
     "same": "That's this same account.",
     "notSelf": "You can't merge away your own account.",
-    "keepsManaged": "Keep the account the member signs in to; a parent-managed account can't absorb it."
+    "keepsManaged": "Keep the account the member signs in to; a parent-managed account can't absorb it.",
+    "bypass": "Merge anyway (skip this check)",
+    "bypassHint": {
+      "keepsManaged": "Keeps the parent-managed account and moves the member's sign-in methods to it. The parent no longer manages it (as after a handover)."
+    }
   },
   "audit": {
     "title": "Audit trail",
@@ -313,5 +317,9 @@
       "notFound": "Not found.",
       "forbidden": "Not allowed."
     }
+  },
+  "history": {
+    "title": "Education & work",
+    "intro": "Add, edit or remove entries for the member (including who can see them). Changes are logged in the audit log and update their current status."
   }
 }

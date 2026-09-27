@@ -96,13 +96,22 @@ export async function SetupChecklist({
                   <div className="min-w-0">
                     <p className="font-medium">
                       {t(`items.${item.key}.title`)}
+                      {item.optional ? (
+                        <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+                          {t("optional")}
+                        </span>
+                      ) : null}
                       <span className="sr-only"> — {t("todo")}</span>
                     </p>
                     <p className="text-sm text-slate-600">
                       {t(`items.${item.key}.body`)}
                     </p>
                   </div>
-                  {item.href ? (
+                  {!item.href && item.optional ? (
+                    <span className="shrink-0 text-xs text-slate-500">
+                      {t("afterApproval")}
+                    </span>
+                  ) : item.href ? (
                     <Link
                       href={item.href}
                       className={buttonClass(

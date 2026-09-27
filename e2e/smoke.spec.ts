@@ -117,6 +117,12 @@ test("email sign-up → verification → admin approval → member dashboard", a
   // Setup checklist: email + form done, approval and LINE still open.
   const setup = member.getByRole("region", { name: "Getting set up" });
   await expect(setup.getByText("2 of 4 done")).toBeVisible();
+  // Linking family is optional, and opens once approved.
+  const family = setup
+    .getByRole("listitem")
+    .filter({ hasText: "Link your family" });
+  await expect(family.getByText("Optional", { exact: true })).toBeVisible();
+  await expect(family.getByText("Available after approval")).toBeVisible();
   await expect(setup.getByRole("link", { name: "Link LINE" })).toHaveAttribute(
     "href",
     /onboarding\/status#line/,
@@ -152,6 +158,9 @@ test("email sign-up → verification → admin approval → member dashboard", a
   // After approval the checklist grows to the profile tasks.
   const checklist = member.getByRole("region", { name: "Getting set up" });
   await expect(checklist.getByText("3 of 8 done")).toBeVisible();
+  await expect(
+    checklist.getByRole("link", { name: "Link family" }),
+  ).toHaveAttribute("href", /\/app\/family$/);
   await checklist.getByRole("link", { name: "Add", exact: true }).click();
   await expect(member).toHaveURL(/\/en\/app\/profile\/history/);
   // Search: test members from earlier runs fill the first page.

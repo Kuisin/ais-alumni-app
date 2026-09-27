@@ -16,14 +16,17 @@ const base: SetupInput = {
 };
 
 describe("setup checklist", () => {
-  it("before approval: email, application, approval, LINE", () => {
+  it("before approval: email, application, approval, LINE (+ family)", () => {
     const items = setupChecklist(base);
     expect(items.map((i) => i.key)).toEqual([
       "email",
       "apply",
       "approval",
       "line",
+      "family",
     ]);
+    // Family is optional and waits for approval (no link yet).
+    expect(items.at(-1)).toMatchObject({ optional: true, href: null });
     expect(setupProgress(items)).toEqual({
       done: 2,
       total: 4,
@@ -33,8 +36,8 @@ describe("setup checklist", () => {
       "/app/onboarding/status#line",
     );
   });
-  it("after approval adds profile tasks; parents also get family", () => {
-    const items = setupChecklist({ ...base, active: true, isParent: true });
+  it("after approval adds profile tasks; family is offered to everyone", () => {
+    const items = setupChecklist({ ...base, active: true });
     expect(items.map((i) => i.key)).toEqual([
       "email",
       "apply",
@@ -61,7 +64,12 @@ describe("setup checklist", () => {
   });
   it("leaves LINE out while LINE Login isn't configured", () => {
     const items = setupChecklist({ ...base, lineAvailable: false });
-    expect(items.map((i) => i.key)).toEqual(["email", "apply", "approval"]);
+    expect(items.map((i) => i.key)).toEqual([
+      "email",
+      "apply",
+      "approval",
+      "family",
+    ]);
   });
   it("complete when everything is done", () => {
     const all = setupChecklist({
@@ -74,7 +82,9 @@ describe("setup checklist", () => {
       hasHistory: true,
       followsSomeone: true,
     });
+    // The optional family link isn't needed to finish setup.
     expect(setupProgress(all).complete).toBe(true);
+    expect(all.find((i) => i.key === "family")?.href).toBe("/app/family");
   });
 });
 

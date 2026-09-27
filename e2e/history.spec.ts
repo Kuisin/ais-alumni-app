@@ -44,14 +44,14 @@ test("education & work history with shared school search", async ({
   await expect(detail).toBeDisabled();
   await add
     .getByRole("combobox", { name: "Industry", exact: true })
-    .selectOption({ label: "IT & telecommunications" });
-  await detail.selectOption({ label: "Software & SaaS" });
+    .selectOption({ label: "Software & telecommunications" });
+  await detail.selectOption({ label: "Software" });
   await add.getByLabel("Start year").fill("2020");
   await add.getByLabel("End year").fill("2023");
   await add.getByRole("button", { name: "Add", exact: true }).click();
   await expect(ken.getByText(company).first()).toBeVisible();
   await expect(
-    ken.getByText("IT & telecommunications › Software & SaaS").first(),
+    ken.getByText("Software & telecommunications › Software").first(),
   ).toBeVisible();
 
   const kenId = await ken.evaluate(async () => {

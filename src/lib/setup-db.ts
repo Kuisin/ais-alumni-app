@@ -36,5 +36,6 @@ export async function loadSetupChecklist(
         r.role === RoleKey.CURRENT_PARENT || r.role === RoleKey.FORMER_PARENT,
     ),
     hasFamilyLink: links > 0,
+    hasKanjiName: Boolean(user.nameKanji?.trim() && user.nameKana?.trim()),
   });
 }

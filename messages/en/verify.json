@@ -63,7 +63,7 @@
   },
   "hints": {
     "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",
-    "nameKanji": "If you have a name in kanji, enter it with its katakana reading (フリガナ). Leave it empty if you don't (e.g. international students).",
+    "nameKanji": "If you have a name in kanji, we recommend entering it with its katakana reading (フリガナ) so Japanese classmates and teachers can find you by name. After approval, changes need a request. Leave it empty if you don't have one (e.g. international students).",
     "nameAtAis": "If different from your current name (e.g. maiden name or nickname).",
     "dateOfBirth": "Used only for verification and age-appropriate privacy. Never shown to other members.",
     "roles": "Choose all that apply.",
@@ -260,5 +260,11 @@
     "class": "Class",
     "now": "(this year)"
   },
-  "choose": "Choose…"
+  "choose": "Choose…",
+  "recommended": "Recommended",
+  "kanjiReminder": {
+    "title": "No kanji / kana name yet",
+    "body": "You can send without it, but we recommend adding it so Japanese classmates and teachers can find you by name (adding it after approval needs a request). If you don't have a kanji name, just send.",
+    "action": "Go back and add it"
+  }
 }

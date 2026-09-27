@@ -19,6 +19,7 @@
     "@auth/prisma-adapter": "^2.11.3",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@supabase/supabase-js": "^2.117.2",
     "@vercel/blob": "^2.8.0",
     "jsqr": "^1.4.0",
     "lucide-react": "^1.48.0",

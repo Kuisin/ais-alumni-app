@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { AccountState, VerificationStatus } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
+import { syncChatMembership } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { mergeUsers } from "@/lib/merge";
 import { NOTIFY_USER_SELECT } from "@/lib/notify";
@@ -178,6 +179,12 @@ export async function decideVerificationAction(
       note: note || null,
     },
   );
+
+  // Approved members join their group chats right away (best-effort).
+  for (const id of [request.userId, ...parents.map((p) => p.parentId)])
+    await syncChatMembership(id).catch((e) =>
+      console.error("[admin-verify] chat sync failed", e),
+    );
 
   // A child registered by a parent can't sign in: the parent hears instead.
   if (!request.user.managedById)

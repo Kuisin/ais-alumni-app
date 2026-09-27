@@ -111,7 +111,14 @@
     },
     "description": "Write, publish and notify members about news. Drafts are not visible to members.",
     "emptyHint": "Create a post and publish it to show it in members' news list.",
-    "readOf": "Read {read} / {audience} in audience"
+    "readOf": "Read {read} / {audience} in audience",
+    "archiveTabs": "Posts to show",
+    "tabActive": "Live & drafts",
+    "tabArchived": "Archived",
+    "archivedBadge": "Archived",
+    "archive": "Archive",
+    "restore": "Restore",
+    "archivedHint": "Hidden from members and never notified."
   },
   "notify": {
     "title": "Publish & notify",

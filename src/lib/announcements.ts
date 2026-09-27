@@ -23,7 +23,11 @@ export const unreadCounts = cache(
   async (user: CurrentUser): Promise<{ news: number; messages: number }> => {
     const [messages, news] = await Promise.all([
       db.broadcastRecipient.count({
-        where: { userId: user.id, readAt: null },
+        where: {
+          userId: user.id,
+          readAt: null,
+          broadcast: { archivedAt: null },
+        },
       }),
       // News posted since the member joined that they haven't opened.
       db.newsPost.count({
@@ -45,7 +49,7 @@ export const unreadCounts = cache(
 export async function listMessages(userId: string, page = 1) {
   const [rows, total] = await Promise.all([
     db.broadcastRecipient.findMany({
-      where: { userId },
+      where: { userId, broadcast: { archivedAt: null } },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * MESSAGES_PAGE_SIZE,
       take: MESSAGES_PAGE_SIZE,
@@ -56,13 +60,16 @@ export async function listMessages(userId: string, page = 1) {
             id: true,
             title: true,
             createdAt: true,
+            editedAt: true,
             position: true,
             sender: { select: { nameRomaji: true, nameKanji: true } },
           },
         },
       },
     }),
-    db.broadcastRecipient.count({ where: { userId } }),
+    db.broadcastRecipient.count({
+      where: { userId, broadcast: { archivedAt: null } },
+    }),
   ]);
   return {
     rows,
@@ -89,7 +96,10 @@ export async function openMessage(user: CurrentUser, broadcastId: string) {
     where: { broadcastId_userId: { broadcastId, userId: user.id } },
     select: { readAt: true },
   });
-  if (!mine && b.senderId !== user.id && !user.isAdmin) return null;
+  const manager = b.senderId === user.id || user.isAdmin;
+  if (!mine && !manager) return null;
+  // Archived messages are hidden from recipients (the sender / admins keep them).
+  if (b.archivedAt && !manager) return null;
   if (mine && !mine.readAt) {
     await db.broadcastRecipient.update({
       where: { broadcastId_userId: { broadcastId, userId: user.id } },

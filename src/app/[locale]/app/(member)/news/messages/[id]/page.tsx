@@ -73,6 +73,11 @@ export default async function MessagePage({
             <time dateTime={b.createdAt.toISOString()}>
               {formatDateTime(b.createdAt, locale)}
             </time>
+            {b.editedAt ? (
+              <span className="ml-2 text-slate-500">
+                （{t("messages.edited")}）
+              </span>
+            ) : null}
           </Meta>
           <Meta icon={<Users />} label={t("messages.sentTo")}>
             {sentTo}

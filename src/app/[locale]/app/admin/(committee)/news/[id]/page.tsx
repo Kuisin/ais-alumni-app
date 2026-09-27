@@ -1,14 +1,18 @@
-import { Eye } from "lucide-react";
+import { Archive, ArchiveRestore, Eye } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { deleteNewsAction } from "@/app/actions/admin-content";
+import {
+  deleteNewsAction,
+  setNewsArchivedAction,
+} from "@/app/actions/admin-content";
 import { NewsReadsCard } from "@/components/admin/news-reads-card";
 import { NewsForm } from "@/components/news/news-form";
 import { NotifyPanel } from "@/components/news/notify-panel";
 import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
-import { Alert, PageHeader } from "@/components/ui/card";
+import { Alert, Badge, PageHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Link } from "@/i18n/navigation";
 import { effectiveAudiences } from "@/lib/audience";
 import { db } from "@/lib/db";
@@ -54,18 +58,39 @@ export default async function AdminNewsEditPage({
           description={
             <span className="flex flex-wrap gap-1">
               <NewsStatusBadges post={post} />
+              {post.archivedAt ? (
+                <Badge tone="amber">{t("news.archivedBadge")}</Badge>
+              ) : null}
             </span>
           }
           actions={
-            status === "published" ? (
-              <Link
-                href={`/app/news/${post.id}`}
-                className={buttonClass("secondary")}
-              >
-                <Eye aria-hidden="true" className="size-4" />
-                {t("news.viewAsMember")}
-              </Link>
-            ) : null
+            <>
+              {status === "published" && !post.archivedAt ? (
+                <Link
+                  href={`/app/news/${post.id}`}
+                  className={buttonClass("secondary")}
+                >
+                  <Eye aria-hidden="true" className="size-4" />
+                  {t("news.viewAsMember")}
+                </Link>
+              ) : null}
+              <form action={setNewsArchivedAction}>
+                <input type="hidden" name="id" value={post.id} />
+                <input
+                  type="hidden"
+                  name="archive"
+                  value={post.archivedAt ? "0" : "1"}
+                />
+                <SubmitButton variant="secondary">
+                  {post.archivedAt ? (
+                    <ArchiveRestore aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Archive aria-hidden="true" className="size-4" />
+                  )}
+                  {post.archivedAt ? t("news.restore") : t("news.archive")}
+                </SubmitButton>
+              </form>
+            </>
           }
         />
       </div>
@@ -91,12 +116,16 @@ export default async function AdminNewsEditPage({
             status !== "published" && "xl:sticky xl:top-20",
           )}
         >
-          <NotifyPanel
-            post={post}
-            status={status}
-            confirm={sp.notify === "1"}
-            locale={locale}
-          />
+          {post.archivedAt ? (
+            <Alert tone="warning">{t("news.archivedHint")}</Alert>
+          ) : (
+            <NotifyPanel
+              post={post}
+              status={status}
+              confirm={sp.notify === "1"}
+              locale={locale}
+            />
+          )}
           {status === "published" ? (
             <NewsReadsCard post={post} locale={locale} />
           ) : null}

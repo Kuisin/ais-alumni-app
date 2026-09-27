@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/read-receipts";
 import { AdminSection } from "@/components/admin/section-nav";
 import { broadcastAudienceText } from "@/components/broadcast/audience-text";
+import { ManageMessage } from "@/components/broadcast/manage-message";
 import { BackLink } from "@/components/ui/back-link";
 import { Alert, Card, PageHeader } from "@/components/ui/card";
 import { messageReceipts } from "@/lib/announcements";
@@ -96,6 +97,15 @@ export default async function SentMessagePage({
               {b.body}
             </p>
           </Card>
+          <div className="mt-6">
+            <ManageMessage
+              id={b.id}
+              title={b.title}
+              body={b.body}
+              archived={b.archivedAt !== null}
+              edited={b.editedAt !== null}
+            />
+          </div>
         </section>
 
         <AdminSection

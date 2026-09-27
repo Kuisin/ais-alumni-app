@@ -34,6 +34,7 @@
     "toAll": "All members",
     "backToList": "Messages for you",
     "senderView": "You sent this message (you are not a recipient).",
-    "newCount": "{count, plural, one {You have # new message} other {You have # new messages}}"
+    "newCount": "{count, plural, one {You have # new message} other {You have # new messages}}",
+    "edited": "Edited"
   }
 }

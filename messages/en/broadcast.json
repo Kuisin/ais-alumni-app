@@ -82,5 +82,28 @@
     "audience": "Sent to",
     "from": "From",
     "body": "Message"
+  },
+  "manage": {
+    "title": "Manage this message",
+    "archivedBadge": "Archived",
+    "editedBadge": "Edited",
+    "archivedHint": "It's hidden from recipients' “Messages for you”. Restore it to show it again (no new notification).",
+    "saved": "Saved. Recipients see it marked “Edited” (no new notification).",
+    "fieldTitle": "Title",
+    "fieldBody": "Message",
+    "editHint": "Editing doesn't send a new notification.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this message? It disappears for recipients and its read receipts are deleted. This can't be undone.",
+    "errors": {
+      "invalid": "Please check the fields.",
+      "forbidden": "You can't manage this message.",
+      "required": "Required.",
+      "tooLong": "Too long."
+    }
   }
 }

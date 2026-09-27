@@ -1,8 +1,11 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { AudienceKey } from "@/generated/prisma/enums";
+import { redirect } from "@/i18n/navigation";
+import { audit } from "@/lib/audit";
 import {
   type BroadcastPreview,
   getBroadcastRights,
@@ -121,4 +124,113 @@ export async function broadcastAction(
   });
   refresh();
   return { step: "sent", preview: result, message: "sent" };
+}
+
+// ---------------------------------------------------------------------------
+// Managing a sent message: its sender or an admin may edit, archive or delete.
+
+export type ManageMessageState = {
+  ok: boolean;
+  /** key in the "broadcast" namespace */
+  message: string;
+  fieldErrors?: Partial<Record<"title" | "body", string>>;
+} | null;
+
+async function manageable(id: string) {
+  const me = await actionActive();
+  const b = await db.broadcast.findUnique({
+    where: { id },
+    select: { id: true, senderId: true },
+  });
+  if (!b || (b.senderId !== me.id && !me.isAdmin)) return null;
+  return { me, b };
+}
+
+const editSchema = z.object({
+  id: z.string().min(1).max(64),
+  title: z.string().trim().min(1, "required").max(100, "tooLong"),
+  body: z.string().trim().min(1, "required").max(2000, "tooLong"),
+});
+
+/** Edit the title/body in place. Recipients see 「編集済み」; no new notification. */
+export async function editBroadcastAction(
+  _prev: ManageMessageState,
+  fd: FormData,
+): Promise<ManageMessageState> {
+  const parsed = editSchema.safeParse({
+    id: fd.get("id"),
+    title: fd.get("title"),
+    body: fd.get("body"),
+  });
+  if (!parsed.success) {
+    const fieldErrors: NonNullable<ManageMessageState>["fieldErrors"] = {};
+    for (const i of parsed.error.issues) {
+      const k = String(i.path[0]);
+      if (k === "title" || k === "body") fieldErrors[k] ??= i.message;
+    }
+    return { ok: false, message: "manage.errors.invalid", fieldErrors };
+  }
+  let ctx: Awaited<ReturnType<typeof manageable>>;
+  try {
+    ctx = await manageable(parsed.data.id);
+  } catch (e) {
+    if (e instanceof AuthError)
+      return { ok: false, message: "manage.errors.forbidden" };
+    throw e;
+  }
+  if (!ctx) return { ok: false, message: "manage.errors.forbidden" };
+  await db.broadcast.update({
+    where: { id: ctx.b.id },
+    data: {
+      title: parsed.data.title,
+      body: parsed.data.body,
+      editedAt: new Date(),
+    },
+  });
+  await audit(ctx.me.id, "broadcast.edited", {
+    type: "Broadcast",
+    id: ctx.b.id,
+  });
+  refresh();
+  return { ok: true, message: "manage.saved" };
+}
+
+/** Archive (hide from recipients) or restore. */
+export async function setBroadcastArchivedAction(fd: FormData): Promise<void> {
+  const id = z.string().min(1).max(64).parse(fd.get("id"));
+  const archive = fd.get("archive") === "1";
+  const ctx = await manageable(id);
+  if (!ctx) return;
+  await db.broadcast.update({
+    where: { id },
+    data: { archivedAt: archive ? new Date() : null },
+  });
+  await audit(
+    ctx.me.id,
+    archive ? "broadcast.archived" : "broadcast.restored",
+    { type: "Broadcast", id },
+  );
+  refresh();
+}
+
+/** Delete permanently, with its read receipts. */
+export async function deleteBroadcastAction(fd: FormData): Promise<void> {
+  const id = z.string().min(1).max(64).parse(fd.get("id"));
+  const ctx = await manageable(id);
+  if (!ctx) return;
+  const b = await db.broadcast.delete({
+    where: { id },
+    select: { title: true, recipientCount: true },
+  });
+  await audit(
+    ctx.me.id,
+    "broadcast.deleted",
+    { type: "Broadcast", id },
+    {
+      title: b.title,
+      recipients: b.recipientCount,
+    },
+  );
+  const locale = await getLocale();
+  redirect({ href: "/app/admin/notify", locale });
 }

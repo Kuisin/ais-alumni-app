@@ -418,6 +418,22 @@ export async function deleteNewsAction(fd: FormData): Promise<void> {
   return go("/app/admin/news?deleted=1");
 }
 
+/** Archive a news post (hidden from members, never notified) or restore it. */
+export async function setNewsArchivedAction(fd: FormData): Promise<void> {
+  const admin = await actionAdmin();
+  const id = Id.parse(str(fd, "id"));
+  const archive = str(fd, "archive") === "1";
+  await db.newsPost.update({
+    where: { id },
+    data: { archivedAt: archive ? new Date() : null },
+  });
+  await audit(admin.id, archive ? "news.archive" : "news.restore", {
+    type: "NewsPost",
+    id,
+  });
+  revalidateNews();
+}
+
 /**
  * Confirmed "Publish & notify" (§10.4, §11). Publishes now if the post is a
  * draft or scheduled, then notifies targeted ACTIVE members once.

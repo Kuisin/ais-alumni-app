@@ -1,17 +1,14 @@
-// Post the launch announcement (src/lib/launch-welcome.ts) as the first
-// message in each member-type group chat, under the sender's own account.
-// Dry run by default; --send writes. Safe to re-run: a group that already
-// has the message is skipped. If a group already has messages, the
-// announcement is dated just before the oldest one so it stays first.
-// Usage: DATABASE_URL=<db> pnpm chat:launch-welcome --from <email> [--send]
-import { ChatGroupKind } from "@/generated/prisma/enums";
-import { groupKey } from "@/lib/chat";
+// Create the launch announcement (src/lib/launch-welcome.ts) as one draft
+// ニュース post per member type, from the sender's account. Nothing reaches
+// members until the sender opens each draft in 管理 → ニュース and uses
+// 「公開して通知」. Dry run by default; --create writes. Safe to re-run: a
+// type whose post already exists is skipped.
+// Usage: DATABASE_URL=<db> pnpm news:launch-welcome --from <email> [--create]
+import type { Prisma } from "@/generated/prisma/client";
+import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
-import {
-  LAUNCH_KINDS,
-  LAUNCH_TITLE_JA,
-  launchMessage,
-} from "@/lib/launch-welcome";
+import { LAUNCH_TYPES, launchAudience, launchPost } from "@/lib/launch-welcome";
+import { legacyColumns } from "@/lib/news-audience";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -20,65 +17,66 @@ function arg(name: string): string | undefined {
 
 async function main() {
   const email = arg("--from")?.trim().toLowerCase();
-  const send = process.argv.includes("--send");
+  const create = process.argv.includes("--create");
   if (!email) throw new Error("Pass --from <sender email>.");
   const sender = await db.user.findUnique({
     where: { primaryEmail: email },
-    select: { id: true, state: true, nameKanji: true, nameRomaji: true },
+    select: {
+      id: true,
+      state: true,
+      isAdmin: true,
+      nameKanji: true,
+      nameRomaji: true,
+    },
   });
-  if (!sender || sender.state !== "ACTIVE")
-    throw new Error(`No active member with the email ${email}.`);
+  if (!sender || sender.state !== "ACTIVE" || !sender.isAdmin)
+    throw new Error(`No active admin with the email ${email}.`);
 
-  for (const kind of LAUNCH_KINDS) {
-    const key = groupKey(ChatGroupKind[kind]);
-    const group = await db.chatGroup.findUnique({
-      where: { key },
-      select: {
-        id: true,
-        _count: { select: { members: true } },
-        messages: {
-          orderBy: { createdAt: "asc" },
-          take: 1,
-          select: { createdAt: true },
-        },
+  for (const type of LAUNCH_TYPES) {
+    const post = launchPost(type, sender);
+    const audience = launchAudience(type);
+    const existing = await db.newsPost.findFirst({
+      where: { titleJa: post.titleJa },
+      select: { id: true },
+    });
+    if (existing) {
+      console.log(`${type}: already exists (${existing.id}) — skipped.`);
+      continue;
+    }
+    if (!create) {
+      console.log(
+        `\n===== ${type} → ${audience.groups.join(", ")} =====\n` +
+          `# ${post.titleJa}\n\n${post.bodyJa}\n\n# ${post.titleEn}\n\n${post.bodyEn}`,
+      );
+      continue;
+    }
+    const row = await db.newsPost.create({
+      data: {
+        ...post,
+        publishedAt: null, // draft
+        pinned: true,
+        notifyOnPublish: true,
+        allowComments: true,
+        audience: audience as Prisma.InputJsonValue,
+        ...legacyColumns(audience),
+        createdById: sender.id,
       },
+      select: { id: true },
     });
-    const already = group
-      ? await db.chatMessage.count({
-          where: {
-            groupId: group.id,
-            userId: sender.id,
-            body: { startsWith: LAUNCH_TITLE_JA },
-            deletedAt: null,
-          },
-        })
-      : 0;
-    const members = group?._count.members ?? 0;
-    if (already) {
-      console.log(`${kind}: already posted — skipped.`);
-      continue;
-    }
-    const body = launchMessage(kind, sender);
-    if (!send) {
-      console.log(`\n===== ${kind} (${members} member(s)) =====\n${body}`);
-      continue;
-    }
-    const target =
-      group ??
-      (await db.chatGroup.create({
-        data: { key, kind: ChatGroupKind[kind] },
-        select: { id: true },
-      }));
-    const oldest = group?.messages[0]?.createdAt;
-    const now = new Date();
-    const createdAt =
-      oldest && oldest <= now ? new Date(oldest.getTime() - 1000) : now;
-    await db.chatMessage.create({
-      data: { groupId: target.id, userId: sender.id, body, createdAt },
-    });
-    console.log(`${kind}: posted to ${members} member(s).`);
+    await audit(
+      sender.id,
+      "news.create",
+      { type: "NewsPost", id: row.id },
+      {
+        title: post.titleJa,
+        delivery: "DRAFT",
+        audience: audience as Prisma.InputJsonValue,
+        via: "scripts/launch-welcome.ts",
+      },
+    );
+    console.log(`${type}: draft created → /ja/app/admin/news/${row.id}`);
   }
-  if (!send) console.log("\nDry run. Add --send to post these messages.");
+  if (!create) console.log("\nDry run. Add --create to save these as drafts.");
   await db.$disconnect();
 }
 

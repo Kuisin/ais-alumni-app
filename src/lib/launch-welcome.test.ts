@@ -1,34 +1,49 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CHAT_MESSAGE } from "./chat";
-import { LAUNCH_KINDS, LAUNCH_TITLE_JA, launchMessage } from "./launch-welcome";
+import { LAUNCH_TYPES, launchAudience, launchPost } from "./launch-welcome";
+import { renderMarkdown } from "./markdown";
+import { audienceSpecSchema } from "./news-audience";
 
 const sender = { nameKanji: "山田太郎", nameRomaji: "Taro Yamada" };
 
-describe("launch welcome message", () => {
-  it.each(LAUNCH_KINDS)("fits one chat message for %s", (kind) => {
-    const text = launchMessage(kind, sender);
-    expect(text.length).toBeLessThanOrEqual(MAX_CHAT_MESSAGE);
-    expect(text.startsWith(LAUNCH_TITLE_JA)).toBe(true);
-    expect(text).toContain("【かんたんな使い方】");
-    expect(text).toContain("[Getting started]");
-    expect(text).toContain("— 山田太郎");
-    expect(text).toContain("— Taro Yamada");
+describe("launch welcome news", () => {
+  it.each(LAUNCH_TYPES)("is a complete bilingual post for %s", (type) => {
+    const p = launchPost(type, sender);
+    expect(p.titleJa.length).toBeLessThanOrEqual(200);
+    expect(p.titleEn.length).toBeLessThanOrEqual(200);
+    expect(p.bodyJa).toContain("## かんたんな使い方");
+    expect(p.bodyEn).toContain("## Getting started");
+    expect(p.bodyJa).toContain("— 山田太郎");
+    expect(p.bodyEn).toContain("— Taro Yamada");
+    expect(renderMarkdown(p.bodyJa)).toContain("<ol>");
+    expect(audienceSpecSchema.safeParse(launchAudience(type)).success).toBe(
+      true,
+    );
   });
 
-  it("tells parents about linking family, not graduates", () => {
-    expect(launchMessage("CURRENT_PARENTS", sender)).toContain("お子さま");
-    expect(launchMessage("FORMER_STUDENTS", sender)).toContain("学歴・職歴");
-    expect(launchMessage("FORMER_STUDENTS", sender)).not.toContain("お子さま");
+  it("targets one member type per post", () => {
+    expect(launchAudience("TEACHERS").groups).toEqual([
+      "TEACHER_CURRENT",
+      "TEACHER_FORMER",
+    ]);
+    expect(launchAudience("FORMER_STUDENTS").groups).toEqual([
+      "FORMER_STUDENT",
+    ]);
+  });
+
+  it("tells parents about linking family, graduates about work history", () => {
+    expect(launchPost("CURRENT_PARENTS", sender).bodyJa).toContain("お子さま");
+    expect(launchPost("FORMER_STUDENTS", sender).bodyJa).toContain(
+      "学歴・職歴",
+    );
+    expect(launchPost("FORMER_STUDENTS", sender).bodyJa).not.toContain(
+      "お子さま",
+    );
   });
 
   it("falls back to the other name and drops a missing signature", () => {
-    const text = launchMessage("TEACHERS", {
-      nameKanji: null,
-      nameRomaji: "Taro Yamada",
-    });
-    expect(text).toContain("— Taro Yamada\n\n――");
-    expect(
-      launchMessage("TEACHERS", { nameKanji: null, nameRomaji: null }),
-    ).not.toContain("— ");
+    const p = launchPost("TEACHERS", { nameKanji: null, nameRomaji: "Taro" });
+    expect(p.bodyJa).toContain("— Taro");
+    const none = launchPost("TEACHERS", { nameKanji: null, nameRomaji: null });
+    expect(none.bodyEn).not.toContain("— ");
   });
 });

@@ -6,6 +6,7 @@ import {
   PositionKey,
   RoleKey,
 } from "@/generated/prisma/enums";
+import { AVATAR_SELECT } from "@/lib/avatar";
 import { desiredGroups, directKey, isAdult } from "@/lib/chat";
 import { db } from "@/lib/db";
 import {
@@ -316,6 +317,6 @@ export async function directChatCandidates(meId: string) {
       managedById: null,
     },
     orderBy: { nameRomaji: "asc" },
-    select: { id: true, nameRomaji: true, nameKanji: true, avatarUrl: true },
+    select: { nameRomaji: true, nameKanji: true, ...AVATAR_SELECT },
   });
 }

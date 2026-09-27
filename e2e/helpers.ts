@@ -31,12 +31,18 @@ export async function clearMailbox(email: string): Promise<void> {
  * Forget earlier codes for a test address so repeated runs aren't blocked by
  * the sign-in code rate limit (5/hour, 30 s cooldown). Test database only.
  */
-async function resetCodes(email: string): Promise<void> {
+async function resetCodes(email: string, locale?: string): Promise<void> {
   if (!email.endsWith("@example.com")) return;
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();
   try {
     await db.query('DELETE FROM "OtpCode" WHERE email = $1', [email]);
+    // Members see the app in their saved language: use the page's.
+    if (locale)
+      await db.query(
+        'UPDATE "User" SET locale = $2::"Locale" WHERE "primaryEmail" = $1',
+        [email, locale],
+      );
   } finally {
     await db.end();
   }
@@ -57,14 +63,19 @@ export async function resetBroadcasts(email: string): Promise<void> {
   }
 }
 
-/** Email-code sign-in from the English sign-in page (/en/app). */
+/**
+ * Email-code sign-in from the English sign-in page (/en/app), or from
+ * where `from` (a signed-out page) sends us.
+ */
 export async function signInWithEmail(
   page: Page,
   email: string,
+  from = "/en/app",
 ): Promise<void> {
   await clearMailbox(email);
-  await resetCodes(email);
-  await page.goto("/en/app");
+  const locale = /^(?:https?:\/\/[^/]+)?\/(ja|en)\//.exec(from)?.[1];
+  await resetCodes(email, locale);
+  await page.goto(from);
   await page.getByLabel("Email address").fill(email);
   await page.getByRole("button", { name: "Email me a sign-in code" }).click();
   const code = await readCode(email);

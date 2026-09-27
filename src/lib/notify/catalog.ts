@@ -80,6 +80,8 @@ export const NOTIFY_KINDS = {
   NAME_REQUEST_REJECTED: { category: "account", emoji: "📋" },
   BIRTH_DATE_REQUEST_APPROVED: { category: "account", emoji: "✅" },
   BIRTH_DATE_REQUEST_REJECTED: { category: "account", emoji: "📋" },
+  GENDER_REQUEST_APPROVED: { category: "account", emoji: "✅" },
+  GENDER_REQUEST_REJECTED: { category: "account", emoji: "📋" },
   RECORD_REQUEST_APPROVED: { category: "account", emoji: "✅" },
   RECORD_REQUEST_REJECTED: { category: "account", emoji: "📋" },
   // News
@@ -106,6 +108,7 @@ export const NOTIFY_KINDS = {
   // Admin work
   NAME_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
   BIRTH_DATE_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
+  GENDER_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
   RECORD_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
 } as const satisfies Record<string, KindSpec>;
 

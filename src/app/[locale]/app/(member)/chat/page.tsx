@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ChatList, type ChatListRow } from "@/components/chat/chat-list";
-import { avatarSrc } from "@/components/profile/avatar-src";
 import { ChatGroupKind } from "@/generated/prisma/enums";
+import { AVATAR_SELECT, loadConnections, photoFor } from "@/lib/avatar";
 import { KIND_ORDER } from "@/lib/chat";
 import {
   chatMentionedGroups,
@@ -50,7 +50,7 @@ export default async function ChatListPage({
         take: 1,
         select: {
           user: {
-            select: { nameRomaji: true, nameKanji: true, avatarUrl: true },
+            select: { nameRomaji: true, nameKanji: true, ...AVATAR_SELECT },
           },
         },
       },
@@ -67,9 +67,10 @@ export default async function ChatListPage({
       },
     },
   });
-  const [unread, mentioned] = await Promise.all([
+  const [unread, mentioned, conn] = await Promise.all([
     chatUnreadByGroup(user.id),
     chatMentionedGroups(user.id),
+    loadConnections(user.id),
   ]);
 
   const rows: ChatListRow[] = groups
@@ -91,7 +92,7 @@ export default async function ChatListPage({
         name: direct
           ? (other?.nameRomaji ?? other?.nameKanji ?? "—")
           : chatGroupName(t, g, locale),
-        avatar: direct ? avatarSrc(other?.avatarUrl) : null,
+        avatar: direct && other ? photoFor(conn, other) : null,
         memberCount: g._count.members,
         preview: last
           ? direct && last.userId !== user.id

@@ -99,6 +99,11 @@ model User {
   nameAtAis             String?
   dateOfBirth           DateTime?            @db.Date
   avatarUrl             String?
+  /// profile photo shown to every member; otherwise only to family and
+  /// follow connections (src/lib/avatar.ts)
+  avatarPublic          Boolean              @default(false)
+  /// MALE | FEMALE | OTHER (default profile icon); null = not given
+  gender                String?
   bio                   String?
   phone                 String?
   socialLinks           Json?
@@ -149,6 +154,8 @@ model User {
   invitesSent          Invite[]              @relation("invitesSent")
   inviteUsed           Invite?               @relation("inviteUsed")
   birthDateReviews     BirthDateRequest[]    @relation("birthDateReviewer")
+  genderRequests       GenderRequest[]       @relation("genderRequester")
+  genderReviews        GenderRequest[]       @relation("genderReviewer")
   chatMessages         ChatMessage[]         @relation("chatMessages")
   chatDeleted          ChatMessage[]         @relation("chatDeleted")
   eventCheckIns        EventCheckIn[]        @relation("CheckedIn")
@@ -1089,4 +1096,24 @@ model ChildHandover {
   createdAt DateTime  @default(now())
 
   @@index([childId])
+}
+
+/// 性別 change requests (fixed after the application, like the birth date).
+model GenderRequest {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation("genderRequester", fields: [userId], references: [id], onDelete: Cascade)
+  current    String?
+  /// MALE | FEMALE | OTHER
+  proposed   String
+  reason     String
+  status     ChangeRequestStatus @default(PENDING)
+  reviewerId String?
+  reviewer   User?               @relation("genderReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote String?
+  createdAt  DateTime            @default(now())
+  decidedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
 }

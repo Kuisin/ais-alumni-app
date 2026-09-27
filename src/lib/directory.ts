@@ -36,6 +36,10 @@ export const PUBLIC_CARD_SELECT = {
   nameKanji: true,
   nameAtAis: true,
   avatarUrl: true,
+  // photo visibility (src/lib/avatar.ts)
+  avatarPublic: true,
+  familyId: true,
+  gender: true,
   roles: {
     select: {
       role: true,
@@ -274,6 +278,9 @@ export async function searchDirectory(
       nameKanji: r.nameKanji,
       nameAtAis: r.nameAtAis,
       avatarUrl: r.avatarUrl,
+      avatarPublic: r.avatarPublic,
+      familyId: r.familyId,
+      gender: r.gender,
       roles: r.roles,
     });
   }

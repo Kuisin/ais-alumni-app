@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Fragment } from "react";
 import { AvatarForm } from "@/components/profile/avatar-form";
+import { AvatarSettingsForm } from "@/components/profile/avatar-settings-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { BirthDateCard } from "@/components/profile/birth-date-card";
 import { FollowerFieldsForm } from "@/components/profile/follower-fields-form";
+import { GenderCard } from "@/components/profile/gender-card";
 import { NameCard } from "@/components/profile/name-card";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { AisRecord } from "@/components/profile/role-details";
@@ -17,6 +19,7 @@ import { Card, PageHeader } from "@/components/ui/card";
 import { ViewEdit } from "@/components/ui/view-edit";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { defaultAvatar } from "@/lib/avatar";
 import { displayName } from "@/lib/format";
 import {
   followerFieldSet,
@@ -66,17 +69,39 @@ export default async function ProfileEditPage() {
         }
       />
 
-      <Card>
-        <h2 className="mb-3 text-lg font-semibold">{t("sections.photo")}</h2>
+      <Card className="space-y-5">
+        <h2 className="text-lg font-semibold">{t("sections.photo")}</h2>
         <AvatarForm
           src={avatarSrc(me.avatarUrl)}
+          fallback={defaultAvatar(me.gender)}
           name={displayName(me, locale)}
         />
+        <div id="photo-settings" className="border-t border-slate-100 pt-4">
+          <ViewEdit
+            actionsClassName="flex justify-end"
+            view={
+              <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
+                <dt className="font-medium text-slate-600">
+                  {t("photo.visibility")}
+                </dt>
+                <dd>
+                  {me.avatarPublic
+                    ? t("photo.everyone")
+                    : t("photo.onlyConnected")}
+                </dd>
+              </dl>
+            }
+          >
+            <AvatarSettingsForm avatarPublic={me.avatarPublic} />
+          </ViewEdit>
+        </div>
       </Card>
 
       <NameCard me={me} />
 
       <BirthDateCard me={me} />
+
+      <GenderCard me={me} />
 
       <ViewEdit
         actionsClassName="flex justify-end"

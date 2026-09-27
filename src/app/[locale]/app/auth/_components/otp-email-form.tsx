@@ -27,10 +27,13 @@ export function OtpEmailForm({
   action,
   sendLabel,
   verifyLabel,
+  next,
 }: {
   action: OtpAction;
   sendLabel?: string;
   verifyLabel?: string;
+  /** page to return to after signing in */
+  next?: string | null;
 }) {
   const t = useTranslations("auth.otp");
   const [state, formAction, pending] = useActionState(action, {
@@ -74,6 +77,7 @@ export function OtpEmailForm({
     return (
       <form action={formAction} className="space-y-4" key="email">
         <input type="hidden" name="intent" value="request" />
+        {next ? <input type="hidden" name="next" value={next} /> : null}
         {status}
         <Field
           id="otp-email"
@@ -103,6 +107,7 @@ export function OtpEmailForm({
   return (
     <form action={formAction} className="space-y-4" key="code">
       <input type="hidden" name="email" value={state.email ?? ""} />
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {status}
       <p className="text-sm text-slate-700">
         {t("enterCodeFor", { email: state.email ?? "" })}

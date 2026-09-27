@@ -14,6 +14,7 @@ import { syncChatMembership } from "@/lib/chat-db";
 import { parseCohortNumber } from "@/lib/cohorts";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { isGender } from "@/lib/gender";
 import { MergeKeepsManagedError, mergeUsers } from "@/lib/merge";
 import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
@@ -115,6 +116,10 @@ const profileSchema = nameFormSchema.extend({
     .nullable(),
   bio: optText(2000),
   phone: optText(40),
+  gender: z
+    .string()
+    .transform((v) => (isGender(v) ? v : null))
+    .nullable(),
 });
 
 export async function updateMemberProfileAction(
@@ -131,6 +136,7 @@ export async function updateMemberProfileAction(
       dateOfBirth: str(fd, "dateOfBirth") ?? "",
       bio: str(fd, "bio") ?? "",
       phone: str(fd, "phone") ?? "",
+      gender: str(fd, "gender") ?? "",
     });
     if (!parsed.success) {
       return {
@@ -154,6 +160,7 @@ export async function updateMemberProfileAction(
         dateOfBirth: true,
         bio: true,
         phone: true,
+        gender: true,
       },
     });
     if (!before) return { error: tc("errors.notFound") };

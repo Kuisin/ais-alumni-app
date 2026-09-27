@@ -1,12 +1,13 @@
 import { getLocale } from "next-intl/server";
 import type { ReactNode } from "react";
-import { avatarSrc } from "@/components/profile/avatar-src";
 import { RoleSummary } from "@/components/profile/role-details";
 import { Avatar } from "@/components/ui/avatar";
 import type { Locale } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { defaultAvatar, loadConnections, photoFor } from "@/lib/avatar";
 import type { PublicCard } from "@/lib/directory";
 import { displayName } from "@/lib/format";
+import { getCurrentUser } from "@/lib/session";
 
 /**
  * Public-tier member summary. Callers must only pass members the viewer is
@@ -27,6 +28,11 @@ export async function MemberCard({
   meta?: ReactNode;
 }) {
   const locale = (await getLocale()) as Locale;
+  const viewer = await getCurrentUser();
+  const photo =
+    showPhoto && viewer
+      ? photoFor(await loadConnections(viewer.id), member)
+      : defaultAvatar(member.gender);
   const name = displayName(member, locale);
   const alt = member.nameRomaji ? member.nameKanji : null;
   const nameEl = linked ? (
@@ -41,11 +47,7 @@ export async function MemberCard({
   );
   return (
     <div className="flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <Avatar
-        src={showPhoto ? avatarSrc(member.avatarUrl) : null}
-        name={name}
-        size={48}
-      />
+      <Avatar src={photo} name={name} size={48} />
       <div className="min-w-0 flex-1">
         <p className="truncate">{nameEl}</p>
         {alt && alt !== name ? (

@@ -7,9 +7,10 @@ import {
   updateMemberProfileAction,
 } from "@/app/actions/admin-members";
 import { NameFields } from "@/components/names/name-fields";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useCloseOnSave } from "@/components/ui/view-edit";
+import { GENDERS } from "@/lib/gender";
 import type { NameParts } from "@/lib/names";
 import { AdminFormResult } from "./form-result";
 
@@ -18,6 +19,7 @@ export type MemberProfileValues = Record<keyof NameParts, string> & {
   dateOfBirth: string; // YYYY-MM-DD or ""
   bio: string;
   phone: string;
+  gender: string; // MALE | FEMALE | OTHER | ""
 };
 
 export function MemberProfileForm({
@@ -29,6 +31,7 @@ export function MemberProfileForm({
 }) {
   const t = useTranslations("adminMembers.profile");
   const tc = useTranslations("common");
+  const tg = useTranslations("profile.photo");
   const [state, action] = useActionState<AdminMemberFormState, FormData>(
     updateMemberProfileAction,
     {},
@@ -64,6 +67,18 @@ export function MemberProfileForm({
               name="dateOfBirth"
               defaultValue={values.dateOfBirth}
             />
+          )}
+        </Field>
+        <Field id="p-gender" label={t("gender")}>
+          {(a) => (
+            <Select {...a} name="gender" defaultValue={values.gender}>
+              <option value="">{tg("genders.none")}</option>
+              {GENDERS.map((g) => (
+                <option key={g} value={g}>
+                  {tg(`genders.${g}`)}
+                </option>
+              ))}
+            </Select>
           )}
         </Field>
         <Field id="p-phone" label={t("phone")} error={err("phone")}>

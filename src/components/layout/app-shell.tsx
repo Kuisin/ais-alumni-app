@@ -124,7 +124,10 @@ export async function AppShell({
           db.birthDateRequest.count({
             where: { status: ChangeRequestStatus.PENDING },
           }),
-        ]).then(([a, b]) => a + b)
+          db.genderRequest.count({
+            where: { status: ChangeRequestStatus.PENDING },
+          }),
+        ]).then(([a, b, c]) => a + b + c)
       : 0,
     variant === "member" && user
       ? db.follow.count({
@@ -470,7 +473,7 @@ export async function AppShell({
 
   const footer = (
     <footer
-      className={`border-t border-slate-200 px-4 py-4 text-xs text-slate-500 ${variant === "member" ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4" : ""}`}
+      className={`border-t border-slate-200 bg-white px-4 pt-4 text-xs text-slate-500 ${variant === "member" ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-4 max-lg:standalone:pb-[calc(5rem+env(safe-area-inset-bottom))]" : "pb-[calc(1rem+env(safe-area-inset-bottom))] standalone:pb-[calc(1.5rem+env(safe-area-inset-bottom))]"}`}
     >
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-balance">
         <Link href="/privacy" className="inline-block py-2 underline">
@@ -489,7 +492,7 @@ export async function AppShell({
   if (admin) {
     return withRealtime(
       <>
-        <header className="sticky top-0 z-40 bg-slate-900 text-white">
+        <header className="sticky top-0 z-40 bg-slate-900 pt-[env(safe-area-inset-top)] text-white">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2">
             <Link
               href="/app/admin"
@@ -553,7 +556,7 @@ export async function AppShell({
 
   return withRealtime(
     <>
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2">
           <Link
             href={variant === "member" ? "/app/dashboard" : "/"}
@@ -608,7 +611,7 @@ export async function AppShell({
       {variant === "member" ? (
         <nav
           aria-label={t("nav.label")}
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur standalone:pb-[max(env(safe-area-inset-bottom),0.5rem)] lg:hidden"
         >
           <ul className="mx-auto grid max-w-lg grid-cols-6">
             {[

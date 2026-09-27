@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { Client } from "pg";
 import { signInWithEmail } from "./helpers";
 
 const lang = /言語を切り替える|Switch language/;
@@ -17,7 +18,15 @@ test("language is changed in Settings, not the header", async ({ page }) => {
 
   // Members: no switch in the header; Settings → Language instead.
   await signInWithEmail(page, "ken@example.com");
-  await page.goto("/ja/app/dashboard");
+  // Pages follow the member's saved language: Japanese here.
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  await db.query(
+    `UPDATE "User" SET locale = 'ja' WHERE "primaryEmail" = 'ken@example.com'`,
+  );
+  await db.end();
+  await page.goto("/en/app/dashboard");
+  await expect(page).toHaveURL(/\/ja\/app\/dashboard$/);
   await expect(
     page.getByRole("banner").getByRole("button", { name: lang }),
   ).toHaveCount(0);

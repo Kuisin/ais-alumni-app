@@ -38,6 +38,7 @@ import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { MESSAGES_ENABLED } from "@/lib/features";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
+import { isGender } from "@/lib/gender";
 import { namePartsOf } from "@/lib/names";
 import { positionEligible } from "@/lib/permissions";
 import { requireAdmin } from "@/lib/session";
@@ -62,6 +63,7 @@ export default async function AdminMemberPage({
   const t = await getTranslations("adminMembers");
   const tr = await getTranslations("roles");
   const tp = await getTranslations("adminMembers.profile");
+  const tgen = await getTranslations("profile.photo");
   const tc = await getTranslations("common");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
 
@@ -267,6 +269,12 @@ export default async function AdminMemberPage({
                           ? user.dateOfBirth.toISOString().slice(0, 10)
                           : null,
                       ],
+                      [
+                        tp("gender"),
+                        isGender(user.gender)
+                          ? tgen(`genders.${user.gender}`)
+                          : null,
+                      ],
                       [tp("phone"), user.phone],
                       [tp("bio"), user.bio],
                     ] as const
@@ -293,6 +301,7 @@ export default async function AdminMemberPage({
                     : "",
                   bio: user.bio ?? "",
                   phone: user.phone ?? "",
+                  gender: user.gender ?? "",
                 }}
               />
             </ViewEdit>

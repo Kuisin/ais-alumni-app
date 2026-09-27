@@ -7,6 +7,7 @@ import { signIn } from "@/auth";
 import { OtpPurpose } from "@/generated/prisma/enums";
 import { issueOtp, normalizeEmail, OTP_MAX_ATTEMPTS } from "@/lib/auth/otp";
 import { db } from "@/lib/db";
+import { safeNextPath } from "@/lib/next-path";
 import { ssoReady } from "@/lib/sso";
 
 // Sign-in actions are, by nature, callable without a session, so they do not
@@ -112,7 +113,7 @@ async function verifySignInCode(formData: FormData): Promise<OtpFormState> {
       email: normalized,
       code: parsed.data.code,
       locale,
-      redirectTo: `/${locale}/app/onboarding`,
+      redirectTo: afterSignIn(locale, formData.get("next")),
     });
   } catch (e) {
     if (e instanceof AuthError) {
@@ -145,17 +146,28 @@ export async function emailSignInAction(
   }
 }
 
-async function oauthSignIn(provider: "google" | "line"): Promise<void> {
+/** Where sign-in lands: /onboarding forwards by state (and to ?next=). */
+function afterSignIn(locale: string, next: unknown): string {
+  const path = safeNextPath(next);
+  return `/${locale}/app/onboarding${path ? `?next=${encodeURIComponent(path)}` : ""}`;
+}
+
+async function oauthSignIn(
+  provider: "google" | "line",
+  formData?: FormData,
+): Promise<void> {
   // The button is disabled when not configured; ignore stale forms.
   if (!ssoReady(provider)) return;
   const locale = await currentLocale();
-  await signIn(provider, { redirectTo: `/${locale}/app/onboarding` });
+  await signIn(provider, {
+    redirectTo: afterSignIn(locale, formData?.get("next")),
+  });
 }
 
-export async function signInWithGoogle(): Promise<void> {
-  await oauthSignIn("google");
+export async function signInWithGoogle(formData?: FormData): Promise<void> {
+  await oauthSignIn("google", formData);
 }
 
-export async function signInWithLine(): Promise<void> {
-  await oauthSignIn("line");
+export async function signInWithLine(formData?: FormData): Promise<void> {
+  await oauthSignIn("line", formData);
 }

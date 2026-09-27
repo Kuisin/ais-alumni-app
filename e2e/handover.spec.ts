@@ -20,6 +20,7 @@ async function parentWithApprovedChild(
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Parent");
   await parent.getByLabel("Date of birth").fill("1980-01-01");
+  await parent.getByLabel("Gender").selectOption("OTHER");
   await parent.getByRole("button", { name: "Next" }).click();
   const romaji = parent.getByRole("group", { name: /Child’s name \(romaji\)/ });
   await romaji.getByRole("textbox", { name: /Last name/ }).fill(lastName);
@@ -118,6 +119,7 @@ test("a student signing up after a parent registered them is caught and merged",
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Kid");
   await kid.getByLabel("Date of birth").fill("2018-04-04");
+  await kid.getByLabel("Gender").selectOption("OTHER");
   await kid.getByRole("button", { name: "Next" }).click();
   await expect(
     kid.getByText("It looks like a parent has already registered you."),

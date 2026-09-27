@@ -35,9 +35,19 @@ import {
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/components/ui/cn";
 import { Link } from "@/i18n/navigation";
-import { CHAT_PAGE_SIZE, MAX_CHAT_MESSAGE } from "@/lib/chat";
+import {
+  applyMention,
+  CHAT_PAGE_SIZE,
+  MAX_CHAT_MESSAGE,
+  mentionQuery,
+  mentionsIn,
+  splitMentions,
+} from "@/lib/chat";
 
 const POLL_MS = 5000;
+/** Picker id of @全員, and its label in every language (for matching). */
+const ALL = "__all__";
+const ALL_LABELS = ["全員", "all"];
 /** The app's colours: light background, brand-blue own bubbles. */
 const BG = "bg-slate-100";
 const MINE = "bg-brand-700 text-white";
@@ -117,6 +127,34 @@ export function ChatRoom({
   const scroller = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const canPost = member && !blocked;
+  const input = useRef<HTMLTextAreaElement>(null);
+  const [caret, setCaret] = useState(-1);
+  const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const allLabel = t("mentionAll");
+  const others = members.filter((m) => m.id !== me);
+  const namesById = new Map(members.map((m) => [m.id, m.name]));
+  // @mention picker: 全員 (group chats) and the other members.
+  const q = caret >= 0 ? mentionQuery(text, caret) : null;
+  const suggestions: (RoomMember & { id: string })[] = q
+    ? [
+        ...(direct
+          ? []
+          : [{ id: ALL, name: allLabel, avatar: null } as RoomMember]),
+        ...others,
+      ]
+        .filter((s) => s.name.toLowerCase().includes(q.query.toLowerCase()))
+        .slice(0, 8)
+    : [];
+  function pickMention(s: RoomMember) {
+    if (!q) return;
+    const r = applyMention(text, q.start, caret, s.name);
+    setText(r.text);
+    setCaret(-1);
+    requestAnimationFrame(() => {
+      input.current?.focus();
+      input.current?.setSelectionRange(r.caret, r.caret);
+    });
+  }
   // The unread line stays where it was when the talk was opened.
   const [divider] = useState(() => {
     if (!lastReadAt) return null;
@@ -287,9 +325,11 @@ export function ChatRoom({
     setSending(true);
     setError(null);
     try {
-      const r = await sendChatMessageAction(groupId, body);
+      const mentions = mentionsIn(body, others, [allLabel, ...ALL_LABELS]);
+      const r = await sendChatMessageAction(groupId, body, mentions);
       if (r.ok) {
         setText("");
+        setCaret(-1);
         stick.current = true;
         add([r.message]);
       } else setError(t(`errors.${r.error}`));
@@ -501,7 +541,29 @@ export function ChatRoom({
                                 (mine ? "rounded-tr-md" : "rounded-tl-md"),
                             )}
                           >
-                            {m.body}
+                            {splitMentions(m.body, [
+                              ...m.mentionUserIds.map(
+                                (id) => namesById.get(id) ?? "",
+                              ),
+                              ...(m.mentionAll
+                                ? [allLabel, ...ALL_LABELS]
+                                : []),
+                            ]).map((part, j) =>
+                              part.mention ? (
+                                <strong
+                                  // biome-ignore lint/suspicious/noArrayIndexKey: parts of one message
+                                  key={j}
+                                  className={
+                                    mine ? "underline" : "text-brand-700"
+                                  }
+                                >
+                                  {part.text}
+                                </strong>
+                              ) : (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: parts of one message
+                                <Fragment key={j}>{part.text}</Fragment>
+                              ),
+                            )}
                           </button>
                         )}
                         <span
@@ -560,12 +622,56 @@ export function ChatRoom({
       {/* Composer */}
       {canPost ? (
         <form
-          className="border-t border-slate-200 bg-white px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
+          className="relative border-t border-slate-200 bg-white px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
           onSubmit={(e) => {
             e.preventDefault();
             void send();
           }}
         >
+          {suggestions.length ? (
+            <div
+              id={`${uid}-mentions`}
+              role="listbox"
+              aria-label={t("mentionList")}
+              className="absolute right-2 bottom-full left-2 mb-1 max-h-60 overflow-y-auto rounded-xl bg-white p-1 shadow-xl ring-1 ring-slate-200"
+            >
+              {suggestions.map((s, i) => (
+                <div
+                  key={s.id}
+                  id={`${uid}-mention-${i}`}
+                  role="option"
+                  aria-selected={i === activeSuggestion}
+                  tabIndex={-1}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pickMention(s)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") pickMention(s);
+                  }}
+                  className={cn(
+                    "flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm",
+                    i === activeSuggestion && "bg-brand-50 text-brand-800",
+                  )}
+                >
+                  {s.id === ALL ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex size-7 items-center justify-center rounded-full bg-brand-100 font-semibold text-brand-800"
+                    >
+                      @
+                    </span>
+                  ) : (
+                    <Avatar src={s.avatar} name={s.name} size={28} />
+                  )}
+                  <span className="truncate font-medium">{s.name}</span>
+                  {s.id === ALL ? (
+                    <span className="text-xs text-slate-500">
+                      {t("mentionAllHint")}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
           {error ? (
             <p role="alert" className="px-2 pb-1 text-sm text-red-700">
               {error}
@@ -576,35 +682,70 @@ export function ChatRoom({
               {t("messageLabel")}
             </label>
             <textarea
+              ref={input}
               id={`${uid}-msg`}
               value={text}
               rows={Math.min(5, Math.max(1, text.split("\n").length))}
               maxLength={MAX_CHAT_MESSAGE}
               placeholder={t("placeholder")}
               aria-describedby={`${uid}-hint`}
-              onChange={(e) => setText(e.target.value)}
+              aria-autocomplete="list"
+              aria-controls={suggestions.length ? `${uid}-mentions` : undefined}
+              aria-activedescendant={
+                suggestions.length
+                  ? `${uid}-mention-${activeSuggestion}`
+                  : undefined
+              }
+              onChange={(e) => {
+                setText(e.target.value);
+                setCaret(e.target.selectionStart ?? e.target.value.length);
+                setActiveSuggestion(0);
+              }}
+              onSelect={(e) =>
+                setCaret(e.currentTarget.selectionStart ?? text.length)
+              }
               onKeyDown={(e) => {
-                // Enter sends; Shift+Enter is a new line; never while the
-                // IME is composing (Japanese input).
+                const composing =
+                  e.nativeEvent.isComposing || e.keyCode === 229;
+                if (suggestions.length && !composing) {
+                  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    const d = e.key === "ArrowDown" ? 1 : -1;
+                    setActiveSuggestion(
+                      (i) => (i + d + suggestions.length) % suggestions.length,
+                    );
+                    return;
+                  }
+                  if (e.key === "Enter" || e.key === "Tab") {
+                    e.preventDefault();
+                    pickMention(suggestions[activeSuggestion]);
+                    return;
+                  }
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    setCaret(-1);
+                    return;
+                  }
+                }
+                // Enter is a new line; Ctrl/⌘+Enter sends (keyboards).
                 if (
                   e.key === "Enter" &&
-                  !e.shiftKey &&
-                  !e.nativeEvent.isComposing &&
-                  e.keyCode !== 229
+                  (e.metaKey || e.ctrlKey) &&
+                  !composing
                 ) {
                   e.preventDefault();
                   void send();
                 }
               }}
-              className="block max-h-36 min-h-10 flex-1 resize-none rounded-[20px] border-0 bg-slate-100 px-4 py-2 text-base focus-visible:outline-2 focus-visible:outline-brand-600"
+              className="block max-h-36 min-h-11 flex-1 resize-none rounded-[20px] border-0 bg-slate-100 px-4 py-2.5 text-base focus-visible:outline-2 focus-visible:outline-brand-600"
             />
             <button
               type="submit"
               disabled={sending || !text.trim()}
-              aria-label={sending ? t("sending") : t("send")}
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-700 hover:bg-brand-50 disabled:text-slate-300"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-brand-700 px-4 text-sm font-semibold text-white hover:bg-brand-800 disabled:bg-slate-300"
             >
-              <SendHorizontal aria-hidden="true" className="size-6" />
+              <SendHorizontal aria-hidden="true" className="size-4" />
+              {sending ? t("sending") : t("send")}
             </button>
           </div>
           <p id={`${uid}-hint`} className="sr-only">

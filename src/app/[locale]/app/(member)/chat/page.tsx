@@ -4,6 +4,7 @@ import { avatarSrc } from "@/components/profile/avatar-src";
 import { ChatGroupKind } from "@/generated/prisma/enums";
 import { KIND_ORDER } from "@/lib/chat";
 import {
+  chatMentionedGroups,
   chatUnreadByGroup,
   GROUP_SELECT,
   syncChatMembership,
@@ -66,7 +67,10 @@ export default async function ChatListPage({
       },
     },
   });
-  const unread = await chatUnreadByGroup(user.id);
+  const [unread, mentioned] = await Promise.all([
+    chatUnreadByGroup(user.id),
+    chatMentionedGroups(user.id),
+  ]);
 
   const rows: ChatListRow[] = groups
     // A 1:1 talk shows once someone has written.
@@ -96,6 +100,7 @@ export default async function ChatListPage({
           : t("members", { count: g._count.members }),
         lastAt: last?.createdAt.toISOString() ?? null,
         unread: unread.get(g.id) ?? 0,
+        mentioned: mentioned.has(g.id),
         order: KIND_ORDER.indexOf(g.kind) * 1000 + (g.cohort?.number ?? 0),
       };
     })

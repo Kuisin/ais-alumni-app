@@ -18,6 +18,8 @@ export type ChatListRow = {
   preview: string;
   lastAt: string | null;
   unread: number;
+  /** an unread message mentions me (or @全員) */
+  mentioned: boolean;
   order: number;
 };
 
@@ -107,6 +109,11 @@ export function ChatList({
               </span>
               <span className="mt-0.5 flex items-center justify-between gap-2">
                 <span className="truncate text-sm text-slate-500">
+                  {r.mentioned ? (
+                    <span className="mr-1 font-semibold text-red-600">
+                      {t("mentionedYou")}
+                    </span>
+                  ) : null}
                   {r.preview}
                 </span>
                 {r.unread ? (

@@ -3,16 +3,24 @@
 import { z } from "zod";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { ChatGroupKind } from "@/generated/prisma/enums";
+import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
-import { CHAT_PAGE_SIZE, directKey, MAX_CHAT_MESSAGE } from "@/lib/chat";
+import {
+  CHAT_PAGE_SIZE,
+  directKey,
+  MAX_CHAT_MESSAGE,
+  MAX_MENTIONS,
+} from "@/lib/chat";
 import {
   type DirectDenial,
   directChatDenial,
   openDirectChat,
 } from "@/lib/chat-db";
 import { db } from "@/lib/db";
+import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
 import { broadcast, channelTopic, realtimePublic } from "@/lib/realtime";
 import { actionActive, type CurrentUser } from "@/lib/session";
+import { publicUrl } from "@/lib/urls";
 
 export type ChatMessageView = {
   id: string;
@@ -23,6 +31,10 @@ export type ChatMessageView = {
   body: string;
   createdAt: string;
   deleted: boolean;
+  /** members mentioned with @name */
+  mentionUserIds: string[];
+  /** @全員 */
+  mentionAll: boolean;
 };
 
 const Id = z.string().min(1).max(64);
@@ -33,6 +45,8 @@ const MESSAGE_SELECT = {
   body: true,
   createdAt: true,
   deletedAt: true,
+  mentionUserIds: true,
+  mentionAll: true,
   user: { select: { nameRomaji: true, nameKanji: true, avatarUrl: true } },
 } as const;
 
@@ -42,6 +56,8 @@ type MessageRow = {
   body: string;
   createdAt: Date;
   deletedAt: Date | null;
+  mentionUserIds: string[];
+  mentionAll: boolean;
   user: {
     nameRomaji: string | null;
     nameKanji: string | null;
@@ -58,6 +74,8 @@ function toView(m: MessageRow): ChatMessageView {
     body: m.deletedAt ? "" : m.body,
     createdAt: m.createdAt.toISOString(),
     deleted: m.deletedAt !== null,
+    mentionUserIds: m.deletedAt ? [] : m.mentionUserIds,
+    mentionAll: m.deletedAt ? false : m.mentionAll,
   };
 }
 
@@ -96,9 +114,17 @@ export type SendResult =
   | { ok: true; message: ChatMessageView }
   | { ok: false; error: "forbidden" | "invalid" | "tooFast" };
 
+const MentionsSchema = z
+  .object({
+    userIds: z.array(Id).max(MAX_MENTIONS).default([]),
+    all: z.boolean().default(false),
+  })
+  .default({ userIds: [], all: false });
+
 export async function sendChatMessageAction(
   groupId: string,
   body: string,
+  mentionsInput?: { userIds: string[]; all: boolean },
 ): Promise<SendResult> {
   const g = await openGroup(groupId);
   if (!g?.member) return { ok: false, error: "forbidden" };
@@ -114,8 +140,29 @@ export async function sendChatMessageAction(
     },
   });
   if (recent >= 20) return { ok: false, error: "tooFast" };
+  // Mentions: only other members of this chat; @全員 only in group chats.
+  const parsed = MentionsSchema.safeParse(mentionsInput);
+  const wanted = parsed.success ? parsed.data : { userIds: [], all: false };
+  const mentioned = wanted.userIds.length
+    ? (
+        await db.chatMember.findMany({
+          where: {
+            groupId: g.groupId,
+            userId: { in: wanted.userIds, not: g.user.id },
+          },
+          select: { userId: true },
+        })
+      ).map((m) => m.userId)
+    : [];
+  const mentionAll = wanted.all && !g.direct;
   const row = await db.chatMessage.create({
-    data: { groupId: g.groupId, userId: g.user.id, body: text },
+    data: {
+      groupId: g.groupId,
+      userId: g.user.id,
+      body: text,
+      mentionUserIds: mentioned,
+      mentionAll,
+    },
     select: MESSAGE_SELECT,
   });
   await db.chatMember.update({
@@ -131,7 +178,42 @@ export async function sendChatMessageAction(
       payload: { id: message.id },
     },
   ]);
+  if (mentioned.length)
+    await notifyMentions(g.groupId, g.user, mentioned).catch((e) =>
+      console.error("[chat] mention notify failed", e),
+    );
   return { ok: true, message };
+}
+
+/**
+ * Tell mentioned members right away (LINE / email, no content). At most one
+ * per member per chat every 10 minutes. @全員 isn't pushed (the daily
+ * summary covers it) so large groups aren't flooded.
+ */
+async function notifyMentions(
+  groupId: string,
+  sender: CurrentUser,
+  userIds: string[],
+) {
+  const users = await db.user.findMany({
+    where: { id: { in: userIds }, state: "ACTIVE" },
+    select: NOTIFY_USER_SELECT,
+  });
+  const bucket = Math.floor(Date.now() / (10 * 60 * 1000));
+  const name = sender.nameRomaji ?? sender.nameKanji ?? "";
+  await notifyMany(users, {
+    kind: "CHAT_MENTION",
+    refId: `${groupId}:${bucket}`,
+    dedupe: true,
+    render: async (locale) => {
+      const t = await getTranslatorFor(locale, "chat");
+      return {
+        subject: t("mention.subject", { name }),
+        text: t("mention.text", { name }),
+        url: publicUrl(`/${locale}/app/chat/${groupId}`),
+      };
+    },
+  });
 }
 
 /** Older messages (before) or new ones (after; the polling fallback). */

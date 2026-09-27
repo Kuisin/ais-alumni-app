@@ -93,3 +93,78 @@ export const KIND_ORDER: ChatGroupKind[] = [
   ChatGroupKind.COHORT,
   ChatGroupKind.COHORT_PARENTS,
 ];
+
+// ─── Mentions (@name, @全員) ─────────────────────────────────────────────
+
+export const MAX_MENTIONS = 50;
+
+/** An "@query" being typed right before the caret, if any. */
+export function mentionQuery(
+  text: string,
+  caret: number,
+): { start: number; query: string } | null {
+  const before = text.slice(0, caret);
+  const at = before.lastIndexOf("@");
+  if (at < 0) return null;
+  if (at > 0 && !/\s/.test(before[at - 1])) return null;
+  const query = before.slice(at + 1);
+  if (/[\n@]/.test(query) || query.length > 30) return null;
+  return { start: at, query };
+}
+
+/** Replace the "@query" with "@label " and return the new caret. */
+export function applyMention(
+  text: string,
+  start: number,
+  caret: number,
+  label: string,
+): { text: string; caret: number } {
+  const insert = `@${label} `;
+  return {
+    text: text.slice(0, start) + insert + text.slice(caret),
+    caret: start + insert.length,
+  };
+}
+
+/** Who is mentioned in the text: members by "@name", everyone by "@全員". */
+export function mentionsIn(
+  text: string,
+  members: readonly { id: string; name: string }[],
+  allLabels: readonly string[],
+): { userIds: string[]; all: boolean } {
+  const userIds = members
+    .filter((m) => text.includes(`@${m.name}`))
+    .map((m) => m.id)
+    .slice(0, MAX_MENTIONS);
+  const all = allLabels.some((l) => text.includes(`@${l}`));
+  return { userIds, all };
+}
+
+/** Split a message into plain text and "@mention" parts (for highlighting). */
+export function splitMentions(
+  body: string,
+  labels: readonly string[],
+): { text: string; mention: boolean }[] {
+  const names = [...new Set(labels.filter(Boolean))].sort(
+    (a, b) => b.length - a.length,
+  );
+  if (!names.length) return [{ text: body, mention: false }];
+  const out: { text: string; mention: boolean }[] = [];
+  let i = 0;
+  let plain = "";
+  while (i < body.length) {
+    const hit =
+      body[i] === "@" ? names.find((n) => body.startsWith(n, i + 1)) : null;
+    if (hit) {
+      if (plain) out.push({ text: plain, mention: false });
+      plain = "";
+      out.push({ text: `@${hit}`, mention: true });
+      i += hit.length + 1;
+    } else {
+      plain += body[i];
+      i++;
+    }
+  }
+  if (plain) out.push({ text: plain, mention: false });
+  return out;
+}

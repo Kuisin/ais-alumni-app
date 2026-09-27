@@ -33,8 +33,14 @@ test("graduates are put in their group chat and can talk", async ({
     hanako.getByRole("heading", { name: "Graduates + former students" }),
   ).toBeVisible();
   const hello = `Hello from Hanako ${stamp}`;
-  await hanako.getByLabel("Message", { exact: true }).fill(hello);
-  await hanako.getByLabel("Message", { exact: true }).press("Enter");
+  // Enter only starts a new line; the Send button sends.
+  const box = hanako.getByLabel("Message", { exact: true });
+  await box.fill("line one");
+  await box.press("Enter");
+  await box.pressSequentially("line two");
+  await expect(box).toHaveValue("line one\nline two");
+  await box.fill(hello);
+  await hanako.getByRole("button", { name: "Send" }).click();
   await expect(hanako.getByText(hello)).toBeVisible();
   await expect(hanako.getByLabel("Message", { exact: true })).toHaveValue("");
 
@@ -106,7 +112,7 @@ test("1:1 talk between mutual followers, with 既読", async ({ browser }) => {
   ).toBeVisible();
   const hi = `Hi B ${stamp}`;
   await pa.getByLabel("Message", { exact: true }).fill(hi);
-  await pa.getByLabel("Message", { exact: true }).press("Enter");
+  await pa.getByRole("button", { name: "Send" }).click();
   await expect(pa.getByText(hi)).toBeVisible();
 
   // B finds it under Friends, unread, and reads it; A then sees 既読.
@@ -139,6 +145,47 @@ test("1:1 talk between mutual followers, with 既読", async ({ browser }) => {
     pa.getByText("You can't exchange messages with this member."),
   ).toBeVisible();
   await expect(pa.getByLabel("Message", { exact: true })).toHaveCount(0);
+});
+
+test("mention a member with @ (and they're told)", async ({ browser }) => {
+  const stamp = Date.now();
+  const grad = await createActiveGraduate(`Men M${stamp}`, "1992-04-04");
+  const other = await browser.newPage();
+  await signInWithEmail(other, grad.email);
+  await other.goto("/en/app/chat"); // joins the graduates' group
+
+  const hanako = await browser.newPage();
+  await signInWithEmail(hanako, "hanako@example.com");
+  await hanako.goto("/en/app/chat");
+  await hanako.getByRole("link", { name: GROUP }).click();
+  const box = hanako.getByLabel("Message", { exact: true });
+  await box.fill("Hello ");
+  await box.pressSequentially(`@M${stamp}`);
+  const picker = hanako.getByRole("listbox", { name: "Mention someone" });
+  await picker
+    .getByRole("option", { name: new RegExp(`M${stamp}, Men`) })
+    .click();
+  await expect(box).toHaveValue(`Hello @M${stamp}, Men `);
+  // @all is offered in group chats.
+  await box.pressSequentially("@al");
+  await expect(picker.getByRole("option", { name: /^@?\s*all/ })).toBeVisible();
+  await box.press("Escape");
+  await box.fill(`Hello @M${stamp}, Men see you!`);
+  await clearMailbox(grad.email);
+  await hanako.getByRole("button", { name: "Send" }).click();
+  await expect(
+    hanako.getByText(`@M${stamp}, Men`, { exact: true }),
+  ).toBeVisible();
+
+  // The mentioned member sees it flagged in the list, and gets a notice.
+  await other.goto("/en/app/chat");
+  await expect(
+    other.getByRole("link", { name: GROUP }).getByText("[Mentioned you]"),
+  ).toBeVisible();
+  const notice = await mail(grad.email);
+  expect(notice).toMatch(/mentioned you|メンションしました/);
+  expect(notice).toContain("/app/chat/");
+  expect(notice).not.toContain("see you!");
 });
 
 async function sql(text: string, values: unknown[]) {

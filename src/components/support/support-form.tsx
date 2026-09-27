@@ -25,6 +25,8 @@ import {
 export function SupportForm({
   defaults,
   signedIn,
+  page,
+  onClose,
 }: {
   defaults: {
     name: string;
@@ -33,6 +35,10 @@ export function SupportForm({
     topic?: string;
   };
   signedIn: boolean;
+  /** the page the member was on (sent with the request) */
+  page?: string;
+  /** in a dialog: show a close button when sent */
+  onClose?: () => void;
 }) {
   const t = useTranslations("support");
   const [state, action, pending] = useActionState<SupportFormState, FormData>(
@@ -76,12 +82,18 @@ export function SupportForm({
             {state.ref}
           </span>
         </p>
-        <Link
-          href={signedIn ? "/app/dashboard" : "/"}
-          className="inline-flex min-h-11 items-center text-brand-700 underline"
-        >
-          {signedIn ? t("sent.backApp") : t("sent.backHome")}
-        </Link>
+        {onClose ? (
+          <Button variant="secondary" onClick={onClose}>
+            {t("sent.close")}
+          </Button>
+        ) : (
+          <Link
+            href={signedIn ? "/app/dashboard" : "/"}
+            className="inline-flex min-h-11 items-center text-brand-700 underline"
+          >
+            {signedIn ? t("sent.backApp") : t("sent.backHome")}
+          </Link>
+        )}
       </div>
     );
   }
@@ -225,6 +237,7 @@ export function SupportForm({
           )}
         </Field>
       </div>
+      {page ? <input type="hidden" name="page" value={page} /> : null}
       {/* Honeypot for bots; hidden from people and screen readers. */}
       <div aria-hidden="true" className="absolute -left-[9999px]">
         <label>

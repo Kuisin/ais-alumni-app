@@ -535,11 +535,16 @@ model NotificationLink {
   token        String                @unique
   kind         String
   refId        String?
-  locale       Locale
+  /// legacy (per-language links); now null — see texts
+  locale       Locale?
   /// app path without the locale, e.g. /app/news/<id>
   path         String
-  title        String
-  body         String
+  /// legacy; now in texts
+  title        String?
+  body         String?
+  /// { ja: { title, body }, en: { title, body } } — previews use the
+  /// opener's language
+  texts        Json?
   category     String
   createdAt    DateTime              @default(now())
   expiresAt    DateTime
@@ -581,6 +586,8 @@ model SupportRequest {
   subject    String
   message    String
   locale     Locale
+  /// page the form was sent from (e.g. onboarding step)
+  page       String?
   createdAt  DateTime  @default(now())
   closedAt   DateTime?
   closedById String?

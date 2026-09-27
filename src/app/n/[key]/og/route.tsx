@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { NOTIFY_KINDS, type NotifyKind } from "@/lib/notify/catalog";
-import { isLinkToken } from "@/lib/notify/links";
+import { isLinkToken, linkText } from "@/lib/notify/links";
 
 /** Japanese glyphs: a Noto Sans JP subset for just the text on the card. */
 async function loadFont(text: string): Promise<ArrayBuffer | null> {
@@ -26,22 +26,24 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
 /**
  * Preview card for a notification link (1200×630): brand, category, the
  * notification's headline and sentence. No sign-in needed; nothing beyond
- * what the notification itself says.
+ * what the notification itself says, in the opener's language.
  */
-export async function GET(_request: Request, ctx: RouteContext<"/n/[key]/og">) {
+export async function GET(request: Request, ctx: RouteContext<"/n/[key]/og">) {
   const { key: token } = await ctx.params;
   const link = isLinkToken(token)
     ? await db.notificationLink.findUnique({ where: { token } })
     : null;
   if (!link) return new Response("Not found", { status: 404 });
-  const t = await getTranslatorFor(link.locale, "notifications");
+  // ?l= is the opener's language (set by the preview page).
+  const l = new URL(request.url).searchParams.get("l");
+  const locale = l === "en" || l === "ja" ? l : (link.locale ?? "ja");
+  const { title, body } = linkText(link, locale);
+  const t = await getTranslatorFor(locale, "notifications");
   const spec = NOTIFY_KINDS[link.kind as NotifyKind];
   const category = t(`categories.${link.category}`);
   const brand = t("preview.brand");
   const site = t("preview.site");
-  const font = await loadFont(
-    `${brand}${category}${link.title}${link.body}${site}🎓`,
-  );
+  const font = await loadFont(`${brand}${category}${title}${body}${site}🎓`);
 
   return new ImageResponse(
     <div
@@ -100,7 +102,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/n/[key]/og">) {
             lineHeight: 1.25,
           }}
         >
-          {`${spec?.emoji ?? "🔔"} ${link.title}`}
+          {`${spec?.emoji ?? "🔔"} ${title}`}
         </div>
         <div
           style={{
@@ -111,7 +113,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/n/[key]/og">) {
             lineHeight: 1.45,
           }}
         >
-          {link.body}
+          {body}
         </div>
         <div
           style={{

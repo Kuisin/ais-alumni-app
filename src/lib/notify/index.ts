@@ -1,4 +1,5 @@
 import type { Locale } from "@/generated/prisma/enums";
+
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { linePush } from "@/lib/line";
@@ -17,6 +18,8 @@ import {
   renderNotification,
 } from "./render";
 import { type Channel, channelsFor, type RoutableUser } from "./route";
+
+const LOCALES: Locale[] = ["ja", "en"];
 
 export { NOTIFY_KINDS, type NotifyKind } from "./catalog";
 export { channelsFor, chooseChannel } from "./route";
@@ -81,7 +84,7 @@ async function inBatches<T>(
 /**
  * Send one notification to many users (src/lib/notify/catalog.ts rules):
  * members who turned the category off are skipped; texts are rendered once
- * per language with one short link per language, and every recipient gets
+ * per language with one short link for everyone, and every recipient gets
  * their own URL (/n/<their code>/<token>) so their open is recorded as a
  * read receipt. LINE pushes go one per member (the push quota counts
  * recipients either way).
@@ -95,22 +98,8 @@ export async function notifyMany(
     n,
   );
   const result = new Map<string, Channel[]>();
-  const perLocale = new Map<
-    Locale,
-    {
-      rendered: RenderedNotification;
-      link: { id: string; token: string } | null;
-    }
-  >();
   const spec = NOTIFY_KINDS[n.kind];
-  type Job = {
-    user: NotifyUser;
-    channels: Channel[];
-    rendered: RenderedNotification;
-    link: { id: string; token: string } | null;
-  };
-  const jobs: Job[] = [];
-
+  const recipients: { user: NotifyUser; channels: Channel[] }[] = [];
   for (const u of users) {
     if (skip.has(u.id) || !wantsKind(u.notifyOff, n.kind)) continue;
     const channels = channelsFor(u, {
@@ -118,28 +107,42 @@ export async function notifyMany(
     }).filter((ch) =>
       ch === "LINE" ? Boolean(u.lineUserId) : Boolean(u.primaryEmail),
     );
-    if (!channels.length) {
-      result.set(u.id, []);
-      continue;
-    }
-    let prepared = perLocale.get(u.locale);
-    if (!prepared) {
-      const params =
-        typeof n.params === "function" ? await n.params(u.locale) : n.params;
-      const rendered = await renderNotification(n.kind, u.locale, params);
-      const link = n.path
-        ? await createNotificationLink({
-            rendered,
-            refId: n.refId,
-            locale: u.locale,
-            path: n.path,
-          })
-        : null;
-      prepared = { rendered, link };
-      perLocale.set(u.locale, prepared);
-    }
-    jobs.push({ user: u, channels, ...prepared });
+    if (channels.length) recipients.push({ user: u, channels });
+    else result.set(u.id, []);
   }
+  if (!recipients.length) return result;
+
+  // Both languages: messages use each member's, and the one link keeps
+  // both so its preview follows the opener's current language.
+  const rendered = {} as Record<Locale, RenderedNotification>;
+  for (const locale of LOCALES) {
+    const params =
+      typeof n.params === "function" ? await n.params(locale) : n.params;
+    rendered[locale] = await renderNotification(n.kind, locale, params);
+  }
+  const link = n.path
+    ? await createNotificationLink({
+        kind: n.kind,
+        category: spec.category,
+        texts: {
+          ja: { title: rendered.ja.title, body: rendered.ja.body },
+          en: { title: rendered.en.title, body: rendered.en.body },
+        },
+        refId: n.refId,
+        path: n.path,
+      })
+    : null;
+  type Job = {
+    user: NotifyUser;
+    channels: Channel[];
+    rendered: RenderedNotification;
+    link: { id: string; token: string } | null;
+  };
+  const jobs: Job[] = recipients.map((r) => ({
+    ...r,
+    rendered: rendered[r.user.locale],
+    link,
+  }));
 
   const logs: { userId: string; channel: Channel }[] = [];
   const receipts: { linkId: string; userId: string; channels: Channel[] }[] =

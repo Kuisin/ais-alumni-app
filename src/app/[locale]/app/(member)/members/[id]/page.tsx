@@ -9,6 +9,7 @@ import { FollowCounts } from "@/components/follows/follow-counts";
 import { MemberMenu } from "@/components/follows/member-menu";
 import { HistoryList } from "@/components/history/history-list";
 import { avatarSrc } from "@/components/profile/avatar-src";
+import { formatBirthDate } from "@/components/profile/birth-date-card";
 import { AisRecord } from "@/components/profile/role-details";
 import {
   parseSocialLinks,
@@ -121,6 +122,9 @@ export default async function MemberProfilePage({ params }: Props) {
         }),
       ]);
   if (!view.isSelf && !targetMeta) notFound();
+  const birthDate = view.isSelf ? me.dateOfBirth : targetMeta?.dateOfBirth;
+  const tb = await getTranslations("profile.birthDate");
+  const lang = (await getLocale()) === "en" ? "en" : "ja";
   // 1:1 talk with mutual followers (like LINE friends).
   const canMessage =
     !view.isSelf && (await directChatDenial(me.id, id)) === null;
@@ -284,6 +288,19 @@ export default async function MemberProfilePage({ params }: Props) {
         <h2 className="mb-3 text-lg font-semibold">{t("sections.contact")}</h2>
         {priv ? (
           <dl className="grid gap-3 sm:grid-cols-2">
+            {/* Date of birth: only the member themselves and admins. */}
+            {view.isSelf || me.isAdmin ? (
+              <div>
+                <dt className="text-sm text-slate-500">{tb("title")}</dt>
+                <dd>
+                  {birthDate ? (
+                    formatBirthDate(birthDate, lang)
+                  ) : (
+                    <span className="text-slate-500">{tb("notSet")}</span>
+                  )}
+                </dd>
+              </div>
+            ) : null}
             {priv.email ? (
               <div>
                 <dt className="text-sm text-slate-500">{t("fields.email")}</dt>

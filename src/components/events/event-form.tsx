@@ -10,6 +10,7 @@ import {
 import { Button, buttonClass } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
 import type { CohortOption } from "@/lib/cohorts";
 import { type AudienceSpec, EVERYONE } from "@/lib/news-audience";
@@ -142,6 +143,7 @@ export function EventForm({
     saveEventAction,
     {},
   );
+  useCloseOnSave(state);
   const err = (name: string) => {
     const key = state.fieldErrors?.[name];
     return key ? t(`errors.${key}`) : null;

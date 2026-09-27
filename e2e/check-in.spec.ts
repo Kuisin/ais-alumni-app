@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import ExcelJS from "exceljs";
 import { signInWithEmail } from "./helpers";
 
 /** Same ticket as src/lib/event-tickets.ts (the QR code's `t`). */
@@ -32,7 +33,11 @@ test("staff scan a member's QR ticket to check them in", async ({
   await hanako.goto(`/en/app/events/${eventId}`);
   await hanako.getByText("Going", { exact: true }).click();
   await hanako.getByRole("button", { name: "Send RSVP" }).click();
-  await expect(hanako.getByText("Your RSVP has been saved.")).toBeVisible();
+  // After answering, the answer is shown with a button to change it.
+  await expect(hanako.getByText(/^Your answer: Going/)).toBeVisible();
+  await expect(
+    hanako.getByRole("button", { name: "Change my answer" }),
+  ).toBeVisible();
   await hanako.reload();
   const qr = hanako.getByRole("img", { name: /^Check-in QR code for/ });
   await expect(qr).toBeVisible();
@@ -103,8 +108,30 @@ test("staff scan a member's QR ticket to check them in", async ({
       .getByRole("button", { name: /^Check in/ }),
   ).toBeVisible();
 
+  // Excel export: summary and attendee sheets with the check-in.
+  await admin.goto(`/en/app/admin/events/${eventId}`);
+  const [download] = await Promise.all([
+    admin.waitForEvent("download"),
+    admin.getByRole("link", { name: "Download Excel" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^event-2030-07-01-.+\.xlsx$/);
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.readFile(await download.path());
+  expect(book.worksheets.map((w) => w.name)).toEqual(["Summary", "Attendees"]);
+  const sheet = book.getWorksheet("Attendees");
+  const hanakoRow = sheet
+    ?.getSheetValues()
+    .find((r) => Array.isArray(r) && r.includes("Suzuki, Hanako")) as
+    | unknown[]
+    | undefined;
+  expect(hanakoRow).toBeDefined();
+  expect(hanakoRow).toContain("Going");
+  // Checked in (undone above, so the check-in time is empty again).
+  expect(sheet?.getRow(1).getCell(8).value).toBe("Checked in at");
+
   // Clean up.
   await admin.goto(`/en/app/admin/events/${eventId}`);
+  await admin.getByRole("button", { name: "Edit", exact: true }).click();
   admin.once("dialog", (d) => d.accept());
   await admin.getByRole("button", { name: /Delete/ }).click();
   await expect(admin).toHaveURL(/\/en\/app\/admin\/events(\?|$)/);

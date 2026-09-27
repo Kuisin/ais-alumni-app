@@ -9,6 +9,7 @@ import {
 import { Alert } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 
 function Result({ state }: { state: CohortFormState }) {
   const t = useTranslations("cohorts");
@@ -37,6 +38,7 @@ export function CohortEditForm({
     updateCohortAction,
     null,
   );
+  useCloseOnSave(state);
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="id" value={id} />

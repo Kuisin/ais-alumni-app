@@ -110,5 +110,9 @@
     "outreach": "Outreach",
     "data": "Data"
   },
-  "notReady": "Not ready yet"
+  "notReady": "Not ready yet",
+  "notSet": "Not set",
+  "on": "On",
+  "off": "Off",
+  "closed": "Closed"
 }

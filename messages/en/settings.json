@@ -12,7 +12,8 @@
     "label": "Language",
     "ja": "日本語 (Japanese)",
     "en": "English",
-    "save": "Save language"
+    "save": "Save language",
+    "current": "Current language: {language}"
   },
   "notifications": {
     "title": "Notifications",

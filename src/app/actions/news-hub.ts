@@ -49,7 +49,7 @@ export async function confirmNewsAction(
 ): Promise<HubResult> {
   const o = await openPost(postId);
   if (!o?.post.requireConfirm) return { ok: false, error: "forbidden" };
-  if (!on && !isOpen(o.post.deadline)) return { ok: false, error: "closed" };
+  if (!on && !isOpen(o.post)) return { ok: false, error: "closed" };
   if (on)
     await db.newsConfirm.upsert({
       where: { postId_userId: { postId: o.post.id, userId: o.user.id } },
@@ -78,7 +78,7 @@ export async function votePollAction(
   const o = await openPost(postId);
   const parsed = VoteSchema.safeParse(input);
   if (!o || !parsed.success) return { ok: false, error: "invalid" };
-  if (!isOpen(o.post.deadline)) return { ok: false, error: "closed" };
+  if (!isOpen(o.post)) return { ok: false, error: "closed" };
   const poll = await db.newsPoll.findFirst({
     where: { id: parsed.data.pollId, postId: o.post.id },
     select: {

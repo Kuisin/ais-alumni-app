@@ -11,6 +11,7 @@ import { getTranslatorFor } from "@/i18n/translator";
 import { canRevokeAdmin } from "@/lib/account";
 import { audit } from "@/lib/audit";
 import { normalizeEmail } from "@/lib/auth/otp";
+import { syncChatMembership } from "@/lib/chat-db";
 import { parseCohortNumber } from "@/lib/cohorts";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -384,6 +385,10 @@ export async function setMemberStateAction(
       data: { state, deactivatedAt: deactivating ? new Date() : null },
       select: NOTIFY_USER_SELECT,
     });
+    // Group chats follow: out when deactivated, back in when reactivated.
+    await syncChatMembership(userId).catch((e) =>
+      console.error("[admin-members] chat sync failed", e),
+    );
     await audit(
       admin.id,
       deactivating ? "member.deactivated" : "member.reactivated",

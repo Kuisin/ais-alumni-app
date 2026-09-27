@@ -119,6 +119,7 @@ test("ニュース hub: confirm, poll, 日程調整, files, comments and a remin
 
   // Clean up.
   await admin.goto(`/en/app/admin/news/${postId}`);
+  await admin.getByRole("button", { name: "Edit", exact: true }).click();
   admin.once("dialog", (d) => d.accept());
   await admin.getByRole("button", { name: /Delete/ }).click();
   await expect(admin).toHaveURL(/\/en\/app\/admin\/news(\?|$)/);

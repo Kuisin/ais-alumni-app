@@ -290,6 +290,9 @@ export function ScheduleCard({
   const [answers, setAnswers] = useState<Record<string, Vote>>(initial);
   const { pending, error, run } = useHubAction();
   const [saved, setSaved] = useState(false);
+  // View first once answered; answers change only via the button.
+  const [editing, setEditing] = useState(open && !answered);
+  const edit = open && editing;
   const best = new Set(
     bestCandidates(new Map(poll.options.map((o) => [o.id, o.counts]))),
   );
@@ -306,7 +309,10 @@ export function ScheduleCard({
           e.preventDefault();
           run(
             () => votePollAction(postId, { pollId: poll.id, choices: answers }),
-            () => setSaved(true),
+            () => {
+              setSaved(true);
+              setEditing(false);
+            },
           );
         }}
       >
@@ -337,7 +343,7 @@ export function ScheduleCard({
                     })}
                   </span>
                 </div>
-                {open ? (
+                {edit ? (
                   <fieldset className="grid grid-cols-3 gap-2">
                     <legend className="sr-only">
                       {t("answerFor", { date })}
@@ -392,19 +398,42 @@ export function ScheduleCard({
             );
           })}
         </ul>
-        {open ? (
+        {edit ? (
           <>
             {!complete ? (
               <p className="text-sm text-slate-600">{t("needAll")}</p>
             ) : null}
-            <Button
-              type="submit"
-              disabled={pending || !complete}
-              className="w-full sm:w-auto"
-            >
-              {answered ? t("update") : t("submit")}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                disabled={pending || !complete}
+                className="w-full sm:w-auto"
+              >
+                {answered ? t("save") : t("submit")}
+              </Button>
+              {answered ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setAnswers(initial);
+                    setEditing(false);
+                  }}
+                >
+                  {t("cancel")}
+                </Button>
+              ) : null}
+            </div>
           </>
+        ) : open ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSaved(false);
+              setEditing(true);
+            }}
+          >
+            {t("update")}
+          </Button>
         ) : null}
       </form>
     </Section>

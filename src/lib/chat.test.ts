@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ChatGroupKind, RoleKey } from "@/generated/prisma/enums";
-import { desiredGroups } from "./chat";
+import { desiredGroups, directKey, isAdult, latestApril1 } from "./chat";
 
 describe("chat groups", () => {
   it("puts a graduate in 卒業生＋元在校生 and their class", () => {
@@ -33,5 +33,42 @@ describe("chat groups", () => {
         (g) => g.key,
       ),
     ).toEqual(["TEACHERS"]);
+  });
+});
+
+describe("18歳以上 group", () => {
+  const at = (iso: string) => new Date(`${iso}T00:00:00+09:00`);
+  const dob = (iso: string) => new Date(`${iso}T00:00:00Z`);
+
+  it("counts from the April 1 on or after the 18th birthday (JST)", () => {
+    expect(latestApril1(at("2027-03-31"))).toBe("2026-04-01");
+    expect(latestApril1(at("2027-04-01"))).toBe("2027-04-01");
+    // Turns 18 on April 1: joins that day.
+    expect(isAdult(dob("2008-04-01"), at("2026-03-31"))).toBe(false);
+    expect(isAdult(dob("2008-04-01"), at("2026-04-01"))).toBe(true);
+    // Turns 18 on April 2: waits for the next April 1.
+    expect(isAdult(dob("2008-04-02"), at("2026-04-02"))).toBe(false);
+    expect(isAdult(dob("2008-04-02"), at("2027-03-31"))).toBe(false);
+    expect(isAdult(dob("2008-04-02"), at("2027-04-01"))).toBe(true);
+    // Leap-day birthday; no birth date = not in the group.
+    expect(isAdult(dob("2008-02-29"), at("2026-04-01"))).toBe(true);
+    expect(isAdult(null, at("2030-04-01"))).toBe(false);
+  });
+
+  it("is added only when asked for", () => {
+    const roles = [{ role: RoleKey.CURRENT_PARENT, cohortId: null }];
+    expect(desiredGroups(roles, []).map((g) => g.key)).toEqual([
+      "CURRENT_PARENTS",
+    ]);
+    expect(desiredGroups(roles, [], { adult: true }).map((g) => g.key)).toEqual(
+      ["CURRENT_PARENTS", "ADULTS"],
+    );
+  });
+});
+
+describe("1:1 talks", () => {
+  it("have one key per pair, whoever starts", () => {
+    expect(directKey("b", "a")).toBe("DIRECT:a:b");
+    expect(directKey("a", "b")).toBe(directKey("b", "a"));
   });
 });

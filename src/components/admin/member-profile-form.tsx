@@ -9,6 +9,7 @@ import {
 import { NameFields } from "@/components/names/name-fields";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import type { NameParts } from "@/lib/names";
 import { AdminFormResult } from "./form-result";
 
@@ -32,6 +33,7 @@ export function MemberProfileForm({
     updateMemberProfileAction,
     {},
   );
+  useCloseOnSave(state);
   const err = (k: string) =>
     state.fieldErrors?.[k] ? tc("errors.validation") : null;
 

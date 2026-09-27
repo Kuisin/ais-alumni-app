@@ -1,8 +1,14 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { AccountState, RoleKey } from "@/generated/prisma/enums";
+import {
+  AccountState,
+  ChatGroupKind,
+  FollowStatus,
+  RoleKey,
+} from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
-import { desiredGroups } from "@/lib/chat";
+import { desiredGroups, directKey, isAdult } from "@/lib/chat";
 import { db } from "@/lib/db";
+import { ADULTS_CHAT_ENABLED, DIRECT_CHAT_ENABLED } from "@/lib/features";
 import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
 import { publicUrl } from "@/lib/urls";
 
@@ -18,11 +24,14 @@ const STUDENT = [RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT];
 export async function syncChatMembership(
   userId: string,
   client: Client = db,
+  now: Date = new Date(),
 ): Promise<boolean> {
   const user = await client.user.findUnique({
     where: { id: userId },
     select: {
       state: true,
+      dateOfBirth: true,
+      managedById: true,
       roles: { select: { role: true, cohortId: true } },
       parentLinks: {
         select: {
@@ -39,13 +48,17 @@ export async function syncChatMembership(
       },
     },
   });
+  // Only the automatic groups are managed here; 1:1 talks stay as they are.
   const current = await client.chatMember.findMany({
-    where: { userId },
+    where: { userId, group: { kind: { not: ChatGroupKind.DIRECT } } },
     select: { groupId: true, group: { select: { key: true } } },
   });
-  if (!user || user.state !== AccountState.ACTIVE) {
+  // Parent-managed child accounts can't sign in: no chats for them.
+  if (!user || user.state !== AccountState.ACTIVE || user.managedById) {
     if (!current.length) return false;
-    await client.chatMember.deleteMany({ where: { userId } });
+    await client.chatMember.deleteMany({
+      where: { userId, groupId: { in: current.map((m) => m.groupId) } },
+    });
     return true;
   }
   const childCohorts = new Set<string>();
@@ -54,7 +67,9 @@ export async function syncChatMembership(
     if (own) childCohorts.add(own);
     else if (l.childCohortId) childCohorts.add(l.childCohortId);
   }
-  const want = desiredGroups(user.roles, [...childCohorts]);
+  const want = desiredGroups(user.roles, [...childCohorts], {
+    adult: ADULTS_CHAT_ENABLED && isAdult(user.dateOfBirth, now),
+  });
   const have = new Map(current.map((m) => [m.group.key, m.groupId]));
   let changed = false;
 
@@ -179,4 +194,107 @@ export async function sendChatDigest(
     });
   }
   return { recipients: users.length };
+}
+
+export type DirectDenial =
+  | "disabled"
+  | "self"
+  | "notFound"
+  | "notFriends"
+  | "blocked";
+
+/**
+ * Who may start a 1:1 talk: mutual followers (like LINE friends), both
+ * active, never across a block. Parent-managed child accounts can't.
+ */
+export async function directChatDenial(
+  meId: string,
+  otherId: string,
+): Promise<DirectDenial | null> {
+  if (!DIRECT_CHAT_ENABLED) return "disabled";
+  if (meId === otherId) return "self";
+  const other = await db.user.findUnique({
+    where: { id: otherId },
+    select: { state: true, managedById: true },
+  });
+  if (!other || other.state !== AccountState.ACTIVE || other.managedById)
+    return "notFound";
+  const [follows, block] = await Promise.all([
+    db.follow.count({
+      where: {
+        status: FollowStatus.ACCEPTED,
+        OR: [
+          { followerId: meId, followeeId: otherId },
+          { followerId: otherId, followeeId: meId },
+        ],
+      },
+    }),
+    db.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: meId, blockedId: otherId },
+          { blockerId: otherId, blockedId: meId },
+        ],
+      },
+      select: { id: true },
+    }),
+  ]);
+  if (block) return "blocked";
+  if (follows < 2) return "notFriends";
+  return null;
+}
+
+/** The 1:1 talk between two members (created on first use). */
+export async function openDirectChat(
+  meId: string,
+  otherId: string,
+): Promise<string> {
+  const key = directKey(meId, otherId);
+  const group = await db.chatGroup.upsert({
+    where: { key },
+    create: { key, kind: ChatGroupKind.DIRECT },
+    update: {},
+    select: { id: true },
+  });
+  for (const userId of [meId, otherId])
+    await db.chatMember.upsert({
+      where: { groupId_userId: { groupId: group.id, userId } },
+      create: { groupId: group.id, userId },
+      update: {},
+    });
+  return group.id;
+}
+
+/** Mutual followers the member can start a talk with (newest first). */
+export async function directChatCandidates(meId: string) {
+  const mine = await db.follow.findMany({
+    where: { followerId: meId, status: FollowStatus.ACCEPTED },
+    select: { followeeId: true },
+  });
+  const theirs = await db.follow.findMany({
+    where: {
+      followeeId: meId,
+      status: FollowStatus.ACCEPTED,
+      followerId: { in: mine.map((f) => f.followeeId) },
+    },
+    select: { followerId: true },
+  });
+  const blocks = await db.block.findMany({
+    where: { OR: [{ blockerId: meId }, { blockedId: meId }] },
+    select: { blockerId: true, blockedId: true },
+  });
+  const blocked = new Set(
+    blocks.map((b) => (b.blockerId === meId ? b.blockedId : b.blockerId)),
+  );
+  return db.user.findMany({
+    where: {
+      id: {
+        in: theirs.map((f) => f.followerId).filter((id) => !blocked.has(id)),
+      },
+      state: AccountState.ACTIVE,
+      managedById: null,
+    },
+    orderBy: { nameRomaji: "asc" },
+    select: { id: true, nameRomaji: true, nameKanji: true, avatarUrl: true },
+  });
 }

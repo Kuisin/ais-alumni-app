@@ -1,18 +1,28 @@
 "use client";
 
-import { Radio, RefreshCw, SendHorizontal, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Copy,
+  EllipsisVertical,
+  Radio,
+  RefreshCw,
+  SendHorizontal,
+  Trash2,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Fragment,
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import {
   type ChatMessageView,
   chatMessagesAction,
+  chatReadStateAction,
   deleteChatMessageAction,
   markChatReadAction,
   sendChatMessageAction,
@@ -22,13 +32,15 @@ import {
   useRealtime,
   useRealtimeLive,
 } from "@/components/realtime/realtime-provider";
-import { Button } from "@/components/ui/button";
-import { Alert } from "@/components/ui/card";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/components/ui/cn";
-import { Textarea } from "@/components/ui/field";
+import { Link } from "@/i18n/navigation";
 import { CHAT_PAGE_SIZE, MAX_CHAT_MESSAGE } from "@/lib/chat";
 
 const POLL_MS = 5000;
+/** The app's colours: light background, brand-blue own bubbles. */
+const BG = "bg-slate-100";
+const MINE = "bg-brand-700 text-white";
 
 const jstDay = (iso: string) =>
   new Date(new Date(iso).getTime() + 9 * 3600_000).toISOString().slice(0, 10);
@@ -45,9 +57,13 @@ function merge(
   );
 }
 
+export type RoomMember = { id: string; name: string; avatar: string | null };
+
 /**
- * A group chat. New messages arrive over Supabase Realtime (or by polling
- * every few seconds without it); what's on screen is marked read.
+ * A talk, styled like LINE: full screen on phones with its own header,
+ * bubbles (own in green on the right), 既読 marks, date pills and a composer
+ * pinned to the bottom. New messages arrive over Supabase Realtime (or by
+ * polling every few seconds without it); what's on screen is marked read.
  */
 export function ChatRoom({
   groupId,
@@ -55,20 +71,35 @@ export function ChatRoom({
   me,
   isAdmin,
   member,
+  direct,
+  title,
+  members,
+  memberCount,
   initial,
+  initialReads,
   lastReadAt,
   muted: initialMuted,
+  blocked,
 }: {
   groupId: string;
   /** the group's realtime channel (src/lib/realtime.ts channelTopic) */
   topic: string;
   me: string;
   isAdmin: boolean;
-  /** false = admin looking in (can moderate, can't post) */
+  /** false = admin looking into a group (can moderate, can't post) */
   member: boolean;
+  /** 1:1 talk */
+  direct: boolean;
+  title: string;
+  members: RoomMember[];
+  memberCount: number;
   initial: ChatMessageView[];
+  /** when the other members last read the talk (ISO) */
+  initialReads: string[];
   lastReadAt: string | null;
   muted: boolean;
+  /** 1:1 talk where either side blocked the other */
+  blocked: boolean;
 }) {
   const t = useTranslations("chat.room");
   const tc = useTranslations("chat");
@@ -76,14 +107,17 @@ export function ChatRoom({
   const uid = useId();
   const live = useRealtimeLive();
   const [messages, setMessages] = useState(initial);
+  const [reads, setReads] = useState(initialReads);
   const [hasOlder, setHasOlder] = useState(initial.length >= CHAT_PAGE_SIZE);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(initialMuted);
-  const bottom = useRef<HTMLDivElement>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
-  // The unread line stays where it was when the room was opened.
+  const canPost = member && !blocked;
+  // The unread line stays where it was when the talk was opened.
   const [divider] = useState(() => {
     if (!lastReadAt) return null;
     return (
@@ -91,6 +125,47 @@ export function ChatRoom({
       null
     );
   });
+
+  // Full screen on phones: the page behind must not scroll.
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.add("max-lg:overflow-hidden");
+    return () => html.classList.remove("max-lg:overflow-hidden");
+  }, []);
+
+  // With the on-screen keyboard open, fit the talk to the visible area so
+  // the header and messages stay in view above the keyboard (iOS shrinks
+  // only the visual viewport; Android resizes via interactive-widget).
+  const shell = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = shell.current;
+    if (!vv || !el) return;
+    const phone = window.matchMedia("(max-width: 1023px)");
+    const fit = () => {
+      if (!phone.matches) {
+        el.style.removeProperty("height");
+        el.style.removeProperty("top");
+        el.style.removeProperty("bottom");
+        return;
+      }
+      el.style.height = `${vv.height}px`;
+      el.style.top = `${vv.offsetTop}px`;
+      el.style.bottom = "auto";
+      // Keep the latest messages visible as the keyboard opens.
+      const list = scroller.current;
+      if (list && stick.current) list.scrollTop = list.scrollHeight;
+    };
+    fit();
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    phone.addEventListener("change", fit);
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+      phone.removeEventListener("change", fit);
+    };
+  }, []);
 
   const fmtTime = (iso: string) =>
     new Intl.DateTimeFormat(locale === "en" ? "en-US" : "ja-JP", {
@@ -100,13 +175,12 @@ export function ChatRoom({
     }).format(new Date(iso));
   const fmtDay = (iso: string) => {
     const d = jstDay(iso);
-    const today = jstDay(new Date().toISOString());
-    const yesterday = jstDay(new Date(Date.now() - 86_400_000).toISOString());
-    if (d === today) return t("today");
-    if (d === yesterday) return t("yesterday");
+    if (d === jstDay(new Date().toISOString())) return t("today");
+    if (d === jstDay(new Date(Date.now() - 86_400_000).toISOString()))
+      return t("yesterday");
     return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "ja-JP", {
       timeZone: "Asia/Tokyo",
-      month: "long",
+      month: "numeric",
       day: "numeric",
       weekday: "short",
     }).format(new Date(iso));
@@ -120,11 +194,15 @@ export function ChatRoom({
     if (!member) return;
     clearTimeout(readTimer.current);
     readTimer.current = setTimeout(() => {
-      void markChatReadAction(groupId);
-    }, 1500);
+      if (document.visibilityState === "visible")
+        void markChatReadAction(groupId);
+    }, 1200);
   }, [groupId, member]);
   useEffect(() => {
     markRead();
+    const onVisible = () => markRead();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [markRead]);
 
   const add = useCallback(
@@ -145,46 +223,62 @@ export function ChatRoom({
     }).catch(() => null);
     if (rows) add(rows);
   }, [groupId, add]);
+  const fetchReads = useCallback(async () => {
+    const r = await chatReadStateAction(groupId).catch(() => null);
+    if (r) setReads(r);
+  }, [groupId]);
   useRealtime(topic, "message", () => void fetchNew());
+  useRealtime(topic, "read", () => void fetchReads());
   useRealtime(topic, "delete", (p) =>
     setMessages((list) =>
       list.map((m) => (m.id === p.id ? { ...m, body: "", deleted: true } : m)),
     ),
   );
 
-  // Without Realtime: poll for new messages.
+  // Without Realtime: poll for new messages and 既読.
   useEffect(() => {
     if (live) return;
-    const timer = setInterval(() => void fetchNew(), POLL_MS);
+    const timer = setInterval(() => {
+      void fetchNew();
+      void fetchReads();
+    }, POLL_MS);
     return () => clearInterval(timer);
-  }, [live, fetchNew]);
+  }, [live, fetchNew, fetchReads]);
 
-  // Follow new messages when the reader is at the bottom.
-  useEffect(() => {
-    const onScroll = () => {
-      stick.current =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 160;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  // Open at the unread line (or the bottom); then follow new messages
+  // while the reader is at the bottom.
+  const first = useRef(true);
   const count = messages.length;
-  useEffect(() => {
-    if (count && stick.current)
-      bottom.current?.scrollIntoView({ block: "end" });
-  }, [count]);
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el || !count) return;
+    if (first.current) {
+      first.current = false;
+      const mark = divider
+        ? el.querySelector<HTMLElement>("[data-divider]")
+        : null;
+      if (mark) el.scrollTop = mark.offsetTop - 80;
+      else el.scrollTop = el.scrollHeight;
+      return;
+    }
+    if (stick.current) el.scrollTop = el.scrollHeight;
+  }, [count, divider]);
 
   async function loadOlder() {
-    const first = messages[0];
-    if (!first) return;
+    const oldest = messages[0];
+    const el = scroller.current;
+    if (!oldest || !el) return;
     stick.current = false;
+    const before = el.scrollHeight;
     const rows = await chatMessagesAction(groupId, {
-      before: first.createdAt,
+      before: oldest.createdAt,
     }).catch(() => null);
     if (!rows) return;
     setHasOlder(rows.length >= CHAT_PAGE_SIZE);
     setMessages((list) => merge(rows, list));
+    requestAnimationFrame(() => {
+      el.scrollTop += el.scrollHeight - before;
+    });
   }
 
   async function send() {
@@ -207,6 +301,7 @@ export function ChatRoom({
   }
 
   async function remove(m: ChatMessageView) {
+    setSelected(null);
     if (!window.confirm(t("deleteConfirm"))) return;
     const r = await deleteChatMessageAction(m.id);
     if (r.ok)
@@ -217,124 +312,270 @@ export function ChatRoom({
       );
   }
 
+  const readsOf = (m: ChatMessageView) =>
+    reads.filter((r) => r >= m.createdAt).length;
+
   return (
-    <div className="space-y-3">
-      <p className="flex items-center gap-1.5 text-xs text-slate-500">
-        {live ? (
-          <Radio aria-hidden="true" className="size-3.5 text-emerald-600" />
+    <div
+      ref={shell}
+      className={cn(
+        "fixed inset-0 z-50 flex flex-col",
+        BG,
+        "lg:static lg:z-auto lg:h-[calc(100dvh-9rem)] lg:overflow-hidden lg:rounded-2xl lg:shadow-sm",
+      )}
+    >
+      {/* Talk header */}
+      <header className="flex items-center gap-1 border-b border-slate-200 bg-white px-1 pt-[env(safe-area-inset-top)] text-slate-900">
+        <Link
+          href="/app/chat"
+          aria-label={t("back")}
+          className="inline-flex size-11 items-center justify-center rounded-full hover:bg-slate-100"
+        >
+          <ChevronLeft aria-hidden="true" className="size-6" />
+        </Link>
+        <h1 className="min-w-0 flex-1 truncate py-3 text-lg font-bold">
+          {title}
+          {!direct ? (
+            <span className="ml-1 font-normal">({memberCount})</span>
+          ) : null}
+        </h1>
+        <span
+          className="mr-1 inline-flex items-center"
+          title={live ? t("live") : t("polling")}
+        >
+          {live ? (
+            <Radio aria-hidden="true" className="size-4 text-emerald-600" />
+          ) : (
+            <RefreshCw aria-hidden="true" className="size-4 text-slate-500" />
+          )}
+          <span className="sr-only">{live ? t("live") : t("polling")}</span>
+        </span>
+        <details className="relative">
+          <summary
+            aria-label={t("menu")}
+            className="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-full hover:bg-slate-100 [&::-webkit-details-marker]:hidden"
+          >
+            <EllipsisVertical aria-hidden="true" className="size-5" />
+          </summary>
+          <div className="absolute top-12 right-1 z-20 w-72 max-w-[calc(100vw-1rem)] space-y-3 rounded-xl bg-white p-3 text-sm shadow-xl">
+            {direct ? (
+              <p className="font-medium">{t("direct")}</p>
+            ) : (
+              <>
+                <p className="font-semibold">
+                  {tc("members", { count: memberCount })}
+                </p>
+                <ul className="max-h-56 space-y-2 overflow-y-auto">
+                  {members.map((m) => (
+                    <li key={m.id} className="flex items-center gap-2">
+                      <Avatar src={m.avatar} name={m.name} size={28} />
+                      <span className="truncate">{m.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {member ? (
+              <label className="flex items-start gap-2 border-t border-slate-100 pt-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-brand-700"
+                  checked={!muted}
+                  onChange={async (e) => {
+                    const next = !e.target.checked;
+                    setMuted(next);
+                    await setChatMutedAction(groupId, next);
+                  }}
+                />
+                {t("digest")}
+              </label>
+            ) : null}
+          </div>
+        </details>
+      </header>
+
+      {/* Messages */}
+      <div
+        ref={scroller}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          stick.current =
+            el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+        }}
+        className="flex-1 overflow-y-auto overscroll-contain px-3 py-3"
+      >
+        {hasOlder ? (
+          <div className="mb-3 text-center">
+            <button
+              type="button"
+              onClick={loadOlder}
+              className="rounded-full bg-white px-4 py-1.5 text-xs font-medium text-brand-700 shadow-sm hover:bg-brand-50"
+            >
+              {t("older")}
+            </button>
+          </div>
+        ) : null}
+        {messages.length === 0 ? (
+          <p className="mx-auto mt-10 max-w-xs rounded-2xl bg-white p-4 text-center text-sm text-slate-600 shadow-sm">
+            {tc("noMessages")}
+          </p>
         ) : (
-          <RefreshCw aria-hidden="true" className="size-3.5" />
-        )}
-        {live ? t("live") : t("polling")}
-      </p>
-
-      {hasOlder ? (
-        <div className="text-center">
-          <Button variant="ghost" onClick={loadOlder}>
-            {t("older")}
-          </Button>
-        </div>
-      ) : null}
-
-      {messages.length === 0 ? (
-        <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-600">
-          {tc("noMessages")}
-        </p>
-      ) : (
-        <ol aria-live="polite" aria-relevant="additions" className="space-y-2">
-          {messages.map((m, i) => {
-            const prev = messages[i - 1];
-            const newDay =
-              !prev || jstDay(prev.createdAt) !== jstDay(m.createdAt);
-            const mine = m.userId === me;
-            const sameAuthor =
-              prev && !newDay && prev.userId === m.userId && !mine;
-            return (
-              <Fragment key={m.id}>
-                {newDay ? (
-                  <li className="py-2 text-center text-xs text-slate-500">
-                    <span className="rounded-full bg-slate-100 px-3 py-1">
-                      {fmtDay(m.createdAt)}
-                    </span>
-                  </li>
-                ) : null}
-                {m.id === divider ? (
-                  <li className="flex items-center gap-2 py-1 text-xs font-semibold text-red-700">
-                    <span className="h-px flex-1 bg-red-200" />
-                    {t("unreadDivider")}
-                    <span className="h-px flex-1 bg-red-200" />
-                  </li>
-                ) : null}
-                <li
-                  className={cn(
-                    "flex flex-col",
-                    mine ? "items-end" : "items-start",
-                  )}
-                >
-                  {!mine && !sameAuthor ? (
-                    <span className="mb-0.5 px-1 text-xs font-medium text-slate-600">
-                      {m.name}
-                    </span>
+          <ol
+            aria-live="polite"
+            aria-relevant="additions"
+            className="space-y-1"
+          >
+            {messages.map((m, i) => {
+              const prev = messages[i - 1];
+              const newDay =
+                !prev || jstDay(prev.createdAt) !== jstDay(m.createdAt);
+              const mine = m.userId === me;
+              const runStart =
+                newDay || !prev || prev.userId !== m.userId || m.id === divider;
+              const canAct = !m.deleted && (mine || isAdmin);
+              const n = mine ? readsOf(m) : 0;
+              return (
+                <Fragment key={m.id}>
+                  {newDay ? (
+                    <li className="flex justify-center py-2">
+                      <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
+                        {fmtDay(m.createdAt)}
+                      </span>
+                    </li>
                   ) : null}
-                  <div
+                  {m.id === divider ? (
+                    <li data-divider className="flex justify-center py-2">
+                      <span className="rounded-full bg-red-50 px-4 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
+                        {t("unreadDivider")}
+                      </span>
+                    </li>
+                  ) : null}
+                  <li
                     className={cn(
-                      "flex max-w-[85%] items-end gap-1.5",
-                      mine && "flex-row-reverse",
+                      "flex gap-2",
+                      mine ? "justify-end" : "justify-start",
+                      runStart && "pt-2",
                     )}
                   >
-                    <p
+                    {!mine ? (
+                      runStart ? (
+                        <Avatar src={m.avatar} name={m.name} size={36} />
+                      ) : (
+                        <span aria-hidden="true" className="w-9 shrink-0" />
+                      )
+                    ) : null}
+                    <div
                       className={cn(
-                        "rounded-2xl px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap break-words",
-                        m.deleted
-                          ? "border border-dashed border-slate-300 text-sm text-slate-500 italic"
-                          : mine
-                            ? "rounded-br-md bg-brand-700 text-white"
-                            : "rounded-bl-md bg-white text-slate-900 shadow-sm ring-1 ring-slate-200",
+                        "flex max-w-[78%] min-w-0 flex-col",
+                        mine ? "items-end" : "items-start",
                       )}
                     >
-                      {m.deleted ? t("deleted") : m.body}
-                    </p>
-                    <span className="flex shrink-0 flex-col items-center gap-0.5">
-                      {!m.deleted && (mine || isAdmin) ? (
-                        <button
-                          type="button"
-                          onClick={() => remove(m)}
-                          aria-label={t("deleteLabel", { name: m.name })}
-                          className="inline-flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-red-700"
-                        >
-                          <Trash2 aria-hidden="true" className="size-3.5" />
-                        </button>
+                      {!mine && runStart && !direct ? (
+                        <span className="mb-0.5 px-1 text-xs font-medium text-slate-600">
+                          {m.name}
+                        </span>
                       ) : null}
-                      <time
-                        dateTime={m.createdAt}
-                        className="text-[11px] text-slate-500 tabular-nums"
+                      <div
+                        className={cn(
+                          "flex items-end gap-1",
+                          mine && "flex-row-reverse",
+                        )}
                       >
-                        {fmtTime(m.createdAt)}
-                      </time>
-                    </span>
-                  </div>
-                </li>
-              </Fragment>
-            );
-          })}
-        </ol>
-      )}
-      <div ref={bottom} />
+                        {m.deleted ? (
+                          <p className="rounded-2xl border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-500 italic">
+                            {t("deleted")}
+                          </p>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelected((s) => (s === m.id ? null : m.id))
+                            }
+                            aria-expanded={selected === m.id}
+                            className={cn(
+                              "rounded-[18px] px-3.5 py-2 text-left text-[15px] leading-relaxed whitespace-pre-wrap break-words shadow-sm select-text",
+                              mine
+                                ? MINE
+                                : "bg-white text-slate-900 ring-1 ring-slate-200",
+                              runStart &&
+                                (mine ? "rounded-tr-md" : "rounded-tl-md"),
+                            )}
+                          >
+                            {m.body}
+                          </button>
+                        )}
+                        <span
+                          className={cn(
+                            "flex shrink-0 flex-col pb-0.5 text-[10px] leading-tight text-slate-500",
+                            mine ? "items-end" : "items-start",
+                          )}
+                        >
+                          {mine && n > 0 ? (
+                            <span>
+                              {direct
+                                ? t("read")
+                                : t("readCount", { count: n })}
+                            </span>
+                          ) : null}
+                          <time dateTime={m.createdAt} className="tabular-nums">
+                            {fmtTime(m.createdAt)}
+                          </time>
+                        </span>
+                      </div>
+                      {selected === m.id && !m.deleted ? (
+                        <div className="mt-1 flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void navigator.clipboard?.writeText(m.body);
+                              setSelected(null);
+                            }}
+                            className="inline-flex min-h-9 items-center gap-1 rounded-full bg-white px-3 text-xs font-medium shadow"
+                          >
+                            <Copy aria-hidden="true" className="size-3.5" />
+                            {t("copy")}
+                          </button>
+                          {canAct ? (
+                            <button
+                              type="button"
+                              onClick={() => remove(m)}
+                              aria-label={t("deleteLabel", { name: m.name })}
+                              className="inline-flex min-h-9 items-center gap-1 rounded-full bg-white px-3 text-xs font-medium text-red-700 shadow"
+                            >
+                              <Trash2 aria-hidden="true" className="size-3.5" />
+                              {t("delete")}
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </li>
+                </Fragment>
+              );
+            })}
+          </ol>
+        )}
+      </div>
 
-      {member ? (
+      {/* Composer */}
+      {canPost ? (
         <form
-          className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 -mx-4 space-y-1 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:bottom-0"
+          className="border-t border-slate-200 bg-white px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
           onSubmit={(e) => {
             e.preventDefault();
             void send();
           }}
         >
-          {error ? <Alert tone="error">{error}</Alert> : null}
+          {error ? (
+            <p role="alert" className="px-2 pb-1 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
           <div className="flex items-end gap-2">
             <label htmlFor={`${uid}-msg`} className="sr-only">
               {t("messageLabel")}
             </label>
-            <Textarea
+            <textarea
               id={`${uid}-msg`}
               value={text}
               rows={Math.min(5, Math.max(1, text.split("\n").length))}
@@ -355,39 +596,25 @@ export function ChatRoom({
                   void send();
                 }
               }}
-              className="max-h-40 min-h-11 resize-none"
+              className="block max-h-36 min-h-10 flex-1 resize-none rounded-[20px] border-0 bg-slate-100 px-4 py-2 text-base focus-visible:outline-2 focus-visible:outline-brand-600"
             />
-            <Button
+            <button
               type="submit"
               disabled={sending || !text.trim()}
               aria-label={sending ? t("sending") : t("send")}
-              className="shrink-0 px-3"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-700 hover:bg-brand-50 disabled:text-slate-300"
             >
-              <SendHorizontal aria-hidden="true" className="size-5" />
-            </Button>
+              <SendHorizontal aria-hidden="true" className="size-6" />
+            </button>
           </div>
-          <p
-            id={`${uid}-hint`}
-            className="hidden text-xs text-slate-500 sm:block"
-          >
+          <p id={`${uid}-hint`} className="sr-only">
             {t("enterHint")}
           </p>
-          <label className="flex min-h-9 items-center gap-2 text-xs text-slate-600">
-            <input
-              type="checkbox"
-              className="size-4 accent-brand-700"
-              checked={!muted}
-              onChange={async (e) => {
-                const next = !e.target.checked;
-                setMuted(next);
-                await setChatMutedAction(groupId, next);
-              }}
-            />
-            {t("digest")}
-          </label>
         </form>
       ) : (
-        <Alert tone="info">{t("adminView")}</Alert>
+        <p className="bg-white px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] text-center text-sm text-slate-600">
+          {blocked ? t("blockedNotice") : t("adminView")}
+        </p>
       )}
     </div>
   );

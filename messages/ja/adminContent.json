@@ -81,6 +81,19 @@
       "open": "受付中",
       "closed": "受付終了",
       "full": "満員"
+    },
+    "details": "イベントの内容",
+    "body": "詳細",
+    "titles": "タイトル",
+    "audience": "対象",
+    "rsvp": {
+      "title": "出欠の受付",
+      "open": "受付中（{time} まで）",
+      "closedManual": "締め切り済み（{time} に締め切り）",
+      "closedDeadline": "期限を過ぎたため締め切り",
+      "close": "出欠の受付を締め切る",
+      "reopen": "受付を再開する",
+      "hint": "締め切ると、会員は回答を変更できなくなります。再開すると期限まで受け付けます。"
     }
   },
   "attendees": {
@@ -126,7 +139,15 @@
     "restore": "元に戻す",
     "archivedHint": "会員には表示されず、通知も送られません。",
     "scheduledFor": "予約：{date}",
-    "noNotify": "通知なし"
+    "noNotify": "通知なし",
+    "details": "ニュースの内容",
+    "body": "本文",
+    "titles": "タイトル",
+    "delivery": "配信",
+    "notifyOn": "LINE・メールで通知",
+    "notifyOff": "アプリ内のみ",
+    "pinned": "固定表示",
+    "files": "添付ファイル {count}件"
   },
   "notify": {
     "title": "公開して通知",
@@ -299,6 +320,50 @@
       "reminded": "リマインド送信済み（{time}）",
       "reminderPlanned": "期限の約1日前に未回答の人へリマインドを送ります。",
       "deadline": "回答期限：{time}"
+    },
+    "view": {
+      "confirm": "「確認しました」ボタンあり",
+      "comments": "コメント・リアクション受付",
+      "commentsOff": "コメント・リアクションなし",
+      "poll": "アンケート：{question}",
+      "schedule": "日程調整：候補 {count}件",
+      "none": "回答の依頼なし"
+    },
+    "close": {
+      "title": "回答の受付",
+      "open": "受付中（期限：{time}）",
+      "openNoDeadline": "受付中",
+      "closedManual": "締め切り済み（{time} に締め切り）",
+      "closedDeadline": "期限を過ぎたため締め切り",
+      "close": "回答を締め切る",
+      "reopen": "回答の受付を再開する",
+      "hint": "締め切ると、会員は回答を変更できなくなり、リマインドも送られません。"
+    }
+  },
+  "xlsx": {
+    "download": "Excelでダウンロード",
+    "summarySheet": "概要",
+    "attendeesSheet": "出欠",
+    "noLimit": "定員なし",
+    "rsvpStatus": "出欠の受付",
+    "rsvpOpen": "受付中",
+    "rsvpClosed": "締め切り（期限）",
+    "rsvpClosedManual": "締め切り（手動）",
+    "goingGuests": "参加者の同伴者",
+    "exportedAt": "出力日時",
+    "walkIn": "未回答（当日参加）",
+    "col": {
+      "nameRomaji": "氏名（ローマ字）",
+      "nameKanji": "氏名（漢字）",
+      "nameKana": "フリガナ",
+      "type": "区分・学年",
+      "answer": "回答",
+      "guests": "同伴者",
+      "answeredAt": "回答日時",
+      "checkedInAt": "受付日時",
+      "checkedInBy": "受付担当",
+      "email": "メールアドレス",
+      "phone": "電話番号"
     }
   }
 }

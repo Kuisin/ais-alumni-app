@@ -9,6 +9,7 @@ import {
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import { EducationLevel, HistoryVisibility } from "@/generated/prisma/enums";
 import { OrgCombobox } from "./org-combobox";
 
@@ -43,6 +44,7 @@ export function HistoryForm({
     saveHistoryAction,
     null,
   );
+  useCloseOnSave(state);
   const formRef = useRef<HTMLFormElement>(null);
   const prefix = `${kind}-${values?.id ?? "new"}`;
   const err = (f: string) =>

@@ -93,6 +93,7 @@ async function NewsTab({
       publishedAt: true,
       requireConfirm: true,
       deadline: true,
+      closedAt: true,
     },
   });
   const rows = pageIds

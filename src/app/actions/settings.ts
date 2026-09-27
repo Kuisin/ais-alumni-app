@@ -19,6 +19,7 @@ import {
 } from "@/lib/account";
 import { audit } from "@/lib/audit";
 import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
+import { syncChatMembership } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
@@ -380,6 +381,9 @@ export async function deactivateSelfAction(
       where: { id: user.id },
       data: { state: AccountState.DEACTIVATED, deactivatedAt: new Date() },
     });
+    await syncChatMembership(user.id).catch((e) =>
+      console.error("[settings] chat sync failed", e),
+    );
     await audit(user.id, "self.deactivated", { type: "User", id: user.id });
     await notify(user, {
       kind: "DEACTIVATED",

@@ -15,7 +15,8 @@
     "CURRENT_PARENTS": "Parents of current students",
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "{cohort}",
-    "COHORT_PARENTS": "{cohort} parents"
+    "COHORT_PARENTS": "{cohort} parents",
+    "ADULTS": "18 and over"
   },
   "groupHints": {
     "TEACHERS": "Everyone who teaches or taught at AIS",
@@ -24,7 +25,8 @@
     "CURRENT_PARENTS": "Parents of current students",
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "Students and graduates of this class",
-    "COHORT_PARENTS": "Parents of children in this class"
+    "COHORT_PARENTS": "Parents of children in this class",
+    "ADULTS": "Members join on the April 1 after they turn 18"
   },
   "room": {
     "back": "All chats",
@@ -51,10 +53,42 @@
       "invalid": "Please write a message (up to 2000 characters).",
       "tooFast": "You're sending too fast. Please wait a moment.",
       "generic": "The message couldn't be sent. Please try again."
-    }
+    },
+    "read": "Read",
+    "readCount": "Read by {count}",
+    "menu": "Menu",
+    "direct": "One-to-one chat",
+    "blockedNotice": "You can't exchange messages with this member.",
+    "copy": "Copy",
+    "close": "Close"
   },
   "digest": {
     "subject": "[AIS Alumni] You have unread chat messages",
     "text": "You have {count, plural, one {# unread message} other {# unread messages}} in your group chats.\nPlease open the app to read them."
+  },
+  "newTalk": "New chat",
+  "search": "Search chats",
+  "filter": "Show",
+  "filters": {
+    "all": "All",
+    "direct": "Friends",
+    "groups": "Groups"
+  },
+  "noMatch": "No matches.",
+  "message": "Message",
+  "new": {
+    "title": "New chat",
+    "hint": "Chat one-to-one with members you follow and who follow you back.",
+    "empty": "No one to chat with yet.",
+    "emptyHint": "Once you follow each other, you can chat one-to-one.",
+    "findMembers": "Find members in the directory",
+    "errors": {
+      "disabled": "One-to-one chats aren't available yet.",
+      "self": "You can't chat with yourself.",
+      "notFound": "You can't chat with this member.",
+      "notFriends": "You can only chat with members who follow you back.",
+      "blocked": "You can't chat with this member.",
+      "forbidden": "The chat couldn't be opened."
+    }
   }
 }

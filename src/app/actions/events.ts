@@ -53,6 +53,7 @@ export async function rsvpAction(
         select: {
           startsAt: true,
           rsvpDeadline: true,
+          rsvpClosedAt: true,
           capacity: true,
           targetRoles: true,
           targetAudiences: true,

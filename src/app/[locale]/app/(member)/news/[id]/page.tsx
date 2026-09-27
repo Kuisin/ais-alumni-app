@@ -63,7 +63,7 @@ export default async function NewsDetailPage({
   // Authorized above (targeted + published) before issuing a signed URL.
   const cover = post.coverUrl ? signedFileUrl(post.coverUrl) : null;
   const hub = await loadHub(post, user);
-  const open = isOpen(post.deadline);
+  const open = isOpen(post);
   const th = await getTranslations("news.hub");
   const kb = (n: number) =>
     n >= 1024 * 1024
@@ -87,14 +87,16 @@ export default async function NewsDetailPage({
           {title.text || t("untitled")}
           <FallbackTag fallback={title.fallback} />
         </h1>
-        {post.deadline ? (
+        {post.deadline || post.closedAt ? (
           <p
             className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${open ? "bg-amber-100 text-amber-900" : "bg-slate-100 text-slate-700"}`}
           >
             <Clock aria-hidden="true" className="size-4" />
-            {open
+            {open && post.deadline
               ? th("deadline", { time: formatDateTime(post.deadline, locale) })
-              : th("closed")}
+              : post.closedAt
+                ? th("closedManual")
+                : th("closed")}
           </p>
         ) : null}
       </div>

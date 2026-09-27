@@ -7,6 +7,7 @@ import {
   updateNotifyViaAction,
 } from "@/app/actions/settings";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import type { NotifyChannel } from "@/generated/prisma/enums";
 import { FormResult } from "./form-result";
 
@@ -17,6 +18,7 @@ export function NotifyForm({ current }: { current: NotifyChannel }) {
     updateNotifyViaAction,
     {},
   );
+  useCloseOnSave(state);
   const options = [
     { value: "AUTO", label: t("auto"), hint: t("autoHint") },
     { value: "EMAIL_ONLY", label: t("emailOnly"), hint: t("emailOnlyHint") },

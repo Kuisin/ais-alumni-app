@@ -110,5 +110,9 @@
     "outreach": "発信",
     "data": "データ"
   },
-  "notReady": "準備中"
+  "notReady": "準備中",
+  "notSet": "未設定",
+  "on": "オン",
+  "off": "オフ",
+  "closed": "締め切り済み"
 }

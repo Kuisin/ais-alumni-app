@@ -1,10 +1,11 @@
-import { Pencil, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { deleteCohortAction } from "@/app/actions/admin-cohorts";
 import { CohortEditForm } from "@/components/cohorts/cohort-forms";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { cohortLabel } from "@/lib/cohorts";
 import { db } from "@/lib/db";
 import { isClassGraduated } from "@/lib/school";
@@ -73,31 +74,25 @@ export default async function CohortsPage() {
                 {c.note ? (
                   <p className="text-sm text-slate-700">{c.note}</p>
                 ) : null}
-                <details>
-                  <summary className="-mx-2 inline-flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-lg px-2 text-sm font-medium text-brand-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                    <Pencil aria-hidden="true" className="size-4" />
-                    {t("edit")}
-                  </summary>
-                  <div className="mt-3 space-y-3">
-                    <CohortEditForm
-                      id={c.id}
-                      start={c.elementaryStartYear}
-                      end={c.elementaryEndYear}
-                      note={c.note ?? ""}
-                    />
-                    {used === 0 ? (
-                      <form action={deleteCohortAction.bind(null, c.id)}>
-                        <SubmitButton variant="danger">
-                          {t("delete")}
-                        </SubmitButton>
-                      </form>
-                    ) : (
-                      <p className="text-sm text-slate-600">
-                        {t("cannotDelete")}
-                      </p>
-                    )}
-                  </div>
-                </details>
+                <ViewEdit view={null} editLabel={t("edit")}>
+                  <CohortEditForm
+                    id={c.id}
+                    start={c.elementaryStartYear}
+                    end={c.elementaryEndYear}
+                    note={c.note ?? ""}
+                  />
+                  {used === 0 ? (
+                    <form action={deleteCohortAction.bind(null, c.id)}>
+                      <SubmitButton variant="danger">
+                        {t("delete")}
+                      </SubmitButton>
+                    </form>
+                  ) : (
+                    <p className="text-sm text-slate-600">
+                      {t("cannotDelete")}
+                    </p>
+                  )}
+                </ViewEdit>
               </Card>
             </li>
           );

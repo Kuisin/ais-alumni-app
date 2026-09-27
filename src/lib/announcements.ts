@@ -1,14 +1,10 @@
 import { cache } from "react";
 import { AccountState } from "@/generated/prisma/enums";
-import {
-  audienceWhere,
-  effectiveAudiences,
-  membersInAudiences,
-} from "@/lib/audience";
-import { toViewer } from "@/lib/authz";
+import type { effectiveAudiences } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { MESSAGES_ENABLED } from "@/lib/features";
-import { publishedWhere } from "@/lib/news";
+import { audienceUserWhere, specFromPost } from "@/lib/news-audience";
+import { visibleNews } from "@/lib/news-visibility";
 import type { CurrentUser } from "@/lib/session";
 
 /**
@@ -33,15 +29,15 @@ export const unreadCounts = cache(
           })
         : 0,
       // News posted since the member joined that they haven't opened.
-      db.newsPost.count({
-        where: {
-          AND: [
-            publishedWhere(),
-            audienceWhere(toViewer(user)),
-            { publishedAt: { gte: user.createdAt } },
-            { reads: { none: { userId: user.id } } },
-          ],
-        },
+      visibleNews(user).then(async (posts) => {
+        const recent = posts.filter(
+          (p) => p.publishedAt && p.publishedAt >= user.createdAt,
+        );
+        if (recent.length === 0) return 0;
+        const read = await db.newsRead.count({
+          where: { userId: user.id, postId: { in: recent.map((p) => p.id) } },
+        });
+        return recent.length - read;
       }),
     ]);
     return { news, messages };
@@ -176,6 +172,7 @@ export async function messageReceipts(broadcastId: string) {
 export async function newsReadStats(
   posts: {
     id: string;
+    audience?: unknown;
     targetAudiences: Parameters<
       typeof effectiveAudiences
     >[0]["targetAudiences"];
@@ -193,7 +190,9 @@ export async function newsReadStats(
     const audience = await db.user.count({
       where: {
         state: AccountState.ACTIVE,
-        ...membersInAudiences(effectiveAudiences(p)),
+        ...audienceUserWhere(
+          specFromPost({ ...p, audience: p.audience ?? null }),
+        ),
       },
     });
     out.set(p.id, {

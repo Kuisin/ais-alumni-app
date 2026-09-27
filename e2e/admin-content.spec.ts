@@ -32,7 +32,8 @@ test("admin saves and deletes a news draft", async ({ page }) => {
   await page.goto("/en/app/admin/news/new");
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel("Body (Japanese)").fill("Draft body");
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("radio", { name: /^Save as draft/ }).check();
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await expect(page.getByText("The post has been saved.")).toBeVisible();
 
   // Archive: listed under "Archived", then restore.
@@ -46,6 +47,50 @@ test("admin saves and deletes a news draft", async ({ page }) => {
   await page.goto(editUrl);
   await page.getByRole("button", { name: "Restore" }).click();
   await expect(page.getByRole("button", { name: "Archive" })).toBeVisible();
+
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: /Delete/ }).click();
+  await expect(page).toHaveURL(/\/en\/app\/admin\/news(\?|$)/);
+  await expect(page.getByText(title)).toHaveCount(0);
+});
+
+test("admin schedules a news post for graduates", async ({ page }) => {
+  const title = `E2E scheduled ${Date.now()}`;
+  // About an hour from now, as a JST datetime-local value.
+  const sendAt = new Date(Date.now() + 9 * 3600_000 + 3600_000)
+    .toISOString()
+    .slice(0, 16);
+  await signInWithEmail(page, "admin@example.com");
+  await page.goto("/en/app/admin/news/new");
+  await page.getByLabel("Title (Japanese)").fill(title);
+  await page.getByLabel("Body (Japanese)").fill("Scheduled body");
+  await page
+    .getByRole("radio", { name: /^Schedule for a date and time/ })
+    .check();
+  await page.getByLabel(/^Send at \(JST\)/).fill(sendAt);
+  await expect(
+    page.getByRole("checkbox", { name: /^Notify by LINE and email/ }),
+  ).toBeChecked();
+  await page.getByRole("radio", { name: /^Choose conditions/ }).check();
+  await page.getByRole("checkbox", { name: /^Graduate/ }).check();
+  await expect(page.getByText(/^Recipients: \d+ members?$/)).toBeVisible();
+  await page.getByRole("button", { name: "Schedule", exact: true }).click();
+  await expect(page.getByText("The post has been saved.")).toBeVisible();
+
+  // The list shows the reservation and the audience.
+  const editUrl = page.url();
+  await page.goto("/en/app/admin/news");
+  const row = page.getByRole("listitem").filter({ hasText: title });
+  await expect(row.getByText("Scheduled", { exact: true })).toBeVisible();
+  await expect(row.getByText(/^Scheduled: /)).toBeVisible();
+  await expect(row.getByText("Graduate", { exact: true })).toBeVisible();
+
+  // Editing keeps the reservation selected.
+  await page.goto(editUrl);
+  await expect(
+    page.getByRole("radio", { name: /^Schedule for a date and time/ }),
+  ).toBeChecked();
+  await expect(page.getByLabel(/^Send at \(JST\)/)).toHaveValue(sendAt);
 
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /Delete/ }).click();

@@ -7,11 +7,11 @@ import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
 import { Badge } from "@/components/ui/card";
 import { markNewsRead } from "@/lib/announcements";
-import { isAudienceTargeted } from "@/lib/audience";
-import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDate, localized } from "@/lib/format";
+import { matchesAudience, specFromPost } from "@/lib/news-audience";
+import { newsViewer } from "@/lib/news-visibility";
 import { getCurrentUser, requireActive } from "@/lib/session";
 import { signedFileUrl } from "@/lib/storage";
 
@@ -22,7 +22,7 @@ const loadPost = cache(async (id: string) => {
   const post = await db.newsPost.findUnique({ where: { id } });
   if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
     return null;
-  if (!isAudienceTargeted(post, toViewer(user))) return null;
+  if (!matchesAudience(specFromPost(post), await newsViewer(user))) return null;
   return post;
 });
 

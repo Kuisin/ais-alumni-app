@@ -31,6 +31,8 @@ export default defineConfig({
     command: `pnpm next start -p ${PORT}`,
     env: {
       EMAIL_DEV_MAILBOX: "1",
+      // Lets tests call /api/cron/* (e.g. sending reserved news).
+      CRON_SECRET: "e2e-cron-secret",
       APP_URL: `http://localhost:${PORT}`,
       AUTH_URL: `http://localhost:${PORT}`,
     },

@@ -6,7 +6,8 @@
     "where": "場所",
     "rsvp": "出欠と公開範囲",
     "cover": "カバー画像",
-    "publishing": "公開設定と公開範囲"
+    "delivery": "配信",
+    "audience": "受け取る人"
   },
   "fields": {
     "titleHint": "タイトルは日本語・英語の少なくとも一方を入力してください。未入力の言語ではもう一方が表示されます。",
@@ -31,8 +32,6 @@
     "coverHint": "JPGまたはPNG、4MBまで。",
     "currentCover": "現在のカバー画像",
     "removeCover": "現在の画像を削除する",
-    "publishedAt": "公開日時（日本時間）",
-    "publishedAtHint": "空欄＝下書き。未来の日時を指定すると予約投稿になり、公開後に毎朝9:00（日本時間）の処理で会員へ通知されます。",
     "pinned": "ニュース一覧の先頭に固定する"
   },
   "errors": {
@@ -48,7 +47,9 @@
     "coverType": "アップロードできるのはJPGまたはPNG画像のみです。",
     "coverSize": "画像は4MB以下にしてください。",
     "forbidden": "この操作を行う権限がありません。",
-    "notFound": "対象が見つかりません。"
+    "notFound": "対象が見つかりません。",
+    "sendAtPast": "未来の日時を指定してください。",
+    "invalidAudience": "受け取る人の指定が正しくありません。もう一度選び直してください。"
   },
   "events": {
     "title": "イベント管理",
@@ -100,8 +101,6 @@
     "deleted": "ニュースを削除しました。",
     "deleteTitle": "ニュースを削除",
     "deleteConfirm": "このニュースを削除しますか？",
-    "saveDraftOrScheduled": "保存する",
-    "saveAndNotify": "保存して公開・通知へ進む…",
     "status": {
       "draft": "下書き",
       "scheduled": "予約済み",
@@ -118,12 +117,14 @@
     "archivedBadge": "アーカイブ中",
     "archive": "アーカイブ",
     "restore": "元に戻す",
-    "archivedHint": "会員には表示されず、通知も送られません。"
+    "archivedHint": "会員には表示されず、通知も送られません。",
+    "scheduledFor": "予約：{date}",
+    "noNotify": "通知なし"
   },
   "notify": {
     "title": "公開して通知",
     "draftHint": "このニュースは下書きです。今すぐ公開して、対象の会員に通知できます。",
-    "scheduledHint": "{date}に公開予定です。公開後、毎朝9:00（日本時間）の処理で自動的に通知されます。今すぐ公開して通知することもできます。",
+    "scheduledHint": "{date}に公開予定です。公開時刻から10〜15分以内に自動で通知されます（通知オンの場合）。今すぐ公開して通知することもできます。",
     "publishedHint": "公開済みですが、まだ会員に通知していません。",
     "notifyNow": "会員に通知する…",
     "publishAndNotify": "今すぐ公開して通知する…",
@@ -150,5 +151,80 @@
     "empty": "まだ誰も読んでいません。",
     "showAll": "すべて表示（ほか{count}人）",
     "truncated": "最近読んだ{count}人を表示しています。"
+  },
+  "delivery": {
+    "legend": "送信のタイミング",
+    "KEEP": "公開中（変更しない）",
+    "KEEPHint": "公開日時はそのままです。",
+    "NOW": "今すぐ送信",
+    "NOWHint": "保存するとすぐに公開されます。",
+    "SCHEDULE": "日時を指定して予約",
+    "SCHEDULEHint": "指定した日時に公開されます。",
+    "DRAFT": "下書きとして保存",
+    "DRAFTHint": "会員には表示されません。",
+    "sendAt": "送信日時（日本時間）",
+    "sendAtHint": "指定した時刻から10〜15分以内に自動で公開・送信されます。",
+    "notify": "LINE・メールで通知する",
+    "notifyHint": "通知にはニュースの内容は含まれず、ニュースへのリンクだけが届きます。オフにするとアプリ内での公開のみになります。",
+    "submitConfirm": "送信へ進む",
+    "submitPublish": "今すぐ公開",
+    "submitSchedule": "予約する",
+    "submitDraft": "下書き保存"
+  },
+  "audience": {
+    "mode": "受け取る人の範囲",
+    "everyone": "全員",
+    "everyoneHint": "すべての会員が受け取ります。",
+    "custom": "条件を指定",
+    "customHint": "グループ・学年・個人を組み合わせて指定します。",
+    "anyHint": "いずれかの条件に当てはまる人が受け取ります。何も選ばない場合は全員に届きます。",
+    "count": "対象：{count}人",
+    "counting": "対象：計算中…",
+    "countError": "対象の人数を取得できませんでした。",
+    "groupsLegend": "グループ",
+    "groups": {
+      "TEACHER_CURRENT": "現職の教職員",
+      "TEACHER_FORMER": "元教職員",
+      "CURRENT_STUDENT": "在校生",
+      "CURRENT_PARENT": "在校生保護者",
+      "GRADUATE": "卒業生",
+      "LEFT_STUDENT": "元在校生",
+      "FORMER_PARENT": "卒業生保護者"
+    },
+    "groupHints": {
+      "TEACHER_CURRENT": "現在AISに勤務している教職員",
+      "TEACHER_FORMER": "以前AISに勤務していた教職員",
+      "CURRENT_STUDENT": "年少〜小学6年生",
+      "CURRENT_PARENT": "在校生のご家族",
+      "GRADUATE": "小学校を卒業した人",
+      "LEFT_STUDENT": "卒業前に転校・退学した人",
+      "FORMER_PARENT": "卒業生・元在校生のご家族"
+    },
+    "cohortsLegend": "学年",
+    "cohortsHint": "選んだ学年の在校生・卒業生・元在校生が受け取ります。",
+    "cohortFilter": "学年を絞り込む",
+    "cohortFilterPlaceholder": "例：12、2020",
+    "show": "表示",
+    "showAll": "すべて",
+    "showGraduated": "卒業",
+    "showCurrent": "在校",
+    "selectShown": "表示中をすべて選択",
+    "clearCohorts": "選択を解除",
+    "cohortsSelected": "{count}学年を選択中",
+    "noCohorts": "該当する学年はありません。",
+    "includeParents": "この学年の保護者も含める",
+    "includeParentsHint": "選んだ学年にお子さんがいる保護者も受け取ります。",
+    "membersLegend": "個別に指定",
+    "memberSearch": "名前で検索",
+    "memberSearchHint": "ローマ字・漢字・フリガナで検索できます。",
+    "searching": "検索中…",
+    "noResults": "見つかりませんでした。",
+    "addMember": "{name}を追加",
+    "removeMember": "{name}を外す",
+    "added": "追加済み",
+    "membersSelected": "{count}人を選択中",
+    "summaryCohorts": "学年 {count}",
+    "summaryParents": "保護者含む",
+    "summaryUsers": "個別 {count}人"
   }
 }

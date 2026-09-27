@@ -14,11 +14,12 @@ import { Alert, Badge, PageHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Link } from "@/i18n/navigation";
-import { effectiveAudiences } from "@/lib/audience";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { localized, toJstLocalInput } from "@/lib/format";
 import { newsStatus } from "@/lib/news";
+import { specFromPost } from "@/lib/news-audience";
 import { requireAdmin } from "@/lib/session";
 import { signedFileUrl } from "@/lib/storage";
 
@@ -43,6 +44,16 @@ export default async function AdminNewsEditPage({
   if (!post) notFound();
   const t = await getTranslations("adminContent");
   const status = newsStatus(post);
+  const audience = specFromPost(post);
+  const [cohorts, members] = await Promise.all([
+    loadCohortOptions(locale),
+    audience.userIds.length
+      ? db.user.findMany({
+          where: { id: { in: audience.userIds } },
+          select: { id: true, nameRomaji: true, nameKanji: true },
+        })
+      : [],
+  ]);
 
   return (
     <>
@@ -145,16 +156,24 @@ export default async function AdminNewsEditPage({
               titleEn: post.titleEn ?? "",
               bodyJa: post.bodyJa ?? "",
               bodyEn: post.bodyEn ?? "",
-              publishedAt: post.publishedAt
-                ? toJstLocalInput(post.publishedAt)
-                : "",
+              status,
+              sendAt:
+                status === "scheduled" && post.publishedAt
+                  ? toJstLocalInput(post.publishedAt)
+                  : "",
+              notifyOnPublish: post.notifyOnPublish,
               pinned: post.pinned,
-              targetAudiences: effectiveAudiences(post),
+              audience,
+              audienceMembers: members.map((m) => ({
+                id: m.id,
+                name: m.nameRomaji ?? m.nameKanji ?? "—",
+                kanji: m.nameRomaji ? m.nameKanji : null,
+              })),
               coverPreviewUrl: post.coverUrl
                 ? signedFileUrl(post.coverUrl)
                 : null,
-              notified: post.notifiedAt !== null,
             }}
+            cohorts={cohorts}
             deleteAction={{
               action: deleteNewsAction,
               message: t("news.deleteConfirm"),

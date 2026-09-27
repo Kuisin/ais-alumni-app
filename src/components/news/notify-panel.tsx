@@ -25,6 +25,7 @@ export async function NotifyPanel({
     id: string;
     targetRoles: RoleKey[];
     targetAudiences: AudienceKey[];
+    audience?: unknown;
     notifiedAt: Date | null;
     publishedAt: Date | null;
   };

@@ -121,3 +121,17 @@ describe("mentions", () => {
     ]);
   });
 });
+
+describe("学年代表 group", () => {
+  it("is added for representatives", () => {
+    const roles = [{ role: RoleKey.FORMER_STUDENT, cohortId: "c5" }];
+    expect(desiredGroups(roles, [], { rep: true }).map((g) => g.key)).toEqual([
+      "FORMER_STUDENTS",
+      "COHORT:c5",
+      "CLASS_REPS",
+    ]);
+    expect(desiredGroups(roles, []).map((g) => g.key)).not.toContain(
+      "CLASS_REPS",
+    );
+  });
+});

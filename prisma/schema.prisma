@@ -792,17 +792,20 @@ model ChatMember {
 }
 
 model ChatMessage {
-  id          String    @id @default(cuid())
-  groupId     String
-  group       ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User      @relation("chatMessages", fields: [userId], references: [id], onDelete: Cascade)
-  body        String
-  createdAt   DateTime  @default(now())
+  id             String    @id @default(cuid())
+  groupId        String
+  group          ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User      @relation("chatMessages", fields: [userId], references: [id], onDelete: Cascade)
+  body           String
+  /// Added: members mentioned with @name, and @全員 (group chats)
+  mentionUserIds String[]  @default([])
+  mentionAll     Boolean   @default(false)
+  createdAt      DateTime  @default(now())
   /// deleted by the author or an admin (the text is removed)
-  deletedAt   DateTime?
-  deletedById String?
-  deletedBy   User?     @relation("chatDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+  deletedAt      DateTime?
+  deletedById    String?
+  deletedBy      User?     @relation("chatDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
 
   @@index([groupId, createdAt])
 }

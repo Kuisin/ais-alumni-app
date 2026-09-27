@@ -16,6 +16,14 @@ import {
   audienceUserWhere,
   legacyColumns,
 } from "@/lib/news-audience";
+import {
+  attachmentItemSchema,
+  MAX_ATTACHMENTS,
+  parseJsonField,
+  pollInputSchema,
+  scheduleInputSchema,
+} from "@/lib/news-hub";
+import { checkNewAttachments, type HubInput, saveHub } from "@/lib/news-hub-db";
 import { actionAdmin } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
@@ -280,6 +288,9 @@ const NewsSchema = z
     notifyOnPublish: z.boolean(),
     pinned: z.boolean(),
     audience: audienceField,
+    requireConfirm: z.boolean(),
+    allowComments: z.boolean(),
+    deadline: optDate,
   })
   .superRefine((d, ctx) => {
     if (!d.titleJa && !d.titleEn) {
@@ -351,9 +362,33 @@ export async function saveNewsAction(
     notifyOnPublish: fd.get("notifyOnPublish") === "on",
     pinned: fd.get("pinned") === "on",
     audience: str(fd, "audience"),
+    requireConfirm: fd.get("requireConfirm") === "on",
+    allowComments: fd.get("allowComments") === "on",
+    deadline: str(fd, "deadline"),
   });
   if (!parsed.success)
     return { error: "validation", fieldErrors: toFieldErrors(parsed.error) };
+  // Poll, 日程調整 and attachments (JSON fields from the hub editor).
+  const poll = parseJsonField(str(fd, "poll"), pollInputSchema);
+  const schedule = parseJsonField(str(fd, "schedule"), scheduleInputSchema);
+  const files = parseJsonField(
+    str(fd, "attachments"),
+    z.array(attachmentItemSchema).max(MAX_ATTACHMENTS, "tooManyFiles"),
+  );
+  if (!poll.ok || !schedule.ok || !files.ok) {
+    const fieldErrors: Record<string, string> = {};
+    if (!poll.ok) fieldErrors.poll = poll.error;
+    if (!schedule.ok) fieldErrors.schedule = schedule.error;
+    if (!files.ok) fieldErrors.attachments = files.error;
+    return { error: "validation", fieldErrors };
+  }
+  const hub: HubInput = {
+    poll: poll.value,
+    schedule: schedule.value,
+    attachments: files.value ?? [],
+  };
+  if (!(await checkNewAttachments(hub.attachments)))
+    return { error: "validation", fieldErrors: { attachments: "invalid" } };
   const { delivery, sendAt, audience, ...rest } = parsed.data;
   const publishedAt =
     delivery === "NOW"
@@ -442,6 +477,8 @@ export async function saveNewsAction(
     );
     postId = post.id;
   }
+  const removedFiles = await db.$transaction((tx) => saveHub(tx, postId, hub));
+  for (const key of removedFiles) await removeFile(key);
   revalidateNews();
 
   // Send now: continue to the confirm step (recipient count) before sending.
@@ -456,11 +493,17 @@ export async function deleteNewsAction(fd: FormData): Promise<void> {
   const id = Id.parse(str(fd, "id"));
   const post = await db.newsPost.findUnique({
     where: { id },
-    select: { titleJa: true, titleEn: true, coverUrl: true },
+    select: {
+      titleJa: true,
+      titleEn: true,
+      coverUrl: true,
+      attachments: { select: { storageKey: true } },
+    },
   });
   if (post) {
     await db.newsPost.delete({ where: { id } });
     await removeFile(post.coverUrl);
+    for (const a of post.attachments) await removeFile(a.storageKey);
     await audit(
       admin.id,
       "news.delete",

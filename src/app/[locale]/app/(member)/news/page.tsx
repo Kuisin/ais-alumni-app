@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { MESSAGES_ENABLED } from "@/lib/features";
 import { NEWS_PAGE_SIZE } from "@/lib/news";
+import { awaitingResponse } from "@/lib/news-hub-db";
 import { visibleNews } from "@/lib/news-visibility";
 import { type CurrentUser, requireActive } from "@/lib/session";
 
@@ -90,6 +91,8 @@ async function NewsTab({
       bodyEn: true,
       pinned: true,
       publishedAt: true,
+      requireConfirm: true,
+      deadline: true,
     },
   });
   const rows = pageIds
@@ -97,10 +100,13 @@ async function NewsTab({
     .filter((p): p is (typeof found)[number] => Boolean(p));
   const hasNext = rows.length > NEWS_PAGE_SIZE;
   const posts = rows.slice(0, NEWS_PAGE_SIZE);
-  const read = await readNewsIds(
-    user.id,
-    posts.map((p) => p.id),
-  );
+  const [read, awaiting] = await Promise.all([
+    readNewsIds(
+      user.id,
+      posts.map((p) => p.id),
+    ),
+    awaitingResponse(user.id, posts),
+  ]);
   // Same rule as the unread count: posts from before the member joined
   // are never "unread".
   const isUnread = (p: (typeof posts)[number]) =>
@@ -116,7 +122,12 @@ async function NewsTab({
         <ul className="space-y-3">
           {posts.map((p) => (
             <li key={p.id}>
-              <NewsCard post={p} locale={locale} unread={isUnread(p)} />
+              <NewsCard
+                post={p}
+                locale={locale}
+                unread={isUnread(p)}
+                needsAnswer={awaiting.has(p.id)}
+              />
             </li>
           ))}
         </ul>

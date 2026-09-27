@@ -132,6 +132,11 @@ model User {
   blocksIn       Block[]               @relation("blocked")
   rsvps          Rsvp[]
   eventStaff     EventStaff[]
+  newsConfirms   NewsConfirm[]
+  newsVotes      NewsPollVote[]
+  newsComments   NewsComment[]         @relation("newsComments")
+  newsHidden     NewsComment[]         @relation("newsCommentsHidden")
+  newsReactions  NewsReaction[]
   eventCheckIns  EventCheckIn[]        @relation("CheckedIn")
   checkInsDone   EventCheckIn[]        @relation("CheckedInBy")
   parentLinks    FamilyLink[]          @relation("parent")
@@ -463,7 +468,7 @@ model EventCheckIn {
 }
 
 model NewsPost {
-  id              String        @id @default(cuid())
+  id              String           @id @default(cuid())
   titleJa         String?
   titleEn         String?
   bodyJa          String?
@@ -471,8 +476,8 @@ model NewsPost {
   coverUrl        String?
   targetRoles     RoleKey[]
   // Added: preferred over targetRoles when non-empty
-  targetAudiences AudienceKey[] @default([])
-  pinned          Boolean       @default(false)
+  targetAudiences AudienceKey[]    @default([])
+  pinned          Boolean          @default(false)
   publishedAt     DateTime?
   notifiedAt      DateTime? // added: set once the publish notification batch has gone out
   // Added: hidden from members and never notified; admins can restore it
@@ -482,12 +487,25 @@ model NewsPost {
   audience        Json?
   // Added: send a LINE/email notification when it goes live (now or at the
   // reserved publishedAt); false = publish in the app only
-  notifyOnPublish Boolean       @default(true)
+  notifyOnPublish Boolean          @default(true)
+  // Added (hub): members press 「確認しました」
+  requireConfirm  Boolean          @default(false)
+  // Added (hub): members may comment / react
+  allowComments   Boolean          @default(true)
+  // Added (hub): answer (confirm / poll / 日程調整) by; one reminder to
+  // those who haven't, a day before (remindedAt)
+  deadline        DateTime?
+  remindedAt      DateTime?
   createdById     String
-  createdBy       User          @relation(fields: [createdById], references: [id])
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdBy       User             @relation(fields: [createdById], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   reads           NewsRead[]
+  confirms        NewsConfirm[]
+  polls           NewsPoll[]
+  comments        NewsComment[]
+  reactions       NewsReaction[]
+  attachments     NewsAttachment[]
 
   @@index([publishedAt])
 }
@@ -621,6 +639,112 @@ model BroadcastRecipient {
 }
 
 // Added: members who have opened a news post (read counts for admins).
+enum NewsPollKind {
+  POLL // choose one (or several) options
+  SCHEDULE // 日程調整: ○△× for each candidate date
+}
+
+enum NewsVote {
+  YES // poll choice / ○
+  MAYBE // △
+  NO // ×
+}
+
+/// 「確認しました」 on a news post.
+model NewsConfirm {
+  postId      String
+  post        NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  confirmedAt DateTime @default(now())
+
+  @@id([postId, userId])
+  @@index([userId])
+}
+
+/// A poll or 日程調整 in a news post (at most one of each).
+model NewsPoll {
+  id       String           @id @default(cuid())
+  postId   String
+  post     NewsPost         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  kind     NewsPollKind
+  question String
+  multiple Boolean          @default(false)
+  options  NewsPollOption[]
+  votes    NewsPollVote[]
+
+  @@unique([postId, kind])
+}
+
+model NewsPollOption {
+  id       String         @id @default(cuid())
+  pollId   String
+  poll     NewsPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  label    String
+  /// 日程調整: the candidate date and time
+  startsAt DateTime?
+  position Int
+  votes    NewsPollVote[]
+
+  @@index([pollId])
+}
+
+model NewsPollVote {
+  optionId String
+  option   NewsPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  pollId   String
+  poll     NewsPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer   NewsVote       @default(YES)
+  votedAt  DateTime       @default(now())
+
+  @@id([optionId, userId])
+  @@index([pollId, userId])
+}
+
+model NewsComment {
+  id         String    @id @default(cuid())
+  postId     String
+  post       NewsPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation("newsComments", fields: [userId], references: [id], onDelete: Cascade)
+  body       String
+  createdAt  DateTime  @default(now())
+  /// hidden by an admin (moderation); kept for the record
+  hiddenAt   DateTime?
+  hiddenById String?
+  hiddenBy   User?     @relation("newsCommentsHidden", fields: [hiddenById], references: [id], onDelete: SetNull)
+
+  @@index([postId, createdAt])
+}
+
+model NewsReaction {
+  postId    String
+  post      NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@id([postId, userId, emoji])
+}
+
+/// Files attached to a news post (private storage, signed links).
+model NewsAttachment {
+  id         String   @id @default(cuid())
+  postId     String
+  post       NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  storageKey String
+  fileName   String
+  mimeType   String
+  size       Int
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([postId])
+}
+
 model NewsRead {
   postId String
   post   NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)

@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { asLocale } from "@/lib/events";
 import { requireAdmin } from "@/lib/session";
+import { isBlobConfigured } from "@/lib/storage";
 
 export async function generateMetadata({
   params,
@@ -36,6 +37,7 @@ export default async function NewNewsPage({
         values={EMPTY_NEWS}
         cohorts={cohorts}
         cancelHref="/app/admin/news"
+        useBlob={isBlobConfigured()}
       />
     </>
   );

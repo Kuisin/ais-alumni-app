@@ -383,7 +383,9 @@ export function ScheduleCard({
                 ) : null}
                 {o.names.length ? (
                   <details className="text-sm text-slate-600">
-                    <summary className="cursor-pointer">{t("answers")}</summary>
+                    <summary className="inline-flex min-h-11 cursor-pointer items-center">
+                      {t("answers")}
+                    </summary>
                     <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                       {o.names.map((n, i) => (
                         // biome-ignore lint/suspicious/noArrayIndexKey: names may repeat
@@ -536,7 +538,7 @@ export function Comments({
                   {isAdmin ? (
                     <Button
                       variant="ghost"
-                      className="min-h-9 px-2 text-xs"
+                      className="min-h-11 px-3 text-xs"
                       disabled={pending}
                       onClick={() =>
                         run(() => hideCommentAction(c.id, !c.hidden))
@@ -547,7 +549,7 @@ export function Comments({
                   ) : null}
                   <Button
                     variant="ghost"
-                    className="min-h-9 px-2 text-xs text-red-700"
+                    className="min-h-11 px-3 text-xs text-red-700"
                     disabled={pending}
                     onClick={() => {
                       if (window.confirm(t("deleteConfirm")))

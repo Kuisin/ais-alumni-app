@@ -1,6 +1,7 @@
 import { TriangleAlert } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { mergeManagedIntoApplicantAction } from "@/app/actions/admin-verify";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Link } from "@/i18n/navigation";
 import { displayName } from "@/lib/format";
@@ -66,13 +67,14 @@ export async function ManagedDuplicate({
                 })}
               </span>
             </span>
-            <form action={mergeManagedIntoApplicantAction}>
+            <ConfirmForm
+              message={t("mergeConfirm", { name: displayName(m, locale) })}
+              action={mergeManagedIntoApplicantAction}
+            >
               <input type="hidden" name="requestId" value={requestId} />
               <input type="hidden" name="managedId" value={m.id} />
-              <SubmitButton variant="secondary" className="px-3 text-xs">
-                {t("merge")}
-              </SubmitButton>
-            </form>
+              <SubmitButton variant="secondary">{t("merge")}</SubmitButton>
+            </ConfirmForm>
           </li>
         ))}
       </ul>

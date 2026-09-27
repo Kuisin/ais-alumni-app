@@ -67,7 +67,7 @@
     "past": "Past (latest {limit})",
     "goingCount": "{going} going",
     "goingOfCapacity": "{going} / {capacity} going",
-    "backToList": "← All events",
+    "backToList": "All events",
     "viewAsMember": "View as member",
     "created": "The event has been created.",
     "deleted": "The event has been deleted.",
@@ -93,7 +93,8 @@
       "closedDeadline": "Closed — the deadline has passed",
       "close": "Close RSVPs",
       "reopen": "Reopen RSVPs",
-      "hint": "Once closed, members can't change their answers. Reopening accepts answers until the deadline."
+      "hint": "Once closed, members can't change their answers. Reopening accepts answers until the deadline.",
+      "closeConfirm": "Close RSVPs? Members can no longer change their answer (you can reopen later)."
     }
   },
   "attendees": {
@@ -115,7 +116,7 @@
     "new": "New post",
     "edit": "Edit post",
     "empty": "No posts yet.",
-    "backToList": "← All posts",
+    "backToList": "All posts",
     "viewAsMember": "View as member",
     "created": "The post has been saved.",
     "deleted": "The post has been deleted.",
@@ -264,7 +265,9 @@
     "add": "Add staff",
     "remove": "Remove {name} from staff",
     "open": "Open check-in",
-    "checkedIn": "Checked in"
+    "checkedIn": "Checked in",
+    "removeConfirm": "Remove {name} from the check-in staff?",
+    "edit": "Edit staff"
   },
   "hub": {
     "requireConfirm": "Show a “Got it” button",
@@ -337,7 +340,8 @@
       "closedDeadline": "Closed — the deadline has passed",
       "close": "Close answers",
       "reopen": "Reopen answers",
-      "hint": "Once closed, members can't change their answers and no reminder is sent."
+      "hint": "Once closed, members can't change their answers and no reminder is sent.",
+      "closeConfirm": "Close responses? (You can reopen later.)"
     }
   },
   "xlsx": {

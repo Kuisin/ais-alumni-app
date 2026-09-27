@@ -16,6 +16,7 @@ export function NavLink({
   className,
   activeClassName,
   scrollIntoViewIfActive = false,
+  also = [],
 }: {
   href: string;
   children: ReactNode;
@@ -23,8 +24,11 @@ export function NavLink({
   activeClassName?: string;
   /** keep the current item visible in a horizontally scrolling nav */
   scrollIntoViewIfActive?: boolean;
+  /** other sections this item stands for (マイページ: follows, settings, …) */
+  also?: string[];
 }) {
-  const active = isActive(usePathname(), href);
+  const pathname = usePathname();
+  const active = [href, ...also].some((h) => isActive(pathname, h));
   const ref = useRef<HTMLAnchorElement>(null);
   useEffect(() => {
     if (!active || !scrollIntoViewIfActive) return;
@@ -67,6 +71,25 @@ export function Dropdown({
   useEffect(() => {
     if (ref.current && pathname) ref.current.open = false;
   }, [pathname]);
+  // Close on a tap outside or Escape, like a menu.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onPointer = (e: PointerEvent) => {
+      if (el.open && !el.contains(e.target as Node)) el.open = false;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || !el.open) return;
+      el.open = false;
+      el.querySelector("summary")?.focus();
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
   return (
     <details ref={ref} className={cn("relative", className)}>
       <summary className={cn("cursor-pointer list-none", summaryClassName)}>

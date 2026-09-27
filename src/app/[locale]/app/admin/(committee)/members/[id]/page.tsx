@@ -14,7 +14,6 @@ import {
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Fragment } from "react";
 import {
   type AdminFamilyLink,
   AdminFamilyPanel,
@@ -34,9 +33,9 @@ import {
 import { AdminSection, SectionNav } from "@/components/admin/section-nav";
 import { HistoryEditor } from "@/components/history/history-editor";
 import { AisRecord } from "@/components/profile/role-details";
-import { BackLink } from "@/components/ui/back-link";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
-import { ViewEdit } from "@/components/ui/view-edit";
+import { HistoryBackLink } from "@/components/ui/history-back-link";
+import { EditableCard, ViewEdit } from "@/components/ui/view-edit";
 import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { roleLabelKey } from "@/lib/audience";
@@ -231,7 +230,9 @@ export default async function AdminMemberPage({
   return (
     <div className="space-y-6">
       <div>
-        <BackLink href="/app/admin/members">{t("detail.back")}</BackLink>
+        <HistoryBackLink fallback="/app/admin/members">
+          {t("detail.back")}
+        </HistoryBackLink>
         <PageHeader
           title={
             <span className="flex flex-wrap items-center gap-2">
@@ -322,63 +323,61 @@ export default async function AdminMemberPage({
             {summary}
           </AdminSection>
 
-          <AdminSection
+          <EditableCard
             id="profile"
             title={t("profile.title")}
             icon={<UserRound />}
-          >
-            <ViewEdit
-              view={
-                <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
-                  {(
+            className="scroll-mt-32"
+            view={
+              <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
+                {(
+                  [
+                    [tp("nameRomaji"), user.nameRomaji],
+                    [tp("nameKanji"), user.nameKanji],
+                    [tp("nameKana"), user.nameKana],
+                    [tp("nameAtAis"), user.nameAtAis],
                     [
-                      [tp("nameRomaji"), user.nameRomaji],
-                      [tp("nameKanji"), user.nameKanji],
-                      [tp("nameKana"), user.nameKana],
-                      [tp("nameAtAis"), user.nameAtAis],
-                      [
-                        tp("dateOfBirth"),
-                        user.dateOfBirth
-                          ? user.dateOfBirth.toISOString().slice(0, 10)
-                          : null,
-                      ],
-                      [
-                        tp("gender"),
-                        isGender(user.gender)
-                          ? tgen(`genders.${user.gender}`)
-                          : null,
-                      ],
-                      [tp("phone"), user.phone],
-                      [tp("bio"), user.bio],
-                    ] as const
-                  ).map(([label, value]) => (
-                    <Fragment key={label}>
-                      <dt className="font-medium text-slate-600">{label}</dt>
-                      <dd className="whitespace-pre-line break-words">
-                        {value || (
-                          <span className="text-slate-500">{tc("notSet")}</span>
-                        )}
-                      </dd>
-                    </Fragment>
-                  ))}
-                </dl>
-              }
-            >
-              <MemberProfileForm
-                userId={user.id}
-                values={{
-                  ...namePartsOf(user),
-                  nameAtAis: user.nameAtAis ?? "",
-                  dateOfBirth: user.dateOfBirth
-                    ? user.dateOfBirth.toISOString().slice(0, 10)
-                    : "",
-                  bio: user.bio ?? "",
-                  phone: user.phone ?? "",
-                  gender: user.gender ?? "",
-                }}
-              />
-            </ViewEdit>
-          </AdminSection>
+                      tp("dateOfBirth"),
+                      user.dateOfBirth
+                        ? user.dateOfBirth.toISOString().slice(0, 10)
+                        : null,
+                    ],
+                    [
+                      tp("gender"),
+                      isGender(user.gender)
+                        ? tgen(`genders.${user.gender}`)
+                        : null,
+                    ],
+                    [tp("phone"), user.phone],
+                    [tp("bio"), user.bio],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label} className="sm:contents">
+                    <dt className="font-medium text-slate-600">{label}</dt>
+                    <dd className="whitespace-pre-line break-words">
+                      {value || (
+                        <span className="text-slate-500">{tc("notSet")}</span>
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            }
+          >
+            <MemberProfileForm
+              userId={user.id}
+              values={{
+                ...namePartsOf(user),
+                nameAtAis: user.nameAtAis ?? "",
+                dateOfBirth: user.dateOfBirth
+                  ? user.dateOfBirth.toISOString().slice(0, 10)
+                  : "",
+                bio: user.bio ?? "",
+                phone: user.phone ?? "",
+                gender: user.gender ?? "",
+              }}
+            />
+          </EditableCard>
 
           <AdminSection
             id="roles"

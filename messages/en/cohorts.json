@@ -40,6 +40,8 @@
     "search": "Search this 学年's students and graduates",
     "add": "Make {name} a class rep",
     "remove": "Remove {name} as class rep",
-    "noResults": "No matching members in this 学年."
-  }
+    "noResults": "No matching members in this 学年.",
+    "removeConfirm": "Remove {name} as class representative?"
+  },
+  "deleteConfirm": "Delete this class year?"
 }

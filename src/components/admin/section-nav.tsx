@@ -21,7 +21,7 @@ export function SectionNav({
           <li key={item.id} className="shrink-0 snap-start">
             <a
               href={`#${item.id}`}
-              className="flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-white hover:shadow-sm"
+              className="flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-white hover:shadow-sm"
             >
               {item.icon ? <span aria-hidden="true">{item.icon}</span> : null}
               {item.label}

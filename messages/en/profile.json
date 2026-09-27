@@ -13,7 +13,8 @@
     "photo": "Profile photo",
     "basic": "Basic information",
     "follows": "Follow requests",
-    "history": "Education & work"
+    "history": "Education & work",
+    "account": "Account"
   },
   "fields": {
     "nameRomaji": "Name (romaji)",
@@ -200,7 +201,8 @@
       "x": "X",
       "website": "Website",
       "currentStageDetail": "Current stage details"
-    }
+    },
+    "noneShared": "Nothing is shared with followers (only your family and the committee can see it)."
   },
   "photo": {
     "gender": "Gender",
@@ -216,7 +218,8 @@
     "visibility": "Who sees your photo",
     "onlyConnected": "Family and connections only",
     "everyone": "Every member",
-    "genderLabel": "Icon"
+    "genderLabel": "Icon",
+    "change": "Change photo"
   },
   "gender": {
     "title": "Gender",
@@ -245,6 +248,14 @@
       "unchanged": "That's the same as your current gender.",
       "pending": "You already have a request being checked.",
       "alreadySet": "Your gender is already registered. Please send a request to change it."
-    }
-  }
+    },
+    "openSetOnce": "Add"
+  },
+  "requestChange": "Request a change",
+  "requestAdd": "Request to add",
+  "photoRemoveConfirm": "Remove your profile photo?",
+  "requestCorrection": "Request a correction",
+  "changeInSettings": "Change in settings",
+  "emailHint": "Where sign-in codes and important notices are sent.",
+  "accountHint": "Follows, family, invitations and notification settings"
 }

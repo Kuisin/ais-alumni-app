@@ -2,6 +2,7 @@
 
 import {
   ChevronLeft,
+  ChevronRight,
   Copy,
   EllipsisVertical,
   Radio,
@@ -43,6 +44,7 @@ import {
   mentionsIn,
   splitMentions,
 } from "@/lib/chat";
+import { MemberTags } from "./member-tags";
 
 const POLL_MS = 5000;
 /** Picker id of @全員, and its label in every language (for matching). */
@@ -76,35 +78,6 @@ export type RoomMember = {
   /** 学年代表 */
   rep?: boolean;
 };
-
-/** 「第5期」「学年代表」 next to a name. */
-function MemberTags({
-  cohort,
-  rep,
-  className,
-}: {
-  cohort?: number | null;
-  rep?: boolean;
-  className?: string;
-}) {
-  const t = useTranslations("chat");
-  const locale = useLocale();
-  if (!cohort && !rep) return null;
-  return (
-    <span className={cn("inline-flex flex-wrap gap-1", className)}>
-      {cohort ? (
-        <span className="rounded bg-slate-200 px-1.5 text-[10px] leading-4 font-medium text-slate-700">
-          {locale === "en" ? `Class ${cohort}` : `第${cohort}期`}
-        </span>
-      ) : null}
-      {rep ? (
-        <span className="rounded bg-brand-100 px-1.5 text-[10px] leading-4 font-semibold text-brand-800">
-          {t("rep")}
-        </span>
-      ) : null}
-    </span>
-  );
-}
 
 /**
  * A talk, styled like LINE: full screen on phones with its own header,
@@ -411,17 +384,26 @@ export function ChatRoom({
         >
           <ChevronLeft aria-hidden="true" className="size-6" />
         </Link>
-        <div className="min-w-0 flex-1 py-2">
-          <h1 className="truncate text-lg font-bold">
-            {title}
+        {/* Tap the name for the talk's details and members (like LINE). */}
+        <Link
+          href={`/app/chat/${groupId}/info`}
+          aria-label={`${title} — ${t("infoOpen")}`}
+          className="group min-w-0 flex-1 rounded-lg py-2 hover:bg-slate-50"
+        >
+          <h1 className="flex items-center truncate text-lg font-bold">
+            <span className="truncate">{title}</span>
             {!direct ? (
               <span className="ml-1 font-normal">({memberCount})</span>
             ) : null}
+            <ChevronRight
+              aria-hidden="true"
+              className="ml-0.5 size-4 shrink-0 text-slate-400 group-hover:text-slate-600"
+            />
           </h1>
           {direct && partner ? (
             <MemberTags cohort={partner.cohort} rep={partner.rep} />
           ) : null}
-        </div>
+        </Link>
         <span
           className="mr-1 inline-flex items-center"
           title={live ? t("live") : t("polling")}
@@ -441,6 +423,13 @@ export function ChatRoom({
             <EllipsisVertical aria-hidden="true" className="size-5" />
           </summary>
           <div className="absolute top-12 right-1 z-20 w-72 max-w-[calc(100vw-1rem)] space-y-3 rounded-xl bg-white p-3 text-sm shadow-xl">
+            <Link
+              href={`/app/chat/${groupId}/info`}
+              className="flex min-h-11 items-center justify-between rounded-lg bg-slate-50 px-3 font-medium text-brand-700 hover:bg-slate-100"
+            >
+              {t("infoOpen")}
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </Link>
             {direct ? (
               <p className="font-medium">{t("direct")}</p>
             ) : (
@@ -460,10 +449,10 @@ export function ChatRoom({
               </>
             )}
             {member ? (
-              <label className="flex items-start gap-2 border-t border-slate-100 pt-3">
+              <label className="flex min-h-11 items-start gap-3 border-t border-slate-100 pt-3">
                 <input
                   type="checkbox"
-                  className="mt-0.5 size-4 accent-brand-700"
+                  className="mt-0.5 size-5 shrink-0 accent-brand-700"
                   checked={!muted}
                   onChange={async (e) => {
                     const next = !e.target.checked;
@@ -493,7 +482,7 @@ export function ChatRoom({
             <button
               type="button"
               onClick={loadOlder}
-              className="rounded-full bg-white px-4 py-1.5 text-xs font-medium text-brand-700 shadow-sm hover:bg-brand-50"
+              className="min-h-11 rounded-full bg-white px-5 text-xs font-medium text-brand-700 shadow-sm hover:bg-brand-50"
             >
               {t("older")}
             </button>
@@ -637,7 +626,7 @@ export function ChatRoom({
                               void navigator.clipboard?.writeText(m.body);
                               setSelected(null);
                             }}
-                            className="inline-flex min-h-9 items-center gap-1 rounded-full bg-white px-3 text-xs font-medium shadow"
+                            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-white px-4 text-xs font-medium shadow"
                           >
                             <Copy aria-hidden="true" className="size-3.5" />
                             {t("copy")}
@@ -647,7 +636,7 @@ export function ChatRoom({
                               type="button"
                               onClick={() => remove(m)}
                               aria-label={t("deleteLabel", { name: m.name })}
-                              className="inline-flex min-h-9 items-center gap-1 rounded-full bg-white px-3 text-xs font-medium text-red-700 shadow"
+                              className="inline-flex min-h-11 items-center gap-1 rounded-full bg-white px-4 text-xs font-medium text-red-700 shadow"
                             >
                               <Trash2 aria-hidden="true" className="size-3.5" />
                               {t("delete")}

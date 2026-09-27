@@ -135,14 +135,6 @@ export default async function DashboardPage({
     <>
       <PageHeader title={t("greeting", { name: displayName(user, locale) })} />
 
-      {setupDone ? (
-        <div className="mb-6 empty:hidden">
-          <LineBanner user={user} />
-        </div>
-      ) : (
-        <SetupChecklist items={setup} />
-      )}
-
       {hasTodos ? (
         <section aria-labelledby="todo-heading" className="mb-6">
           <h2 id="todo-heading" className="mb-2 text-lg font-semibold">
@@ -180,6 +172,15 @@ export default async function DashboardPage({
           </ul>
         </section>
       ) : null}
+
+      {/* Waiting on me first; the setup checklist after. */}
+      {setupDone ? (
+        <div className="mb-6 empty:hidden">
+          <LineBanner user={user} />
+        </div>
+      ) : (
+        <SetupChecklist items={setup} />
+      )}
 
       {unread.messages > 0 ? (
         <Link

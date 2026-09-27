@@ -7,6 +7,7 @@ import {
 } from "@/app/actions/teachers";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { Input } from "@/components/ui/field";
 import { SearchForm } from "@/components/ui/search-form";
 import { SearchButton, SubmitButton } from "@/components/ui/submit-button";
@@ -182,13 +183,16 @@ export default async function TeachersPage({
                         .join(" · ")}
                     </p>
                   </div>
-                  <form action={unassignTeacherAction}>
+                  <ConfirmForm
+                    message={t("current.removeConfirm")}
+                    action={unassignTeacherAction}
+                  >
                     <input type="hidden" name="userId" value={u.id} />
-                    <SubmitButton variant="secondary" className="px-3 text-xs">
+                    <SubmitButton variant="secondary" className="px-3">
                       <UserMinus aria-hidden="true" className="size-4" />
                       {t("current.remove")}
                     </SubmitButton>
-                  </form>
+                  </ConfirmForm>
                 </li>
               );
             })}

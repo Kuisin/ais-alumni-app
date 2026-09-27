@@ -6,7 +6,9 @@ import { type ChangeEvent, useActionState, useEffect, useState } from "react";
 import { removeAvatarAction, uploadAvatarAction } from "@/app/actions/profile";
 import { Avatar } from "@/components/ui/avatar";
 import { buttonClass } from "@/components/ui/button";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave, useViewEdit } from "@/components/ui/view-edit";
 import { ResultMessage } from "./profile-form";
 
 export function AvatarForm({
@@ -21,6 +23,9 @@ export function AvatarForm({
 }) {
   const t = useTranslations("profile");
   const [state, action] = useActionState(uploadAvatarAction, null);
+  // Inside the photo EditableCard: close it once the photo changed.
+  useCloseOnSave(state);
+  const card = useViewEdit();
   // Local preview of the chosen file before it is uploaded.
   const [preview, setPreview] = useState<{ url: string; name: string } | null>(
     null,
@@ -98,9 +103,15 @@ export function AvatarForm({
           {state?.ok ? <ResultMessage state={state} ns={t} /> : null}
         </form>
         {src && !preview ? (
-          <form action={removeAvatarAction}>
+          <ConfirmForm
+            message={t("photoRemoveConfirm")}
+            action={async () => {
+              await removeAvatarAction();
+              card?.done();
+            }}
+          >
             <SubmitButton variant="ghost">{t("photoRemove")}</SubmitButton>
-          </form>
+          </ConfirmForm>
         ) : null}
       </div>
     </div>

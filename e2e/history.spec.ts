@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { Client } from "pg";
 import { signInWithEmail } from "./helpers";
 
 // The add forms are collapsed behind a "＋ Add a school / job" button.
@@ -64,10 +65,16 @@ test("education & work history with shared school search", async ({
     ken.getByText("IT & web › Systems engineer").first(),
   ).toBeVisible();
 
-  // /profile forwards to the member page (client-side once streaming).
+  // Their own profile (/profile) shows the history and the stage.
   await ken.goto("/en/app/profile");
-  await ken.waitForURL(/\/en\/app\/members\/[^/?#]+$/);
-  const kenId = new URL(ken.url()).pathname.split("/").pop();
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  const kenId = (
+    await db.query(`SELECT id FROM "User" WHERE "primaryEmail" = $1`, [
+      "ken@example.com",
+    ])
+  ).rows[0].id as string;
+  await db.end();
   // Ongoing university → current stage set automatically.
   await expect(ken.getByText("University / College").first()).toBeVisible();
 

@@ -1,4 +1,4 @@
-import { ChevronRight, Gavel } from "lucide-react";
+import { ArrowDown, ChevronRight, Gavel } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -6,9 +6,10 @@ import type { ReactNode } from "react";
 import { ChildrenReview } from "@/components/admin/children-review";
 import { InvitePanel } from "@/components/admin/invite-panel";
 import { ManagedDuplicate } from "@/components/admin/managed-duplicate";
-import { BackLink } from "@/components/ui/back-link";
+import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/field";
+import { HistoryBackLink } from "@/components/ui/history-back-link";
 import { SearchForm } from "@/components/ui/search-form";
 import { SearchButton } from "@/components/ui/submit-button";
 import {
@@ -129,21 +130,47 @@ export default async function VerificationDetailPage({
   const open = request.status === VerificationStatus.PENDING;
   const canAddVoucher =
     open || request.status === VerificationStatus.NEEDS_INFO;
+  // Decided: offer the next application in the queue (oldest first).
+  const next = open
+    ? null
+    : await db.verificationRequest.findFirst({
+        where: {
+          status: VerificationStatus.PENDING,
+          followsChildren: false,
+          id: { not: request.id },
+        },
+        orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
+        select: { id: true },
+      });
 
   return (
     <div className="space-y-6">
-      <BackLink href="/app/admin/verification">{t("detail.back")}</BackLink>
-      <PageHeader
-        title={displayName(user, lang)}
-        description={t("detail.submitted", {
-          date: formatDateTime(request.submittedAt, lang),
-        })}
-        actions={
-          <Badge tone={open ? "amber" : "slate"}>
-            {t(`status.${request.status}`)}
-          </Badge>
-        }
-      />
+      <div>
+        <HistoryBackLink fallback="/app/admin/verification">
+          {t("detail.back")}
+        </HistoryBackLink>
+        <PageHeader
+          title={displayName(user, lang)}
+          description={t("detail.submitted", {
+            date: formatDateTime(request.submittedAt, lang),
+          })}
+          actions={
+            <Badge tone={open ? "amber" : "slate"}>
+              {t(`status.${request.status}`)}
+            </Badge>
+          }
+        />
+        {/* The decision card is last on phones: jump to it. */}
+        {open ? (
+          <a
+            href="#decision"
+            className="-mt-3 inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50 lg:hidden"
+          >
+            {t("decision.jump")}
+            <ArrowDown aria-hidden="true" className="size-4" />
+          </a>
+        ) : null}
+      </div>
 
       <div className="flex flex-wrap gap-1.5">
         {teacher?.schoolEmailVerified ? (
@@ -468,7 +495,10 @@ export default async function VerificationDetailPage({
           </Section>
         </div>
         <aside className="min-w-0 space-y-4 lg:sticky lg:top-20">
-          <Card className="space-y-3 lg:border-brand-200 lg:shadow-md">
+          <Card
+            id="decision"
+            className="scroll-mt-20 space-y-3 lg:border-brand-200 lg:shadow-md"
+          >
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <Gavel aria-hidden="true" className="size-5 text-brand-700" />
               {t("decision.title")}
@@ -476,7 +506,30 @@ export default async function VerificationDetailPage({
             {open ? (
               <DecisionForm requestId={request.id} />
             ) : (
-              <p className="text-sm text-slate-600">{t("decision.closed")}</p>
+              <>
+                <p className="text-sm text-slate-600">{t("decision.closed")}</p>
+                {/* After deciding: straight on to the next one. */}
+                <div className="flex flex-col gap-2">
+                  {next ? (
+                    <Link
+                      href={`/app/admin/verification/${next.id}`}
+                      className={buttonClass("primary", "w-full")}
+                    >
+                      {t("decision.next")}
+                      <ChevronRight aria-hidden="true" className="size-4" />
+                    </Link>
+                  ) : null}
+                  <Link
+                    href="/app/admin/verification"
+                    className={buttonClass(
+                      next ? "secondary" : "primary",
+                      "w-full",
+                    )}
+                  >
+                    {t("decision.backToQueue")}
+                  </Link>
+                </div>
+              </>
             )}
           </Card>
           <Card className="space-y-2">

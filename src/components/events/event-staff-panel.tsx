@@ -61,7 +61,10 @@ export function EventStaffPanel({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => set(m.id, false)}
+                onClick={() => {
+                  if (window.confirm(t("removeConfirm", { name: m.name })))
+                    set(m.id, false);
+                }}
                 aria-label={t("remove", { name: m.name })}
                 className="inline-flex min-h-11 items-center gap-1 rounded-full border border-brand-300 bg-brand-50 py-1 pr-2 pl-3 text-sm text-brand-900 hover:bg-brand-100"
               >

@@ -42,6 +42,7 @@ export function NameDecisionForm({
               type="radio"
               name="decision"
               value={d}
+              className="size-5 shrink-0 accent-brand-700"
               checked={decision === d}
               onChange={() => setDecision(d)}
             />

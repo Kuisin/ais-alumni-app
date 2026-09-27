@@ -11,9 +11,13 @@ import {
 } from "@/components/admin/read-receipts";
 import { AdminSection } from "@/components/admin/section-nav";
 import { broadcastAudienceText } from "@/components/broadcast/audience-text";
-import { ManageMessage } from "@/components/broadcast/manage-message";
+import {
+  ManageMessage,
+  ManageMessageForm,
+} from "@/components/broadcast/manage-message";
 import { BackLink } from "@/components/ui/back-link";
-import { Alert, Card, PageHeader } from "@/components/ui/card";
+import { Alert, PageHeader } from "@/components/ui/card";
+import { EditableCard } from "@/components/ui/view-edit";
 import { messageReceipts } from "@/lib/announcements";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -92,19 +96,21 @@ export default async function SentMessagePage({
           aria-labelledby="message-body"
           className="min-w-0 lg:col-start-1 lg:row-start-1"
         >
-          <Card>
-            <h2 id="message-body" className="mb-3 text-lg font-semibold">
-              {t("detail.body")}
-            </h2>
-            <p className="text-sm leading-relaxed break-words whitespace-pre-line text-slate-800">
-              {b.body}
-            </p>
-          </Card>
+          {/* The body once: 編集 turns it into the form (senders, admins). */}
+          <EditableCard
+            id="message-body"
+            title={t("detail.body")}
+            view={
+              <p className="text-sm leading-relaxed break-words whitespace-pre-line text-slate-800">
+                {b.body}
+              </p>
+            }
+          >
+            <ManageMessageForm id={b.id} title={b.title} body={b.body} />
+          </EditableCard>
           <div className="mt-6">
             <ManageMessage
               id={b.id}
-              title={b.title}
-              body={b.body}
               archived={b.archivedAt !== null}
               edited={b.editedAt !== null}
             />

@@ -7,6 +7,7 @@ import {
   OrgRenameForm,
 } from "@/components/history/org-admin-forms";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { Input, Select } from "@/components/ui/field";
 import { SearchForm } from "@/components/ui/search-form";
 import { SearchButton, SubmitButton } from "@/components/ui/submit-button";
@@ -169,12 +170,18 @@ export default async function OrganizationsPage({
                     </div>
                   </div>
                   {r.count === 0 ? (
-                    <form
+                    <ConfirmForm
+                      message={t("deleteConfirm")}
                       action={deleteOrgAction.bind(null, kind, r.id)}
                       className="mb-2"
                     >
-                      <SubmitButton variant="ghost">{t("delete")}</SubmitButton>
-                    </form>
+                      <SubmitButton
+                        variant="ghost"
+                        className="text-red-700 hover:bg-red-50"
+                      >
+                        {t("delete")}
+                      </SubmitButton>
+                    </ConfirmForm>
                   ) : null}
                 </details>
               </li>

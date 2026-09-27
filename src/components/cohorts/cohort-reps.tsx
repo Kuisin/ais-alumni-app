@@ -68,7 +68,10 @@ export function CohortReps({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => set(r.id, false)}
+                onClick={() => {
+                  if (window.confirm(t("removeConfirm", { name: r.name })))
+                    set(r.id, false);
+                }}
                 aria-label={t("remove", { name: r.name })}
                 className="inline-flex min-h-11 items-center gap-1 rounded-full border border-brand-300 bg-white py-1 pr-2 pl-3 text-sm text-brand-900 hover:bg-brand-50"
               >

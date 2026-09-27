@@ -97,10 +97,10 @@ export default async function EventDetailPage({
   const full = remaining === 0 && mine?.answer !== RsvpAnswer.GOING;
 
   return (
-    <article className="space-y-6">
+    <article className="mx-auto max-w-3xl space-y-6">
       <div>
         <BackLink href="/app/events">{t("backToList")}</BackLink>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight break-words">
           {title.text || t("untitled")}
           <FallbackTag fallback={title.fallback} />
         </h1>
@@ -125,24 +125,26 @@ export default async function EventDetailPage({
       ) : null}
 
       <Card>
-        <dl className="grid gap-3 text-sm sm:grid-cols-[10rem_1fr]">
-          <dt className="font-medium text-slate-600">{t("when")}</dt>
-          <dd>
-            <time dateTime={event.startsAt.toISOString()}>
-              {formatDateTime(event.startsAt, locale)}
-            </time>
-            {event.endsAt ? (
-              <>
-                {" – "}
-                <time dateTime={event.endsAt.toISOString()}>
-                  {formatDateTime(event.endsAt, locale)}
-                </time>
-              </>
-            ) : null}
-            <span className="ml-1 text-slate-500">{t("jst")}</span>
-          </dd>
+        <dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[10rem_1fr]">
+          <div className="sm:contents">
+            <dt className="font-medium text-slate-600">{t("when")}</dt>
+            <dd>
+              <time dateTime={event.startsAt.toISOString()}>
+                {formatDateTime(event.startsAt, locale)}
+              </time>
+              {event.endsAt ? (
+                <>
+                  {" – "}
+                  <time dateTime={event.endsAt.toISOString()}>
+                    {formatDateTime(event.endsAt, locale)}
+                  </time>
+                </>
+              ) : null}
+              <span className="ml-1 text-slate-500">{t("jst")}</span>
+            </dd>
+          </div>
           {event.location || map ? (
-            <>
+            <div className="sm:contents">
               <dt className="font-medium text-slate-600">{t("where")}</dt>
               <dd>
                 {event.location}
@@ -157,49 +159,38 @@ export default async function EventDetailPage({
                   </a>
                 ) : null}
               </dd>
-            </>
+            </div>
           ) : null}
-          <dt className="font-medium text-slate-600">{t("capacity")}</dt>
-          <dd>
-            {event.capacity === null
-              ? t("capacityUnlimited", { going: goingTotal })
-              : t("capacityLimited", {
-                  capacity: event.capacity,
-                  going: goingTotal,
-                  remaining: remaining ?? 0,
-                })}
-          </dd>
-          <dt className="font-medium text-slate-600">{t("deadline")}</dt>
-          <dd>
-            <time dateTime={closesAt.toISOString()}>
-              {formatDateTime(closesAt, locale)}
-            </time>
-            {left ? (
-              <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
-                {t(`deadlineLeft.${left.unit}`, { count: left.count })}
-              </span>
-            ) : null}
-          </dd>
+          <div className="sm:contents">
+            <dt className="font-medium text-slate-600">{t("capacity")}</dt>
+            <dd>
+              {event.capacity === null
+                ? t("capacityUnlimited", { going: goingTotal })
+                : t("capacityLimited", {
+                    capacity: event.capacity,
+                    going: goingTotal,
+                    remaining: remaining ?? 0,
+                  })}
+            </dd>
+          </div>
+          <div className="sm:contents">
+            <dt className="font-medium text-slate-600">{t("deadline")}</dt>
+            <dd>
+              <time dateTime={closesAt.toISOString()}>
+                {formatDateTime(closesAt, locale)}
+              </time>
+              {left ? (
+                <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                  {t(`deadlineLeft.${left.unit}`, { count: left.count })}
+                </span>
+              ) : null}
+            </dd>
+          </div>
         </dl>
       </Card>
 
-      {body.text ? (
-        <Card>
-          <section aria-labelledby="event-details-title">
-            <h2 id="event-details-title" className="mb-3 text-lg font-semibold">
-              {t("details")}
-            </h2>
-            {body.fallback ? (
-              <p className="mb-2">
-                <FallbackTag fallback={body.fallback} />
-              </p>
-            ) : null}
-            <MarkdownBody source={body.text} />
-          </section>
-        </Card>
-      ) : null}
-
-      <Card>
+      {/* Answering comes right after when / where / deadline. */}
+      <Card id="rsvp" className="scroll-mt-20">
         <h2 className="mb-3 text-lg font-semibold">{t("rsvp.title")}</h2>
         {!open ? (
           <div className="mb-3">
@@ -233,6 +224,22 @@ export default async function EventDetailPage({
           <RsvpForm eventId={event.id} current={mine} />
         </ViewEdit>
       </Card>
+
+      {body.text ? (
+        <Card>
+          <section aria-labelledby="event-details-title">
+            <h2 id="event-details-title" className="mb-3 text-lg font-semibold">
+              {t("details")}
+            </h2>
+            {body.fallback ? (
+              <p className="mb-2">
+                <FallbackTag fallback={body.fallback} />
+              </p>
+            ) : null}
+            <MarkdownBody source={body.text} />
+          </section>
+        </Card>
+      ) : null}
 
       {mine && mine.answer !== RsvpAnswer.NOT_GOING ? (
         <LineRsvpPrompt user={user} returnTo={`/app/events/${event.id}`} />

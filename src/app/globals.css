@@ -7,9 +7,12 @@
 @theme {
   --color-brand-50: #eff4ff;
   --color-brand-100: #dbe6fe;
+  --color-brand-200: #bfd0fd;
+  --color-brand-300: #93b0f8;
   --color-brand-600: #1e40af;
   --color-brand-700: #1e3a8a;
   --color-brand-800: #172e6e;
+  --color-brand-900: #0f1f4d;
   --color-line: #06c755;
   /* Motion: short, calm transitions (disabled for prefers-reduced-motion). */
   --animate-step: step-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;

@@ -136,7 +136,7 @@ export function ChatList({
 
   return (
     <div className="-mx-4 -mt-6 lg:mx-0 lg:mt-0">
-      <div className="sticky top-0 z-10 space-y-3 border-b border-slate-200 bg-white px-4 pt-4 pb-3 lg:rounded-t-2xl">
+      <div className="sticky top-[calc(3.75rem+env(safe-area-inset-top))] z-10 space-y-3 border-b border-slate-200 bg-white px-4 pt-4 pb-3 lg:rounded-t-2xl">
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           {canStartDirect ? (
@@ -163,7 +163,7 @@ export function ChatList({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("search")}
-            className="block min-h-10 w-full rounded-full border-0 bg-slate-100 py-2 pr-4 pl-9 text-base placeholder:text-slate-500 focus-visible:outline-2 focus-visible:outline-brand-600"
+            className="block min-h-11 w-full rounded-full border-0 bg-slate-100 py-2 pr-4 pl-9 text-base placeholder:text-slate-500 focus-visible:outline-2 focus-visible:outline-brand-600"
           />
         </div>
         <fieldset className="flex gap-2">
@@ -172,7 +172,7 @@ export function ChatList({
             <label
               key={f}
               className={cn(
-                "inline-flex min-h-9 cursor-pointer items-center rounded-full border px-3 text-sm",
+                "inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-sm",
                 "border-slate-300 text-slate-700 has-checked:border-brand-700 has-checked:bg-brand-50 has-checked:font-semibold has-checked:text-brand-800",
               )}
             >

@@ -26,7 +26,8 @@ test("admin creates, edits and deletes an event", async ({ page }) => {
   await expect(page.getByLabel("Title (Japanese)")).toHaveCount(0);
   await expect(page.getByText(`${title} edited`).first()).toBeVisible();
 
-  // Closing RSVPs early (and reopening).
+  // Closing RSVPs early (asks first; reopening doesn't).
+  page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Close RSVPs" }).click();
   await expect(
     page.getByRole("button", { name: "Reopen RSVPs" }),

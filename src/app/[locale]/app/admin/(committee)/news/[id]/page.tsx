@@ -13,6 +13,7 @@ import { NotificationOpensCard } from "@/components/admin/notification-opens-car
 import { NewsForm } from "@/components/news/news-form";
 import { NotifyPanel } from "@/components/news/notify-panel";
 import { NewsStatusBadges } from "@/components/news/status-badges";
+import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
@@ -64,12 +65,7 @@ export default async function AdminNewsEditPage({
 
   return (
     <>
-      <Link
-        href="/app/admin/news"
-        className="inline-flex min-h-11 items-center text-sm text-brand-700 underline"
-      >
-        {t("news.backToList")}
-      </Link>
+      <BackLink href="/app/admin/news">{t("news.backToList")}</BackLink>
       <div className="mt-1">
         <PageHeader
           title={localized(post.titleJa, post.titleEn, locale).text}
@@ -172,10 +168,9 @@ export default async function AdminNewsEditPage({
           aria-labelledby="edit"
           className="min-w-0 xl:col-start-1 xl:row-start-1"
         >
-          <h2 id="edit" className="mb-3 text-lg font-semibold">
-            {t("news.details")}
-          </h2>
           <ViewEdit
+            title={t("news.details")}
+            titleId="edit"
             view={
               <NewsView
                 post={post}

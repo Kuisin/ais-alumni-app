@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AudienceSummary } from "@/components/news/audience-summary";
 import { MarkdownBody } from "@/components/news/markdown-body";
 import { Card } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { formatDateTime } from "@/lib/format";
 import type { AudienceSpec } from "@/lib/news-audience";
@@ -249,14 +250,18 @@ export async function CloseControl({
     >
       <h2 className="font-semibold">{t(`${k}.title`)}</h2>
       <p className="text-sm">{status}</p>
-      {past ? null : (
+      {past ? null : closedAt ? (
         <form action={action}>
           <input type="hidden" name="id" value={id} />
-          <input type="hidden" name="close" value={closedAt ? "0" : "1"} />
-          <SubmitButton variant={closedAt ? "secondary" : "danger"}>
-            {closedAt ? t(`${k}.reopen`) : t(`${k}.close`)}
-          </SubmitButton>
+          <input type="hidden" name="close" value="0" />
+          <SubmitButton variant="secondary">{t(`${k}.reopen`)}</SubmitButton>
         </form>
+      ) : (
+        <ConfirmForm message={t(`${k}.closeConfirm`)} action={action}>
+          <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="close" value="1" />
+          <SubmitButton variant="danger">{t(`${k}.close`)}</SubmitButton>
+        </ConfirmForm>
       )}
       <p className="text-xs text-slate-500">{t(`${k}.hint`)}</p>
     </section>

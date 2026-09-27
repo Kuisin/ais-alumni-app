@@ -5,6 +5,9 @@ import { formatCompactDate } from "@/components/admin/admin-format";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/field";
+import { LinkPendingBar } from "@/components/ui/link-pending";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton } from "@/components/ui/submit-button";
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, type RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
@@ -154,9 +157,8 @@ export default async function AdminMembersPage({
     <div>
       <PageHeader title={t("title")} description={t("description")} />
 
-      {/* Plain GET form: filters live in the URL so results are linkable. */}
-      <form
-        method="get"
+      {/* GET form: filters live in the URL so results are linkable. */}
+      <SearchForm
         aria-label={t("filters.label")}
         className="mb-6 space-y-3 rounded-xl border border-slate-200 bg-white p-4"
       >
@@ -174,13 +176,12 @@ export default async function AdminMembersPage({
             />
           </div>
           <div className="flex shrink-0 gap-2">
-            <button
-              type="submit"
-              className={buttonClass("primary", "whitespace-nowrap")}
+            <SearchButton
+              className="whitespace-nowrap"
+              icon={<Search aria-hidden="true" className="size-4" />}
             >
-              <Search aria-hidden="true" className="size-4" />
               {tc("search")}
-            </button>
+            </SearchButton>
             {filtered ? (
               <Link
                 href="/app/admin/members"
@@ -267,189 +268,198 @@ export default async function AdminMembersPage({
             </div>
           </div>
         </details>
-      </form>
+      </SearchForm>
 
-      <p className="mb-3 text-sm text-slate-600" aria-live="polite">
-        {t("resultCount", { count: total })}
-      </p>
+      <div data-results>
+        <p className="mb-3 text-sm text-slate-600" aria-live="polite">
+          {t("resultCount", { count: total })}
+        </p>
 
-      {page.length === 0 ? (
-        <EmptyState>{t("empty")}</EmptyState>
-      ) : (
-        <>
-          {/* Phones and tablets: cards (two columns from md) */}
-          <ul className="grid gap-3 md:grid-cols-2 lg:hidden">
-            {page.map((u) => (
-              <li key={u.id}>
-                <Link
-                  href={`/app/admin/members/${u.id}`}
-                  className="block h-full rounded-xl border border-slate-200 bg-white p-4 transition-shadow hover:border-brand-700 hover:shadow-sm"
-                >
-                  <p className="flex flex-wrap items-center gap-2 font-semibold">
-                    {name(u)}
-                    {u.isAdmin ? (
-                      <Badge tone="brand">{t("badge.admin")}</Badge>
-                    ) : null}
-                  </p>
-                  <p
-                    className="truncate text-sm text-slate-600"
-                    title={u.primaryEmail ?? undefined}
+        {page.length === 0 ? (
+          <EmptyState>{t("empty")}</EmptyState>
+        ) : (
+          <>
+            {/* Phones and tablets: cards (two columns from md) */}
+            <ul className="grid gap-3 md:grid-cols-2 lg:hidden">
+              {page.map((u) => (
+                <li key={u.id}>
+                  <Link
+                    href={`/app/admin/members/${u.id}`}
+                    className="block h-full rounded-xl border border-slate-200 bg-white p-4 transition-shadow hover:border-brand-700 hover:shadow-sm"
                   >
-                    {u.primaryEmail ?? "—"}
-                  </p>
-                  <p className="mt-2 flex flex-wrap gap-1 [&>span]:whitespace-nowrap">
-                    <Badge tone={stateTone(u.state)}>
-                      {tr(`state.${u.state}`)}
-                    </Badge>
-                    {u.roles.map((r) => (
-                      <Badge key={r.role}>{roleLabel(r)}</Badge>
-                    ))}
-                  </p>
-                  <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                      <span
-                        aria-hidden="true"
-                        className={`size-2 rounded-full ${lineDot(u)}`}
-                      />
-                      {t("columns.line")}: {lineLabel(u)}
-                    </span>
-                    <span className="whitespace-nowrap tabular-nums">
-                      {t("columns.created")}:{" "}
-                      {formatCompactDate(u.createdAt, locale)}
-                    </span>
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-
-          {/* lg+: table */}
-          <div className="relative hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
-            <table className="w-full text-sm">
-              <caption className="sr-only">{t("title")}</caption>
-              <thead className="bg-slate-50 text-left text-xs text-slate-600">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 font-medium whitespace-nowrap"
-                  >
-                    {t("columns.name")}
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 font-medium whitespace-nowrap"
-                  >
-                    {t("columns.state")}
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 font-medium whitespace-nowrap"
-                  >
-                    {t("columns.roles")}
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 font-medium whitespace-nowrap"
-                  >
-                    {t("columns.line")}
-                  </th>
-                  <th
-                    scope="col"
-                    className="hidden px-3 py-2 font-medium whitespace-nowrap xl:table-cell"
-                  >
-                    {t("columns.created")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {page.map((u) => (
-                  <tr
-                    key={u.id}
-                    className="border-t border-slate-100 align-middle hover:bg-slate-50"
-                  >
-                    <th scope="row" className="px-3 py-2 text-left font-medium">
-                      <Link
-                        href={`/app/admin/members/${u.id}`}
-                        className="text-brand-700 hover:underline"
-                      >
-                        {name(u)}
-                      </Link>
+                    <p className="flex flex-wrap items-center gap-2 font-semibold">
+                      {name(u)}
                       {u.isAdmin ? (
-                        <span className="ml-2 whitespace-nowrap">
-                          <Badge tone="brand">{t("badge.admin")}</Badge>
-                        </span>
+                        <Badge tone="brand">{t("badge.admin")}</Badge>
                       ) : null}
-                      <span
-                        className="block max-w-[18rem] truncate text-xs font-normal text-slate-500"
-                        title={u.primaryEmail ?? undefined}
-                      >
-                        <span className="sr-only">{t("columns.email")}: </span>
-                        {u.primaryEmail ?? "—"}
-                      </span>
-                    </th>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    </p>
+                    <p
+                      className="truncate text-sm text-slate-600"
+                      title={u.primaryEmail ?? undefined}
+                    >
+                      {u.primaryEmail ?? "—"}
+                    </p>
+                    <p className="mt-2 flex flex-wrap gap-1 [&>span]:whitespace-nowrap">
                       <Badge tone={stateTone(u.state)}>
                         {tr(`state.${u.state}`)}
                       </Badge>
-                    </td>
-                    <td className="px-3 py-2">
-                      {u.roles.length ? (
-                        <span className="flex flex-wrap gap-1 [&>span]:whitespace-nowrap">
-                          {u.roles.map((r) => (
-                            <Badge key={r.role}>{roleLabel(r)}</Badge>
-                          ))}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span
-                        className="inline-flex items-center gap-1.5"
-                        title={lineLabel(u)}
-                      >
+                      {u.roles.map((r) => (
+                        <Badge key={r.role}>{roleLabel(r)}</Badge>
+                      ))}
+                    </p>
+                    <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                         <span
                           aria-hidden="true"
-                          className={`size-2 shrink-0 rounded-full ${lineDot(u)}`}
+                          className={`size-2 rounded-full ${lineDot(u)}`}
                         />
-                        <span aria-hidden="true">{lineShort(u)}</span>
-                        <span className="sr-only">{lineLabel(u)}</span>
+                        {t("columns.line")}: {lineLabel(u)}
                       </span>
-                    </td>
-                    <td className="hidden px-3 py-2 whitespace-nowrap tabular-nums xl:table-cell">
-                      <time dateTime={u.createdAt.toISOString()}>
+                      <span className="whitespace-nowrap tabular-nums">
+                        {t("columns.created")}:{" "}
                         {formatCompactDate(u.createdAt, locale)}
-                      </time>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                      </span>
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
 
-      <nav aria-label={t("pagination")} className="mt-4 flex flex-wrap gap-2">
-        {cursor ? (
-          <Link
-            href={{ pathname: "/app/admin/members", query: baseQuery }}
-            className={buttonClass("secondary")}
-          >
-            {t("firstPage")}
-          </Link>
-        ) : null}
-        {hasMore ? (
-          <Link
-            href={{
-              pathname: "/app/admin/members",
-              query: { ...baseQuery, cursor: page[page.length - 1].id },
-            }}
-            className={buttonClass("secondary")}
-          >
-            {t("nextPage")}
-          </Link>
-        ) : null}
-      </nav>
+            {/* lg+: table */}
+            <div className="relative hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
+              <table className="w-full text-sm">
+                <caption className="sr-only">{t("title")}</caption>
+                <thead className="bg-slate-50 text-left text-xs text-slate-600">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 font-medium whitespace-nowrap"
+                    >
+                      {t("columns.name")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 font-medium whitespace-nowrap"
+                    >
+                      {t("columns.state")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 font-medium whitespace-nowrap"
+                    >
+                      {t("columns.roles")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-2 font-medium whitespace-nowrap"
+                    >
+                      {t("columns.line")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="hidden px-3 py-2 font-medium whitespace-nowrap xl:table-cell"
+                    >
+                      {t("columns.created")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {page.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="border-t border-slate-100 align-middle hover:bg-slate-50"
+                    >
+                      <th
+                        scope="row"
+                        className="px-3 py-2 text-left font-medium"
+                      >
+                        <Link
+                          href={`/app/admin/members/${u.id}`}
+                          className="text-brand-700 hover:underline"
+                        >
+                          {name(u)}
+                        </Link>
+                        {u.isAdmin ? (
+                          <span className="ml-2 whitespace-nowrap">
+                            <Badge tone="brand">{t("badge.admin")}</Badge>
+                          </span>
+                        ) : null}
+                        <span
+                          className="block max-w-[18rem] truncate text-xs font-normal text-slate-500"
+                          title={u.primaryEmail ?? undefined}
+                        >
+                          <span className="sr-only">
+                            {t("columns.email")}:{" "}
+                          </span>
+                          {u.primaryEmail ?? "—"}
+                        </span>
+                      </th>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <Badge tone={stateTone(u.state)}>
+                          {tr(`state.${u.state}`)}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2">
+                        {u.roles.length ? (
+                          <span className="flex flex-wrap gap-1 [&>span]:whitespace-nowrap">
+                            {u.roles.map((r) => (
+                              <Badge key={r.role}>{roleLabel(r)}</Badge>
+                            ))}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span
+                          className="inline-flex items-center gap-1.5"
+                          title={lineLabel(u)}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`size-2 shrink-0 rounded-full ${lineDot(u)}`}
+                          />
+                          <span aria-hidden="true">{lineShort(u)}</span>
+                          <span className="sr-only">{lineLabel(u)}</span>
+                        </span>
+                      </td>
+                      <td className="hidden px-3 py-2 whitespace-nowrap tabular-nums xl:table-cell">
+                        <time dateTime={u.createdAt.toISOString()}>
+                          {formatCompactDate(u.createdAt, locale)}
+                        </time>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        <nav aria-label={t("pagination")} className="mt-4 flex flex-wrap gap-2">
+          {cursor ? (
+            <Link
+              href={{ pathname: "/app/admin/members", query: baseQuery }}
+              className={buttonClass("secondary", "relative")}
+            >
+              {t("firstPage")}
+              <LinkPendingBar />
+            </Link>
+          ) : null}
+          {hasMore ? (
+            <Link
+              href={{
+                pathname: "/app/admin/members",
+                query: { ...baseQuery, cursor: page[page.length - 1].id },
+              }}
+              className={buttonClass("secondary", "relative")}
+            >
+              {t("nextPage")}
+              <LinkPendingBar />
+            </Link>
+          ) : null}
+        </nav>
+      </div>
     </div>
   );
 }

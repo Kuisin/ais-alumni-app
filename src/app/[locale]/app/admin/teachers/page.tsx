@@ -8,7 +8,8 @@ import {
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/field";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton, SubmitButton } from "@/components/ui/submit-button";
 import { AccountState, RoleKey, TeacherStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
@@ -88,7 +89,7 @@ export default async function TeachersPage({
           <UserPlus aria-hidden="true" className="size-5 text-brand-700" />
           {t("add.title")}
         </h2>
-        <form className="flex gap-2">
+        <SearchForm className="flex gap-2">
           <label htmlFor="teacher-q" className="sr-only">
             {t("add.search")}
           </label>
@@ -100,47 +101,49 @@ export default async function TeachersPage({
             placeholder={t("add.placeholder")}
             className="min-w-0 flex-1"
           />
-          <SubmitButton
+          <SearchButton
             variant="secondary"
             className="shrink-0 whitespace-nowrap"
+            icon={<Search aria-hidden="true" className="size-4" />}
           >
-            <Search aria-hidden="true" className="size-4" />
             {t("add.search")}
-          </SubmitButton>
-        </form>
-        {q ? (
-          results.length ? (
-            <ul className="divide-y divide-slate-100">
-              {results.map((u) => (
-                <li
-                  key={u.id}
-                  className="animate-rise flex items-center gap-3 py-3"
-                >
-                  <Avatar name={displayName(u, locale)} size={36} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">
-                      {displayName(u, locale)}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {u.roles.map((r) => tr(`role.${r.role}`)).join("・")}
-                    </p>
-                  </div>
-                  <form action={assignTeacherAction}>
-                    <input type="hidden" name="userId" value={u.id} />
-                    <SubmitButton className="px-3 text-xs">
-                      <UserPlus aria-hidden="true" className="size-4" />
-                      {t("add.button")}
-                    </SubmitButton>
-                  </form>
-                </li>
-              ))}
-            </ul>
+          </SearchButton>
+        </SearchForm>
+        <div data-results>
+          {q ? (
+            results.length ? (
+              <ul className="divide-y divide-slate-100">
+                {results.map((u) => (
+                  <li
+                    key={u.id}
+                    className="animate-rise flex items-center gap-3 py-3"
+                  >
+                    <Avatar name={displayName(u, locale)} size={36} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">
+                        {displayName(u, locale)}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {u.roles.map((r) => tr(`role.${r.role}`)).join("・")}
+                      </p>
+                    </div>
+                    <form action={assignTeacherAction}>
+                      <input type="hidden" name="userId" value={u.id} />
+                      <SubmitButton className="px-3 text-xs">
+                        <UserPlus aria-hidden="true" className="size-4" />
+                        {t("add.button")}
+                      </SubmitButton>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState>{t("add.none")}</EmptyState>
+            )
           ) : (
-            <EmptyState>{t("add.none")}</EmptyState>
-          )
-        ) : (
-          <p className="text-sm text-slate-600">{t("add.hint")}</p>
-        )}
+            <p className="text-sm text-slate-600">{t("add.hint")}</p>
+          )}
+        </div>
       </Card>
 
       <Card

@@ -114,7 +114,7 @@ async function NewsTab({
     !read.has(p.id) && !!p.publishedAt && p.publishedAt >= user.createdAt;
 
   return (
-    <section aria-label={t("tabs.news")}>
+    <section data-results aria-label={t("tabs.news")}>
       {posts.length === 0 ? (
         <EmptyState icon={<Newspaper />} hint={t("emptyHint")}>
           {t("empty")}
@@ -151,7 +151,7 @@ async function MessagesTab({
   const { rows, pages } = await listMessages(userId, page);
 
   return (
-    <section aria-label={t("tabs.messages")}>
+    <section data-results aria-label={t("tabs.messages")}>
       {rows.length === 0 ? (
         <EmptyState icon={<Mail />} hint={t("messages.emptyHint")}>
           {t("messages.empty")}

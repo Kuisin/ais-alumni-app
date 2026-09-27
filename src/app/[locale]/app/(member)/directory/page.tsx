@@ -5,6 +5,7 @@ import { DirectoryFilterForm } from "@/components/directory/filter-form";
 import { MemberCard } from "@/components/directory/member-card";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
+import { LinkPendingBar } from "@/components/ui/link-pending";
 import { Link } from "@/i18n/navigation";
 import { blockedUserIds, toViewer } from "@/lib/authz";
 import { loadCohortOptions } from "@/lib/cohorts-db";
@@ -58,7 +59,7 @@ export default async function DirectoryPage({ searchParams }: Props) {
         }
       />
 
-      <section aria-labelledby="dir-results" className="mt-6">
+      <section data-results aria-labelledby="dir-results" className="mt-6">
         <div className="mb-3 flex items-baseline gap-2">
           <h2 id="dir-results" className="text-sm font-medium text-slate-600">
             {t("results")}
@@ -104,17 +105,19 @@ export default async function DirectoryPage({ searchParams }: Props) {
           {filters.cursor ? (
             <Link
               href={`/app/directory${directoryQuery(filters)}`}
-              className={buttonClass("ghost")}
+              className={buttonClass("ghost", "relative")}
             >
               {t("firstPage")}
+              <LinkPendingBar />
             </Link>
           ) : null}
           {nextCursor ? (
             <Link
               href={`/app/directory${directoryQuery(filters, nextCursor)}`}
-              className={buttonClass("secondary")}
+              className={buttonClass("secondary", "relative")}
             >
               {t("loadMore")}
+              <LinkPendingBar />
             </Link>
           ) : null}
         </nav>

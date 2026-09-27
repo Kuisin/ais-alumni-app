@@ -1,6 +1,13 @@
 "use client";
 
-import { ImageIcon, Send, Type, Users } from "lucide-react";
+import {
+  ImageIcon,
+  ListChecks,
+  Paperclip,
+  Send,
+  Type,
+  Users,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
@@ -29,6 +36,12 @@ import type { NewsStatus } from "@/lib/news";
 import { type AudienceSpec, EVERYONE } from "@/lib/news-audience";
 import { type AudienceMember, AudiencePicker } from "./audience-picker";
 import { type Delivery, DeliveryField } from "./delivery-field";
+import {
+  AttachmentFields,
+  EMPTY_HUB,
+  type HubValues,
+  ResponseFields,
+} from "./hub-fields";
 
 export type NewsFormValues = {
   id?: string;
@@ -47,6 +60,8 @@ export type NewsFormValues = {
   audienceMembers: AudienceMember[];
   /** signed URL of the current cover, for preview */
   coverPreviewUrl: string | null;
+  /** confirm / poll / 日程調整 / attachments */
+  hub: HubValues;
 };
 
 export const EMPTY_NEWS: NewsFormValues = {
@@ -61,6 +76,7 @@ export const EMPTY_NEWS: NewsFormValues = {
   audience: EVERYONE,
   audienceMembers: [],
   coverPreviewUrl: null,
+  hub: EMPTY_HUB,
 };
 
 /** The 配信 option selected when the editor opens. */
@@ -76,8 +92,11 @@ export function NewsForm({
   cohorts,
   cancelHref,
   deleteAction,
+  useBlob,
 }: {
   values: NewsFormValues;
+  /** attachments go straight to Vercel Blob when it's configured */
+  useBlob: boolean;
   /** existing 学年 for the audience picker */
   cohorts: readonly CohortOption[];
   /** shows a cancel link in the action bar (from `sm`) */
@@ -245,6 +264,18 @@ export function NewsForm({
               )}
             </Field>
           </div>
+        </FormSection>
+
+        <FormSection icon={<Paperclip />} title={t("sections.attachments")}>
+          <AttachmentFields
+            initial={values.hub.attachments}
+            useBlob={useBlob}
+            error={err("attachments")}
+          />
+        </FormSection>
+
+        <FormSection icon={<ListChecks />} title={t("sections.responses")}>
+          <ResponseFields values={values.hub} err={err} />
         </FormSection>
 
         <FormSection icon={<Send />} title={t("sections.delivery")}>

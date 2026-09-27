@@ -89,12 +89,17 @@ function sign(key: string, exp: number): string {
 }
 
 /** Short-lived URL for a private file. Call only after authorizing the viewer. */
-export function signedFileUrl(key: string, ttlMs = SIGNED_URL_TTL_MS): string {
+export function signedFileUrl(
+  key: string,
+  ttlMs = SIGNED_URL_TTL_MS,
+  fileName?: string,
+): string {
   const exp = Date.now() + ttlMs;
   const qs = new URLSearchParams({
     key,
     exp: String(exp),
     sig: sign(key, exp),
+    ...(fileName ? { name: fileName.slice(0, 200) } : {}),
   });
   return `/api/files?${qs}`;
 }

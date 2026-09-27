@@ -6,6 +6,7 @@ import {
   setNewsArchivedAction,
 } from "@/app/actions/admin-content";
 import { NewsReadsCard } from "@/components/admin/news-reads-card";
+import { NewsResponsesCard } from "@/components/admin/news-responses-card";
 import { NewsForm } from "@/components/news/news-form";
 import { NotifyPanel } from "@/components/news/notify-panel";
 import { NewsStatusBadges } from "@/components/news/status-badges";
@@ -20,8 +21,9 @@ import { asLocale } from "@/lib/events";
 import { localized, toJstLocalInput } from "@/lib/format";
 import { newsStatus } from "@/lib/news";
 import { specFromPost } from "@/lib/news-audience";
+import { hubFormValues } from "@/lib/news-hub-db";
 import { requireAdmin } from "@/lib/session";
-import { signedFileUrl } from "@/lib/storage";
+import { isBlobConfigured, signedFileUrl } from "@/lib/storage";
 
 export async function generateMetadata({
   params,
@@ -45,7 +47,7 @@ export default async function AdminNewsEditPage({
   const t = await getTranslations("adminContent");
   const status = newsStatus(post);
   const audience = specFromPost(post);
-  const [cohorts, members] = await Promise.all([
+  const [cohorts, members, hub] = await Promise.all([
     loadCohortOptions(locale),
     audience.userIds.length
       ? db.user.findMany({
@@ -53,6 +55,7 @@ export default async function AdminNewsEditPage({
           select: { id: true, nameRomaji: true, nameKanji: true },
         })
       : [],
+    hubFormValues(post),
   ]);
 
   return (
@@ -138,6 +141,9 @@ export default async function AdminNewsEditPage({
             />
           )}
           {status === "published" ? (
+            <NewsResponsesCard post={post} locale={locale} />
+          ) : null}
+          {status === "published" ? (
             <NewsReadsCard post={post} locale={locale} />
           ) : null}
         </aside>
@@ -172,7 +178,9 @@ export default async function AdminNewsEditPage({
               coverPreviewUrl: post.coverUrl
                 ? signedFileUrl(post.coverUrl)
                 : null,
+              hub,
             }}
+            useBlob={isBlobConfigured()}
             cohorts={cohorts}
             deleteAction={{
               action: deleteNewsAction,

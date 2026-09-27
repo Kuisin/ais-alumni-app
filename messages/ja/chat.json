@@ -1,0 +1,60 @@
+{
+  "title": "チャット",
+  "description": "区分や学年ごとのグループで話せます。メンバーは自動で参加します。",
+  "empty": "参加しているグループはまだありません。",
+  "emptyHint": "会員区分や学年が登録されると、該当するグループに自動で参加します。",
+  "allGroups": "その他のグループ（管理者）",
+  "members": "メンバー {count}人",
+  "noMessages": "まだメッセージはありません。最初のメッセージを送ってみましょう。",
+  "unread": "未読 {count}件",
+  "you": "あなた",
+  "groups": {
+    "TEACHERS": "教職員",
+    "CURRENT_STUDENTS": "在校生",
+    "FORMER_STUDENTS": "卒業生＋元在校生",
+    "CURRENT_PARENTS": "在校生保護者",
+    "FORMER_PARENTS": "卒業生保護者",
+    "COHORT": "{cohort}",
+    "COHORT_PARENTS": "{cohort} 保護者"
+  },
+  "groupHints": {
+    "TEACHERS": "教職員の皆さん",
+    "CURRENT_STUDENTS": "在校生の皆さん",
+    "FORMER_STUDENTS": "卒業生と元在校生の皆さん",
+    "CURRENT_PARENTS": "在校生の保護者の皆さん",
+    "FORMER_PARENTS": "卒業生の保護者の皆さん",
+    "COHORT": "同じ学年の生徒・卒業生",
+    "COHORT_PARENTS": "同じ学年のお子さまの保護者"
+  },
+  "room": {
+    "back": "チャット一覧へ",
+    "membersList": "メンバー一覧",
+    "messageLabel": "メッセージ",
+    "placeholder": "メッセージを入力",
+    "send": "送信",
+    "sending": "送信中…",
+    "enterHint": "Enterで送信、Shift+Enterで改行",
+    "older": "以前のメッセージを表示",
+    "unreadDivider": "ここから未読",
+    "deleted": "メッセージは削除されました",
+    "delete": "削除",
+    "deleteConfirm": "このメッセージを削除しますか？",
+    "deleteLabel": "{name}さんのメッセージを削除",
+    "digest": "未読があるとき、毎日20時にまとめて通知を受け取る",
+    "adminView": "管理者として閲覧しています（投稿はできません）",
+    "live": "リアルタイム接続中",
+    "polling": "数秒ごとに更新しています",
+    "today": "今日",
+    "yesterday": "昨日",
+    "errors": {
+      "forbidden": "このグループには投稿できません。",
+      "invalid": "メッセージを入力してください（2000文字まで）。",
+      "tooFast": "送信が多すぎます。少し待ってからお試しください。",
+      "generic": "送信できませんでした。もう一度お試しください。"
+    }
+  },
+  "digest": {
+    "subject": "【AIS同窓会】未読のチャットがあります",
+    "text": "グループチャットに未読のメッセージが{count}件あります。\nアプリでご確認ください。"
+  }
+}

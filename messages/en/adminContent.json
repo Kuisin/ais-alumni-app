@@ -7,7 +7,9 @@
     "rsvp": "RSVP and audience",
     "cover": "Cover image",
     "delivery": "Delivery",
-    "audience": "Recipients"
+    "audience": "Recipients",
+    "responses": "Responses",
+    "attachments": "Attachments"
   },
   "fields": {
     "titleHint": "Enter the title in at least one language. Members see the other language as a fallback.",
@@ -49,7 +51,11 @@
     "forbidden": "You don't have permission to do that.",
     "notFound": "This item no longer exists.",
     "sendAtPast": "Choose a time in the future.",
-    "invalidAudience": "The recipients are not valid. Please choose them again."
+    "invalidAudience": "The recipients are not valid. Please choose them again.",
+    "pollQuestion": "Please enter a question.",
+    "pollOptions": "Please enter 2–10 choices.",
+    "scheduleOptions": "Please enter 1–20 candidate dates.",
+    "tooManyFiles": "Up to 5 attachments."
   },
   "events": {
     "title": "Events",
@@ -238,5 +244,61 @@
     "remove": "Remove {name} from staff",
     "open": "Open check-in",
     "checkedIn": "Checked in"
+  },
+  "hub": {
+    "requireConfirm": "Show a “Got it” button",
+    "requireConfirmHint": "Members confirm they've read it; you can see who has and who hasn't.",
+    "allowComments": "Allow comments and reactions",
+    "deadline": "Respond by (Japan time)",
+    "deadlineHint": "About a day before, one reminder goes to members who haven't responded (without content).",
+    "poll": {
+      "title": "Poll",
+      "add": "Add a poll",
+      "remove": "Remove the poll",
+      "question": "Question",
+      "multiple": "Allow several choices",
+      "option": "Choice {n}",
+      "addOption": "Add a choice",
+      "removeOption": "Remove choice {n}",
+      "editWarn": "Removing a choice also removes the answers to it."
+    },
+    "schedule": {
+      "title": "Scheduling",
+      "add": "Add scheduling",
+      "remove": "Remove scheduling",
+      "question": "Description (optional)",
+      "candidate": "Option {n} (Japan time)",
+      "note": "Note for option {n} (optional)",
+      "addCandidate": "Add a date",
+      "removeCandidate": "Remove option {n}",
+      "hint": "Members answer ○ / △ / × for each date."
+    },
+    "files": {
+      "hint": "PDF, JPG or PNG, up to 10 MB each, {max} files. Members open them through temporary links.",
+      "add": "Add files",
+      "remove": "Remove {name}",
+      "uploading": "Uploading: {name}",
+      "errors": {
+        "type": "Only PDF, JPG and PNG files can be attached.",
+        "size": "Files must be 10 MB or smaller.",
+        "count": "Up to {max} files.",
+        "generic": "The upload failed. Please try again.",
+        "forbidden": "You can't do this."
+      }
+    },
+    "results": {
+      "title": "Responses",
+      "responded": "Responded",
+      "pending": "Not yet",
+      "pendingList": "Not responded yet",
+      "confirmedList": "Confirmed",
+      "voters": "{count, plural, one {# response} other {# responses}}",
+      "votersList": "Who answered",
+      "none": "No responses yet.",
+      "noAsks": "This post doesn't ask for a response.",
+      "reminded": "Reminder sent ({time})",
+      "reminderPlanned": "A reminder goes to those who haven't responded about a day before the deadline.",
+      "deadline": "Respond by {time}"
+    }
   }
 }

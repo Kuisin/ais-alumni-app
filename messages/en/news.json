@@ -15,7 +15,9 @@
     "subject": "[AIS Alumni] {title}",
     "fallbackText": "A new announcement has been posted.",
     "contentlessSubject": "[AIS Alumni] New announcement",
-    "contentlessText": "The AIS Alumni Committee posted a new announcement.\nOpen the app to read it."
+    "contentlessText": "The AIS Alumni Committee posted a new announcement.\nOpen the app to read it.",
+    "reminderSubject": "[AIS Alumni] A response deadline is coming up",
+    "reminderText": "There's a news post you haven't responded to yet.\nPlease open the app to see it."
   },
   "emptyHint": "Announcements from the committee will appear here when they are posted.",
   "unread": "Unread",
@@ -36,5 +38,72 @@
     "senderView": "You sent this message (you are not a recipient).",
     "newCount": "{count, plural, one {You have # new message} other {You have # new messages}}",
     "edited": "Edited"
+  },
+  "hub": {
+    "deadline": "Respond by {time}",
+    "closed": "The response deadline has passed",
+    "answered": "Responded",
+    "needsAnswer": "Response needed",
+    "confirm": {
+      "title": "Confirmation",
+      "hint": "Press this once you've read the post.",
+      "button": "Got it",
+      "done": "Confirmed ({time})",
+      "undo": "Undo",
+      "count": "{count, plural, one {# confirmed} other {# confirmed}}"
+    },
+    "poll": {
+      "title": "Poll",
+      "multiple": "You can choose several",
+      "single": "Choose one",
+      "submit": "Vote",
+      "update": "Change my answer",
+      "voters": "{count, plural, one {# vote} other {# votes}}",
+      "yours": "Your answer",
+      "saved": "Your answer has been saved."
+    },
+    "schedule": {
+      "title": "Scheduling",
+      "YES": "○",
+      "MAYBE": "△",
+      "NO": "×",
+      "YESLabel": "Can attend",
+      "MAYBELabel": "Maybe",
+      "NOLabel": "Can't attend",
+      "answerFor": "Answer for {date}",
+      "submit": "Send",
+      "update": "Change my answers",
+      "best": "Best so far",
+      "counts": "○{yes} △{maybe} ×{no}",
+      "answers": "Everyone's answers",
+      "needAll": "Please answer every date.",
+      "saved": "Your answers have been saved."
+    },
+    "reactions": {
+      "label": "Reactions",
+      "toggle": "{emoji} ({count})"
+    },
+    "comments": {
+      "title": "Comments",
+      "empty": "No comments yet.",
+      "label": "Write a comment",
+      "submit": "Post",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this comment?",
+      "hide": "Hide",
+      "show": "Show again",
+      "hidden": "Hidden (visible to admins only)",
+      "off": "Comments are turned off for this post."
+    },
+    "files": {
+      "title": "Attachments"
+    },
+    "errors": {
+      "closed": "The response deadline has passed.",
+      "invalid": "That couldn't be sent. Please check and try again.",
+      "commentsOff": "Comments are turned off.",
+      "forbidden": "You can't do this.",
+      "generic": "That couldn't be sent. Please try again."
+    }
   }
 }

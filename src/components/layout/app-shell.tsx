@@ -13,6 +13,7 @@ import {
   Layers,
   LogOut,
   Megaphone,
+  MessagesSquare,
   Newspaper,
   Route,
   ScrollText,
@@ -27,6 +28,7 @@ import {
 import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { signOutAction } from "@/app/actions/common";
+import { RealtimeProvider } from "@/components/realtime/realtime-provider";
 import {
   ChangeRequestStatus,
   FollowStatus,
@@ -35,9 +37,11 @@ import {
 import { Link } from "@/i18n/navigation";
 import { unreadCounts } from "@/lib/announcements";
 import { getStaffAccess } from "@/lib/broadcasts";
+import { chatUnreadTotal } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { hasStaffAccess, type StaffAccess } from "@/lib/permissions";
+import { channelTopic } from "@/lib/realtime";
 import type { CurrentUser } from "@/lib/session";
 import { LocaleSwitcher } from "./locale-switcher";
 import { Dropdown, NavLink } from "./nav-link";
@@ -114,6 +118,29 @@ export async function AppShell({
         : { news: 0, messages: 0 },
     ]);
   const unreadTotal = unread.news + unread.messages;
+  // Group chats: unread badge and the channels joined for live updates.
+  const live = user && user.state === "ACTIVE" && variant !== "onboarding";
+  const [chatUnread, chatGroups] = live
+    ? await Promise.all([
+        variant === "member" ? chatUnreadTotal(user.id) : 0,
+        db.chatMember.findMany({
+          where: { userId: user.id },
+          select: { groupId: true },
+        }),
+      ])
+    : [0, []];
+  const realtimeTopics = live
+    ? [
+        channelTopic("user", user.id),
+        ...chatGroups.map((g) => channelTopic("chat", g.groupId)),
+      ]
+    : [];
+  const withRealtime = (node: ReactNode) =>
+    live ? (
+      <RealtimeProvider topics={realtimeTopics}>{node}</RealtimeProvider>
+    ) : (
+      node
+    );
 
   const primary: NavItem[] = [
     {
@@ -136,6 +163,12 @@ export async function AppShell({
       label: t("nav.news"),
       count: unreadTotal,
       icon: <Newspaper className={ICON} />,
+    },
+    {
+      href: "/app/chat",
+      label: t("nav.chat"),
+      count: chatUnread,
+      icon: <MessagesSquare className={ICON} />,
     },
     {
       href: "/app/family",
@@ -409,7 +442,7 @@ export async function AppShell({
   );
 
   if (admin) {
-    return (
+    return withRealtime(
       <>
         <header className="sticky top-0 z-40 bg-slate-900 text-white">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2">
@@ -469,11 +502,11 @@ export async function AppShell({
           </main>
         </div>
         {footer}
-      </>
+      </>,
     );
   }
 
-  return (
+  return withRealtime(
     <>
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2">
@@ -531,9 +564,9 @@ export async function AppShell({
           aria-label={t("nav.label")}
           className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
         >
-          <ul className="mx-auto grid max-w-md grid-cols-5">
+          <ul className="mx-auto grid max-w-lg grid-cols-6">
             {[
-              ...primary.slice(0, 4),
+              ...primary.slice(0, 5),
               { ...accountItems[0], label: t("nav.profileShort") },
             ].map((item) => (
               <li key={item.href}>
@@ -565,6 +598,6 @@ export async function AppShell({
           </ul>
         </nav>
       ) : null}
-    </>
+    </>,
   );
 }

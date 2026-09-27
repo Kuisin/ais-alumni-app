@@ -60,7 +60,8 @@
     "adminModeShort": "管理",
     "memberModeShort": "会員画面",
     "pending": "{count}件の対応待ち",
-    "unread": "未読 {count}件"
+    "unread": "未読 {count}件",
+    "chat": "チャット"
   },
   "adminNav": {
     "verification": "本人確認",

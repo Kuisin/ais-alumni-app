@@ -7,7 +7,9 @@
     "rsvp": "出欠と公開範囲",
     "cover": "カバー画像",
     "delivery": "配信",
-    "audience": "受け取る人"
+    "audience": "受け取る人",
+    "responses": "回答・参加",
+    "attachments": "添付ファイル"
   },
   "fields": {
     "titleHint": "タイトルは日本語・英語の少なくとも一方を入力してください。未入力の言語ではもう一方が表示されます。",
@@ -49,7 +51,11 @@
     "forbidden": "この操作を行う権限がありません。",
     "notFound": "対象が見つかりません。",
     "sendAtPast": "未来の日時を指定してください。",
-    "invalidAudience": "受け取る人の指定が正しくありません。もう一度選び直してください。"
+    "invalidAudience": "受け取る人の指定が正しくありません。もう一度選び直してください。",
+    "pollQuestion": "質問を入力してください。",
+    "pollOptions": "選択肢を2〜10個入力してください。",
+    "scheduleOptions": "候補日時を1〜20個入力してください。",
+    "tooManyFiles": "添付ファイルは5件までです。"
   },
   "events": {
     "title": "イベント管理",
@@ -238,5 +244,61 @@
     "remove": "{name}さんをスタッフから外す",
     "open": "受付画面を開く",
     "checkedIn": "受付済み"
+  },
+  "hub": {
+    "requireConfirm": "「確認しました」ボタンを表示する",
+    "requireConfirmHint": "読んだことを確認してもらい、確認した人・まだの人の一覧を見られます。",
+    "allowComments": "コメントとリアクションを受け付ける",
+    "deadline": "回答期限（日本時間）",
+    "deadlineHint": "期限の約1日前に、まだ回答していない人へ1回だけリマインドを送ります（内容は含みません）。",
+    "poll": {
+      "title": "アンケート",
+      "add": "アンケートを追加",
+      "remove": "アンケートを削除",
+      "question": "質問",
+      "multiple": "複数選択を許可する",
+      "option": "選択肢 {n}",
+      "addOption": "選択肢を追加",
+      "removeOption": "選択肢 {n} を削除",
+      "editWarn": "選択肢を削除すると、その選択肢への回答も消えます。"
+    },
+    "schedule": {
+      "title": "日程調整",
+      "add": "日程調整を追加",
+      "remove": "日程調整を削除",
+      "question": "説明（任意）",
+      "candidate": "候補 {n}（日本時間）",
+      "note": "候補 {n} のメモ（任意）",
+      "addCandidate": "候補日時を追加",
+      "removeCandidate": "候補 {n} を削除",
+      "hint": "参加者は候補ごとに ○・△・× で回答します。"
+    },
+    "files": {
+      "hint": "PDF・JPG・PNG、1ファイル10MBまで、{max}件まで。会員には閲覧用の一時リンクで表示されます。",
+      "add": "ファイルを追加",
+      "remove": "{name} を削除",
+      "uploading": "アップロード中：{name}",
+      "errors": {
+        "type": "PDF・JPG・PNGのみ添付できます。",
+        "size": "ファイルは10MB以下にしてください。",
+        "count": "添付ファイルは{max}件までです。",
+        "generic": "アップロードできませんでした。もう一度お試しください。",
+        "forbidden": "この操作を行う権限がありません。"
+      }
+    },
+    "results": {
+      "title": "回答状況",
+      "responded": "回答済み",
+      "pending": "未回答",
+      "pendingList": "未回答の人",
+      "confirmedList": "確認した人",
+      "voters": "{count}人が回答",
+      "votersList": "回答した人",
+      "none": "まだ回答はありません。",
+      "noAsks": "このニュースは回答を求めていません。",
+      "reminded": "リマインド送信済み（{time}）",
+      "reminderPlanned": "期限の約1日前に未回答の人へリマインドを送ります。",
+      "deadline": "回答期限：{time}"
+    }
   }
 }

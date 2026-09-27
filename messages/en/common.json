@@ -60,7 +60,8 @@
     "adminModeShort": "Admin",
     "memberModeShort": "Member",
     "pending": "{count} waiting",
-    "unread": "{count} unread"
+    "unread": "{count} unread",
+    "chat": "Chat"
   },
   "adminNav": {
     "verification": "Verification",

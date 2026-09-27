@@ -23,12 +23,15 @@ export function NewsCard({
   locale,
   excerpt = true,
   unread = false,
+  needsAnswer = false,
 }: {
   post: NewsCardData;
   locale: "ja" | "en";
   excerpt?: boolean;
   /** the member hasn't opened this post yet */
   unread?: boolean;
+  /** asks for a confirmation / answer the member hasn't given yet */
+  needsAnswer?: boolean;
 }) {
   const t = useTranslations("news");
   const title = localized(post.titleJa, post.titleEn, locale);
@@ -46,6 +49,9 @@ export function NewsCard({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           {unread ? <UnreadBadge /> : null}
+          {needsAnswer ? (
+            <Badge tone="amber">{t("hub.needsAnswer")}</Badge>
+          ) : null}
           {post.pinned ? <Badge tone="brand">{t("pinned")}</Badge> : null}
           {post.publishedAt ? (
             <span className="inline-flex items-center gap-1.5">

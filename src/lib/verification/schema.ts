@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { parseCohortNumber } from "@/lib/cohorts";
-import { nameColumns } from "@/lib/names";
+import { kanaPart, nameColumns, requireKanaForKanji } from "@/lib/names";
 
 /**
  * Sign-up (verification) form, version 2. Shared by the client wizard
@@ -140,13 +140,18 @@ const newChildSchema = z
     firstNameRomaji: requiredText(50),
     lastNameKanji: optionalText(50),
     firstNameKanji: optionalText(50),
+    lastNameKana: kanaPart(),
+    firstNameKana: kanaPart(),
     dateOfBirth: isoDate,
     cohortNumber: cohortNumber(),
     joinedYear: year(),
     leftYear: optionalYear(),
     studentIdNo: optionalText(50),
   })
-  .superRefine(leftAfterJoined);
+  .superRefine((v, ctx) => {
+    leftAfterJoined(v, ctx);
+    requireKanaForKanji(v, ctx);
+  });
 
 const existingChildSchema = z.object({
   mode: z.literal("existing"),
@@ -202,7 +207,7 @@ export function safeFileName(name: string): string {
 // ---------------------------------------------------------------------------
 // Whole form
 
-export function verificationSchema(opts: { requireKanji: boolean }) {
+export function verificationSchema(_opts: { requireKanji: boolean }) {
   return z
     .object({
       types: z
@@ -212,8 +217,12 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
       lastNameRomaji: requiredText(50),
       firstNameRomaji: requiredText(50),
       middleNameRomaji: optionalText(50),
-      lastNameKanji: opts.requireKanji ? requiredText(50) : optionalText(50),
-      firstNameKanji: opts.requireKanji ? requiredText(50) : optionalText(50),
+      // Kanji is optional (e.g. international students); フリガナ is
+      // required with it. `requireKanji` is kept for callers but unused.
+      lastNameKanji: optionalText(50),
+      firstNameKanji: optionalText(50),
+      lastNameKana: kanaPart(),
+      firstNameKana: kanaPart(),
       nameAtAis: optionalText(100),
       dateOfBirth: isoDate,
       locale: z.enum(["ja", "en"]),
@@ -226,6 +235,7 @@ export function verificationSchema(opts: { requireKanji: boolean }) {
         .default([]),
     })
     .superRefine((v, ctx) => {
+      requireKanaForKanji(v, ctx);
       for (const type of v.types) {
         if (!v[SECTION[type]]) {
           ctx.addIssue({
@@ -264,6 +274,8 @@ export type ChildState = {
   firstNameRomaji: string;
   lastNameKanji: string;
   firstNameKanji: string;
+  lastNameKana: string;
+  firstNameKana: string;
   dateOfBirth: string;
   cohortNumber: string;
   joinedYear: string;
@@ -278,6 +290,8 @@ export type VerifyFormState = {
   middleNameRomaji: string;
   lastNameKanji: string;
   firstNameKanji: string;
+  lastNameKana: string;
+  firstNameKana: string;
   nameAtAis: string;
   dateOfBirth: string;
   locale: "ja" | "en";
@@ -307,6 +321,8 @@ export const emptyChild = (mode: ChildMode = "new"): ChildState => ({
   firstNameRomaji: "",
   lastNameKanji: "",
   firstNameKanji: "",
+  lastNameKana: "",
+  firstNameKana: "",
   dateOfBirth: "",
   cohortNumber: "",
   joinedYear: "",
@@ -322,6 +338,8 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
     middleNameRomaji: "",
     lastNameKanji: "",
     firstNameKanji: "",
+    lastNameKana: "",
+    firstNameKana: "",
     nameAtAis: "",
     dateOfBirth: "",
     locale,
@@ -382,6 +400,8 @@ export function answersToFormState(
     middleNameRomaji: s(a.middleNameRomaji),
     lastNameKanji: s(a.lastNameKanji),
     firstNameKanji: s(a.firstNameKanji),
+    lastNameKana: s(a.lastNameKana),
+    firstNameKana: s(a.firstNameKana),
     nameAtAis: s(a.nameAtAis),
     dateOfBirth: s(a.dateOfBirth),
     locale: a.locale === "en" ? "en" : a.locale === "ja" ? "ja" : locale,
@@ -404,6 +424,8 @@ export function answersToFormState(
             lastNameRomaji: s(c.lastNameRomaji),
             firstNameRomaji: s(c.firstNameRomaji),
             firstNameKanji: s(c.firstNameKanji),
+            lastNameKana: s(c.lastNameKana),
+            firstNameKana: s(c.firstNameKana),
             dateOfBirth: s(c.dateOfBirth),
             cohortNumber: s(c.cohortNumber),
             joinedYear: s(c.joinedYear),
@@ -448,6 +470,8 @@ const KNOWN_CODES = new Set([
   "cohortRequired",
   "childrenRequired",
   "childNotSelected",
+  "kanaOnly",
+  "kanaRequired",
   "tooManyFiles",
 ]);
 

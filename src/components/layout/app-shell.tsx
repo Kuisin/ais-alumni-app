@@ -9,6 +9,7 @@ import {
   GraduationCap,
   HeartHandshake,
   House,
+  IdCard,
   Layers,
   LogOut,
   Megaphone,
@@ -82,23 +83,29 @@ export async function AppShell({
   const isStaff = access ? hasStaffAccess(access) : false;
   const admin = variant === "admin";
   // Badges: work waiting for this person.
-  const [pendingVerify, pendingRecords, followRequests] = await Promise.all([
-    admin && access?.admin
-      ? db.verificationRequest.count({
-          where: { status: VerificationStatus.PENDING },
-        })
-      : 0,
-    admin && access?.admin
-      ? db.recordChangeRequest.count({
-          where: { status: ChangeRequestStatus.PENDING },
-        })
-      : 0,
-    variant === "member" && user
-      ? db.follow.count({
-          where: { followeeId: user.id, status: FollowStatus.REQUESTED },
-        })
-      : 0,
-  ]);
+  const [pendingVerify, pendingRecords, pendingNames, followRequests] =
+    await Promise.all([
+      admin && access?.admin
+        ? db.verificationRequest.count({
+            where: { status: VerificationStatus.PENDING },
+          })
+        : 0,
+      admin && access?.admin
+        ? db.recordChangeRequest.count({
+            where: { status: ChangeRequestStatus.PENDING },
+          })
+        : 0,
+      admin && access?.admin
+        ? db.nameChangeRequest.count({
+            where: { status: ChangeRequestStatus.PENDING },
+          })
+        : 0,
+      variant === "member" && user
+        ? db.follow.count({
+            where: { followeeId: user.id, status: FollowStatus.REQUESTED },
+          })
+        : 0,
+    ]);
 
   const primary: NavItem[] = [
     {
@@ -163,6 +170,12 @@ export async function AppShell({
               label: t("adminNav.recordRequests"),
               count: pendingRecords,
               icon: <FilePen className={ICON} />,
+            },
+            {
+              href: "/app/admin/name-requests",
+              label: t("adminNav.nameRequests"),
+              count: pendingNames,
+              icon: <IdCard className={ICON} />,
             },
           ]
         : [],
@@ -414,7 +427,7 @@ export async function AppShell({
         </header>
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:flex-row">
           <nav aria-label={t("nav.adminLabel")} className="lg:w-56 lg:shrink-0">
-            <div className="-mx-4 flex snap-x gap-1 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_88%,transparent)] lg:sticky lg:[mask-image:none] lg:top-20 lg:mx-0 lg:block lg:space-y-5 lg:overflow-visible lg:px-0">
+            <div className="relative -mx-4 flex snap-x gap-1 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_88%,transparent)] lg:sticky lg:[mask-image:none] lg:top-20 lg:mx-0 lg:block lg:space-y-5 lg:overflow-visible lg:px-0">
               {adminGroups.map((g) => (
                 <div key={g.label} className="contents lg:block">
                   <p className="hidden px-3 pb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase lg:block">

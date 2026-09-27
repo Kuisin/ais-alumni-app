@@ -3,10 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { BlockControl } from "@/components/follows/block-control";
-import {
-  FollowButton,
-  type FollowUiState,
-} from "@/components/follows/follow-button";
+import { FollowButton } from "@/components/follows/follow-button";
+import { FollowCounts } from "@/components/follows/follow-counts";
 import { MemberMenu } from "@/components/follows/member-menu";
 import { HistoryList } from "@/components/history/history-list";
 import { avatarSrc } from "@/components/profile/avatar-src";
@@ -18,7 +16,7 @@ import {
 import { Avatar } from "@/components/ui/avatar";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, Card } from "@/components/ui/card";
-import { FollowStatus, type Locale, RoleKey } from "@/generated/prisma/enums";
+import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { roleLabelKey } from "@/lib/audience";
 import {
@@ -28,6 +26,13 @@ import {
   toViewer,
 } from "@/lib/authz";
 import { db } from "@/lib/db";
+import {
+  type FollowUiState,
+  followButtonState,
+  followsMe,
+  loadFollowCounts,
+  loadFollowStatus,
+} from "@/lib/follows";
 import { displayName } from "@/lib/format";
 import { visibleHistory } from "@/lib/history";
 import { requireActive } from "@/lib/session";
@@ -90,6 +95,10 @@ export default async function MemberProfilePage({ params }: Props) {
   const altName = locale === "ja" && p.nameKanji ? p.nameRomaji : p.nameKanji;
 
   // Non-private columns needed to decide which relationship controls to show.
+  const [counts, theirFollow] = await Promise.all([
+    loadFollowCounts(id),
+    view.isSelf ? null : loadFollowStatus(id, me.id),
+  ]);
   const [targetMeta, myBlock] = view.isSelf
     ? [null, null]
     : await Promise.all([
@@ -100,6 +109,7 @@ export default async function MemberProfilePage({ params }: Props) {
             state: true,
             familyId: true,
             dateOfBirth: true,
+            managedById: true,
             roles: { select: { role: true } },
           },
         }),
@@ -114,17 +124,19 @@ export default async function MemberProfilePage({ params }: Props) {
   let followState: FollowUiState | null = null;
   if (targetMeta && !family && !myBlock) {
     const rel = view.relationship;
-    if (rel.follow === FollowStatus.ACCEPTED) followState = "following";
-    else if (rel.follow === FollowStatus.REQUESTED) followState = "requested";
-    else {
-      const check = canRequestFollow(
-        toViewer(me),
-        { ...targetMeta, roles: targetMeta.roles.map((r) => r.role) },
-        rel,
-      );
-      if (check.ok) followState = "none";
-    }
+    const { managedById, ...meta } = targetMeta;
+    const check = canRequestFollow(
+      toViewer(me),
+      {
+        ...meta,
+        managed: managedById !== null,
+        roles: targetMeta.roles.map((r) => r.role),
+      },
+      rel,
+    );
+    followState = followButtonState(rel.follow, theirFollow, check.ok);
   }
+  const canRequest = followState === "none" || followState === "followBack";
 
   const former = p.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
   const priv = view.private;
@@ -155,12 +167,20 @@ export default async function MemberProfilePage({ params }: Props) {
             <div className="mt-2 flex flex-wrap justify-center gap-1 sm:justify-start">
               {view.isSelf ? <Badge tone="slate">{t("self")}</Badge> : null}
               {family ? <Badge tone="green">{tf("familyMember")}</Badge> : null}
+              {!view.isSelf && followsMe(theirFollow) ? (
+                <Badge tone="slate">{tf("followsYou")}</Badge>
+              ) : null}
               {p.roles.map((r) => (
                 <Badge key={r.role} tone="brand">
                   {tr(roleLabelKey(r))}
                 </Badge>
               ))}
             </div>
+            <FollowCounts
+              followers={counts.followers}
+              following={counts.following}
+              linked={view.isSelf}
+            />
           </div>
         </div>
         {view.isSelf ? (
@@ -178,8 +198,8 @@ export default async function MemberProfilePage({ params }: Props) {
           <div className="mt-4 flex flex-wrap items-start justify-center gap-2 sm:justify-start">
             {followState ? (
               <div className="flex flex-col items-center gap-1 sm:items-start">
-                <FollowButton targetId={id} state={followState} />
-                {followState === "none" ? (
+                <FollowButton targetId={id} state={followState} name={name} />
+                {canRequest ? (
                   <p className="text-balance text-sm text-slate-500">
                     {tf("followHint")}
                   </p>
@@ -320,7 +340,7 @@ export default async function MemberProfilePage({ params }: Props) {
             <p className="mt-1">
               {followState === "requested"
                 ? t("locked.requested")
-                : followState === "none"
+                : canRequest
                   ? t("locked.body", { name })
                   : t("locked.unavailable")}
             </p>

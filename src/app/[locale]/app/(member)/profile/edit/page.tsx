@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AvatarForm } from "@/components/profile/avatar-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
+import { NameCard } from "@/components/profile/name-card";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { AisRecord } from "@/components/profile/role-details";
 import { parseSocialLinks } from "@/components/profile/social-links";
@@ -11,7 +12,6 @@ import { Card, PageHeader } from "@/components/ui/card";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { displayName, formatDate } from "@/lib/format";
-import { namePartsOf } from "@/lib/names";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -49,11 +49,11 @@ export default async function ProfileEditPage() {
         />
       </Card>
 
+      <NameCard me={me} />
+
       <ProfileForm
         showAutoAccept={Boolean(former)}
         values={{
-          ...namePartsOf(me),
-          nameAtAis: me.nameAtAis ?? "",
           bio: me.bio ?? "",
           phone: me.phone ?? "",
           autoAcceptSameYear: me.autoAcceptSameYear,

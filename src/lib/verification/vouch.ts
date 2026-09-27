@@ -3,6 +3,7 @@ import { AccountState, type Locale, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
+import { toKatakana } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { appUrl } from "@/lib/urls";
 import {
@@ -71,6 +72,7 @@ function prefilter(name: string): Prisma.UserWhereInput[] {
   return tokens.flatMap((t) => [
     { nameRomaji: { contains: t, mode: "insensitive" as const } },
     { nameAtAis: { contains: t, mode: "insensitive" as const } },
+    { nameKana: { contains: toKatakana(t) } },
   ]);
 }
 

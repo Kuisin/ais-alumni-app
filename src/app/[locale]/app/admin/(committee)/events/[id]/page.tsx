@@ -188,7 +188,7 @@ export default async function AdminEventPage({
               {rsvps.length === 0 ? (
                 <EmptyState>{t("attendees.empty")}</EmptyState>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="relative overflow-x-auto">
                   <table className="w-full min-w-[32rem] text-left text-sm">
                     <thead className="border-b border-slate-200 text-slate-600">
                       <tr>

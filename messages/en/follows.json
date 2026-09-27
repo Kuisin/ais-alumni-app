@@ -31,7 +31,11 @@
     "unblock": "Unblock",
     "blockConfirm": "Block {name}? You won't see each other anywhere on the site, and any follows between you will be removed.",
     "blockYes": "Yes, block",
-    "working": "Working…"
+    "working": "Working…",
+    "followBack": "Follow back",
+    "requestedHint": " (cancel request)",
+    "unfollowConfirm": "Unfollow {name}? To see their contact details again, you'll need to send a new request.",
+    "cancel": "Cancel"
   },
   "status": {
     "requestSent": "Follow request sent.",
@@ -59,5 +63,14 @@
     "label": "More actions"
   },
   "followHint": "Once your follow is accepted, you can see their contact details.",
-  "findInDirectory": "Find people in the directory"
+  "findInDirectory": "Find people in the directory",
+  "followsYou": "Follows you",
+  "counts": {
+    "followers": "<b>{count, number}</b> {count, plural, one {follower} other {followers}}",
+    "following": "<b>{count, number}</b> following"
+  },
+  "accepted": {
+    "title": "You accepted {name}'s request.",
+    "followBackHint": "Follow them back?"
+  }
 }

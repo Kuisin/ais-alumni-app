@@ -90,6 +90,10 @@ model User {
   middleNameRomaji      String?
   lastNameKanji         String?
   firstNameKanji        String?
+  // Added: フリガナ (katakana) for the kanji name, required when kanji is given.
+  lastNameKana          String?
+  firstNameKana         String?
+  nameKana              String?
   nameRomaji            String?
   nameKanji             String?
   nameAtAis             String?
@@ -132,6 +136,8 @@ model User {
   auditActions   AuditLog[]
   recordRequests RecordChangeRequest[] @relation("recordRequester")
   recordReviews  RecordChangeRequest[] @relation("recordReviewer")
+  nameRequests   NameChangeRequest[]   @relation("nameRequester")
+  nameReviews    NameChangeRequest[]   @relation("nameReviewer")
   positions      UserPosition[]        @relation("positionHolder")
   positionGrants UserPosition[]        @relation("positionGrantor")
   broadcasts     Broadcast[]
@@ -629,4 +635,24 @@ model Company {
   createdById String?
   entries     WorkEntry[]
   createdAt   DateTime    @default(now())
+}
+
+// Added: names are fixed once a member is approved; changes go through the
+// committee. `current` / `proposed` hold the name parts (src/lib/names.ts).
+model NameChangeRequest {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation("nameRequester", fields: [userId], references: [id], onDelete: Cascade)
+  current    Json
+  proposed   Json
+  reason     String
+  status     ChangeRequestStatus @default(PENDING)
+  reviewerId String?
+  reviewer   User?               @relation("nameReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote String?
+  createdAt  DateTime            @default(now())
+  decidedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
 }

@@ -16,7 +16,7 @@ export function SectionNav({
       aria-label={label}
       className="sticky top-[3.75rem] z-30 -mx-4 border-b border-slate-200 bg-slate-50/95 px-4 py-2 backdrop-blur lg:mx-0 lg:rounded-xl lg:border"
     >
-      <ul className="flex snap-x gap-1 overflow-x-auto [mask-image:linear-gradient(to_right,black_90%,transparent)] lg:flex-wrap lg:overflow-visible lg:[mask-image:none]">
+      <ul className="relative flex snap-x gap-1 overflow-x-auto [mask-image:linear-gradient(to_right,black_90%,transparent)] lg:flex-wrap lg:overflow-visible lg:[mask-image:none]">
         {items.map((item) => (
           <li key={item.id} className="shrink-0 snap-start">
             <a

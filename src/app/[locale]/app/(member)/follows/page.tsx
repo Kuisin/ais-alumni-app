@@ -1,4 +1,4 @@
-import { Search, ShieldOff, Users } from "lucide-react";
+import { CircleCheck, Search, ShieldOff, Users } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
@@ -10,14 +10,20 @@ import {
   unfollowAction,
 } from "@/app/actions/follows";
 import { MemberCard } from "@/components/directory/member-card";
+import { FollowButton } from "@/components/follows/follow-button";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { Locale } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
-import { loadFollowLists } from "@/lib/follows";
-import { formatDate } from "@/lib/format";
+import {
+  type FollowUiState,
+  loadAcceptedFollower,
+  loadFollowButtonStates,
+  loadFollowLists,
+} from "@/lib/follows";
+import { displayName, formatDate } from "@/lib/format";
 import { requireActive } from "@/lib/session";
 
 const TABS = [
@@ -60,6 +66,18 @@ function ActionForm({
   );
 }
 
+/** FollowButton, or nothing when I may not follow them (minor, family…). */
+function FollowStateButton({
+  state,
+  ...props
+}: {
+  targetId: string;
+  name: string;
+  state: FollowUiState | null;
+}) {
+  return state ? <FollowButton state={state} {...props} /> : null;
+}
+
 /** Follow requests, followers, following and blocked members (§9.2). */
 export default async function FollowsPage({ searchParams }: Props) {
   const me = await requireActive();
@@ -69,6 +87,17 @@ export default async function FollowsPage({ searchParams }: Props) {
   const raw = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
   const tab: Tab = TABS.includes(raw as Tab) ? (raw as Tab) : "incoming";
   const lists = await loadFollowLists(me.id);
+  const rawAccepted = Array.isArray(sp.accepted) ? sp.accepted[0] : sp.accepted;
+  const accepted =
+    tab === "incoming" && rawAccepted
+      ? await loadAcceptedFollower(me.id, rawAccepted.slice(0, 64))
+      : null;
+  // Follow-back buttons: followers I don't follow (yet), and the request I
+  // just accepted.
+  const buttonStates = await loadFollowButtonStates(me, [
+    ...(tab === "followers" ? lists.followers.map((f) => f.follower.id) : []),
+    ...(accepted ? [accepted.id] : []),
+  ]);
 
   const counts: Record<Tab, number> = {
     incoming: lists.incoming.length,
@@ -138,13 +167,20 @@ export default async function FollowsPage({ searchParams }: Props) {
           <MemberCard
             member={f.follower}
             actions={
-              <ActionForm
-                action={removeFollowerAction}
-                name="followerId"
-                value={f.follower.id}
-              >
-                {t("actions.remove")}
-              </ActionForm>
+              <>
+                <FollowStateButton
+                  targetId={f.follower.id}
+                  state={buttonStates.get(f.follower.id) ?? null}
+                  name={displayName(f.follower, locale)}
+                />
+                <ActionForm
+                  action={removeFollowerAction}
+                  name="followerId"
+                  value={f.follower.id}
+                >
+                  {t("actions.remove")}
+                </ActionForm>
+              </>
             }
           />,
         ),
@@ -157,13 +193,11 @@ export default async function FollowsPage({ searchParams }: Props) {
           <MemberCard
             member={f.followee}
             actions={
-              <ActionForm
-                action={unfollowAction}
-                name="targetId"
-                value={f.followee.id}
-              >
-                {t("actions.unfollow")}
-              </ActionForm>
+              <FollowButton
+                targetId={f.followee.id}
+                state="following"
+                name={displayName(f.followee, locale)}
+              />
             }
           />,
         ),
@@ -226,6 +260,36 @@ export default async function FollowsPage({ searchParams }: Props) {
           ))}
         </ul>
       </nav>
+      {accepted ? (
+        <section
+          aria-labelledby="follows-accepted-title"
+          className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3"
+        >
+          <h2
+            id="follows-accepted-title"
+            className="mb-2 flex items-center gap-2 text-sm font-semibold text-green-900"
+          >
+            <CircleCheck aria-hidden="true" className="size-4" />
+            {t("accepted.title", { name: displayName(accepted, locale) })}
+          </h2>
+          <MemberCard
+            member={accepted}
+            meta={
+              buttonStates.get(accepted.id) === "followBack" ||
+              buttonStates.get(accepted.id) === "none"
+                ? t("accepted.followBackHint")
+                : undefined
+            }
+            actions={
+              <FollowStateButton
+                targetId={accepted.id}
+                state={buttonStates.get(accepted.id) ?? null}
+                name={displayName(accepted, locale)}
+              />
+            }
+          />
+        </section>
+      ) : null}
       <section aria-labelledby="follows-list-title">
         <h2 id="follows-list-title" className="sr-only">
           {t(`tabs.${tab}`)}

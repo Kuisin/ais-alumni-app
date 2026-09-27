@@ -29,7 +29,7 @@ async function main() {
         isAdmin: true,
         lastNameRomaji: "Admin",
         firstNameRomaji: "AIS",
-        nameRomaji: "AIS Admin",
+        nameRomaji: "Admin, AIS",
         roles: {
           create: [
             { role: "TEACHER", yearsFrom: 2010, teacherStatus: "CURRENT" },
@@ -110,7 +110,7 @@ async function main() {
         state: "ACTIVE",
         firstNameRomaji: m.first,
         lastNameRomaji: m.last,
-        nameRomaji: `${m.first} ${m.last}`,
+        nameRomaji: `${m.last}, ${m.first}`,
         lastNameKanji: m.kanji?.[0] ?? null,
         firstNameKanji: m.kanji?.[1] ?? null,
         nameKanji: m.kanji ? m.kanji.join(" ") : null,

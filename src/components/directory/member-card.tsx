@@ -28,8 +28,7 @@ export async function MemberCard({
 }) {
   const locale = (await getLocale()) as Locale;
   const name = displayName(member, locale);
-  const alt =
-    locale === "ja" && member.nameKanji ? member.nameRomaji : member.nameKanji;
+  const alt = member.nameRomaji ? member.nameKanji : null;
   const nameEl = linked ? (
     <Link
       href={`/app/members/${member.id}`}

@@ -1,5 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
-import { createActiveGraduate, signInWithEmail, uniqueEmail } from "./helpers";
+import {
+  asListed,
+  createActiveGraduate,
+  signInWithEmail,
+  uniqueEmail,
+} from "./helpers";
 
 async function startParentApplication(page: Page, lastName: string) {
   await signInWithEmail(page, uniqueEmail("parent"));
@@ -21,7 +26,7 @@ async function approve(admin: Page, lastName: string) {
   await admin.getByRole("searchbox", { name: "Search" }).fill(lastName);
   await admin.getByRole("button", { name: "Search" }).click();
   await admin
-    .getByRole("link", { name: new RegExp(`Parent ${lastName}`) })
+    .getByRole("link", { name: new RegExp(`${lastName}, Parent`) })
     .first()
     .click();
 }
@@ -73,7 +78,7 @@ test("parent registers a new child; the committee approves the child's details",
     parent.getByRole("heading", { name: "Children you manage" }),
   ).toBeVisible();
   await expect(parent.getByText("Approved", { exact: true })).toBeVisible();
-  await expect(parent.getByText(`Kid ${lastName}`).first()).toBeVisible();
+  await expect(parent.getByText(`${lastName}, Kid`).first()).toBeVisible();
 });
 
 test("parent links a child who is already registered; the child confirms", async ({
@@ -96,7 +101,9 @@ test("parent links a child who is already registered; the child confirms", async
   await expect(parent.getByText(/No registered member matches/)).toBeVisible();
   await parent.getByLabel(/Child’s date of birth/).fill("1999-09-09");
   await parent.getByRole("button", { name: "Find" }).click();
-  await parent.getByRole("button", { name: new RegExp(childName) }).click();
+  await parent
+    .getByRole("button", { name: new RegExp(asListed(childName)) })
+    .click();
   await expect(parent.getByRole("button", { name: /Change/ })).toBeVisible();
   await parent.getByRole("button", { name: "Next" }).click();
   await parent.getByRole("button", { name: "Submit application" }).click();

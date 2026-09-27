@@ -1,5 +1,6 @@
 "use client";
 
+import { GraduationCap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   type FormEvent,
@@ -16,9 +17,10 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import type { CohortChoice } from "@/lib/cohorts";
+import { type CohortChoice, parseCohortNumber } from "@/lib/cohorts";
 import { composeKanji, composeRomaji } from "@/lib/names";
 import {
+  applicantGraduated,
   issuesToErrors,
   MEMBER_TYPES,
   type MemberType,
@@ -163,6 +165,16 @@ export function VerifyForm({
 
   const errorCount = Object.keys(errors).length;
   const progress = ((stepIndex + 1) / STEPS.length) * 100;
+
+  // 卒業証書: asked of graduates (worked out from the 学年 and leave year).
+  const isGraduate =
+    state.types.includes("STUDENT") &&
+    applicantGraduated(
+      parseCohortNumber(state.student.cohortNumber) ?? null,
+      state.student.leftYear ? Number(state.student.leftYear) : null,
+    );
+  const diplomaItems = state.evidence.filter((e) => e.kind === "DIPLOMA");
+  const otherItems = state.evidence.filter((e) => e.kind !== "DIPLOMA");
 
   return (
     <form
@@ -484,9 +496,72 @@ export function VerifyForm({
               </Button>
             </section>
 
+            {isGraduate ? (
+              <section
+                aria-labelledby="diploma-title"
+                className="space-y-3 rounded-2xl border-2 border-brand-200 bg-white p-4"
+              >
+                <h3
+                  id="diploma-title"
+                  className="flex items-center gap-2 font-semibold"
+                >
+                  <GraduationCap
+                    aria-hidden="true"
+                    className="size-5 text-brand-700"
+                  />
+                  {t("diploma.title")}
+                  {state.diplomaUnavailable ? null : (
+                    <span className="text-red-700" aria-hidden="true">
+                      *
+                    </span>
+                  )}
+                </h3>
+                <p className="text-sm text-slate-600">{t("diploma.intro")}</p>
+                {state.diplomaUnavailable ? null : (
+                  <EvidenceUploader
+                    userId={userId}
+                    useBlob={useBlob}
+                    kind="DIPLOMA"
+                    max={1}
+                    label={t("diploma.label")}
+                    hint={t("diploma.hint")}
+                    items={diplomaItems}
+                    onChange={(items) =>
+                      set("evidence", [...otherItems, ...items])
+                    }
+                    error={errors.diploma ?? errors.evidence}
+                  />
+                )}
+                {errors.diploma ? (
+                  <p id="diploma-error" className="text-sm text-red-700">
+                    {t(`errors.${errors.diploma}`)}
+                  </p>
+                ) : null}
+                <label className="flex min-h-11 items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-5 shrink-0"
+                    checked={state.diplomaUnavailable}
+                    onChange={(e) =>
+                      set("diplomaUnavailable", e.currentTarget.checked)
+                    }
+                  />
+                  <span>
+                    {t("diploma.unavailable")}
+                    <span className="block text-slate-500">
+                      {t("diploma.unavailableHint")}
+                    </span>
+                  </span>
+                </label>
+              </section>
+            ) : null}
+
             <details
               className="rounded-2xl border border-slate-200 bg-white p-4"
-              open={state.evidence.length > 0}
+              open={
+                otherItems.length > 0 ||
+                (isGraduate && state.diplomaUnavailable)
+              }
             >
               <summary className="cursor-pointer font-medium text-brand-700">
                 {t("review.addDocuments")}
@@ -495,8 +570,10 @@ export function VerifyForm({
                 <EvidenceUploader
                   userId={userId}
                   useBlob={useBlob}
-                  items={state.evidence}
-                  onChange={(items) => set("evidence", items)}
+                  items={otherItems}
+                  onChange={(items) =>
+                    set("evidence", [...diplomaItems, ...items])
+                  }
                   error={errors.evidence}
                 />
               </div>

@@ -31,7 +31,8 @@
     "parentUnconfirmed": "保護者未確認",
     "rosterMatch": "名簿一致 {score}",
     "vouchCounts": "推薦 承認{yes}・否認{no}・不明{unsure}・未回答{pending}",
-    "noVouches": "推薦なし"
+    "noVouches": "推薦なし",
+    "diploma": "卒業証書あり"
   },
   "status": {
     "PENDING": "審査待ち",

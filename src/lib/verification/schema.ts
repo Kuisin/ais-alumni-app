@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { parseCohortNumber } from "@/lib/cohorts";
+import { elementaryEndFor, parseCohortNumber } from "@/lib/cohorts";
 import { kanaPart, nameColumns, requireKanaForKanji } from "@/lib/names";
+import { studentStatus } from "@/lib/school";
 
 /**
  * Sign-up (verification) form, version 2. Shared by the client wizard
@@ -186,7 +187,12 @@ export const teacherSchema = z
   })
   .superRefine(leftAfterJoined);
 
+/** 卒業証書 (one file) or other supporting documents (up to 3). */
+export const EVIDENCE_KINDS = ["DIPLOMA", "OTHER"] as const;
+export type EvidenceKindValue = (typeof EVIDENCE_KINDS)[number];
+
 export const evidenceItemSchema = z.object({
+  kind: z.enum(EVIDENCE_KINDS).default("OTHER"),
   key: z.string().min(1).max(500),
   fileName: z.string().trim().min(1).max(200),
   mimeType: z.enum(EVIDENCE_TYPES),
@@ -231,11 +237,32 @@ export function verificationSchema(_opts: { requireKanji: boolean }) {
       teacher: teacherSchema.optional(),
       evidence: z
         .array(evidenceItemSchema)
-        .max(EVIDENCE_MAX_FILES, "tooManyFiles")
-        .default([]),
+        .default([])
+        .refine(
+          (a) =>
+            a.filter((e) => e.kind === "DIPLOMA").length <= 1 &&
+            a.filter((e) => e.kind === "OTHER").length <= EVIDENCE_MAX_FILES,
+          "tooManyFiles",
+        ),
+      /** a graduate who can't provide their 卒業証書 */
+      diplomaUnavailable: z.boolean().default(false),
     })
     .superRefine((v, ctx) => {
       requireKanaForKanji(v, ctx);
+      // Graduates upload their 卒業証書 (or say they don't have it).
+      if (
+        v.types.includes("STUDENT") &&
+        v.student &&
+        applicantGraduated(v.student.cohortNumber, v.student.leftYear) &&
+        !v.diplomaUnavailable &&
+        !v.evidence.some((e) => e.kind === "DIPLOMA")
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["diploma"],
+          message: "diplomaRequired",
+        });
+      }
       for (const type of v.types) {
         if (!v[SECTION[type]]) {
           ctx.addIssue({
@@ -257,6 +284,17 @@ export function verificationSchema(_opts: { requireKanji: boolean }) {
 }
 
 export type VerificationData = z.output<ReturnType<typeof verificationSchema>>;
+
+/** Whether a student applicant finished 6th grade at AIS (by 学年 and leave year). */
+export function applicantGraduated(
+  cohortNumber: number | null | undefined,
+  leftYear: number | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (cohortNumber == null) return false;
+  return studentStatus(elementaryEndFor(cohortNumber), leftYear ?? null, now)
+    .didGraduate;
+}
 
 /** What is stored in VerificationRequest.answers. */
 export type StoredAnswers = Omit<VerificationData, "evidence"> & { version: 2 };
@@ -311,6 +349,7 @@ export type VerifyFormState = {
     schoolEmail: string;
   };
   evidence: EvidenceItem[];
+  diplomaUnavailable: boolean;
 };
 
 export const emptyChild = (mode: ChildMode = "new"): ChildState => ({
@@ -354,6 +393,7 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
     parent: { children: [emptyChild()] },
     teacher: { joinedYear: "", leftYear: "", subjects: "", schoolEmail: "" },
     evidence: [],
+    diplomaUnavailable: false,
   };
 }
 
@@ -441,6 +481,7 @@ export function answersToFormState(
       schoolEmail: s(tc.schoolEmail),
     },
     evidence,
+    diplomaUnavailable: a.diplomaUnavailable === true,
   };
 }
 
@@ -472,6 +513,7 @@ const KNOWN_CODES = new Set([
   "childNotSelected",
   "kanaOnly",
   "kanaRequired",
+  "diplomaRequired",
   "tooManyFiles",
 ]);
 
@@ -488,6 +530,6 @@ export function stepOfPath(path: string): Step {
   if (head === "types") return "type";
   if (head === "student" || head === "parent" || head === "teacher")
     return "details";
-  if (head === "evidence") return "review";
+  if (head === "evidence" || head === "diploma") return "review";
   return "basics";
 }

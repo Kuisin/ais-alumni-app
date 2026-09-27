@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   FileText,
+  GraduationCap,
   ListChecks,
   Search,
   ShieldCheck,
@@ -112,6 +113,7 @@ export default async function VerificationQueuePage({
         },
         vouches: { select: { answer: true } },
         _count: { select: { evidence: true } },
+        evidence: { where: { kind: "DIPLOMA" }, select: { id: true } },
       },
     }),
     db.verificationRequest.groupBy({
@@ -287,6 +289,11 @@ export default async function VerificationQueuePage({
                             })
                           : t("badges.noVouches")}
                       </Signal>
+                      {r.evidence.length ? (
+                        <Signal tone="green" icon={<GraduationCap />}>
+                          {t("badges.diploma")}
+                        </Signal>
+                      ) : null}
                       <Signal
                         tone={r._count.evidence > 0 ? "blue" : "dim"}
                         icon={<FileText />}

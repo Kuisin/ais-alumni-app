@@ -12,7 +12,7 @@ test("admin appoints a class representative who notifies their class", async ({
   await signInWithEmail(admin, "admin@example.com");
   await admin.goto("/en/app/admin/members?q=hanako");
   await admin
-    .getByRole("link", { name: /Hanako Suzuki/ })
+    .getByRole("link", { name: /Suzuki, Hanako/ })
     .first()
     .click();
 

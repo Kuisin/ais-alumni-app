@@ -22,6 +22,7 @@ describe("name similarity (§6.4.1)", () => {
 
   it("ignores case, spacing, order and accents", () => {
     expect(romajiSimilarity("Taro Yamada", "YAMADA  taro")).toBe(1);
+    expect(romajiSimilarity("Yamada, Taro", "Taro Yamada")).toBe(1);
     expect(romajiSimilarity("Yamada Taro", "Yamadataro")).toBe(1);
     expect(romajiSimilarity("Taro Yamada", "Yamadataro")).toBe(1);
     expect(romajiSimilarity("José Ito", "jose ito")).toBe(1);

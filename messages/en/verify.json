@@ -102,7 +102,8 @@
     "cohortRequired": "Choose a class.",
     "childNotSelected": "Use “Find” to look up your child and select them.",
     "kanaOnly": "Use katakana (hiragana is converted automatically).",
-    "kanaRequired": "Please add the katakana reading (フリガナ) for your kanji name."
+    "kanaRequired": "Please add the katakana reading (フリガナ) for your kanji name.",
+    "diplomaRequired": "Upload your diploma, or tick “I don't have my diploma”."
   },
   "evidence": {
     "label": "Supporting documents (optional)",
@@ -236,5 +237,13 @@
   "placeholders": {
     "lastNameKana": "e.g. ヤマダ",
     "firstNameKana": "e.g. タロウ"
+  },
+  "diploma": {
+    "title": "Diploma (卒業証書)",
+    "intro": "If you graduated from AIS, upload a photo or scan of your diploma. The committee uses it to confirm you attended, and deletes it 30 days after deciding.",
+    "label": "Diploma file",
+    "hint": "JPG, PNG or PDF (up to 10 MB). Make sure your name and graduation year are readable.",
+    "unavailable": "I don't have my diploma",
+    "unavailableHint": "If so, add any other document that shows you attended (report card, a yearbook photo, …) below."
   }
 }

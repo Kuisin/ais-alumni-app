@@ -113,3 +113,32 @@ describe("exactNameMatch", () => {
     expect(exactNameMatch("  ", u)).toBe(false);
   });
 });
+
+describe("exactNameMatch with Last, First names", async () => {
+  const { exactNameMatch } = await import("./family");
+  it("ignores order and the comma", () => {
+    const u = {
+      nameRomaji: "Suzuki, Hanako",
+      nameKanji: "鈴木 花子",
+      nameAtAis: null,
+    };
+    expect(exactNameMatch("Hanako Suzuki", u)).toBe(true);
+    expect(exactNameMatch("suzuki hanako", u)).toBe(true);
+    expect(exactNameMatch("鈴木花子", u)).toBe(true);
+    expect(exactNameMatch("Hanako Sato", u)).toBe(false);
+  });
+});
+
+describe("exactNameMatch is strict", async () => {
+  const { exactNameMatch } = await import("./family");
+  it("doesn't ignore digits or extra words", () => {
+    const u = {
+      nameRomaji: "Link12345, Grad",
+      nameKanji: null,
+      nameAtAis: null,
+    };
+    expect(exactNameMatch("Grad Link12345", u)).toBe(true);
+    expect(exactNameMatch("Grad Link99999", u)).toBe(false);
+    expect(exactNameMatch("Grad", u)).toBe(false);
+  });
+});

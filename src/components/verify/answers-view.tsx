@@ -99,6 +99,9 @@ export async function AnswersView({ answers }: { answers: unknown }) {
               .map((x) => t(`types.${String(x)}.title`))
               .join("・")}
           />
+          {a.diplomaUnavailable === true ? (
+            <Row label={t("diploma.title")} value={t("diploma.unavailable")} />
+          ) : null}
           <Row
             label={t("fields.locale")}
             value={a.locale === "en" ? "English" : "日本語"}

@@ -309,6 +309,8 @@ model VerificationEvidence {
   fileName    String
   mimeType    String
   size        Int
+  // Added: 卒業証書 (DIPLOMA) or any other supporting document
+  kind        EvidenceKind        @default(OTHER)
   // null while the request is undecided; set to decidedAt + 30 days (§6.3)
   deleteAfter DateTime?
   createdAt   DateTime            @default(now())
@@ -655,4 +657,10 @@ model NameChangeRequest {
 
   @@index([status, createdAt])
   @@index([userId])
+}
+
+// Added: type of an uploaded verification document.
+enum EvidenceKind {
+  DIPLOMA
+  OTHER
 }

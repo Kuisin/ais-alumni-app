@@ -762,6 +762,7 @@ enum ChatGroupKind {
   COHORT_PARENTS // 第N期 保護者
   ADULTS // 18歳以上（18歳を迎えた後の4月1日から）
   DIRECT // 1対1のトーク (key DIRECT:<userId>:<userId>, sorted)
+  CLASS_REPS // 学年代表（STUDENT_LEADER の役職を持つ会員）
 }
 
 /// Group chats by member type and 学年. Members are added automatically

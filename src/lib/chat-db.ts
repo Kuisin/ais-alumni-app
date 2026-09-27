@@ -3,18 +3,23 @@ import {
   AccountState,
   ChatGroupKind,
   FollowStatus,
+  PositionKey,
   RoleKey,
 } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
 import { desiredGroups, directKey, isAdult } from "@/lib/chat";
 import { db } from "@/lib/db";
-import { ADULTS_CHAT_ENABLED, DIRECT_CHAT_ENABLED } from "@/lib/features";
+import {
+  ADULTS_CHAT_ENABLED,
+  CLASS_REPS_CHAT_ENABLED,
+  DIRECT_CHAT_ENABLED,
+} from "@/lib/features";
 import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
 import { publicUrl } from "@/lib/urls";
 
 type Client = Prisma.TransactionClient | typeof db;
 
-const STUDENT = [RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT];
+const STUDENT: RoleKey[] = [RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT];
 
 /**
  * Put the member in (and take them out of) the groups for their type and
@@ -32,6 +37,10 @@ export async function syncChatMembership(
       state: true,
       dateOfBirth: true,
       managedById: true,
+      positions: {
+        where: { position: PositionKey.STUDENT_LEADER },
+        select: { id: true },
+      },
       roles: { select: { role: true, cohortId: true } },
       parentLinks: {
         select: {
@@ -69,6 +78,11 @@ export async function syncChatMembership(
   }
   const want = desiredGroups(user.roles, [...childCohorts], {
     adult: ADULTS_CHAT_ENABLED && isAdult(user.dateOfBirth, now),
+    // 学年代表 need a (former) student role, like the position itself.
+    rep:
+      CLASS_REPS_CHAT_ENABLED &&
+      user.positions.length > 0 &&
+      user.roles.some((r) => STUDENT.includes(r.role)),
   });
   const have = new Map(current.map((m) => [m.group.key, m.groupId]));
   let changed = false;

@@ -6,6 +6,7 @@ import { ChatGroupKind, RoleKey } from "@/generated/prisma/enums";
  *  - 教職員, 在校生, 卒業生＋元在校生, 在校生保護者, 卒業生保護者
  *  - 第N期 (students and graduates of that class)
  *  - 第N期 保護者 (parents of a child in that class)
+ *  - 学年代表: members holding the 学年代表 (STUDENT_LEADER) position
  *  - 18歳以上: students and graduates (not parents or teachers) from the
  *    April 1 on or after their 18th birthday
  */
@@ -62,7 +63,7 @@ export function isAdult(dateOfBirth: Date | null, now: Date): boolean {
 export function desiredGroups(
   roles: readonly { role: RoleKey; cohortId: string | null }[],
   childCohortIds: readonly string[],
-  opts: { adult?: boolean } = {},
+  opts: { adult?: boolean; rep?: boolean } = {},
 ): GroupSpec[] {
   const out = new Map<string, GroupSpec>();
   const add = (kind: ChatGroupKind, cohortId: string | null = null) =>
@@ -82,6 +83,7 @@ export function desiredGroups(
   // 18歳以上 is for (former) students only, not parents or teachers.
   if (opts.adult && roles.some((r) => STUDENT.includes(r.role)))
     add(ChatGroupKind.ADULTS);
+  if (opts.rep) add(ChatGroupKind.CLASS_REPS);
   return [...out.values()];
 }
 
@@ -93,6 +95,7 @@ export const KIND_ORDER: ChatGroupKind[] = [
   ChatGroupKind.CURRENT_PARENTS,
   ChatGroupKind.FORMER_PARENTS,
   ChatGroupKind.ADULTS,
+  ChatGroupKind.CLASS_REPS,
   ChatGroupKind.COHORT,
   ChatGroupKind.COHORT_PARENTS,
 ];

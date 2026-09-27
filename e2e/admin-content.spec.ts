@@ -14,14 +14,27 @@ test("admin creates, edits and deletes an event", async ({ page }) => {
   await page.getByRole("button", { name: "Create event" }).click();
   await expect(page.getByText("The event has been created.")).toBeVisible();
 
-  // Edit: the save bar stays reachable at the bottom of the screen.
+  // Saved data opens read-only; Edit opens the form. The save bar stays
+  // reachable at the bottom of the screen, and saving returns to the view.
+  await expect(page.getByLabel("Title (Japanese)")).toHaveCount(0);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByLabel("Title (Japanese)").fill(`${title} edited`);
   const save = page.getByRole("button", { name: "Save", exact: true });
   await expect(save).toBeInViewport();
   await save.click();
-  await expect(page.getByLabel("Title (Japanese)")).toHaveValue(
-    `${title} edited`,
-  );
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Title (Japanese)")).toHaveCount(0);
+  await expect(page.getByText(`${title} edited`).first()).toBeVisible();
+
+  // Closing RSVPs early (and reopening).
+  await page.getByRole("button", { name: "Close RSVPs" }).click();
+  await expect(
+    page.getByRole("button", { name: "Reopen RSVPs" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Reopen RSVPs" }).click();
+  await expect(page.getByRole("button", { name: "Close RSVPs" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
 
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /Delete/ }).click();
@@ -50,6 +63,8 @@ test("admin saves and deletes a news draft", async ({ page }) => {
   await page.goto(editUrl);
   await page.getByRole("button", { name: "Restore" }).click();
   await expect(page.getByRole("button", { name: "Archive" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
 
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /Delete/ }).click();
@@ -90,6 +105,7 @@ test("admin schedules a news post for graduates", async ({ page }) => {
 
   // Editing keeps the reservation selected.
   await page.goto(editUrl);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
   await expect(
     page.getByRole("radio", { name: /^Schedule for a date and time/ }),
   ).toBeChecked();
@@ -131,6 +147,7 @@ test("events use the ニュース audience conditions", async ({ browser }) => {
   // Clean up.
   for (const url of [teacherUrl, gradUrl]) {
     await admin.goto(url);
+    await admin.getByRole("button", { name: "Edit", exact: true }).click();
     admin.once("dialog", (d) => d.accept());
     await admin.getByRole("button", { name: /Delete/ }).click();
     await expect(admin).toHaveURL(/\/en\/app\/admin\/events(\?|$)/);

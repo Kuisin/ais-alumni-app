@@ -77,7 +77,9 @@
       "counts": "○{yes} △{maybe} ×{no}",
       "answers": "Everyone's answers",
       "needAll": "Please answer every date.",
-      "saved": "Your answers have been saved."
+      "saved": "Your answers have been saved.",
+      "save": "Save my answers",
+      "cancel": "Cancel"
     },
     "reactions": {
       "label": "Reactions",
@@ -104,6 +106,7 @@
       "commentsOff": "Comments are turned off.",
       "forbidden": "You can't do this.",
       "generic": "That couldn't be sent. Please try again."
-    }
+    },
+    "closedManual": "Answers are closed"
   }
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { answerVouchAction, type VouchAnswerState } from "@/app/actions/vouch";
+import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { VouchAnswer } from "@/generated/prisma/enums";
@@ -27,6 +28,11 @@ export function VouchAnswerForm({
     answerVouchAction,
     null,
   );
+  // View first once answered; the answer changes only via the button.
+  const [editing, setEditing] = useState(!current);
+  useEffect(() => {
+    if (state?.ok) setEditing(false);
+  }, [state]);
 
   return (
     <form action={action} className="space-y-4">
@@ -38,6 +44,10 @@ export function VouchAnswerForm({
       ) : null}
       {closed ? (
         <Alert tone="info">{t("closed")}</Alert>
+      ) : !editing ? (
+        <Button variant="secondary" onClick={() => setEditing(true)}>
+          {t("change")}
+        </Button>
       ) : (
         <fieldset>
           <legend className="sr-only">{t("question")}</legend>

@@ -162,17 +162,25 @@ export function asksAnything(asks: Asks): boolean {
   return asks.confirm || asks.pollIds.length > 0;
 }
 
-/** Answers can change until the deadline. */
-export function isOpen(deadline: Date | null, now: Date = new Date()): boolean {
-  return !deadline || deadline > now;
+/** Answers can change until the deadline or until the sender closes them. */
+export function isOpen(
+  post: { deadline: Date | null; closedAt?: Date | null },
+  now: Date = new Date(),
+): boolean {
+  if (post.closedAt) return false;
+  return !post.deadline || post.deadline > now;
 }
 
 /** Posts whose reminder is due: deadline within REMIND_BEFORE_MS, not past. */
 export function reminderDue(
-  post: { deadline: Date | null; remindedAt: Date | null },
+  post: {
+    deadline: Date | null;
+    remindedAt: Date | null;
+    closedAt?: Date | null;
+  },
   now: Date = new Date(),
 ): boolean {
-  if (!post.deadline || post.remindedAt) return false;
+  if (!post.deadline || post.remindedAt || post.closedAt) return false;
   const left = post.deadline.getTime() - now.getTime();
   return left > 0 && left <= REMIND_BEFORE_MS;
 }

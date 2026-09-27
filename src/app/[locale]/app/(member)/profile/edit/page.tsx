@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
+import { Fragment } from "react";
 import { AvatarForm } from "@/components/profile/avatar-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { NameCard } from "@/components/profile/name-card";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { AisRecord } from "@/components/profile/role-details";
-import { parseSocialLinks } from "@/components/profile/social-links";
+import {
+  parseSocialLinks,
+  SOCIAL_KEYS,
+} from "@/components/profile/social-links";
 import { buttonClass } from "@/components/ui/button";
 import { Card, PageHeader } from "@/components/ui/card";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { displayName } from "@/lib/format";
@@ -23,6 +28,7 @@ export default async function ProfileEditPage() {
   const me = await requireActive();
   const t = await getTranslations("profile");
   const tr = await getTranslations("roles");
+  const tc = await getTranslations("common");
   const locale = (await getLocale()) as Locale;
   const former = me.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
   const social = parseSocialLinks(me.socialLinks);
@@ -51,15 +57,60 @@ export default async function ProfileEditPage() {
 
       <NameCard me={me} />
 
-      <ProfileForm
-        showAutoAccept={Boolean(former)}
-        values={{
-          bio: me.bio ?? "",
-          phone: me.phone ?? "",
-          autoAcceptSameYear: me.autoAcceptSameYear,
-          social,
-        }}
-      />
+      <ViewEdit
+        actionsClassName="flex justify-end"
+        view={
+          <Card>
+            <dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[10rem_1fr]">
+              <dt className="font-medium text-slate-600">{t("fields.bio")}</dt>
+              <dd className="whitespace-pre-line break-words">
+                {me.bio || (
+                  <span className="text-slate-500">{tc("notSet")}</span>
+                )}
+              </dd>
+              <dt className="font-medium text-slate-600">
+                {t("fields.phone")}
+              </dt>
+              <dd>
+                {me.phone || (
+                  <span className="text-slate-500">{tc("notSet")}</span>
+                )}
+              </dd>
+              {SOCIAL_KEYS.filter((k) => social[k]).map((k) => (
+                <Fragment key={k}>
+                  <dt className="font-medium text-slate-600">
+                    {t(`fields.${k}`)}
+                  </dt>
+                  <dd className="break-all">{social[k]}</dd>
+                </Fragment>
+              ))}
+              {former ? (
+                <>
+                  <dt className="font-medium text-slate-600">
+                    {t("sections.follows")}
+                  </dt>
+                  <dd>
+                    {t("autoAccept.label")}:{" "}
+                    <strong>
+                      {me.autoAcceptSameYear ? tc("on") : tc("off")}
+                    </strong>
+                  </dd>
+                </>
+              ) : null}
+            </dl>
+          </Card>
+        }
+      >
+        <ProfileForm
+          showAutoAccept={Boolean(former)}
+          values={{
+            bio: me.bio ?? "",
+            phone: me.phone ?? "",
+            autoAcceptSameYear: me.autoAcceptSameYear,
+            social,
+          }}
+        />
+      </ViewEdit>
 
       {former ? (
         <Card id="stage" className="scroll-mt-20">

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import {
   type Division,
   type LifeStage,
@@ -214,6 +215,7 @@ export function MemberRoleForm({
     saveMemberRoleAction,
     {},
   );
+  useCloseOnSave(state);
   const [removeState, removeAction] = useActionState<
     AdminMemberFormState,
     FormData

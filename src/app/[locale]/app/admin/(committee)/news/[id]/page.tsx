@@ -4,7 +4,9 @@ import { getTranslations } from "next-intl/server";
 import {
   deleteNewsAction,
   setNewsArchivedAction,
+  setNewsClosedAction,
 } from "@/app/actions/admin-content";
+import { CloseControl, NewsView } from "@/components/admin/content-views";
 import { NewsReadsCard } from "@/components/admin/news-reads-card";
 import { NewsResponsesCard } from "@/components/admin/news-responses-card";
 import { NewsForm } from "@/components/news/news-form";
@@ -14,6 +16,7 @@ import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -140,6 +143,17 @@ export default async function AdminNewsEditPage({
               locale={locale}
             />
           )}
+          {status === "published" &&
+          (post.requireConfirm || hub.poll || hub.schedule) ? (
+            <CloseControl
+              kind="news"
+              id={post.id}
+              closedAt={post.closedAt}
+              deadline={post.deadline}
+              action={setNewsClosedAction}
+              locale={locale}
+            />
+          ) : null}
           {status === "published" ? (
             <NewsResponsesCard post={post} locale={locale} />
           ) : null}
@@ -153,40 +167,52 @@ export default async function AdminNewsEditPage({
           className="min-w-0 xl:col-start-1 xl:row-start-1"
         >
           <h2 id="edit" className="mb-3 text-lg font-semibold">
-            {t("news.edit")}
+            {t("news.details")}
           </h2>
-          <NewsForm
-            values={{
-              id: post.id,
-              titleJa: post.titleJa ?? "",
-              titleEn: post.titleEn ?? "",
-              bodyJa: post.bodyJa ?? "",
-              bodyEn: post.bodyEn ?? "",
-              status,
-              sendAt:
-                status === "scheduled" && post.publishedAt
-                  ? toJstLocalInput(post.publishedAt)
-                  : "",
-              notifyOnPublish: post.notifyOnPublish,
-              pinned: post.pinned,
-              audience,
-              audienceMembers: members.map((m) => ({
-                id: m.id,
-                name: m.nameRomaji ?? m.nameKanji ?? "—",
-                kanji: m.nameRomaji ? m.nameKanji : null,
-              })),
-              coverPreviewUrl: post.coverUrl
-                ? signedFileUrl(post.coverUrl)
-                : null,
-              hub,
-            }}
-            useBlob={isBlobConfigured()}
-            cohorts={cohorts}
-            deleteAction={{
-              action: deleteNewsAction,
-              message: t("news.deleteConfirm"),
-            }}
-          />
+          <ViewEdit
+            view={
+              <NewsView
+                post={post}
+                audience={audience}
+                hub={hub}
+                locale={locale}
+                coverUrl={post.coverUrl ? signedFileUrl(post.coverUrl) : null}
+              />
+            }
+          >
+            <NewsForm
+              values={{
+                id: post.id,
+                titleJa: post.titleJa ?? "",
+                titleEn: post.titleEn ?? "",
+                bodyJa: post.bodyJa ?? "",
+                bodyEn: post.bodyEn ?? "",
+                status,
+                sendAt:
+                  status === "scheduled" && post.publishedAt
+                    ? toJstLocalInput(post.publishedAt)
+                    : "",
+                notifyOnPublish: post.notifyOnPublish,
+                pinned: post.pinned,
+                audience,
+                audienceMembers: members.map((m) => ({
+                  id: m.id,
+                  name: m.nameRomaji ?? m.nameKanji ?? "—",
+                  kanji: m.nameRomaji ? m.nameKanji : null,
+                })),
+                coverPreviewUrl: post.coverUrl
+                  ? signedFileUrl(post.coverUrl)
+                  : null,
+                hub,
+              }}
+              useBlob={isBlobConfigured()}
+              cohorts={cohorts}
+              deleteAction={{
+                action: deleteNewsAction,
+                message: t("news.deleteConfirm"),
+              }}
+            />
+          </ViewEdit>
         </section>
       </div>
     </>

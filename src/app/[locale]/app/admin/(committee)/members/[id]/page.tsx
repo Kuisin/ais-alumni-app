@@ -12,6 +12,7 @@ import {
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { Fragment } from "react";
 import { AUDIT_ROW_INCLUDE, AuditList } from "@/components/admin/audit-list";
 import { MemberMerge } from "@/components/admin/member-merge";
 import { MemberPositionControl } from "@/components/admin/member-positions";
@@ -25,8 +26,10 @@ import {
   MemberStateControl,
 } from "@/components/admin/member-status";
 import { AdminSection, SectionNav } from "@/components/admin/section-nav";
+import { AisRecord } from "@/components/profile/role-details";
 import { BackLink } from "@/components/ui/back-link";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { roleLabelKey } from "@/lib/audience";
@@ -58,6 +61,8 @@ export default async function AdminMemberPage({
   const admin = await requireAdmin();
   const t = await getTranslations("adminMembers");
   const tr = await getTranslations("roles");
+  const tp = await getTranslations("adminMembers.profile");
+  const tc = await getTranslations("common");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
 
   const user = await db.user.findUnique({
@@ -236,18 +241,49 @@ export default async function AdminMemberPage({
             title={t("profile.title")}
             icon={<UserRound />}
           >
-            <MemberProfileForm
-              userId={user.id}
-              values={{
-                ...namePartsOf(user),
-                nameAtAis: user.nameAtAis ?? "",
-                dateOfBirth: user.dateOfBirth
-                  ? user.dateOfBirth.toISOString().slice(0, 10)
-                  : "",
-                bio: user.bio ?? "",
-                phone: user.phone ?? "",
-              }}
-            />
+            <ViewEdit
+              view={
+                <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">
+                  {(
+                    [
+                      [tp("nameRomaji"), user.nameRomaji],
+                      [tp("nameKanji"), user.nameKanji],
+                      [tp("nameAtAis"), user.nameAtAis],
+                      [
+                        tp("dateOfBirth"),
+                        user.dateOfBirth
+                          ? user.dateOfBirth.toISOString().slice(0, 10)
+                          : null,
+                      ],
+                      [tp("phone"), user.phone],
+                      [tp("bio"), user.bio],
+                    ] as const
+                  ).map(([label, value]) => (
+                    <Fragment key={label}>
+                      <dt className="font-medium text-slate-600">{label}</dt>
+                      <dd className="whitespace-pre-line break-words">
+                        {value || (
+                          <span className="text-slate-500">{tc("notSet")}</span>
+                        )}
+                      </dd>
+                    </Fragment>
+                  ))}
+                </dl>
+              }
+            >
+              <MemberProfileForm
+                userId={user.id}
+                values={{
+                  ...namePartsOf(user),
+                  nameAtAis: user.nameAtAis ?? "",
+                  dateOfBirth: user.dateOfBirth
+                    ? user.dateOfBirth.toISOString().slice(0, 10)
+                    : "",
+                  bio: user.bio ?? "",
+                  phone: user.phone ?? "",
+                }}
+              />
+            </ViewEdit>
           </AdminSection>
 
           <AdminSection
@@ -290,29 +326,31 @@ export default async function AdminMemberPage({
                         })}
                       </p>
                     ) : null}
-                    <MemberRoleForm
-                      userId={user.id}
-                      cohorts={cohortChoices}
-                      values={{
-                        role: r.role,
-                        cohortNumber: r.cohortId
-                          ? (cohortNumbers.get(r.cohortId) ?? null)
-                          : null,
-                        teacherStatus: r.teacherStatus,
-                        yearsFrom: r.yearsFrom,
-                        yearsTo: r.yearsTo,
-                        subjects: r.subjects,
-                        schoolEmail: r.schoolEmail,
-                        schoolEmailVerified: r.schoolEmailVerified,
-                        currentGrade: r.currentGrade,
-                        studentIdNo: r.studentIdNo,
-                        lastDivision: r.lastDivision,
-                        graduationOrLeaveYear: r.graduationOrLeaveYear,
-                        didGraduate: r.didGraduate,
-                        currentStage: r.currentStage,
-                        currentStageDetail: r.currentStageDetail,
-                      }}
-                    />
+                    <ViewEdit view={<AisRecord roles={[r]} />}>
+                      <MemberRoleForm
+                        userId={user.id}
+                        cohorts={cohortChoices}
+                        values={{
+                          role: r.role,
+                          cohortNumber: r.cohortId
+                            ? (cohortNumbers.get(r.cohortId) ?? null)
+                            : null,
+                          teacherStatus: r.teacherStatus,
+                          yearsFrom: r.yearsFrom,
+                          yearsTo: r.yearsTo,
+                          subjects: r.subjects,
+                          schoolEmail: r.schoolEmail,
+                          schoolEmailVerified: r.schoolEmailVerified,
+                          currentGrade: r.currentGrade,
+                          studentIdNo: r.studentIdNo,
+                          lastDivision: r.lastDivision,
+                          graduationOrLeaveYear: r.graduationOrLeaveYear,
+                          didGraduate: r.didGraduate,
+                          currentStage: r.currentStage,
+                          currentStageDetail: r.currentStageDetail,
+                        }}
+                      />
+                    </ViewEdit>
                   </div>
                 </details>
               ))}

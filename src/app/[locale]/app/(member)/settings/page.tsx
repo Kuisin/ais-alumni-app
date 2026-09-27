@@ -16,6 +16,7 @@ import {
 } from "@/components/settings/sign-in-methods";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
 import {
   canRemoveSignInMethod,
@@ -138,7 +139,17 @@ export default async function SettingsPage({
           title={t("language.title")}
           description={t("language.description")}
         >
-          <LanguageForm current={user.locale} />
+          <ViewEdit
+            view={
+              <p className="text-sm">
+                {t("language.current", {
+                  language: t(`language.${user.locale}`),
+                })}
+              </p>
+            }
+          >
+            <LanguageForm current={user.locale} />
+          </ViewEdit>
         </SettingsSection>
 
         <SettingsSection
@@ -146,12 +157,17 @@ export default async function SettingsPage({
           title={t("notifications.title")}
           description={t("notifications.description")}
         >
-          <p className="text-sm">
-            {t("notifications.current", {
-              channel: t(`notifications.channel.${channel}`),
-            })}
-          </p>
-          <NotifyForm current={user.notifyVia} />
+          <ViewEdit
+            view={
+              <p className="text-sm">
+                {t("notifications.current", {
+                  channel: t(`notifications.channel.${channel}`),
+                })}
+              </p>
+            }
+          >
+            <NotifyForm current={user.notifyVia} />
+          </ViewEdit>
           <p className="text-sm text-slate-600">{t("notifications.rule")}</p>
         </SettingsSection>
 

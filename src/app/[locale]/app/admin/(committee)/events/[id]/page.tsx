@@ -1,16 +1,21 @@
 import { CircleCheck, Download, Eye, ListChecks, ScanLine } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { deleteEventAction } from "@/app/actions/admin-content";
+import {
+  deleteEventAction,
+  setEventRsvpClosedAction,
+} from "@/app/actions/admin-content";
+import { CloseControl, EventView } from "@/components/admin/content-views";
 import { EventForm } from "@/components/events/event-form";
 import { EventStaffPanel } from "@/components/events/event-staff-panel";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { checkInPath } from "@/lib/event-tickets";
-import { answerSummary, asLocale, headcount } from "@/lib/events";
+import { answerSummary, asLocale, headcount, rsvpClosesAt } from "@/lib/events";
 import {
   displayName,
   formatDateTime,
@@ -185,6 +190,16 @@ export default async function AdminEventPage({
               ) : null}
             </div>
           </Card>
+          <div className="mt-4">
+            <CloseControl
+              kind="event"
+              id={event.id}
+              closedAt={event.rsvpClosedAt}
+              deadline={rsvpClosesAt(event)}
+              action={setEventRsvpClosedAction}
+              locale={locale}
+            />
+          </div>
           <Card className="mt-4">
             <h2 className="mb-3 text-lg font-semibold">{t("staff.title")}</h2>
             <EventStaffPanel
@@ -201,36 +216,43 @@ export default async function AdminEventPage({
         <div className="min-w-0 space-y-8 xl:col-start-1 xl:row-start-1">
           <section aria-labelledby="edit">
             <h2 id="edit" className="mb-3 text-lg font-semibold">
-              {t("events.edit")}
+              {t("events.details")}
             </h2>
-            <EventForm
-              values={{
-                id: event.id,
-                titleJa: event.titleJa ?? "",
-                titleEn: event.titleEn ?? "",
-                bodyJa: event.bodyJa ?? "",
-                bodyEn: event.bodyEn ?? "",
-                startsAt: toJstLocalInput(event.startsAt),
-                endsAt: event.endsAt ? toJstLocalInput(event.endsAt) : "",
-                rsvpDeadline: event.rsvpDeadline
-                  ? toJstLocalInput(event.rsvpDeadline)
-                  : "",
-                location: event.location ?? "",
-                mapUrl: event.mapUrl ?? "",
-                capacity: event.capacity === null ? "" : String(event.capacity),
-                audience,
-                audienceMembers: audienceMembers.map((m) => ({
-                  id: m.id,
-                  name: m.nameRomaji ?? m.nameKanji ?? "—",
-                  kanji: m.nameRomaji ? m.nameKanji : null,
-                })),
-              }}
-              cohorts={cohorts}
-              deleteAction={{
-                action: deleteEventAction,
-                message: `${t("events.deleteConfirm")}\n${t("events.deleteHint")}`,
-              }}
-            />
+            <ViewEdit
+              view={
+                <EventView event={event} audience={audience} locale={locale} />
+              }
+            >
+              <EventForm
+                values={{
+                  id: event.id,
+                  titleJa: event.titleJa ?? "",
+                  titleEn: event.titleEn ?? "",
+                  bodyJa: event.bodyJa ?? "",
+                  bodyEn: event.bodyEn ?? "",
+                  startsAt: toJstLocalInput(event.startsAt),
+                  endsAt: event.endsAt ? toJstLocalInput(event.endsAt) : "",
+                  rsvpDeadline: event.rsvpDeadline
+                    ? toJstLocalInput(event.rsvpDeadline)
+                    : "",
+                  location: event.location ?? "",
+                  mapUrl: event.mapUrl ?? "",
+                  capacity:
+                    event.capacity === null ? "" : String(event.capacity),
+                  audience,
+                  audienceMembers: audienceMembers.map((m) => ({
+                    id: m.id,
+                    name: m.nameRomaji ?? m.nameKanji ?? "—",
+                    kanji: m.nameRomaji ? m.nameKanji : null,
+                  })),
+                }}
+                cohorts={cohorts}
+                deleteAction={{
+                  action: deleteEventAction,
+                  message: `${t("events.deleteConfirm")}\n${t("events.deleteHint")}`,
+                }}
+              />
+            </ViewEdit>
           </section>
 
           <section aria-labelledby="attendee-list" className="scroll-mt-20">

@@ -7,6 +7,7 @@ import {
   updateLanguageAction,
 } from "@/app/actions/settings";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import { FormResult } from "./form-result";
 
 export function LanguageForm({ current }: { current: "ja" | "en" }) {
@@ -16,6 +17,7 @@ export function LanguageForm({ current }: { current: "ja" | "en" }) {
     updateLanguageAction,
     {},
   );
+  useCloseOnSave(state);
   return (
     <form action={action} className="space-y-3">
       <fieldset>

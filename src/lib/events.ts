@@ -45,9 +45,15 @@ export function rsvpClosesAt(event: {
 }
 
 export function isRsvpOpen(
-  event: { startsAt: Date; rsvpDeadline: Date | null },
+  event: {
+    startsAt: Date;
+    rsvpDeadline: Date | null;
+    /** closed early by the organiser */
+    rsvpClosedAt?: Date | null;
+  },
   now: Date = new Date(),
 ): boolean {
+  if (event.rsvpClosedAt) return false;
   return now < rsvpClosesAt(event);
 }
 
@@ -59,7 +65,12 @@ export type RsvpDenial = "closed" | "capacity" | "guests";
  * be refused for capacity; MAYBE / NOT_GOING are always accepted while open.
  */
 export function checkRsvp(input: {
-  event: { startsAt: Date; rsvpDeadline: Date | null; capacity: number | null };
+  event: {
+    startsAt: Date;
+    rsvpDeadline: Date | null;
+    rsvpClosedAt?: Date | null;
+    capacity: number | null;
+  };
   answer: RsvpAnswerValue;
   guests: number;
   othersGoing: number;

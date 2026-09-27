@@ -10,6 +10,7 @@ import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card } from "@/components/ui/card";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { RsvpAnswer } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
@@ -200,26 +201,37 @@ export default async function EventDetailPage({
 
       <Card>
         <h2 className="mb-3 text-lg font-semibold">{t("rsvp.title")}</h2>
-        {mine ? (
-          <p className="mb-3 text-sm text-slate-700">
-            {t("rsvp.current", {
-              answer: t(`answer.${mine.answer}`),
-              guests: mine.guests,
-            })}
-          </p>
-        ) : null}
         {!open ? (
-          <Alert tone="warning">{t("rsvp.closed")}</Alert>
-        ) : (
-          <>
-            {full ? (
-              <div className="mb-3">
-                <Alert tone="warning">{t("rsvp.full")}</Alert>
-              </div>
-            ) : null}
-            <RsvpForm eventId={event.id} current={mine} />
-          </>
-        )}
+          <div className="mb-3">
+            <Alert tone="warning">
+              {event.rsvpClosedAt
+                ? t("rsvp.closedByOrganizer")
+                : t("rsvp.closed")}
+            </Alert>
+          </div>
+        ) : full ? (
+          <div className="mb-3">
+            <Alert tone="warning">{t("rsvp.full")}</Alert>
+          </div>
+        ) : null}
+        {/* After answering: the answer, with Edit while RSVPs are open. */}
+        <ViewEdit
+          canEdit={open}
+          startEditing={open && !mine}
+          editLabel={t("rsvp.change")}
+          view={
+            <p className="text-sm text-slate-700">
+              {mine
+                ? t("rsvp.current", {
+                    answer: t(`answer.${mine.answer}`),
+                    guests: mine.guests,
+                  })
+                : t("rsvp.none")}
+            </p>
+          }
+        >
+          <RsvpForm eventId={event.id} current={mine} />
+        </ViewEdit>
       </Card>
 
       {mine && mine.answer !== RsvpAnswer.NOT_GOING ? (

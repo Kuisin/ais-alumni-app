@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ChatGroupKind, RoleKey } from "@/generated/prisma/enums";
-import { desiredGroups, isAdult, latestApril1 } from "./chat";
+import { desiredGroups, directKey, isAdult, latestApril1 } from "./chat";
 
 describe("chat groups", () => {
   it("puts a graduate in 卒業生＋元在校生 and their class", () => {
@@ -63,5 +63,12 @@ describe("18歳以上 group", () => {
     expect(desiredGroups(roles, [], { adult: true }).map((g) => g.key)).toEqual(
       ["CURRENT_PARENTS", "ADULTS"],
     );
+  });
+});
+
+describe("1:1 talks", () => {
+  it("have one key per pair, whoever starts", () => {
+    expect(directKey("b", "a")).toBe("DIRECT:a:b");
+    expect(directKey("a", "b")).toBe(directKey("b", "a"));
   });
 });

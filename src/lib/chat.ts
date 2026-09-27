@@ -21,6 +21,11 @@ export type GroupSpec = {
 const STUDENT: RoleKey[] = [RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT];
 const PARENT: RoleKey[] = [RoleKey.CURRENT_PARENT, RoleKey.FORMER_PARENT];
 
+/** Key of the 1:1 talk between two members (order-independent). */
+export function directKey(a: string, b: string): string {
+  return `${ChatGroupKind.DIRECT}:${[a, b].sort().join(":")}`;
+}
+
 export function groupKey(kind: ChatGroupKind, cohortId: string | null = null) {
   return cohortId ? `${kind}:${cohortId}` : kind;
 }

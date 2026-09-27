@@ -2,6 +2,7 @@ import { Pencil, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { MessageButton } from "@/components/chat/start-talk";
 import { BlockControl } from "@/components/follows/block-control";
 import { FollowButton } from "@/components/follows/follow-button";
 import { FollowCounts } from "@/components/follows/follow-counts";
@@ -25,6 +26,7 @@ import {
   sameFamily,
   toViewer,
 } from "@/lib/authz";
+import { directChatDenial } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import {
   type FollowUiState,
@@ -119,6 +121,9 @@ export default async function MemberProfilePage({ params }: Props) {
         }),
       ]);
   if (!view.isSelf && !targetMeta) notFound();
+  // 1:1 talk with mutual followers (like LINE friends).
+  const canMessage =
+    !view.isSelf && (await directChatDenial(me.id, id)) === null;
 
   const family = targetMeta ? sameFamily(me, targetMeta) : false;
   let followState: FollowUiState | null = null;
@@ -206,6 +211,7 @@ export default async function MemberProfilePage({ params }: Props) {
                 ) : null}
               </div>
             ) : null}
+            {canMessage ? <MessageButton memberId={id} /> : null}
             {myBlock ? (
               <BlockControl targetId={id} name={name} blocked />
             ) : null}

@@ -7,6 +7,7 @@ import {
   type RichMenuState,
 } from "@/app/actions/line-richmenu";
 import { Alert } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { SubmitButton } from "@/components/ui/submit-button";
 
 export function RichMenuInstall({ installed }: { installed: boolean }) {
@@ -16,7 +17,11 @@ export function RichMenuInstall({ installed }: { installed: boolean }) {
     {},
   );
   return (
-    <form action={action} className="space-y-3">
+    <ConfirmForm
+      message={t("installConfirm")}
+      action={action}
+      className="space-y-3"
+    >
       {state.ok ? (
         <Alert tone="success">
           {t("done", {
@@ -38,6 +43,6 @@ export function RichMenuInstall({ installed }: { installed: boolean }) {
       <SubmitButton pendingText={t("installing")}>
         {installed ? t("update") : t("install")}
       </SubmitButton>
-    </form>
+    </ConfirmForm>
   );
 }

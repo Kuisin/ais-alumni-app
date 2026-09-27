@@ -82,6 +82,7 @@ test("staff scan a member's QR ticket to check them in", async ({
 
   // Admin makes Hanako staff; she then gets the reception screen.
   await admin.goto(`/en/app/admin/events/${eventId}`);
+  await admin.getByRole("button", { name: "Edit staff" }).click();
   await admin.getByPlaceholder("Add staff").fill("Hanako");
   await admin
     .getByRole("button", { name: /Hanako/ })

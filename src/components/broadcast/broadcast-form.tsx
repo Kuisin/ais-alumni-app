@@ -132,6 +132,7 @@ export function BroadcastForm({
               >
                 <input
                   type="checkbox"
+                  className="size-5 shrink-0 accent-brand-700"
                   checked={roles.includes(r)}
                   onChange={(e) =>
                     setRoles((prev) =>

@@ -14,6 +14,7 @@
     "hint": "When someone leaves, press “Move to former”. This year is recorded as their leave year; their record stays.",
     "since": "since {year}",
     "remove": "Move to former",
-    "none": "No current teachers yet."
+    "none": "No current teachers yet.",
+    "removeConfirm": "Remove this teacher's registration?"
   }
 }

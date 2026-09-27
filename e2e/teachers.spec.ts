@@ -23,6 +23,8 @@ test("teacher registrar marks a member as a current teacher and back", async ({
     .filter({ has: admin.getByRole("button") });
   const assign = registrar.getByRole("button", { name: "Assign" });
   if (await assign.isVisible()) {
+    // View first: Assign opens the form, Assign again saves it.
+    await assign.click();
     await assign.click();
     await expect(
       registrar.getByText("Assigned", { exact: true }),
@@ -56,6 +58,7 @@ test("teacher registrar marks a member as a current teacher and back", async ({
     .getByRole("listitem")
     .filter({ hasText: asListed(name) });
   await expect(row).toHaveCount(1);
+  ken.once("dialog", (d) => d.accept());
   await row.getByRole("button", { name: "Move to former" }).click();
   await expect(row).toHaveCount(0);
 

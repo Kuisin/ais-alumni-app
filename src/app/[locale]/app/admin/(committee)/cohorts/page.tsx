@@ -4,9 +4,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { deleteCohortAction } from "@/app/actions/admin-cohorts";
 import { CohortEditForm } from "@/components/cohorts/cohort-forms";
 import { CohortReps } from "@/components/cohorts/cohort-reps";
-import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { Badge, EmptyState, PageHeader } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { ViewEdit } from "@/components/ui/view-edit";
+import { EditableCard } from "@/components/ui/view-edit";
 import { PositionKey } from "@/generated/prisma/enums";
 import { cohortLabel } from "@/lib/cohorts";
 import { db } from "@/lib/db";
@@ -25,6 +26,7 @@ function subtitle(label: string): string {
 /** Admin: 学年 list (layout enforces admin). */
 export default async function CohortsPage() {
   const t = await getTranslations("cohorts");
+  const tc = await getTranslations("common");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
   const cohorts = await db.cohort.findMany({
     orderBy: { number: "desc" },
@@ -55,16 +57,12 @@ export default async function CohortsPage() {
             c._count.roles + c._count.positions + c._count.broadcasts;
           return (
             <li key={c.id}>
-              <Card className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-lg font-bold">
-                      {t("numberValue", { number: c.number })}
-                    </span>
-                    {/* Status and grade are computed from the end year. */}
-                    <span className="text-sm text-slate-600">
-                      {subtitle(cohortLabel(c, locale))}
-                    </span>
+              {/* View first; 編集 opens the years / note, reps and delete. */}
+              <EditableCard
+                id={`cohort-${c.id}`}
+                title={
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span>{t("numberValue", { number: c.number })}</span>
                     <Badge
                       tone={
                         isClassGraduated(c.elementaryEndYear)
@@ -76,42 +74,65 @@ export default async function CohortsPage() {
                         ? t("status.graduated")
                         : t("status.current")}
                     </Badge>
-                    <span className="text-sm whitespace-nowrap text-slate-600">
+                  </span>
+                }
+                editLabel={t("edit")}
+                closeLabel={tc("close")}
+                view={
+                  <div className="space-y-2 text-sm">
+                    {/* Status and grade are computed from the end year. */}
+                    <p className="text-slate-600">
+                      {subtitle(cohortLabel(c, locale))} ·{" "}
                       {t("members", { count: c._count.roles })}
-                    </span>
+                    </p>
+                    {c.note ? <p className="text-slate-700">{c.note}</p> : null}
+                    <p>
+                      <span className="font-medium">{t("reps.title")}: </span>
+                      {c.positions.length ? (
+                        c.positions
+                          .map(
+                            ({ user: u }) => u.nameRomaji ?? u.nameKanji ?? "—",
+                          )
+                          .join("、")
+                      ) : (
+                        <span className="text-slate-500">{t("reps.none")}</span>
+                      )}
+                    </p>
                   </div>
-                </div>
-                {c.note ? (
-                  <p className="text-sm text-slate-700">{c.note}</p>
-                ) : null}
-                <CohortReps
-                  cohortId={c.id}
-                  reps={c.positions.map(({ user: u }) => ({
-                    id: u.id,
-                    name: u.nameRomaji ?? u.nameKanji ?? "—",
-                    kanji: u.nameRomaji ? u.nameKanji : null,
-                  }))}
-                />
-                <ViewEdit view={null} editLabel={t("edit")}>
+                }
+              >
+                <div className="space-y-4">
                   <CohortEditForm
                     id={c.id}
                     start={c.elementaryStartYear}
                     end={c.elementaryEndYear}
                     note={c.note ?? ""}
                   />
+                  <CohortReps
+                    cohortId={c.id}
+                    reps={c.positions.map(({ user: u }) => ({
+                      id: u.id,
+                      name: u.nameRomaji ?? u.nameKanji ?? "—",
+                      kanji: u.nameRomaji ? u.nameKanji : null,
+                    }))}
+                  />
                   {used === 0 ? (
-                    <form action={deleteCohortAction.bind(null, c.id)}>
+                    <ConfirmForm
+                      message={t("deleteConfirm")}
+                      action={deleteCohortAction.bind(null, c.id)}
+                      className="border-t border-slate-100 pt-3"
+                    >
                       <SubmitButton variant="danger">
                         {t("delete")}
                       </SubmitButton>
-                    </form>
+                    </ConfirmForm>
                   ) : (
                     <p className="text-sm text-slate-600">
                       {t("cannotDelete")}
                     </p>
                   )}
-                </ViewEdit>
-              </Card>
+                </div>
+              </EditableCard>
             </li>
           );
         })}

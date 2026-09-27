@@ -174,7 +174,10 @@
       "NEEDS_INFO": "Send request",
       "REJECT": "Reject"
     },
-    "closed": "This application has been decided."
+    "closed": "This application has been decided.",
+    "jump": "Go to decision",
+    "next": "Next application",
+    "backToQueue": "Back to applications"
   },
   "errors": {
     "reasonRequired": "Please give a reason.",
@@ -237,7 +240,8 @@
     "title": "A parent already registered this person",
     "body": "A child account created by a parent has the same name and birth date as this applicant. Merging moves its AIS record and family links into the applicant's account (the applicant's account is kept). Then decide the application as usual.",
     "registeredBy": "Registered by: {parent}",
-    "merge": "Merge into applicant's account"
+    "merge": "Merge into applicant's account",
+    "mergeConfirm": "Merge “{name}” into this applicant's account? This can't be undone."
   },
   "invite": {
     "title": "Invitation",

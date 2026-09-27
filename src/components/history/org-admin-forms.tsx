@@ -8,6 +8,7 @@ import {
   renameOrgAction,
 } from "@/app/actions/admin-orgs";
 import { Alert } from "@/components/ui/card";
+import { ConfirmForm } from "@/components/ui/confirm-form";
 import { Field, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { OrgKind } from "@/lib/organizations";
@@ -61,12 +62,16 @@ export function OrgMergeForm({ kind, id }: { kind: OrgKind; id: string }) {
     null,
   );
   return (
-    <form action={action} className="space-y-2">
+    <ConfirmForm
+      message={t("mergeConfirm")}
+      action={action}
+      className="space-y-2"
+    >
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={id} />
       <OrgCombobox kind={kind} id={`merge-${id}`} label={t("mergeInto")} />
       <Result state={state} />
       <SubmitButton variant="danger">{t("merge")}</SubmitButton>
-    </form>
+    </ConfirmForm>
   );
 }

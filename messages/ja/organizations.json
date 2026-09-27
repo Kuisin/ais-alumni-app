@@ -35,5 +35,7 @@
   "count": "全{total}件",
   "countLimited": "全{total}件中 {shown}件を表示（検索で絞り込めます）",
   "emptyHint": "会員が学歴・職歴を登録すると、ここに学校や会社が追加されます。",
-  "emptySearchHint": "表記ゆれ（略称・英語名など）でも検索してみてください。"
+  "emptySearchHint": "表記ゆれ（略称・英語名など）でも検索してみてください。",
+  "mergeConfirm": "この項目を選んだ項目に統合し、削除します。元に戻せません。よろしいですか？",
+  "deleteConfirm": "この項目を削除しますか？"
 }

@@ -30,6 +30,8 @@ test("学年代表 are chosen per 学年, from that 学年's students", async ({
     .locator("li")
     .filter({ has: page.getByText("第5期", { exact: true }) })
     .first();
+  // View first: 編集 opens the years, reps and delete.
+  await card.getByRole("button", { name: "Edit" }).click();
   const search = card.getByPlaceholder(/^Search this 学年/);
 
   // Someone from another 学年 isn't offered.
@@ -60,7 +62,8 @@ test("学年代表 are chosen per 学年, from that 学年's students", async ({
   );
   expect(chats.map((c) => c.kind)).toContain("CLASS_REPS");
 
-  // Removing takes the position away.
+  // Removing (after confirming) takes the position away.
+  page.once("dialog", (d) => d.accept());
   await chip.click();
   await expect(chip).toHaveCount(0);
   expect(
@@ -86,12 +89,15 @@ test("学年代表 can be assigned from the member's 役職 panel (own 学年 on
     .filter({ has: page.getByText("Class representative", { exact: true }) })
     .filter({ has: page.getByRole("button", { name: "Assign" }) })
     .last();
+  // View first: Assign opens the form (then Assign saves).
+  await panel.getByRole("button", { name: "Assign" }).click();
   const select = panel.getByLabel("学年 (class)");
   // Only their own 学年 is offered (plus the empty choice).
   await expect(select.locator("option")).toHaveCount(2);
   await select.selectOption({ index: 1 });
   await panel.getByRole("button", { name: "Assign" }).click();
-  await expect(panel.getByText("Position assigned.")).toBeVisible();
+  // Saved: the section closes to its view with the result.
+  await expect(page.getByText("Position assigned.")).toBeVisible();
   const chats = await sql(
     `SELECT g.kind FROM "ChatMember" m JOIN "ChatGroup" g ON g.id = m."groupId"
      WHERE m."userId" = $1`,

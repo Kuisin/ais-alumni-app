@@ -16,6 +16,7 @@ import {
 import type { Prisma } from "@/generated/prisma/client";
 import { RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { isPersonalField, PERSONAL_FIELDS } from "@/lib/personal-fields";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
@@ -102,6 +103,25 @@ export async function updateProfileAction(
       autoAcceptSameYear: d.autoAcceptSameYear,
       socialLinks: socialLinks as Prisma.InputJsonValue,
     },
+  });
+  refresh();
+  return { ok: true, message: "saved" };
+}
+
+/** Which personal fields followers may see too (all off by default). */
+export async function updateFollowerFieldsAction(
+  _prev: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const me = await member();
+  if (!me) return FORBIDDEN;
+  const chosen = new Set(
+    formData.getAll("share").map(String).filter(isPersonalField),
+  );
+  await db.user.update({
+    where: { id: me.id },
+    // Stored in the catalog order.
+    data: { followerFields: PERSONAL_FIELDS.filter((f) => chosen.has(f)) },
   });
   refresh();
   return { ok: true, message: "saved" };

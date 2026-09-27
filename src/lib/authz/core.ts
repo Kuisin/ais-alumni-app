@@ -95,8 +95,31 @@ export function canViewProfile(
 export const canSeeInDirectory = canViewProfile;
 
 /**
- * THE single gate for private-tier fields (§9.1, §15). Private fields are
- * visible to: self, admins, family members, and accepted followers.
+ * THE single gate for private-tier fields (§9.1, §15):
+ *  - "all": self, admins and family members see every personal field;
+ *  - "followers": accepted followers see only the fields the member chose
+ *    to share with followers (User.followerFields, all off by default);
+ *  - "none": everyone else.
+ */
+export type PrivateAccess = "all" | "followers" | "none";
+
+export function privateAccess(
+  viewer: Viewer,
+  target: Target,
+  rel: Relationship,
+  now: Date = new Date(),
+): PrivateAccess {
+  if (viewer.id === target.id) return "all";
+  if (!viewerIsActive(viewer)) return "none";
+  if (viewer.isAdmin) return "all";
+  if (!canViewProfile(viewer, target, rel, now)) return "none";
+  if (sameFamily(viewer, target)) return "all";
+  return rel.follow === FollowStatus.ACCEPTED ? "followers" : "none";
+}
+
+/**
+ * Followers-or-family tier: "followers only" 学歴・職歴 entries. Personal
+ * fields use privateAccess() instead.
  */
 export function canViewPrivate(
   viewer: Viewer,
@@ -104,12 +127,7 @@ export function canViewPrivate(
   rel: Relationship,
   now: Date = new Date(),
 ): boolean {
-  if (viewer.id === target.id) return true;
-  if (!viewerIsActive(viewer)) return false;
-  if (viewer.isAdmin) return true;
-  if (!canViewProfile(viewer, target, rel, now)) return false;
-  if (sameFamily(viewer, target)) return true;
-  return rel.follow === FollowStatus.ACCEPTED;
+  return privateAccess(viewer, target, rel, now) !== "none";
 }
 
 export type FollowDenial =

@@ -73,7 +73,7 @@ export default async function MemberProfilePage({ params }: Props) {
   const me = await requireActive();
   const view = await getProfileForViewer(me, id);
   if (!view) notFound();
-  // 学歴・職歴: "followers only" entries need private-tier access.
+  // 学歴・職歴: "followers only" entries need follower or family access.
   const [education, work] = await Promise.all([
     db.educationEntry.findMany({
       where: { userId: id },
@@ -85,8 +85,8 @@ export default async function MemberProfilePage({ params }: Props) {
     }),
   ]);
   const history = {
-    education: visibleHistory(education, view.private !== null),
-    work: visibleHistory(work, view.private !== null),
+    education: visibleHistory(education, view.access !== "none"),
+    work: visibleHistory(work, view.access !== "none"),
   };
 
   const t = await getTranslations("profile");
@@ -150,6 +150,13 @@ export default async function MemberProfilePage({ params }: Props) {
   const former = p.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
   const priv = view.private;
   const social = priv ? parseSocialLinks(priv.socialLinks) : {};
+  const hasContact = Boolean(
+    priv &&
+      (priv.email ||
+        priv.phone ||
+        priv.lineDisplayName ||
+        Object.keys(social).length),
+  );
 
   return (
     <div className="space-y-4">
@@ -286,6 +293,11 @@ export default async function MemberProfilePage({ params }: Props) {
 
       <Card>
         <h2 className="mb-3 text-lg font-semibold">{t("sections.contact")}</h2>
+        {view.access === "followers" && hasContact ? (
+          <p className="-mt-2 mb-3 text-sm text-slate-500">
+            {t("sharedWithFollowers")}
+          </p>
+        ) : null}
         {priv ? (
           <dl className="grid gap-3 sm:grid-cols-2">
             {/* Date of birth: only the member themselves and admins. */}
@@ -354,18 +366,24 @@ export default async function MemberProfilePage({ params }: Props) {
             !priv.phone &&
             !priv.lineDisplayName &&
             !Object.keys(social).length ? (
-              <p className="text-slate-600">{t("noContact")}</p>
+              <p className="text-slate-600">
+                {view.access === "followers"
+                  ? t("noContactFollowers")
+                  : t("noContact")}
+              </p>
             ) : null}
           </dl>
         ) : (
           <Alert tone="info">
             <p className="font-semibold">{t("locked.title")}</p>
             <p className="mt-1">
-              {followState === "requested"
-                ? t("locked.requested")
-                : canRequest
-                  ? t("locked.body", { name })
-                  : t("locked.unavailable")}
+              {!view.sharesWithFollowers
+                ? t("locked.familyOnly", { name })
+                : followState === "requested"
+                  ? t("locked.requested")
+                  : canRequest
+                    ? t("locked.body", { name })
+                    : t("locked.unavailable")}
             </p>
           </Alert>
         )}

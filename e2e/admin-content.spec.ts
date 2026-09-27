@@ -35,6 +35,18 @@ test("admin saves and deletes a news draft", async ({ page }) => {
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("The post has been saved.")).toBeVisible();
 
+  // Archive: listed under "Archived", then restore.
+  const editUrl = page.url();
+  await page.getByRole("button", { name: "Archive" }).click();
+  await expect(page.getByText("Archived").first()).toBeVisible();
+  await page.goto("/en/app/admin/news?archived=1");
+  await expect(page.getByText(title)).toBeVisible();
+  await page.goto("/en/app/admin/news");
+  await expect(page.getByText(title)).toHaveCount(0);
+  await page.goto(editUrl);
+  await page.getByRole("button", { name: "Restore" }).click();
+  await expect(page.getByRole("button", { name: "Archive" })).toBeVisible();
+
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /Delete/ }).click();
   await expect(page).toHaveURL(/\/en\/app\/admin\/news(\?|$)/);

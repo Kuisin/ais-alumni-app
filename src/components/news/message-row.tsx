@@ -31,6 +31,7 @@ export type MessageRowData = {
     id: string;
     title: string;
     createdAt: Date;
+    editedAt?: Date | null;
     position: PositionKey | null;
     sender: Sender;
   };
@@ -44,6 +45,7 @@ export function MessageRow({
   row: MessageRowData;
   locale: "ja" | "en";
 }) {
+  const tn = useTranslations("news");
   const b = row.broadcast;
   const unread = !row.readAt;
   return (
@@ -71,6 +73,11 @@ export function MessageRow({
           )}
         >
           {b.title}
+          {b.editedAt ? (
+            <span className="ml-2 text-xs font-normal text-slate-500">
+              {tn("messages.edited")}
+            </span>
+          ) : null}
         </h3>
         <p className="mt-1 inline-flex min-w-0 items-center gap-1.5 text-sm text-slate-600">
           <UserRound aria-hidden="true" className="size-4 shrink-0" />

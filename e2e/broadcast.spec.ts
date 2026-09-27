@@ -93,4 +93,35 @@ test("admin appoints a class representative who notifies their class", async ({
   // The sender sees the read receipt.
   await member.goto("/en/app/admin/notify");
   await expect(member.getByText(/Read 1 \/ 1/).first()).toBeVisible();
+
+  // Managing it after sending: edit, archive, restore, delete.
+  await member
+    .getByRole("link", { name: new RegExp(title) })
+    .first()
+    .click();
+  await member.getByRole("button", { name: "Edit" }).click();
+  const edited = `${title} (updated)`;
+  await member.getByLabel("Title").fill(edited);
+  await member.getByRole("button", { name: "Save" }).click();
+  await expect(member.getByText(/^Saved\./)).toBeVisible();
+  await ken.goto("/en/app/news?tab=messages");
+  const editedRow = ken.getByRole("link", {
+    name: new RegExp(edited.replace(/[()]/g, "\\$&")),
+  });
+  await expect(editedRow).toContainText("Edited");
+
+  await member.getByRole("button", { name: "Archive" }).click();
+  await expect(member.getByText("Archived").first()).toBeVisible();
+  await ken.reload();
+  await expect(editedRow).toHaveCount(0);
+
+  await member.getByRole("button", { name: "Restore" }).click();
+  await ken.reload();
+  await expect(editedRow).toHaveCount(1);
+
+  member.once("dialog", (d) => d.accept());
+  await member.getByRole("button", { name: "Delete" }).click();
+  await expect(member).toHaveURL(/\/en\/app\/admin\/notify$/);
+  await ken.reload();
+  await expect(editedRow).toHaveCount(0);
 });

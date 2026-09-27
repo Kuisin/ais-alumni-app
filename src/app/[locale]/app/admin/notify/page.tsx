@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ReadMeter, readPercent } from "@/components/admin/read-receipts";
 import { broadcastAudienceText } from "@/components/broadcast/audience-text";
 import { BroadcastForm } from "@/components/broadcast/broadcast-form";
-import { Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { Link } from "@/i18n/navigation";
 import { receiptCounts } from "@/lib/announcements";
@@ -102,6 +102,18 @@ export default async function NotifyPage({
                         <div className="min-w-0 flex-1 space-y-0.5">
                           <p className="font-medium break-words text-slate-900 group-hover:text-brand-800">
                             {b.title}
+                            {b.archivedAt ? (
+                              <span className="ml-2 align-middle">
+                                <Badge tone="amber">
+                                  {t("manage.archivedBadge")}
+                                </Badge>
+                              </span>
+                            ) : null}
+                            {b.editedAt ? (
+                              <span className="ml-2 align-middle">
+                                <Badge>{t("manage.editedBadge")}</Badge>
+                              </span>
+                            ) : null}
                           </p>
                           <p className="text-slate-600">
                             {formatDateTime(b.createdAt, locale)} ·{" "}

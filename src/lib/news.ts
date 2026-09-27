@@ -22,11 +22,11 @@ export const COVER_TYPES = { "image/jpeg": "jpg", "image/png": "png" } as const;
 /** DB filter for events and news a viewer may see (src/lib/audience.ts). */
 export const targetRolesWhere = audienceWhere;
 
-/** Published = publishedAt set and not in the future. */
+/** Published = publishedAt set, not in the future, and not archived. */
 export function publishedWhere(
   now: Date = new Date(),
 ): Prisma.NewsPostWhereInput {
-  return { publishedAt: { lte: now } };
+  return { publishedAt: { lte: now }, archivedAt: null };
 }
 
 export type NewsStatus = "draft" | "scheduled" | "published";
@@ -67,7 +67,12 @@ export async function sendNewsNotification(
   now: Date = new Date(),
 ): Promise<{ recipients: number } | null> {
   const claimed = await db.newsPost.updateMany({
-    where: { id: postId, notifiedAt: null, publishedAt: { lte: now } },
+    where: {
+      id: postId,
+      notifiedAt: null,
+      archivedAt: null,
+      publishedAt: { lte: now },
+    },
     data: { notifiedAt: now },
   });
   if (claimed.count === 0) return null;
@@ -115,6 +120,7 @@ export async function dueScheduledNews(
   return db.newsPost.findMany({
     where: {
       notifiedAt: null,
+      archivedAt: null,
       publishedAt: {
         lte: now,
         gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),

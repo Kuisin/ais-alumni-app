@@ -34,6 +34,7 @@
     "toAll": "全員",
     "backToList": "あなた宛ての連絡へ",
     "senderView": "あなたが送信した連絡です（あなたは受信者ではありません）。",
-    "newCount": "新しい連絡が{count}件あります"
+    "newCount": "新しい連絡が{count}件あります",
+    "edited": "編集済み"
   }
 }

@@ -111,7 +111,14 @@
     },
     "description": "会員向けお知らせの作成・公開・通知ができます。下書きは会員には表示されません。",
     "emptyHint": "お知らせを作成し、公開すると会員のお知らせ一覧に表示されます。",
-    "readOf": "既読 {read} / 対象 {audience}"
+    "readOf": "既読 {read} / 対象 {audience}",
+    "archiveTabs": "表示するお知らせ",
+    "tabActive": "公開・下書き",
+    "tabArchived": "アーカイブ",
+    "archivedBadge": "アーカイブ中",
+    "archive": "アーカイブ",
+    "restore": "元に戻す",
+    "archivedHint": "会員には表示されず、通知も送られません。"
   },
   "notify": {
     "title": "公開して通知",

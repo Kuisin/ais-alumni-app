@@ -20,7 +20,8 @@ const loadPost = cache(async (id: string) => {
   const user = await getCurrentUser();
   if (!user || id.length > 64) return null;
   const post = await db.newsPost.findUnique({ where: { id } });
-  if (!post?.publishedAt || post.publishedAt > new Date()) return null;
+  if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
+    return null;
   if (!isAudienceTargeted(post, toViewer(user))) return null;
   return post;
 });

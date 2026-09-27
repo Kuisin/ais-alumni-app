@@ -7,6 +7,7 @@ import { Pager, parsePage } from "@/components/news/pager";
 import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, EmptyState, PageHeader } from "@/components/ui/card";
+import { Tabs } from "@/components/ui/tabs";
 import { Link } from "@/i18n/navigation";
 import { newsReadStats } from "@/lib/announcements";
 import { db } from "@/lib/db";
@@ -35,8 +36,13 @@ export default async function AdminNewsPage({
   await requireAdmin();
   const t = await getTranslations("adminContent");
 
+  const archived = sp.archived === "1";
+  const archivedCount = await db.newsPost.count({
+    where: { archivedAt: { not: null } },
+  });
   // Drafts (publishedAt null) first, then newest publish date.
   const rows = await db.newsPost.findMany({
+    where: { archivedAt: archived ? { not: null } : null },
     orderBy: [
       { publishedAt: { sort: "desc", nulls: "first" } },
       { createdAt: "desc" },
@@ -71,6 +77,23 @@ export default async function AdminNewsPage({
             {t("news.new")}
           </Link>
         }
+      />
+      <Tabs
+        label={t("news.archiveTabs")}
+        className="mb-4"
+        items={[
+          {
+            href: "/app/admin/news",
+            label: t("news.tabActive"),
+            active: !archived,
+          },
+          {
+            href: "/app/admin/news?archived=1",
+            label: t("news.tabArchived"),
+            count: archivedCount,
+            active: archived,
+          },
+        ]}
       />
       {sp.deleted === "1" ? (
         <div className="mb-4">

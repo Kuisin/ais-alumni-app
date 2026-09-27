@@ -71,6 +71,24 @@ export function MemberMerge({ userId }: { userId: string }) {
         </div>
         <p className="text-sm text-slate-700">{t("whatHappens")}</p>
         <AdminFormResult state={state} />
+        {/* A safety check stopped the merge: the admin may override it. */}
+        {state.blocked ? (
+          <label className="flex min-h-11 items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+            <input
+              type="checkbox"
+              name="force"
+              className="mt-0.5 size-5 shrink-0 accent-amber-600"
+            />
+            <span>
+              <span className="block font-medium text-amber-900">
+                {t("bypass")}
+              </span>
+              <span className="block text-amber-900">
+                {t(`bypassHint.${state.blocked}`)}
+              </span>
+            </span>
+          </label>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <SubmitButton
             name="intent"

@@ -56,5 +56,30 @@
       "title": "This link has expired",
       "body": "Linking links and QR codes work for 10 minutes. Please refresh the page on your other device and scan the new code."
     }
+  },
+  "welcome": {
+    "greetingNamed": "Hi {name}, thanks for adding us as a friend!",
+    "greeting": "Thanks for adding us as a friend!",
+    "greetingBackNamed": "Welcome back, {name}!",
+    "greetingBack": "Welcome back!",
+    "title": "[Welcome to AIS Alumni]",
+    "about": "This account is run by the AIS Alumni Committee, a volunteer group of AIS graduates. It is not an official account of Aichi International School.",
+    "receiveTitle": "■ What you'll get on LINE",
+    "receiveItems": "・The result of your membership application\n・Event invitations, with reminders one week and one day before\n・News from the committee\n・Messages from class representatives and teachers\n・Follow and family-link requests\n・Results of AIS record corrections",
+    "linkedTitle": "■ Your account",
+    "linked": "✅ Linked to your AIS Alumni account. Notifications will arrive here on LINE.",
+    "notLinkedTitle": "■ Not linked to the app yet",
+    "notLinked": "To get notifications here, link LINE in the app:\n1. Tap “Open app” below and sign in (new here? you can sign up right away)\n2. Go to Settings → LINE → “Link LINE”\n3. Sign in with LINE and allow access — that's it",
+    "settingsTitle": "■ Notification settings",
+    "settings": "Switch between LINE and email in the app under Settings → Notifications. If you block this account, we'll email you instead.",
+    "privacyTitle": "■ Your privacy",
+    "privacy": "We only store your LINE user ID and display name, and never read your chats. See the privacy policy for details:\n{url}",
+    "buttonsAlt": "Open the AIS Alumni app: {url}",
+    "buttonsTitle": "AIS Alumni",
+    "buttonsText": "See the directory, events and news in the app.",
+    "openApp": "Open app",
+    "linkLine": "Link LINE",
+    "notifySettings": "Notification settings",
+    "privacyButton": "Privacy policy"
   }
 }

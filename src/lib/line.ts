@@ -10,6 +10,20 @@ const API = "https://api.line.me/v2/bot";
 
 export type LineTextMessage = { type: "text"; text: string };
 
+/** Buttons template: title ≤ 40, text ≤ 60 (with title), ≤ 4 URI actions. */
+export type LineButtonsMessage = {
+  type: "template";
+  altText: string;
+  template: {
+    type: "buttons";
+    title?: string;
+    text: string;
+    actions: { type: "uri"; label: string; uri: string }[];
+  };
+};
+
+export type LineMessage = LineTextMessage | LineButtonsMessage;
+
 let cached: { token: string; expiresAt: number } | null = null;
 
 /**
@@ -91,6 +105,17 @@ export async function linePush(
   messages: LineTextMessage[],
 ): Promise<void> {
   await call("/message/push", { to, messages });
+}
+
+/**
+ * Reply to a webhook event (free; does not count toward the push quota).
+ * The reply token is single-use and expires shortly after the event.
+ */
+export async function lineReply(
+  replyToken: string,
+  messages: LineMessage[],
+): Promise<void> {
+  await call("/message/reply", { replyToken, messages: messages.slice(0, 5) });
 }
 
 /** Multicast to up to 500 userIds per request; batches automatically. */

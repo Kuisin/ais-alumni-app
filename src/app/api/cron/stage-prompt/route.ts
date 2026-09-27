@@ -5,7 +5,7 @@ import { jstYear } from "@/lib/account";
 import { isAuthorizedCron } from "@/lib/cron";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 export const maxDuration = 300;
 
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
             // 現在の状況 follows 学歴・職歴, so the prompt asks to keep that
             // up to date.
             const t = await getTranslatorFor(locale, "settings");
-            const url = appUrl(`/${locale}/app/profile/history`);
+            const url = publicUrl(`/${locale}/app/profile/history`);
             if (!stage) {
               return {
                 subject: t("notify.stagePrompt.subject"),

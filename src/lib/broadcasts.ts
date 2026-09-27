@@ -6,6 +6,7 @@ import { membersInAudiences, rolesForAudiences } from "@/lib/audience";
 import { audit } from "@/lib/audit";
 import { blockedUserIds, isCurrentTeacher } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { displayName } from "@/lib/format";
 import {
   estimateLinePushes,
@@ -21,7 +22,7 @@ import {
   staffAccess,
 } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/session";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /** The member's roles and positions, loaded once per request. */
 const loadHolder = cache(async (user: CurrentUser): Promise<Holder> => {
@@ -47,7 +48,9 @@ export async function getBroadcastRights(
 
 /** Which admin-mode pages the member may open. */
 export async function getStaffAccess(user: CurrentUser): Promise<StaffAccess> {
-  return staffAccess(await loadHolder(user));
+  const access = staffAccess(await loadHolder(user));
+  // The send page is hidden while messages are switched off.
+  return MESSAGES_ENABLED ? access : { ...access, broadcast: false };
 }
 
 /**
@@ -159,7 +162,7 @@ export async function sendBroadcast(params: {
       return {
         subject: t("notifyContentless.subject"),
         text: t("notifyContentless.text", { from }),
-        url: appUrl(`/${locale}/app/news/messages/${broadcast.id}`),
+        url: publicUrl(`/${locale}/app/news/messages/${broadcast.id}`),
       };
     },
   });

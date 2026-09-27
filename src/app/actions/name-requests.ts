@@ -17,7 +17,7 @@ import {
 } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify, notifyMany } from "@/lib/notify";
 import { AuthError, actionActive, actionAdmin } from "@/lib/session";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /**
  * Names are fixed once a member is approved (§6). Members ask the committee
@@ -121,7 +121,7 @@ export async function submitNameRequestAction(
         text: t("nameRequest.notify.admin.text", {
           name: displayName(me, locale),
         }),
-        url: appUrl(`/${locale}/app/admin/name-requests`),
+        url: publicUrl(`/${locale}/app/admin/name-requests`),
       };
     },
   }).catch((e) => console.error("[name-requests] admin notify failed", e));
@@ -214,7 +214,7 @@ export async function decideNameRequestAction(
       return {
         subject: t(`nameRequest.notify.${key}.subject`),
         text: t(`nameRequest.notify.${key}.text`, { note: note || "—" }),
-        url: appUrl(`/${locale}/app/profile/edit`),
+        url: publicUrl(`/${locale}/app/profile/edit`),
       };
     },
   }).catch((e) => console.error("[name-requests] member notify failed", e));

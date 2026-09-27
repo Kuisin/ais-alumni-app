@@ -17,6 +17,7 @@ import { messageReceipts } from "@/lib/announcements";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { displayName, formatDateTime } from "@/lib/format";
 import { requireActive } from "@/lib/session";
 
@@ -32,6 +33,7 @@ export async function generateMetadata({
 export default async function SentMessagePage({
   params,
 }: PageProps<"/[locale]/app/admin/notify/[id]">) {
+  if (!MESSAGES_ENABLED) notFound();
   const { id, locale: rawLocale } = await params;
   const locale = asLocale(rawLocale);
   const me = await requireActive();

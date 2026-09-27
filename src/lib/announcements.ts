@@ -7,6 +7,7 @@ import {
 } from "@/lib/audience";
 import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { publishedWhere } from "@/lib/news";
 import type { CurrentUser } from "@/lib/session";
 
@@ -22,13 +23,15 @@ export const MESSAGES_PAGE_SIZE = 20;
 export const unreadCounts = cache(
   async (user: CurrentUser): Promise<{ news: number; messages: number }> => {
     const [messages, news] = await Promise.all([
-      db.broadcastRecipient.count({
-        where: {
-          userId: user.id,
-          readAt: null,
-          broadcast: { archivedAt: null },
-        },
-      }),
+      MESSAGES_ENABLED
+        ? db.broadcastRecipient.count({
+            where: {
+              userId: user.id,
+              readAt: null,
+              broadcast: { archivedAt: null },
+            },
+          })
+        : 0,
       // News posted since the member joined that they haven't opened.
       db.newsPost.count({
         where: {

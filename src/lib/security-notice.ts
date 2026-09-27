@@ -1,7 +1,7 @@
 import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /**
  * Security notice when Google/LINE is linked to an existing account (§11:
@@ -27,7 +27,7 @@ export async function notifySignInMethodAdded(
           text: t("notify.methodAdded.text", {
             method: t(`methods.${provider}`),
           }),
-          url: appUrl(`/${locale}/app/settings`),
+          url: publicUrl(`/${locale}/app/settings`),
         };
       },
     });

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { lineReply, verifyLineSignature } from "@/lib/line";
 import { welcomeMessages } from "@/lib/line-welcome";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /**
  * POST /api/line/webhook — Messaging API webhook for the Official Account.
@@ -46,7 +46,8 @@ async function sendWelcome(lineUserId: string, event: LineEvent) {
             }
           : null,
         isUnblocked: Boolean(event.follow?.isUnblocked),
-        appUrl,
+        // Links in LINE always point at the production site.
+        appUrl: publicUrl,
       },
     ),
   );

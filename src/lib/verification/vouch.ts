@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { toKatakana } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 import {
   bestNameSimilarity,
   isCjk,
@@ -154,7 +154,7 @@ export async function notifyVoucher(vouchId: string): Promise<void> {
           text: years
             ? t("notify.bodyYears", { name, years })
             : t("notify.body", { name }),
-          url: appUrl(`/${locale}/app/vouch/${vouch.id}`),
+          url: publicUrl(`/${locale}/app/vouch/${vouch.id}`),
         };
       },
     });

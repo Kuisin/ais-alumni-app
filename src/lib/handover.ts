@@ -11,7 +11,7 @@ import { mergeUsers } from "@/lib/merge";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
 import { syncMemberStatus } from "@/lib/status-sync";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /**
  * Handing a parent-managed child account over to the child (§8).
@@ -79,7 +79,7 @@ export async function startHandover(
       parent: displayName(parent, locale),
       child: displayName(child, locale),
     }),
-    url: appUrl(`/${locale}/app/handover/${token}`),
+    url: publicUrl(`/${locale}/app/handover/${token}`),
   });
   await audit(parent.id, "family.handover_started", {
     type: "User",
@@ -203,7 +203,7 @@ export async function claimHandover(
           text: t("handover.done.text", {
             child: displayName(h.child, locale),
           }),
-          url: appUrl(`/${locale}/app/family`),
+          url: publicUrl(`/${locale}/app/family`),
         };
       },
     });

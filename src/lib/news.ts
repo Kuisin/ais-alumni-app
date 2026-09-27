@@ -9,7 +9,7 @@ import {
 } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 export const NEWS_PAGE_SIZE = 10;
 export const EVENTS_PAGE_SIZE = 20;
@@ -90,7 +90,7 @@ export async function sendNewsNotification(
         return {
           subject: t("notify.contentlessSubject"),
           text: t("notify.contentlessText"),
-          url: appUrl(`/${locale}/app/news/${post.id}`),
+          url: publicUrl(`/${locale}/app/news/${post.id}`),
         };
       },
     });

@@ -20,7 +20,7 @@ import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { AuthError, actionAdmin } from "@/lib/session";
 import { canTransition } from "@/lib/state-machine";
 import { syncMemberStatus } from "@/lib/status-sync";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 export type MergeSide = {
   id: string;
@@ -402,7 +402,7 @@ export async function setMemberStateAction(
         return {
           subject: tr(`notify.${key}.subject`),
           text: tr(`notify.${key}.text`),
-          url: deactivating ? undefined : appUrl(`/${locale}/app/dashboard`),
+          url: deactivating ? undefined : publicUrl(`/${locale}/app/dashboard`),
         };
       },
     }).catch((e) => console.error("[admin-members] notify failed", e));

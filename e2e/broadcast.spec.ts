@@ -1,6 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+
+// Messages (お知らせを送る) are switched off for now (src/lib/features.ts
+// MESSAGES_ENABLED); announcements go out as ニュース. Re-enable with the flag.
+test.skip(true, "Messages are switched off (MESSAGES_ENABLED = false)");
+
 import { clearMailbox, resetBroadcasts, signInWithEmail } from "./helpers";
 
 // Seeded demo members (SEED_DEMO=1): hanako (第5期), ken (第6期).

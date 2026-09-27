@@ -18,7 +18,7 @@ import {
 } from "@/lib/parent-onboarding";
 import { AuthError, actionAdmin, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 import { deleteAfterFrom } from "@/lib/verification/evidence";
 import { ROSTER_MATCH_THRESHOLD } from "@/lib/verification/roster";
 import { notifyVoucher } from "@/lib/verification/vouch";
@@ -190,7 +190,7 @@ export async function decideVerificationAction(
           text: note
             ? t(`notify.${k}.bodyWithNote`, { note })
             : t(`notify.${k}.body`),
-          url: appUrl(`/${locale}${path}`),
+          url: publicUrl(`/${locale}${path}`),
         };
       },
     });

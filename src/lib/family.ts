@@ -23,7 +23,7 @@ import { displayName } from "@/lib/format";
 import { toKatakana } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 import { isCjk } from "@/lib/verification/roster";
 
 /** Families and parent/child links (§8). */
@@ -425,7 +425,7 @@ export async function createFamilyLink(
         return {
           subject: t(`notify.${key}Subject`, { name }),
           text: t(`notify.${key}Text`, { name }),
-          url: appUrl(`/${locale}/app/family`),
+          url: publicUrl(`/${locale}/app/family`),
         };
       },
     });

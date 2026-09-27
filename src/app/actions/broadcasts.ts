@@ -13,6 +13,7 @@ import {
   sendBroadcast,
 } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { type Audience, rightFor, withinLimit } from "@/lib/permissions";
 import { AuthError, actionActive } from "@/lib/session";
 
@@ -62,6 +63,8 @@ export async function broadcastAction(
   _prev: BroadcastFormState,
   fd: FormData,
 ): Promise<BroadcastFormState> {
+  if (!MESSAGES_ENABLED)
+    return { step: "compose", message: "errors.forbidden" };
   let me: Awaited<ReturnType<typeof actionActive>>;
   try {
     me = await actionActive();

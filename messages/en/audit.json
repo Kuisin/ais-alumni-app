@@ -105,6 +105,23 @@
       "merge": {
         "line_email": "Auto-merged LINE and email accounts"
       }
+    },
+    "family": {
+      "linked": "Linked family",
+      "confirmed": "Confirmed a family link",
+      "unlinked": "Unlinked family"
+    },
+    "gender_request": {
+      "approved": "Approved a gender change",
+      "rejected": "Rejected a gender change"
+    },
+    "birth_date_request": {
+      "approved": "Approved a date of birth change",
+      "rejected": "Rejected a date of birth change"
+    },
+    "support": {
+      "close": "Marked a support request done",
+      "reopen": "Reopened a support request"
     }
   }
 }

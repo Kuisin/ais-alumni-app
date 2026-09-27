@@ -210,6 +210,7 @@ export async function searchFamilyCandidates(
       id: r.id,
       nameRomaji: r.nameRomaji,
       nameKanji: r.nameKanji,
+      nameKana: r.nameKana,
       nameAtAis: r.nameAtAis,
       avatarUrl: r.avatarUrl,
       avatarPublic: r.avatarPublic,

@@ -2,6 +2,8 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { buttonClass } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton } from "@/components/ui/submit-button";
 import { LifeStage } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { MEMBER_FILTER_OPTIONS } from "@/lib/audience";
@@ -9,7 +11,7 @@ import type { CohortOption } from "@/lib/cohorts";
 import { type DirectoryFilters, MAX_YEAR, MIN_YEAR } from "@/lib/directory";
 import { AIS_DIVISIONS } from "@/lib/school";
 
-/** Plain GET form so filtering works without JavaScript (§10.1). */
+/** GET form (SearchForm), so filtering also works without JavaScript (§10.1). */
 export async function DirectoryFilterForm({
   filters,
   cohorts,
@@ -29,10 +31,7 @@ export async function DirectoryFilterForm({
   ].filter(Boolean).length;
   return (
     <search aria-label={t("filters.legend")}>
-      <form
-        method="get"
-        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-      >
+      <SearchForm className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-end gap-2">
           <div className="min-w-0 flex-1">
             <Field id="dir-q" label={t("filters.q")}>
@@ -49,10 +48,12 @@ export async function DirectoryFilterForm({
               )}
             </Field>
           </div>
-          <button type="submit" className={buttonClass("primary", "shrink-0")}>
-            <Search aria-hidden="true" className="size-4" />
+          <SearchButton
+            className="shrink-0"
+            icon={<Search aria-hidden="true" className="size-4" />}
+          >
             {t("filters.apply")}
-          </button>
+          </SearchButton>
         </div>
         <details className="group mt-3" open={activeCount > 0}>
           <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-2 text-sm font-medium text-brand-700 hover:bg-brand-50 [&::-webkit-details-marker]:hidden">
@@ -160,16 +161,14 @@ export async function DirectoryFilterForm({
               )}
             </Field>
             <div className="flex flex-wrap items-end gap-2">
-              <button type="submit" className={buttonClass("primary")}>
-                {t("filters.applyFilters")}
-              </button>
+              <SearchButton>{t("filters.applyFilters")}</SearchButton>
               <Link href="/app/directory" className={buttonClass("secondary")}>
                 {t("filters.clear")}
               </Link>
             </div>
           </div>
         </details>
-      </form>
+      </SearchForm>
     </search>
   );
 }

@@ -8,7 +8,8 @@ import { cn } from "./cn";
 // Feedback on a clicked link while its route is still on the way (it wasn't
 // prefetched yet, e.g. on a slow phone connection). Render inside a <Link>.
 // Both hints are always in the DOM (no layout shift) and appear only after a
-// short delay, so fast navigations stay quiet.
+// short delay, so fast navigations stay quiet. A pending link inside #main
+// also dims the page's [data-results] regions (globals.css).
 
 /** A thin bar along the bottom of the link. The link must be `relative`. */
 export function LinkPendingBar({
@@ -21,6 +22,7 @@ export function LinkPendingBar({
   return (
     <span
       aria-hidden="true"
+      data-pending={pending || undefined}
       className={cn(
         "pointer-events-none absolute h-0.5 opacity-0",
         pending && "animate-pending",
@@ -34,7 +36,10 @@ export function LinkPendingBar({
 export function LinkPendingIcon({ children }: { children: ReactNode }) {
   const { pending } = useLinkStatus();
   return (
-    <span className="relative inline-flex shrink-0">
+    <span
+      data-pending={pending || undefined}
+      className="relative inline-flex shrink-0"
+    >
       <span className={cn("inline-flex", pending && "animate-pending-out")}>
         {children}
       </span>

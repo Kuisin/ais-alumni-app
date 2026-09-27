@@ -5,11 +5,16 @@ import { AddHistory } from "@/components/history/add-history";
 import { HistoryForm } from "@/components/history/history-form";
 import { WorkTags } from "@/components/history/work-tags";
 import { BackLink } from "@/components/ui/back-link";
-import { Badge, Card, PageHeader } from "@/components/ui/card";
+import { Alert, Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ViewEdit } from "@/components/ui/view-edit";
 import { db } from "@/lib/db";
-import { isOngoing, sortHistory } from "@/lib/history";
+import {
+  currentEntries,
+  isOngoing,
+  sortHistory,
+  stageFromHistory,
+} from "@/lib/history";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,6 +37,15 @@ export default async function HistoryPage() {
       include: { company: true },
     }),
   ]);
+  // Several entries marked 現在: say which one sets 現在の状況.
+  const current = [...currentEntries(education), ...currentEntries(work)];
+  const used =
+    current.length > 1
+      ? stageFromHistory(
+          education.map((e) => ({ ...e, school: e.school.name })),
+          work.map((w) => ({ ...w, company: w.company.name })),
+        )
+      : null;
   const years = (e: { startYear: number | null; endYear: number | null }) =>
     `${e.startYear ?? ""}–${e.endYear ?? t("present")}`;
 
@@ -107,6 +121,16 @@ export default async function HistoryPage() {
         <BackLink href="/app/profile/edit">{t("backToProfile")}</BackLink>
         <PageHeader title={t("title")} description={t("description")} />
       </div>
+      {used ? (
+        <Alert tone="warning">
+          <span className="block font-semibold">
+            {t("multipleCurrent.title", { count: current.length })}
+          </span>
+          <span className="mt-1 block">
+            {t("multipleCurrent.body", { name: used.detail })}
+          </span>
+        </Alert>
+      ) : null}
       {section("education")}
       {section("work")}
     </div>

@@ -75,6 +75,17 @@ body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
 
+/* While a search, tab or page link on this page loads (data-pending, see
+   link-pending.tsx and SearchButton), the results it will replace fade back.
+   The delay keeps fast responses from flickering. */
+[data-results] {
+  transition: opacity 0.2s ease-out;
+}
+#main:has([data-pending]) [data-results] {
+  opacity: 0.5;
+  transition-delay: 0.15s;
+}
+
 /* Visible focus for keyboard users (WCAG 2.4.7) */
 :focus-visible {
   @apply outline-2 outline-offset-2 outline-brand-600;

@@ -3,8 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { EventCard } from "@/components/events/event-card";
 import { Pager, parsePage } from "@/components/news/pager";
 import { EmptyState, PageHeader } from "@/components/ui/card";
-import { cn } from "@/components/ui/cn";
-import { Link } from "@/i18n/navigation";
+import { Tabs } from "@/components/ui/tabs";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { EVENTS_PAGE_SIZE } from "@/lib/news";
@@ -73,49 +72,40 @@ export default async function EventsPage({
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <nav
-        aria-label={t("tabs.label")}
-        className="mb-4 flex gap-2 border-b border-slate-200"
-      >
-        {tabs.map((x) => (
-          <Link
-            key={x.key}
-            href={x.href}
-            aria-current={tab === x.key ? "page" : undefined}
-            className={cn(
-              "-mb-px flex min-h-11 items-center border-b-2 px-3 text-sm font-medium",
-              tab === x.key
-                ? "border-brand-700 text-brand-800"
-                : "border-transparent text-slate-600 hover:text-slate-900",
-            )}
-          >
-            {x.label}
-          </Link>
-        ))}
-      </nav>
-
-      {events.length === 0 ? (
-        <EmptyState icon={<CalendarDays />}>
-          {tab === "past" ? t("emptyPast") : t("emptyUpcoming")}
-        </EmptyState>
-      ) : (
-        <ul className="space-y-3">
-          {events.map((e) => (
-            <li key={e.id}>
-              <EventCard
-                event={{ ...e, myAnswer: e.rsvps[0]?.answer ?? null }}
-                locale={locale}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-      <Pager
-        pathname="/app/events"
-        page={page}
-        hasNext={hasNext}
-        query={tab === "past" ? { tab: "past" } : {}}
+      <Tabs
+        label={t("tabs.label")}
+        className="mb-4"
+        items={tabs.map((x) => ({
+          href: x.href,
+          label: x.label,
+          active: tab === x.key,
+        }))}
       />
+
+      <div data-results>
+        {events.length === 0 ? (
+          <EmptyState icon={<CalendarDays />}>
+            {tab === "past" ? t("emptyPast") : t("emptyUpcoming")}
+          </EmptyState>
+        ) : (
+          <ul className="space-y-3">
+            {events.map((e) => (
+              <li key={e.id}>
+                <EventCard
+                  event={{ ...e, myAnswer: e.rsvps[0]?.answer ?? null }}
+                  locale={locale}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+        <Pager
+          pathname="/app/events"
+          page={page}
+          hasNext={hasNext}
+          query={tab === "past" ? { tab: "past" } : {}}
+        />
+      </div>
     </>
   );
 }

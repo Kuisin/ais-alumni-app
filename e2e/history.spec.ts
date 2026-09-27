@@ -64,11 +64,10 @@ test("education & work history with shared school search", async ({
     ken.getByText("IT & web › Systems engineer").first(),
   ).toBeVisible();
 
-  const kenId = await ken.evaluate(async () => {
-    const r = await fetch("/en/app/profile");
-    return new URL(r.url).pathname.split("/").pop();
-  });
-  await ken.goto(`/en/app/members/${kenId}`);
+  // /profile forwards to the member page (client-side once streaming).
+  await ken.goto("/en/app/profile");
+  await ken.waitForURL(/\/en\/app\/members\/[^/?#]+$/);
+  const kenId = new URL(ken.url()).pathname.split("/").pop();
   // Ongoing university → current stage set automatically.
   await expect(ken.getByText("University / College").first()).toBeVisible();
 

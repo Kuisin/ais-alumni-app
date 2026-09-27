@@ -7,9 +7,10 @@ import { ChildrenReview } from "@/components/admin/children-review";
 import { InvitePanel } from "@/components/admin/invite-panel";
 import { ManagedDuplicate } from "@/components/admin/managed-duplicate";
 import { BackLink } from "@/components/ui/back-link";
-import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/field";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton } from "@/components/ui/submit-button";
 import {
   AddVoucherButton,
   DecisionForm,
@@ -370,7 +371,7 @@ export default async function VerificationDetailPage({
             {canAddVoucher ? (
               <div className="space-y-3 border-t border-slate-200 pt-3">
                 <search>
-                  <form method="get" className="flex flex-wrap items-end gap-2">
+                  <SearchForm className="flex flex-wrap items-end gap-2">
                     <div className="min-w-0 flex-1 space-y-1">
                       <label
                         htmlFor="voucher-q"
@@ -385,45 +386,47 @@ export default async function VerificationDetailPage({
                         maxLength={100}
                       />
                     </div>
-                    <button type="submit" className={buttonClass("secondary")}>
+                    <SearchButton variant="secondary">
                       {t("vouches.search")}
-                    </button>
-                  </form>
+                    </SearchButton>
+                  </SearchForm>
                 </search>
-                {q ? (
-                  candidates.length ? (
-                    <ul className="divide-y divide-slate-200 text-sm">
-                      {candidates.map((c) => {
-                        const name = displayName(c, lang);
-                        return (
-                          <li
-                            key={c.id}
-                            className="flex flex-wrap items-center justify-between gap-2 py-2"
-                          >
-                            <span>
-                              {name}
-                              {c.nameRomaji && c.nameRomaji !== name ? (
-                                <span className="text-slate-500">
-                                  {" "}
-                                  ({c.nameRomaji})
-                                </span>
-                              ) : null}
-                            </span>
-                            <AddVoucherButton
-                              requestId={request.id}
-                              voucherId={c.id}
-                              name={name}
-                            />
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-slate-600">
-                      {t("vouches.noResults")}
-                    </p>
-                  )
-                ) : null}
+                <div data-results>
+                  {q ? (
+                    candidates.length ? (
+                      <ul className="divide-y divide-slate-200 text-sm">
+                        {candidates.map((c) => {
+                          const name = displayName(c, lang);
+                          return (
+                            <li
+                              key={c.id}
+                              className="flex flex-wrap items-center justify-between gap-2 py-2"
+                            >
+                              <span>
+                                {name}
+                                {c.nameRomaji && c.nameRomaji !== name ? (
+                                  <span className="text-slate-500">
+                                    {" "}
+                                    ({c.nameRomaji})
+                                  </span>
+                                ) : null}
+                              </span>
+                              <AddVoucherButton
+                                requestId={request.id}
+                                voucherId={c.id}
+                                name={name}
+                              />
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-600">
+                        {t("vouches.noResults")}
+                      </p>
+                    )
+                  ) : null}
+                </div>
               </div>
             ) : null}
           </Section>

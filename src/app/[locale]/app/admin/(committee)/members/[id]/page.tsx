@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   ChevronRight,
   GraduationCap,
+  HeartHandshake,
   History,
   IdCard,
   Merge,
@@ -13,6 +14,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Fragment } from "react";
+import {
+  type AdminFamilyLink,
+  AdminFamilyPanel,
+} from "@/components/admin/admin-family-panel";
 import { AUDIT_ROW_INCLUDE, AuditList } from "@/components/admin/audit-list";
 import { MemberMerge } from "@/components/admin/member-merge";
 import { MemberPositionControl } from "@/components/admin/member-positions";
@@ -37,7 +42,12 @@ import { isCurrentTeacher } from "@/lib/authz";
 import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { MESSAGES_ENABLED } from "@/lib/features";
-import { displayName, formatDate, formatDateTime } from "@/lib/format";
+import {
+  displayName,
+  formatDate,
+  formatDateTime,
+  otherNames,
+} from "@/lib/format";
 import { isGender } from "@/lib/gender";
 import { namePartsOf } from "@/lib/names";
 import { positionEligible } from "@/lib/permissions";
@@ -81,6 +91,47 @@ export default async function AdminMemberPage({
   });
 
   const isSelf = user.id === admin.id;
+  // 家族: direct links (as parent or child), and others in the same family.
+  const PERSON = {
+    id: true,
+    nameRomaji: true,
+    nameKanji: true,
+    nameKana: true,
+  };
+  const [linkRows, familyMembers] = await Promise.all([
+    db.familyLink.findMany({
+      where: { OR: [{ parentId: user.id }, { childId: user.id }] },
+      orderBy: { createdAt: "asc" },
+      include: { parent: { select: PERSON }, child: { select: PERSON } },
+    }),
+    user.familyId
+      ? db.user.findMany({
+          where: { familyId: user.familyId, id: { not: user.id } },
+          select: { id: true, nameRomaji: true, nameKanji: true },
+        })
+      : [],
+  ]);
+  const person = (u: {
+    id: string;
+    nameRomaji: string | null;
+    nameKanji: string | null;
+    nameKana: string | null;
+  }) => ({ id: u.id, name: displayName(u, locale), otherNames: otherNames(u) });
+  const familyLinks: AdminFamilyLink[] = linkRows.map((l) => {
+    const asParent = l.childId === user.id;
+    const other = asParent ? l.parent : l.child;
+    return {
+      id: l.id,
+      as: asParent ? "parent" : "child",
+      other: other ? person(other) : null,
+      childName: l.childName,
+      confirmed: l.confirmedAt !== null,
+    };
+  });
+  const directIds = new Set(familyLinks.map((l) => l.other?.id));
+  const relatives = familyMembers
+    .filter((m) => !directIds.has(m.id))
+    .map((m) => ({ id: m.id, name: displayName(m, locale) }));
   const name =
     user.nameRomaji || user.nameKanji ? displayName(user, locale) : t("noName");
   const roleOrder = Object.values(RoleKey);
@@ -189,8 +240,17 @@ export default async function AdminMemberPage({
             </span>
           }
           description={
-            user.primaryEmail ? (
-              <span className="break-all">{user.primaryEmail}</span>
+            otherNames(user) || user.primaryEmail ? (
+              <span className="block space-y-0.5">
+                {otherNames(user) ? (
+                  <span className="block text-slate-700">
+                    {otherNames(user)}
+                  </span>
+                ) : null}
+                {user.primaryEmail ? (
+                  <span className="block break-all">{user.primaryEmail}</span>
+                ) : null}
+              </span>
             ) : undefined
           }
         />
@@ -215,6 +275,11 @@ export default async function AdminMemberPage({
             id: "roles",
             label: t("roles.title"),
             icon: <GraduationCap className="size-4" />,
+          },
+          {
+            id: "family",
+            label: t("family.title"),
+            icon: <HeartHandshake className="size-4" />,
           },
           {
             id: "positions",
@@ -262,6 +327,7 @@ export default async function AdminMemberPage({
                     [
                       [tp("nameRomaji"), user.nameRomaji],
                       [tp("nameKanji"), user.nameKanji],
+                      [tp("nameKana"), user.nameKana],
                       [tp("nameAtAis"), user.nameAtAis],
                       [
                         tp("dateOfBirth"),
@@ -391,6 +457,18 @@ export default async function AdminMemberPage({
                 </details>
               ) : null}
             </div>
+          </AdminSection>
+
+          <AdminSection
+            id="family"
+            title={t("family.title")}
+            icon={<HeartHandshake />}
+          >
+            <AdminFamilyPanel
+              memberId={user.id}
+              links={familyLinks}
+              relatives={relatives}
+            />
           </AdminSection>
 
           <AdminSection

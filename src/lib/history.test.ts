@@ -55,14 +55,15 @@ describe("history", () => {
     expect(visibleHistory(list, false)).toHaveLength(1);
     expect(visibleHistory(list, true)).toHaveLength(2);
   });
-  it("derives the current stage (school before work)", () => {
+  it("derives the current stage from the newest ongoing entry", () => {
     const uni = {
       level: "UNIVERSITY" as const,
       school: "Nagoya University",
       startYear: 2024,
       endYear: null,
     };
-    const job = { company: "Toyota", startYear: 2025, endYear: null };
+    // A part-time job started before university: still a student.
+    const job = { company: "Toyota", startYear: 2023, endYear: null };
     expect(stageFromHistory([uni], [job], now)).toEqual({
       stage: "UNIVERSITY_COLLEGE",
       detail: "Nagoya University",
@@ -72,5 +73,32 @@ describe("history", () => {
       detail: "Toyota",
     });
     expect(stageFromHistory([], [], now)).toBeNull();
+  });
+
+  it("uses the newest ongoing entry, and carries the latest status over", () => {
+    const uni = {
+      level: "UNIVERSITY" as const,
+      school: "Nagoya University",
+      startYear: 2016,
+      endYear: null,
+    };
+    const job = { company: "Toyota", startYear: 2021, endYear: null };
+    // A job started after university: 社会人 (the old entry wasn't closed).
+    expect(stageFromHistory([uni], [job], now)).toEqual({
+      stage: "WORKING",
+      detail: "Toyota",
+    });
+    // Nothing ongoing: the latest entry's status carries over.
+    expect(stageFromHistory([], [{ ...job, endYear: 2024 }], now)).toEqual({
+      stage: "WORKING",
+      detail: "Toyota",
+    });
+    expect(
+      stageFromHistory(
+        [{ ...uni, endYear: 2020 }],
+        [{ ...job, startYear: 2012, endYear: 2015 }],
+        now,
+      ),
+    ).toEqual({ stage: "UNIVERSITY_COLLEGE", detail: "Nagoya University" });
   });
 });

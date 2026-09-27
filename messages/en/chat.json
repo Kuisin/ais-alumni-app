@@ -15,7 +15,8 @@
     "CURRENT_PARENTS": "Parents of current students",
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "{cohort}",
-    "COHORT_PARENTS": "{cohort} parents"
+    "COHORT_PARENTS": "{cohort} parents",
+    "ADULTS": "18 and over"
   },
   "groupHints": {
     "TEACHERS": "Everyone who teaches or taught at AIS",
@@ -24,7 +25,8 @@
     "CURRENT_PARENTS": "Parents of current students",
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "Students and graduates of this class",
-    "COHORT_PARENTS": "Parents of children in this class"
+    "COHORT_PARENTS": "Parents of children in this class",
+    "ADULTS": "Members join on the April 1 after they turn 18"
   },
   "room": {
     "back": "All chats",

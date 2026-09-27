@@ -15,7 +15,8 @@
     "CURRENT_PARENTS": "在校生保護者",
     "FORMER_PARENTS": "卒業生保護者",
     "COHORT": "{cohort}",
-    "COHORT_PARENTS": "{cohort} 保護者"
+    "COHORT_PARENTS": "{cohort} 保護者",
+    "ADULTS": "18歳以上"
   },
   "groupHints": {
     "TEACHERS": "教職員の皆さん",
@@ -24,7 +25,8 @@
     "CURRENT_PARENTS": "在校生の保護者の皆さん",
     "FORMER_PARENTS": "卒業生の保護者の皆さん",
     "COHORT": "同じ学年の生徒・卒業生",
-    "COHORT_PARENTS": "同じ学年のお子さまの保護者"
+    "COHORT_PARENTS": "同じ学年のお子さまの保護者",
+    "ADULTS": "18歳を迎えた後の4月1日から参加するメンバー"
   },
   "room": {
     "back": "チャット一覧へ",

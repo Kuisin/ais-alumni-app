@@ -1,8 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
-import { desiredGroups } from "@/lib/chat";
+import { desiredGroups, isAdult } from "@/lib/chat";
 import { db } from "@/lib/db";
+import { ADULTS_CHAT_ENABLED } from "@/lib/features";
 import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
 import { publicUrl } from "@/lib/urls";
 
@@ -18,11 +19,14 @@ const STUDENT = [RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT];
 export async function syncChatMembership(
   userId: string,
   client: Client = db,
+  now: Date = new Date(),
 ): Promise<boolean> {
   const user = await client.user.findUnique({
     where: { id: userId },
     select: {
       state: true,
+      dateOfBirth: true,
+      managedById: true,
       roles: { select: { role: true, cohortId: true } },
       parentLinks: {
         select: {
@@ -43,7 +47,8 @@ export async function syncChatMembership(
     where: { userId },
     select: { groupId: true, group: { select: { key: true } } },
   });
-  if (!user || user.state !== AccountState.ACTIVE) {
+  // Parent-managed child accounts can't sign in: no chats for them.
+  if (!user || user.state !== AccountState.ACTIVE || user.managedById) {
     if (!current.length) return false;
     await client.chatMember.deleteMany({ where: { userId } });
     return true;
@@ -54,7 +59,9 @@ export async function syncChatMembership(
     if (own) childCohorts.add(own);
     else if (l.childCohortId) childCohorts.add(l.childCohortId);
   }
-  const want = desiredGroups(user.roles, [...childCohorts]);
+  const want = desiredGroups(user.roles, [...childCohorts], {
+    adult: ADULTS_CHAT_ENABLED && isAdult(user.dateOfBirth, now),
+  });
   const have = new Map(current.map((m) => [m.group.key, m.groupId]));
   let changed = false;
 

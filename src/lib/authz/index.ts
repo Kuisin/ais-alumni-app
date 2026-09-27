@@ -101,6 +101,7 @@ export type PublicProfile = {
   id: string;
   nameRomaji: string | null;
   nameKanji: string | null;
+  nameKana: string | null;
   nameAtAis: string | null;
   avatarUrl: string | null;
   avatarPublic: boolean;
@@ -149,6 +150,7 @@ export function projectPublic(user: UserWithRoles): PublicProfile {
     id: user.id,
     nameRomaji: user.nameRomaji,
     nameKanji: user.nameKanji,
+    nameKana: user.nameKana,
     nameAtAis: user.nameAtAis,
     avatarUrl: user.avatarUrl,
     avatarPublic: user.avatarPublic,

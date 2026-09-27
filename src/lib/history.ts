@@ -110,25 +110,63 @@ const LEVEL_STAGE: Partial<Record<EducationLevel, LifeStage>> = {
   VOCATIONAL: LifeStage.UNIVERSITY_COLLEGE,
 };
 
+type StageEntry =
+  | (Entry & { kind: "education"; level: EducationLevel; name: string })
+  | (Entry & { kind: "work"; name: string });
+
+function stageOf(e: StageEntry): LifeStage | null {
+  return e.kind === "work" ? LifeStage.WORKING : (LEVEL_STAGE[e.level] ?? null);
+}
+
+/** Newest first: later start, then later (or no) end; school on a tie. */
+function newestFirst(a: StageEntry, b: StageEntry): number {
+  return (
+    (b.startYear ?? 0) - (a.startYear ?? 0) ||
+    (b.endYear ?? 9999) - (a.endYear ?? 9999) ||
+    (a.kind === "education" ? -1 : 0) - (b.kind === "education" ? -1 : 0)
+  );
+}
+
+function stageEntries(
+  education: readonly (Entry & { level: EducationLevel; school: string })[],
+  work: readonly (Entry & { company: string })[],
+): StageEntry[] {
+  return [
+    ...education.map((e) => ({
+      ...e,
+      kind: "education" as const,
+      name: e.school,
+    })),
+    ...work.map((w) => ({ ...w, kind: "work" as const, name: w.company })),
+  ].filter((e) => stageOf(e) !== null);
+}
+
 /**
- * Current stage implied by the history (school first — e.g. a university
- * student with a part-time job is a student), with the school / company
- * name as the detail. Null when nothing is ongoing.
+ * Current stage implied by the history, with the school / company name as
+ * the detail: the most recently started ongoing entry (a job started after
+ * university means 社会人). With nothing ongoing, the latest entry's status
+ * carries over (someone between jobs stays 社会人). Null without history.
  */
 export function stageFromHistory(
   education: readonly (Entry & { level: EducationLevel; school: string })[],
   work: readonly (Entry & { company: string })[],
   now: Date = new Date(),
 ): { stage: LifeStage; detail: string } | null {
-  const school = sortHistory(education, now).find(
-    (e) => isOngoing(e, now) && LEVEL_STAGE[e.level],
-  );
-  if (school)
-    return {
-      stage: LEVEL_STAGE[school.level] as LifeStage,
-      detail: school.school,
-    };
-  const job = sortHistory(work, now).find((e) => isOngoing(e, now));
-  if (job) return { stage: LifeStage.WORKING, detail: job.company };
-  return null;
+  const all = stageEntries(education, work);
+  const ongoing = all.filter((e) => isOngoing(e, now)).sort(newestFirst);
+  const latest =
+    ongoing[0] ??
+    [...all].sort(
+      (a, b) => (b.endYear ?? 9999) - (a.endYear ?? 9999) || newestFirst(a, b),
+    )[0];
+  if (!latest) return null;
+  return { stage: stageOf(latest) as LifeStage, detail: latest.name };
+}
+
+/**
+ * Entries marked 現在 (no end year). More than one usually means an old one
+ * wasn't closed; the current stage then uses the newest.
+ */
+export function currentEntries<T extends Entry>(entries: readonly T[]): T[] {
+  return entries.filter((e) => e.endYear === null);
 }

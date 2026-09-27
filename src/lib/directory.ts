@@ -34,6 +34,7 @@ export const PUBLIC_CARD_SELECT = {
   id: true,
   nameRomaji: true,
   nameKanji: true,
+  nameKana: true,
   nameAtAis: true,
   avatarUrl: true,
   // photo visibility (src/lib/avatar.ts)
@@ -276,6 +277,7 @@ export async function searchDirectory(
       id: r.id,
       nameRomaji: r.nameRomaji,
       nameKanji: r.nameKanji,
+      nameKana: r.nameKana,
       nameAtAis: r.nameAtAis,
       avatarUrl: r.avatarUrl,
       avatarPublic: r.avatarPublic,

@@ -105,6 +105,23 @@
       "merge": {
         "line_email": "LINEとメールのアカウントを自動統合"
       }
+    },
+    "family": {
+      "linked": "家族をつなげた",
+      "confirmed": "家族のつながりを確認",
+      "unlinked": "家族のつながりを解除"
+    },
+    "gender_request": {
+      "approved": "性別の変更を承認",
+      "rejected": "性別の変更を却下"
+    },
+    "birth_date_request": {
+      "approved": "生年月日の変更を承認",
+      "rejected": "生年月日の変更を却下"
+    },
+    "support": {
+      "close": "お問い合わせを対応済みに",
+      "reopen": "お問い合わせを未対応に戻す"
     }
   }
 }

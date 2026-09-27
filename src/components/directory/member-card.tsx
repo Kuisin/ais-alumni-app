@@ -1,4 +1,4 @@
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { RoleSummary } from "@/components/profile/role-details";
 import { Avatar } from "@/components/ui/avatar";
@@ -6,7 +6,7 @@ import type { Locale } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { defaultAvatar, loadConnections, photoFor } from "@/lib/avatar";
 import type { PublicCard } from "@/lib/directory";
-import { displayName } from "@/lib/format";
+import { displayName, otherNames } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 
 /**
@@ -28,13 +28,14 @@ export async function MemberCard({
   meta?: ReactNode;
 }) {
   const locale = (await getLocale()) as Locale;
+  const tp = await getTranslations("profile");
   const viewer = await getCurrentUser();
   const photo =
     showPhoto && viewer
       ? photoFor(await loadConnections(viewer.id), member)
       : defaultAvatar(member.gender);
   const name = displayName(member, locale);
-  const alt = member.nameRomaji ? member.nameKanji : null;
+  const alt = otherNames(member);
   const nameEl = linked ? (
     <Link
       href={`/app/members/${member.id}`}
@@ -50,8 +51,11 @@ export async function MemberCard({
       <Avatar src={photo} name={name} size={48} />
       <div className="min-w-0 flex-1">
         <p className="truncate">{nameEl}</p>
-        {alt && alt !== name ? (
-          <p className="truncate text-sm text-slate-500">{alt}</p>
+        {alt ? <p className="truncate text-sm text-slate-500">{alt}</p> : null}
+        {member.nameAtAis ? (
+          <p className="truncate text-xs text-slate-500">
+            {tp("nameAtAisValue", { name: member.nameAtAis })}
+          </p>
         ) : null}
         <RoleSummary roles={member.roles} />
         {meta ? (

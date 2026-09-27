@@ -1,13 +1,56 @@
+import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
-import { verifyLineSignature } from "@/lib/line";
+import { displayName } from "@/lib/format";
+import { lineReply, verifyLineSignature } from "@/lib/line";
+import { welcomeMessages } from "@/lib/line-welcome";
+import { appUrl } from "@/lib/urls";
 
 /**
  * POST /api/line/webhook — Messaging API webhook for the Official Account.
  * Tracks friendship (follow / unfollow) so notifications route to LINE only
- * for members who can actually receive pushes (§5.4). No replies are sent.
+ * for members who can actually receive pushes (§5.4), and replies to a
+ * follow with the welcome message (src/lib/line-welcome.ts). Other messages
+ * get no reply.
  */
 
-type LineEvent = { type?: string; source?: { type?: string; userId?: string } };
+type LineEvent = {
+  type?: string;
+  replyToken?: string;
+  source?: { type?: string; userId?: string };
+  follow?: { isUnblocked?: boolean };
+};
+
+async function sendWelcome(lineUserId: string, event: LineEvent) {
+  if (!event.replyToken) return;
+  const member = await db.user.findFirst({
+    where: { lineUserId },
+    select: { nameRomaji: true, nameKanji: true, locale: true },
+  });
+  const [ja, en] = await Promise.all(
+    (["ja", "en"] as const).map(async (l) => {
+      const t = await getTranslatorFor(l, "line");
+      return (k: string, v?: Record<string, string>) => t(`welcome.${k}`, v);
+    }),
+  );
+  const locale = member?.locale === "en" ? "en" : "ja";
+  const hasName = Boolean(member?.nameRomaji || member?.nameKanji);
+  await lineReply(
+    event.replyToken,
+    welcomeMessages(
+      { ja, en },
+      {
+        member: member
+          ? {
+              name: hasName ? displayName(member, locale) : null,
+              locale,
+            }
+          : null,
+        isUnblocked: Boolean(event.follow?.isUnblocked),
+        appUrl,
+      },
+    ),
+  );
+}
 
 export async function POST(req: Request) {
   // The signature is computed over the exact raw body, so read it as text first.
@@ -37,6 +80,14 @@ export async function POST(req: Request) {
         });
       } catch (e) {
         console.error("[line-webhook] failed to update friendship", e);
+      }
+    }
+    if (event.type === "follow") {
+      try {
+        await sendWelcome(lineUserId, event);
+      } catch (e) {
+        // Never fail the webhook over the greeting (LINE would retry).
+        console.error("[line-webhook] failed to send welcome", e);
       }
     }
   }

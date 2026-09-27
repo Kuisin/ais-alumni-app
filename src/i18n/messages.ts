@@ -28,6 +28,7 @@ export const NAMESPACES = [
   "organizations",
   "follows",
   "family",
+  "chat",
   "settings",
   "adminMembers",
   "adminStats",

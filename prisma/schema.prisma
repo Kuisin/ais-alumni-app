@@ -137,6 +137,9 @@ model User {
   newsComments   NewsComment[]         @relation("newsComments")
   newsHidden     NewsComment[]         @relation("newsCommentsHidden")
   newsReactions  NewsReaction[]
+  chatMembers    ChatMember[]
+  chatMessages   ChatMessage[]         @relation("chatMessages")
+  chatDeleted    ChatMessage[]         @relation("chatDeleted")
   eventCheckIns  EventCheckIn[]        @relation("CheckedIn")
   checkInsDone   EventCheckIn[]        @relation("CheckedInBy")
   parentLinks    FamilyLink[]          @relation("parent")
@@ -745,6 +748,59 @@ model NewsAttachment {
   @@index([postId])
 }
 
+enum ChatGroupKind {
+  TEACHERS // 教職員
+  CURRENT_STUDENTS // 在校生
+  FORMER_STUDENTS // 卒業生＋元在校生
+  CURRENT_PARENTS // 在校生保護者
+  FORMER_PARENTS // 卒業生保護者
+  COHORT // 第N期（生徒・卒業生）
+  COHORT_PARENTS // 第N期 保護者
+}
+
+/// Group chats by member type and 学年. Members are added automatically
+/// (src/lib/chat.ts syncChatMembership); `key` is unique per kind (+ cohort).
+model ChatGroup {
+  id        String        @id @default(cuid())
+  key       String        @unique
+  kind      ChatGroupKind
+  cohortId  String?
+  cohort    Cohort?       @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  members   ChatMember[]
+  messages  ChatMessage[]
+}
+
+model ChatMember {
+  groupId    String
+  group      ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime  @default(now())
+  /// no daily digest for this group
+  muted      Boolean   @default(false)
+
+  @@id([groupId, userId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id          String    @id @default(cuid())
+  groupId     String
+  group       ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("chatMessages", fields: [userId], references: [id], onDelete: Cascade)
+  body        String
+  createdAt   DateTime  @default(now())
+  /// deleted by the author or an admin (the text is removed)
+  deletedAt   DateTime?
+  deletedById String?
+  deletedBy   User?     @relation("chatDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  @@index([groupId, createdAt])
+}
+
 model NewsRead {
   postId String
   post   NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -769,6 +825,7 @@ model Cohort {
   positions           UserPosition[]
   broadcasts          Broadcast[]
   childLinks          FamilyLink[]
+  chatGroups          ChatGroup[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 }

@@ -1,0 +1,60 @@
+{
+  "title": "Chat",
+  "description": "Talk in groups for your member type and class. You're added automatically.",
+  "empty": "You're not in any groups yet.",
+  "emptyHint": "Once your member type and class are set, you'll join the matching groups automatically.",
+  "allGroups": "Other groups (admin)",
+  "members": "{count, plural, one {# member} other {# members}}",
+  "noMessages": "No messages yet. Say hello!",
+  "unread": "{count} unread",
+  "you": "You",
+  "groups": {
+    "TEACHERS": "Teachers & staff",
+    "CURRENT_STUDENTS": "Current students",
+    "FORMER_STUDENTS": "Graduates + former students",
+    "CURRENT_PARENTS": "Parents of current students",
+    "FORMER_PARENTS": "Parents of graduates",
+    "COHORT": "{cohort}",
+    "COHORT_PARENTS": "{cohort} parents"
+  },
+  "groupHints": {
+    "TEACHERS": "Everyone who teaches or taught at AIS",
+    "CURRENT_STUDENTS": "Current students",
+    "FORMER_STUDENTS": "Graduates and former students",
+    "CURRENT_PARENTS": "Parents of current students",
+    "FORMER_PARENTS": "Parents of graduates",
+    "COHORT": "Students and graduates of this class",
+    "COHORT_PARENTS": "Parents of children in this class"
+  },
+  "room": {
+    "back": "All chats",
+    "membersList": "Members",
+    "messageLabel": "Message",
+    "placeholder": "Write a message",
+    "send": "Send",
+    "sending": "Sending…",
+    "enterHint": "Enter to send, Shift+Enter for a new line",
+    "older": "Show earlier messages",
+    "unreadDivider": "Unread",
+    "deleted": "This message was deleted",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this message?",
+    "deleteLabel": "Delete {name}'s message",
+    "digest": "Get a daily summary at 8 pm when there are unread messages",
+    "adminView": "You're viewing as an admin (you can't post here)",
+    "live": "Live",
+    "polling": "Updating every few seconds",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "errors": {
+      "forbidden": "You can't post in this group.",
+      "invalid": "Please write a message (up to 2000 characters).",
+      "tooFast": "You're sending too fast. Please wait a moment.",
+      "generic": "The message couldn't be sent. Please try again."
+    }
+  },
+  "digest": {
+    "subject": "[AIS Alumni] You have unread chat messages",
+    "text": "You have {count, plural, one {# unread message} other {# unread messages}} in your group chats.\nPlease open the app to read them."
+  }
+}

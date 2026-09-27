@@ -5,6 +5,7 @@ import { audienceWhere, type Targeted } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { audienceUserWhere, specFromPost } from "@/lib/news-audience";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
+import { refreshUsers } from "@/lib/realtime";
 import { publicUrl } from "@/lib/urls";
 
 export const NEWS_PAGE_SIZE = 10;
@@ -101,6 +102,11 @@ export async function sendNewsNotification(
     });
     throw e;
   }
+  // Open pages update their unread badges right away.
+  await refreshUsers(
+    users.map((u) => u.id),
+    "news",
+  );
   return { recipients: users.length };
 }
 

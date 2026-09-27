@@ -21,6 +21,8 @@ export const config: VercelConfig = {
     // 00:05 JST daily: current/former, grades and graduation from 学年 and
     // leave years (the school year rolls over on April 1)
     { path: "/api/cron/sync-status", schedule: "5 15 * * *" },
+    // 20:00 JST daily: group-chat digest (unread count + link)
+    { path: "/api/cron/chat-digest", schedule: "0 11 * * *" },
     // 03:00 JST daily: delete evidence 30 days after decision (§6.3)
     { path: "/api/cron/cleanup-evidence", schedule: "0 18 * * *" },
   ],

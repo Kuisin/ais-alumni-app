@@ -5,6 +5,11 @@
  */
 export const NEXT_PATH_HEADER = "x-ais-path";
 
+/** "/ja/app/x?y" → "/app/x?y" (the path without its locale prefix). */
+export function stripLocale(path: string): string {
+  return path.replace(/^\/(ja|en)(?=\/|$|\?)/, "") || "/";
+}
+
 export function safeNextPath(value: unknown): string | null {
   if (typeof value !== "string" || !value || value.length > 500) return null;
   // Absolute paths on this site only (no //host, no backslashes).

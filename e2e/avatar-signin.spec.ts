@@ -102,3 +102,15 @@ test("gender is fixed: set once if missing, then changed by request", async ({
   await page.reload();
   await expect(card.getByText("Female", { exact: true })).toBeVisible();
 });
+
+test("members see their own language, whatever the URL (e.g. the PWA)", async ({
+  page,
+}) => {
+  const m = await createActiveGraduate(`Lang Pwa${Date.now()}`, "1990-04-04");
+  await signInWithEmail(page, m.email);
+  // Saved language: English. A Japanese or locale-less URL follows it.
+  await page.goto("/ja/app/events");
+  await expect(page).toHaveURL(/\/en\/app\/events$/);
+  await page.goto("/app/news");
+  await expect(page).toHaveURL(/\/en\/app\/news$/);
+});

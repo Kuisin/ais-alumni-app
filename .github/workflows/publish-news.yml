@@ -1,0 +1,31 @@
+name: Publish reserved news
+
+# Sends ニュース reserved for a time that has come (予約送信). Vercel's Hobby plan
+# only runs crons once a day, so this calls the production endpoint every
+# 10 minutes. Scheduled workflows run from the default branch (main).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: publish-news
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call /api/cron/publish-news
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET is not set; skipping." && exit 0
+          fi
+          curl --fail-with-body -sS --max-time 120 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://ais.kai-lab.net/api/cron/publish-news

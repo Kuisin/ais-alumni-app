@@ -1,7 +1,8 @@
 "use client";
 
-import { Eye, ImageIcon, Type } from "lucide-react";
+import { ImageIcon, Send, Type, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import {
   type AdminFormState,
   saveNewsAction,
@@ -18,15 +19,16 @@ import {
   MarkdownHint,
   StickyActions,
 } from "@/components/events/event-form";
-import {
-  CHOICE_CARD,
-  TargetRolesField,
-} from "@/components/events/target-roles-field";
+import { CHOICE_CARD } from "@/components/events/target-roles-field";
 import { useFormAction } from "@/components/events/use-form-action";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
-import type { AudienceKey } from "@/generated/prisma/enums";
+import type { CohortOption } from "@/lib/cohorts";
+import type { NewsStatus } from "@/lib/news";
+import { type AudienceSpec, EVERYONE } from "@/lib/news-audience";
+import { type AudienceMember, AudiencePicker } from "./audience-picker";
+import { type Delivery, DeliveryField } from "./delivery-field";
 
 export type NewsFormValues = {
   id?: string;
@@ -34,13 +36,17 @@ export type NewsFormValues = {
   titleEn: string;
   bodyJa: string;
   bodyEn: string;
-  /** datetime-local in JST; empty = draft */
-  publishedAt: string;
+  /** current state of the post; null = new post */
+  status: NewsStatus | null;
+  /** datetime-local in JST: the reserved time of a scheduled post */
+  sendAt: string;
+  notifyOnPublish: boolean;
   pinned: boolean;
-  targetAudiences: AudienceKey[];
+  audience: AudienceSpec;
+  /** names of the individually chosen members in `audience.userIds` */
+  audienceMembers: AudienceMember[];
   /** signed URL of the current cover, for preview */
   coverPreviewUrl: string | null;
-  notified: boolean;
 };
 
 export const EMPTY_NEWS: NewsFormValues = {
@@ -48,19 +54,32 @@ export const EMPTY_NEWS: NewsFormValues = {
   titleEn: "",
   bodyJa: "",
   bodyEn: "",
-  publishedAt: "",
+  status: null,
+  sendAt: "",
+  notifyOnPublish: true,
   pinned: false,
-  targetAudiences: [],
+  audience: EVERYONE,
+  audienceMembers: [],
   coverPreviewUrl: null,
-  notified: false,
 };
+
+/** The 配信 option selected when the editor opens. */
+function initialDelivery(status: NewsStatus | null): Delivery {
+  if (status === "published") return "KEEP";
+  if (status === "scheduled") return "SCHEDULE";
+  if (status === "draft") return "DRAFT";
+  return "NOW";
+}
 
 export function NewsForm({
   values,
+  cohorts,
   cancelHref,
   deleteAction,
 }: {
   values: NewsFormValues;
+  /** existing 学年 for the audience picker */
+  cohorts: readonly CohortOption[];
   /** shows a cancel link in the action bar (from `sm`) */
   cancelHref?: string;
   /** shows a delete button in the action bar */
@@ -80,6 +99,26 @@ export function NewsForm({
     return key ? t(`errors.${key}`) : null;
   };
   const deleteFormId = values.id ? `delete-news-${values.id}` : "";
+  const [delivery, setDelivery] = useState<Delivery>(() =>
+    initialDelivery(values.status),
+  );
+  // After a save changes the post's state (e.g. draft → published), follow it.
+  const [shownStatus, setShownStatus] = useState(values.status);
+  if (values.status !== shownStatus) {
+    setShownStatus(values.status);
+    setDelivery(initialDelivery(values.status));
+  }
+  const [notify, setNotify] = useState(values.notifyOnPublish);
+  const submitLabel =
+    delivery === "NOW"
+      ? notify
+        ? t("delivery.submitConfirm")
+        : t("delivery.submitPublish")
+      : delivery === "SCHEDULE"
+        ? t("delivery.submitSchedule")
+        : delivery === "DRAFT"
+          ? t("delivery.submitDraft")
+          : tc("save");
 
   return (
     <>
@@ -208,23 +247,16 @@ export function NewsForm({
           </div>
         </FormSection>
 
-        <FormSection icon={<Eye />} title={t("sections.publishing")}>
-          <Field
-            id="publishedAt"
-            label={t("fields.publishedAt")}
-            hint={t("fields.publishedAtHint")}
-            error={err("publishedAt")}
-          >
-            {(a) => (
-              <Input
-                {...a}
-                type="datetime-local"
-                name="publishedAt"
-                defaultValue={values.publishedAt}
-                className="sm:max-w-xs"
-              />
-            )}
-          </Field>
+        <FormSection icon={<Send />} title={t("sections.delivery")}>
+          <DeliveryField
+            published={values.status === "published"}
+            delivery={delivery}
+            onDelivery={setDelivery}
+            notify={notify}
+            onNotify={setNotify}
+            defaultSendAt={values.sendAt}
+            sendAtError={err("sendAt")}
+          />
           <label className={CHOICE_CARD}>
             <input
               type="checkbox"
@@ -234,7 +266,15 @@ export function NewsForm({
             />
             <span className="text-sm font-medium">{t("fields.pinned")}</span>
           </label>
-          <TargetRolesField defaultValue={values.targetAudiences} />
+        </FormSection>
+
+        <FormSection icon={<Users />} title={t("sections.audience")}>
+          <AudiencePicker
+            cohorts={cohorts}
+            initialSpec={values.audience}
+            initialMembers={values.audienceMembers}
+            error={err("audience")}
+          />
         </FormSection>
 
         <StickyActions
@@ -246,31 +286,12 @@ export function NewsForm({
         >
           <Button
             type="submit"
-            name="intent"
-            value="save"
             disabled={pending}
             aria-disabled={pending}
             className={ACTION_BUTTON}
           >
-            {pending
-              ? tc("saving")
-              : values.id
-                ? tc("save")
-                : t("news.saveDraftOrScheduled")}
+            {pending ? tc("saving") : submitLabel}
           </Button>
-          {!values.notified ? (
-            <Button
-              type="submit"
-              name="intent"
-              value="notify"
-              variant="secondary"
-              disabled={pending}
-              aria-disabled={pending}
-              className={ACTION_BUTTON}
-            >
-              {t("news.saveAndNotify")}
-            </Button>
-          ) : null}
           {cancelHref ? <CancelLink href={cancelHref} /> : null}
         </StickyActions>
       </form>

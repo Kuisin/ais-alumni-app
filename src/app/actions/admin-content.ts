@@ -4,13 +4,20 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
 import { AudienceKey } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { rolesForAudiences } from "@/lib/audience";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { parseJstLocal } from "@/lib/format";
+import { toKatakana } from "@/lib/names";
 import { COVER_MAX_BYTES, sendNewsNotification } from "@/lib/news";
+import {
+  audienceSpecSchema,
+  audienceUserWhere,
+  legacyColumns,
+} from "@/lib/news-audience";
 import { actionAdmin } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
@@ -244,15 +251,34 @@ export async function deleteEventAction(fd: FormData): Promise<void> {
 
 // ─── News ─────────────────────────────────────────────────────────────────
 
+/**
+ * 配信: NOW = publish now (then the confirm step sends the notification),
+ * SCHEDULE = reserve publish + notification at sendAt, DRAFT = not published,
+ * KEEP = already published; leave the publish time as it is.
+ */
+const DELIVERY = ["NOW", "SCHEDULE", "DRAFT", "KEEP"] as const;
+
 const NewsSchema = z
   .object({
     titleJa: optText(200),
     titleEn: optText(200),
     bodyJa: optText(50000),
     bodyEn: optText(50000),
-    publishedAt: optDate,
+    delivery: z.enum(DELIVERY, "invalid"),
+    sendAt: optDate,
+    notifyOnPublish: z.boolean(),
     pinned: z.boolean(),
-    targetAudiences,
+    audience: z
+      .string()
+      .max(20000)
+      .transform((v, ctx) => {
+        try {
+          const r = audienceSpecSchema.safeParse(v ? JSON.parse(v) : {});
+          if (r.success) return r.data;
+        } catch {}
+        ctx.addIssue({ code: "custom", message: "invalidAudience" });
+        return z.NEVER;
+      }),
   })
   .superRefine((d, ctx) => {
     if (!d.titleJa && !d.titleEn) {
@@ -261,6 +287,16 @@ const NewsSchema = z
         path: ["titleJa"],
         message: "titleRequired",
       });
+    }
+    if (d.delivery === "SCHEDULE") {
+      if (!d.sendAt)
+        ctx.addIssue({ code: "custom", path: ["sendAt"], message: "required" });
+      else if (d.sendAt.getTime() <= Date.now())
+        ctx.addIssue({
+          code: "custom",
+          path: ["sendAt"],
+          message: "sendAtPast",
+        });
     }
   });
 
@@ -309,16 +345,29 @@ export async function saveNewsAction(
     titleEn: str(fd, "titleEn"),
     bodyJa: str(fd, "bodyJa"),
     bodyEn: str(fd, "bodyEn"),
-    publishedAt: str(fd, "publishedAt"),
+    delivery: str(fd, "delivery") || (id ? "KEEP" : "DRAFT"),
+    sendAt: str(fd, "sendAt"),
+    notifyOnPublish: fd.get("notifyOnPublish") === "on",
     pinned: fd.get("pinned") === "on",
-    targetAudiences: fd.getAll("targetAudiences"),
+    audience: str(fd, "audience"),
   });
   if (!parsed.success)
     return { error: "validation", fieldErrors: toFieldErrors(parsed.error) };
-  // Keep the legacy role column filled for older code (src/lib/audience.ts).
+  const { delivery, sendAt, audience, ...rest } = parsed.data;
+  const publishedAt =
+    delivery === "NOW"
+      ? new Date()
+      : delivery === "SCHEDULE"
+        ? sendAt
+        : delivery === "DRAFT"
+          ? null
+          : undefined; // KEEP
   const data = {
-    ...parsed.data,
-    targetRoles: rolesForAudiences(parsed.data.targetAudiences),
+    ...rest,
+    ...(publishedAt !== undefined ? { publishedAt } : {}),
+    // Who receives it, plus the older columns for code that reads them.
+    audience: audience as Prisma.InputJsonValue,
+    ...legacyColumns(audience),
   };
 
   // Cover image: validate before touching storage or the database.
@@ -359,9 +408,14 @@ export async function saveNewsAction(
 
   const summary = {
     title: data.titleJa ?? data.titleEn,
-    publishedAt: data.publishedAt?.toISOString() ?? null,
+    delivery,
+    publishedAt:
+      publishedAt === undefined
+        ? "unchanged"
+        : (publishedAt?.toISOString() ?? null),
+    notifyOnPublish: data.notifyOnPublish,
     pinned: data.pinned,
-    targetAudiences: data.targetAudiences,
+    audience: audience as Prisma.InputJsonValue,
     coverChanged: coverUrl !== undefined,
   };
 
@@ -389,7 +443,8 @@ export async function saveNewsAction(
   }
   revalidateNews();
 
-  if (str(fd, "intent") === "notify")
+  // Send now: continue to the confirm step (recipient count) before sending.
+  if (delivery === "NOW" && data.notifyOnPublish)
     return go(`/app/admin/news/${postId}?notify=1`);
   if (!id) return go(`/app/admin/news/${postId}?created=1`);
   return { ok: true };
@@ -466,4 +521,50 @@ export async function notifyNewsAction(fd: FormData): Promise<void> {
   );
   revalidateNews();
   return go(`/app/admin/news/${id}?notified=1`);
+}
+
+// ─── ニュース audience helpers (editor) ─────────────────────────────────────
+
+/** How many ACTIVE members an audience reaches (live preview while editing). */
+export async function previewNewsAudienceAction(
+  spec: unknown,
+): Promise<{ count: number } | null> {
+  const admin = await adminOrNull();
+  if (!admin) return null;
+  const parsed = audienceSpecSchema.safeParse(spec);
+  if (!parsed.success) return null;
+  const count = await db.user.count({
+    where: { state: "ACTIVE", ...audienceUserWhere(parsed.data) },
+  });
+  return { count };
+}
+
+/** Find ACTIVE members by name (romaji, kanji or フリガナ) to add individually. */
+export async function searchAudienceMembersAction(
+  q: string,
+): Promise<{ id: string; name: string; kanji: string | null }[]> {
+  const admin = await adminOrNull();
+  if (!admin) return [];
+  const term = String(q ?? "")
+    .trim()
+    .slice(0, 60);
+  if (term.length < 1) return [];
+  const rows = await db.user.findMany({
+    where: {
+      state: "ACTIVE",
+      OR: [
+        { nameRomaji: { contains: term, mode: "insensitive" } },
+        { nameKanji: { contains: term } },
+        { nameKana: { contains: toKatakana(term) } },
+      ],
+    },
+    orderBy: { nameRomaji: "asc" },
+    take: 10,
+    select: { id: true, nameRomaji: true, nameKanji: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.nameRomaji ?? r.nameKanji ?? "—",
+    kanji: r.nameRomaji ? r.nameKanji : null,
+  }));
 }

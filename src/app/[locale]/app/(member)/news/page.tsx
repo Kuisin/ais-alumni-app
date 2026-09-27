@@ -6,11 +6,11 @@ import { Pager, parsePage } from "@/components/news/pager";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { listMessages, readNewsIds, unreadCounts } from "@/lib/announcements";
-import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { MESSAGES_ENABLED } from "@/lib/features";
-import { NEWS_PAGE_SIZE, publishedWhere, targetRolesWhere } from "@/lib/news";
+import { NEWS_PAGE_SIZE } from "@/lib/news";
+import { visibleNews } from "@/lib/news-visibility";
 import { type CurrentUser, requireActive } from "@/lib/session";
 
 export async function generateMetadata({
@@ -75,11 +75,13 @@ async function NewsTab({
   locale: "ja" | "en";
 }) {
   const t = await getTranslations("news");
-  const rows = await db.newsPost.findMany({
-    where: { AND: [targetRolesWhere(toViewer(user)), publishedWhere()] },
-    orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-    skip: (page - 1) * NEWS_PAGE_SIZE,
-    take: NEWS_PAGE_SIZE + 1,
+  // Visible posts for this member (audience incl. 学年 / individuals).
+  const visible = await visibleNews(user);
+  const pageIds = visible
+    .slice((page - 1) * NEWS_PAGE_SIZE, page * NEWS_PAGE_SIZE + 1)
+    .map((p) => p.id);
+  const found = await db.newsPost.findMany({
+    where: { id: { in: pageIds } },
     select: {
       id: true,
       titleJa: true,
@@ -90,6 +92,9 @@ async function NewsTab({
       publishedAt: true,
     },
   });
+  const rows = pageIds
+    .map((id) => found.find((p) => p.id === id))
+    .filter((p): p is (typeof found)[number] => Boolean(p));
   const hasNext = rows.length > NEWS_PAGE_SIZE;
   const posts = rows.slice(0, NEWS_PAGE_SIZE);
   const read = await readNewsIds(

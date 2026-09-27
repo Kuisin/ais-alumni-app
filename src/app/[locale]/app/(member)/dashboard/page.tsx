@@ -17,7 +17,8 @@ import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
-import { publishedWhere, targetRolesWhere } from "@/lib/news";
+import { targetRolesWhere } from "@/lib/news";
+import { visibleNews } from "@/lib/news-visibility";
 import { requireActive } from "@/lib/session";
 import { setupProgress } from "@/lib/setup";
 import { loadSetupChecklist } from "@/lib/setup-db";
@@ -62,20 +63,21 @@ export default async function DashboardPage({
           rsvps: { where: { userId: user.id }, select: { answer: true } },
         },
       }),
-      db.newsPost.findMany({
-        where: { AND: [target, publishedWhere(now)] },
-        orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-        take: 3,
-        select: {
-          id: true,
-          titleJa: true,
-          titleEn: true,
-          bodyJa: true,
-          bodyEn: true,
-          pinned: true,
-          publishedAt: true,
-        },
-      }),
+      visibleNews(user, now).then((v) =>
+        db.newsPost.findMany({
+          where: { id: { in: v.slice(0, 3).map((p) => p.id) } },
+          orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
+          select: {
+            id: true,
+            titleJa: true,
+            titleEn: true,
+            bodyJa: true,
+            bodyEn: true,
+            pinned: true,
+            publishedAt: true,
+          },
+        }),
+      ),
       db.follow.count({
         where: { followeeId: user.id, status: FollowStatus.REQUESTED },
       }),

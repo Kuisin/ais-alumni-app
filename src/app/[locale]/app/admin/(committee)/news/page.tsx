@@ -1,12 +1,12 @@
 import { ChevronRight, Newspaper, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { ReadMeter, readPercent } from "@/components/admin/read-receipts";
-import { TargetBadges } from "@/components/events/target-badges";
+import { AudienceSummary } from "@/components/news/audience-summary";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { Pager, parsePage } from "@/components/news/pager";
 import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
-import { Alert, EmptyState, PageHeader } from "@/components/ui/card";
+import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { Link } from "@/i18n/navigation";
 import { newsReadStats } from "@/lib/announcements";
@@ -14,6 +14,7 @@ import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
 import { newsStatus } from "@/lib/news";
+import { specFromPost } from "@/lib/news-audience";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -55,9 +56,11 @@ export default async function AdminNewsPage({
       titleEn: true,
       publishedAt: true,
       notifiedAt: true,
+      notifyOnPublish: true,
       pinned: true,
       targetRoles: true,
       targetAudiences: true,
+      audience: true,
     },
   });
   const posts = rows.slice(0, PAGE_SIZE);
@@ -130,9 +133,16 @@ export default async function AdminNewsPage({
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-1">
                       <NewsStatusBadges post={p} />
+                      {!p.notifyOnPublish && !p.notifiedAt ? (
+                        <Badge>{t("news.noNotify")}</Badge>
+                      ) : null}
                       {p.publishedAt ? (
                         <span className="ml-1 text-sm text-slate-600">
-                          {formatDateTime(p.publishedAt, locale)}
+                          {newsStatus(p) === "scheduled"
+                            ? t("news.scheduledFor", {
+                                date: formatDateTime(p.publishedAt, locale),
+                              })
+                            : formatDateTime(p.publishedAt, locale)}
                         </span>
                       ) : null}
                     </div>
@@ -141,7 +151,7 @@ export default async function AdminNewsPage({
                       <FallbackTag fallback={title.fallback} />
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      <TargetBadges target={p} />
+                      <AudienceSummary spec={specFromPost(p)} />
                     </div>
                     {reads ? (
                       <ReadMeter

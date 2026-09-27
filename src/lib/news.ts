@@ -1,13 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
-import {
-  audienceWhere,
-  effectiveAudiences,
-  membersInAudiences,
-  type Targeted,
-} from "@/lib/audience";
+import { audienceWhere, type Targeted } from "@/lib/audience";
 import { db } from "@/lib/db";
+import { audienceUserWhere, specFromPost } from "@/lib/news-audience";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
 import { publicUrl } from "@/lib/urls";
 
@@ -45,12 +41,14 @@ export function newsStatus(
  * (they can *see* everything, but are not spammed with every announcement).
  */
 export async function targetedRecipients(
-  target: Targeted,
+  target: Targeted & { audience?: unknown },
 ): Promise<NotifyUser[]> {
   return db.user.findMany({
     where: {
       state: AccountState.ACTIVE,
-      ...membersInAudiences(effectiveAudiences(target)),
+      ...audienceUserWhere(
+        specFromPost({ audience: target.audience ?? null, ...target }),
+      ),
     },
     select: NOTIFY_USER_SELECT,
   });
@@ -121,6 +119,8 @@ export async function dueScheduledNews(
     where: {
       notifiedAt: null,
       archivedAt: null,
+      // Reserved with "notify" on (off = publish in the app only).
+      notifyOnPublish: true,
       publishedAt: {
         lte: now,
         gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),

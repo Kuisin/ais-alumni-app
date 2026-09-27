@@ -441,6 +441,12 @@ model NewsPost {
   notifiedAt      DateTime? // added: set once the publish notification batch has gone out
   // Added: hidden from members and never notified; admins can restore it
   archivedAt      DateTime?
+  // Added: who receives it (src/lib/news-audience.ts AudienceSpec: groups,
+  // 学年, individual members). null = derive from targetAudiences/targetRoles.
+  audience        Json?
+  // Added: send a LINE/email notification when it goes live (now or at the
+  // reserved publishedAt); false = publish in the app only
+  notifyOnPublish Boolean       @default(true)
   createdById     String
   createdBy       User          @relation(fields: [createdById], references: [id])
   createdAt       DateTime      @default(now())

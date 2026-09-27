@@ -64,14 +64,22 @@ describe("18歳以上 group", () => {
     expect(isAdult(null, at("2030-04-01"))).toBe(false);
   });
 
-  it("is added only when asked for", () => {
-    const roles = [{ role: RoleKey.CURRENT_PARENT, cohortId: null }];
-    expect(desiredGroups(roles, []).map((g) => g.key)).toEqual([
-      "CURRENT_PARENTS",
+  it("is only for students and graduates who are 18", () => {
+    const grad = [{ role: RoleKey.FORMER_STUDENT, cohortId: null }];
+    expect(desiredGroups(grad, []).map((g) => g.key)).toEqual([
+      "FORMER_STUDENTS",
     ]);
-    expect(desiredGroups(roles, [], { adult: true }).map((g) => g.key)).toEqual(
-      ["CURRENT_PARENTS", "ADULTS"],
-    );
+    expect(desiredGroups(grad, [], { adult: true }).map((g) => g.key)).toEqual([
+      "FORMER_STUDENTS",
+      "ADULTS",
+    ]);
+    // Parents and teachers aren't added, however old.
+    for (const role of [RoleKey.CURRENT_PARENT, RoleKey.TEACHER])
+      expect(
+        desiredGroups([{ role, cohortId: null }], [], { adult: true }).map(
+          (g) => g.key,
+        ),
+      ).not.toContain("ADULTS");
   });
 });
 

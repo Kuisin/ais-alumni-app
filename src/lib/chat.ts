@@ -6,7 +6,8 @@ import { ChatGroupKind, RoleKey } from "@/generated/prisma/enums";
  *  - 教職員, 在校生, 卒業生＋元在校生, 在校生保護者, 卒業生保護者
  *  - 第N期 (students and graduates of that class)
  *  - 第N期 保護者 (parents of a child in that class)
- *  - 18歳以上: everyone from the April 1 on or after their 18th birthday
+ *  - 18歳以上: students and graduates (not parents or teachers) from the
+ *    April 1 on or after their 18th birthday
  */
 
 export const CHAT_PAGE_SIZE = 50;
@@ -78,7 +79,9 @@ export function desiredGroups(
   }
   if (roles.some((r) => PARENT.includes(r.role)))
     for (const c of childCohortIds) add(ChatGroupKind.COHORT_PARENTS, c);
-  if (opts.adult) add(ChatGroupKind.ADULTS);
+  // 18歳以上 is for (former) students only, not parents or teachers.
+  if (opts.adult && roles.some((r) => STUDENT.includes(r.role)))
+    add(ChatGroupKind.ADULTS);
   return [...out.values()];
 }
 

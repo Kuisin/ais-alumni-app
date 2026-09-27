@@ -65,7 +65,8 @@
     "close": "Close",
     "mentionList": "Mention someone",
     "mentionAll": "all",
-    "mentionAllHint": "Everyone in this group"
+    "mentionAllHint": "Everyone in this group",
+    "infoOpen": "Chat details & members"
   },
   "digest": {
     "subject": "[AIS Alumni] You have unread chat messages",
@@ -101,5 +102,12 @@
     "subject": "[AIS Alumni] {name} mentioned you in a chat",
     "text": "{name} mentioned you in a chat.\nPlease open the app to read it."
   },
-  "rep": "Class rep"
+  "rep": "Class rep",
+  "info": {
+    "title": "Chat details",
+    "back": "Back to the chat",
+    "search": "Search members by name",
+    "noMatch": "No one found.",
+    "open": "Chat details"
+  }
 }

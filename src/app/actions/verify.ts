@@ -20,6 +20,7 @@ import {
 } from "@/lib/member-status";
 import {
   childrenCurrent,
+  findManagedMatches,
   findRegisteredChildren,
   notifyChildConfirmations,
   type RegisteredChild,
@@ -487,4 +488,30 @@ export async function searchRegisteredChildAction(input: {
   const dateOfBirth = String(input?.dateOfBirth ?? "").slice(0, 10);
   const locale = user.locale === "en" ? "en" : "ja";
   return findRegisteredChildren({ name, dateOfBirth }, user.id, locale);
+}
+
+// ---------------------------------------------------------------------------
+// Students: were they already registered by a parent? (exact name + birth date)
+
+export async function checkManagedDuplicateAction(input: {
+  lastNameRomaji: string;
+  firstNameRomaji: string;
+  lastNameKanji: string;
+  firstNameKanji: string;
+  dateOfBirth: string;
+}): Promise<boolean> {
+  const user = await applicant();
+  if (!user) return false;
+  const s = (v: unknown) => String(v ?? "").slice(0, 60);
+  const matches = await findManagedMatches(
+    {
+      names: [
+        `${s(input.firstNameRomaji)} ${s(input.lastNameRomaji)}`,
+        `${s(input.lastNameKanji)}${s(input.firstNameKanji)}`,
+      ],
+      dateOfBirth: s(input.dateOfBirth),
+    },
+    user.id,
+  );
+  return matches.length > 0;
 }

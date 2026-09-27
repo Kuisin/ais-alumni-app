@@ -122,3 +122,20 @@ export function asListed(firstLast: string): string {
   const [first, ...rest] = firstLast.split(" ");
   return rest.length ? `${rest.join(" ")}, ${first}` : first;
 }
+
+/** The first app link in the latest email to this address (dev mailbox). */
+export async function readLink(
+  email: string,
+  pathPart: string,
+): Promise<string> {
+  const file = path.join(MAILBOX, `${email}.txt`);
+  for (let i = 0; i < 50; i++) {
+    try {
+      const body = await readFile(file, "utf8");
+      const m = body.match(new RegExp(`https?://\\S*${pathPart}\\S*`));
+      if (m) return new URL(m[0]).pathname;
+    } catch {}
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  throw new Error(`No ${pathPart} link emailed to ${email}`);
+}

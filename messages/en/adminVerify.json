@@ -230,5 +230,11 @@
       "childToConfirm": "Waiting for the child to confirm"
     },
     "nameOnlyHint": "Only a name was given (older form). Ask the parent to resubmit, or link them on the family page."
+  },
+  "managedDuplicate": {
+    "title": "A parent already registered this person",
+    "body": "A child account created by a parent has the same name and birth date as this applicant. Merging moves its AIS record and family links into the applicant's account (the applicant's account is kept). Then decide the application as usual.",
+    "registeredBy": "Registered by: {parent}",
+    "merge": "Merge into applicant's account"
   }
 }

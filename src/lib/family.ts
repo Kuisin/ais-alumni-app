@@ -278,7 +278,16 @@ export async function loadFamily(me: CurrentUser) {
     db.user.findMany({
       where: { managedById: me.id },
       orderBy: { createdAt: "asc" },
-      select: { ...PUBLIC_CARD_SELECT, state: true },
+      select: {
+        ...PUBLIC_CARD_SELECT,
+        state: true,
+        // The handover link waiting for the child, if any.
+        handoversAsChild: {
+          where: { usedAt: null, expiresAt: { gt: new Date() } },
+          select: { email: true, expiresAt: true },
+          take: 1,
+        },
+      },
     }),
   ]);
   const links: FamilyLinkView[] = rawLinks.map((l) => ({

@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import {
+  checkManagedDuplicateAction,
   type SubmitVerificationState,
   submitVerificationAction,
 } from "@/app/actions/verify";
@@ -99,6 +100,37 @@ export function VerifyForm({
   >(submitVerificationAction, null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const step = STEPS[stepIndex];
+
+  // Students: a parent may already have registered them (exact name + birth
+  // date). They can still continue; the committee merges the two.
+  const [registeredByParent, setRegisteredByParent] = useState(false);
+  const isStudent = state.types.includes("STUDENT");
+  useEffect(() => {
+    if (step !== "details" || !isStudent || !state.dateOfBirth) return;
+    let live = true;
+    checkManagedDuplicateAction({
+      lastNameRomaji: state.lastNameRomaji,
+      firstNameRomaji: state.firstNameRomaji,
+      lastNameKanji: state.lastNameKanji,
+      firstNameKanji: state.firstNameKanji,
+      dateOfBirth: state.dateOfBirth,
+    })
+      .then((found) => {
+        if (live) setRegisteredByParent(found);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [
+    step,
+    isStudent,
+    state.lastNameRomaji,
+    state.firstNameRomaji,
+    state.lastNameKanji,
+    state.firstNameKanji,
+    state.dateOfBirth,
+  ]);
 
   // Server-side validation errors: show them on the step they belong to.
   useEffect(() => {
@@ -415,6 +447,14 @@ export function VerifyForm({
 
         {step === "details" ? (
           <div className="space-y-6">
+            {state.types.includes("STUDENT") && registeredByParent ? (
+              <Alert tone="warning">
+                <span className="font-semibold">
+                  {t("parentRegistered.title")}
+                </span>{" "}
+                {t("parentRegistered.body")}
+              </Alert>
+            ) : null}
             {state.types.includes("STUDENT") ? (
               <StudentSection
                 value={state.student}

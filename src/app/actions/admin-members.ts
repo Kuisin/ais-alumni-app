@@ -14,7 +14,7 @@ import { normalizeEmail } from "@/lib/auth/otp";
 import { parseCohortNumber } from "@/lib/cohorts";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
-import { mergeUsers } from "@/lib/merge";
+import { MergeKeepsManagedError, mergeUsers } from "@/lib/merge";
 import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { AuthError, actionAdmin } from "@/lib/session";
@@ -581,7 +581,13 @@ export async function mergeMembersAction(
       ]);
       if (!keep || !dup) return { error: tc("errors.notFound") };
 
-      await mergeUsers(duplicateId, keepId);
+      try {
+        await mergeUsers(duplicateId, keepId);
+      } catch (e) {
+        if (e instanceof MergeKeepsManagedError)
+          return { ...prev, error: t("merge.keepsManaged") };
+        throw e;
+      }
       // mergeUsers leaves email/admin/notification settings on the kept
       // account; fill the email if the kept account had none, and keep admin
       // rights if either account had them.

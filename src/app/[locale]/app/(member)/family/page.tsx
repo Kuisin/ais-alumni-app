@@ -8,6 +8,7 @@ import {
 import { MemberCard } from "@/components/directory/member-card";
 import { ChildNameForm } from "@/components/family/child-name-form";
 import { FamilySearch } from "@/components/family/family-search";
+import { HandoverPanel } from "@/components/family/handover-panel";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -159,6 +160,12 @@ export default async function FamilyPage({ searchParams }: Props) {
                     )}
                   </Badge>
                 </p>
+                {m.state === "ACTIVE" ? (
+                  <HandoverPanel
+                    childId={m.id}
+                    pending={m.handoversAsChild[0] ?? null}
+                  />
+                ) : null}
               </li>
             ))}
           </ul>

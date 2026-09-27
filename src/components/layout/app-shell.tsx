@@ -398,6 +398,8 @@ export async function AppShell({
         <Link href="/privacy" className="inline-block py-2 underline">
           {t("privacy")}
         </Link>
+        {/* Members change language in 設定; visitors and applicants here. */}
+        {variant === "onboarding" ? <LocaleSwitcher compact /> : null}
         <span>{t("footer")}</span>
       </div>
     </footer>
@@ -424,9 +426,6 @@ export async function AppShell({
             </Link>
             <div className="flex items-center gap-1">
               {switchLink}
-              <div className="[&_button]:text-white">
-                <LocaleSwitcher />
-              </div>
               {accountMenu}
             </div>
           </div>
@@ -516,7 +515,6 @@ export async function AppShell({
 
           <div className="flex items-center gap-1">
             {switchLink}
-            <LocaleSwitcher />
             {accountMenu}
           </div>
         </div>

@@ -339,5 +339,31 @@
       "reopen": "Reopen answers",
       "hint": "Once closed, members can't change their answers and no reminder is sent."
     }
+  },
+  "xlsx": {
+    "download": "Download Excel",
+    "summarySheet": "Summary",
+    "attendeesSheet": "Attendees",
+    "noLimit": "No limit",
+    "rsvpStatus": "RSVPs",
+    "rsvpOpen": "Open",
+    "rsvpClosed": "Closed (deadline)",
+    "rsvpClosedManual": "Closed (manually)",
+    "goingGuests": "Guests of those going",
+    "exportedAt": "Exported at",
+    "walkIn": "No RSVP (walk-in)",
+    "col": {
+      "nameRomaji": "Name (romaji)",
+      "nameKanji": "Name (kanji)",
+      "nameKana": "Furigana",
+      "type": "Type / class",
+      "answer": "Answer",
+      "guests": "Guests",
+      "answeredAt": "Answered at",
+      "checkedInAt": "Checked in at",
+      "checkedInBy": "Checked in by",
+      "email": "Email",
+      "phone": "Phone"
+    }
   }
 }

@@ -1,5 +1,7 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { buttonClass } from "@/components/ui/button";
+import { LinkPendingIcon } from "@/components/ui/link-pending";
 import { Link } from "@/i18n/navigation";
 
 /** Previous / next page links. `query` holds extra params to keep (e.g. tab). */
@@ -27,6 +29,9 @@ export function Pager({
           className={buttonClass("secondary")}
           rel="prev"
         >
+          <LinkPendingIcon>
+            <ChevronLeft aria-hidden="true" className="size-4" />
+          </LinkPendingIcon>
           {t("pager.prev")}
         </Link>
       ) : (
@@ -42,6 +47,9 @@ export function Pager({
           rel="next"
         >
           {t("pager.next")}
+          <LinkPendingIcon>
+            <ChevronRight aria-hidden="true" className="size-4" />
+          </LinkPendingIcon>
         </Link>
       ) : (
         <span />

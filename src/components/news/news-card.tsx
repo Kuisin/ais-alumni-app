@@ -2,6 +2,7 @@ import { Calendar, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
+import { LinkPendingIcon } from "@/components/ui/link-pending";
 import { Link } from "@/i18n/navigation";
 import { formatDate, localized } from "@/lib/format";
 import { markdownToPlain } from "@/lib/markdown";
@@ -75,10 +76,12 @@ export function NewsCard({
           <p className="mt-1 line-clamp-2 text-sm text-slate-600">{body}</p>
         ) : null}
       </div>
-      <ChevronRight
-        aria-hidden="true"
-        className="size-5 shrink-0 text-slate-400 transition-colors group-hover:text-brand-700"
-      />
+      <LinkPendingIcon>
+        <ChevronRight
+          aria-hidden="true"
+          className="size-5 shrink-0 text-slate-400 transition-colors group-hover:text-brand-700"
+        />
+      </LinkPendingIcon>
     </Link>
   );
 }

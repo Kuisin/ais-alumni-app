@@ -16,6 +16,10 @@
   --animate-rise: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-fade: fade 0.3s ease-out both;
   --animate-pop: pop 0.35s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  /* Loading: skeletons and link hints stay invisible for fast navigations. */
+  --animate-skeleton: fade 0.3s ease-out 0.15s both;
+  --animate-pending: fade 0.2s ease-out 0.12s both;
+  --animate-pending-out: fade 0.2s ease-out 0.12s reverse both;
 
   @keyframes step-in {
     from {

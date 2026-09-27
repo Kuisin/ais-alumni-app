@@ -97,6 +97,8 @@ test("email sign-up → verification → admin approval → member dashboard", a
   ).toBeVisible();
   await member.getByRole("button", { name: "Next" }).click();
 
+  // No kanji name: recommended (not required) before sending.
+  await expect(member.getByText("No kanji / kana name yet")).toBeVisible();
   // Graduates upload their 卒業証書 (or say they don't have it).
   await member.getByRole("button", { name: "Submit application" }).click();
   await expect(
@@ -163,6 +165,15 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(
     checklist.getByRole("link", { name: "Link family" }),
   ).toHaveAttribute("href", /\/app\/family$/);
+  // 漢字・フリガナ: recommended, added through a name request.
+  const names = checklist
+    .getByRole("listitem")
+    .filter({ hasText: "Add your name in kanji and kana" });
+  await expect(names.getByText("Recommended", { exact: true })).toBeVisible();
+  await expect(names.getByRole("link", { name: "Add name" })).toHaveAttribute(
+    "href",
+    /\/app\/profile\/edit#name$/,
+  );
   await checklist.getByRole("link", { name: "Add", exact: true }).click();
   await expect(member).toHaveURL(/\/en\/app\/profile\/history/);
   // Search: test members from earlier runs fill the first page.

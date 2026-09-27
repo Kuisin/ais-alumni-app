@@ -7,8 +7,8 @@
   "backToList": "All news",
   "pager": {
     "label": "Pages",
-    "prev": "← Newer",
-    "next": "Older →",
+    "prev": "Newer",
+    "next": "Older",
     "page": "Page {page}"
   },
   "notify": {

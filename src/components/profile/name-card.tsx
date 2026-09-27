@@ -32,7 +32,7 @@ export async function NameCard({ me }: { me: CurrentUser }) {
   ];
 
   return (
-    <Card className="space-y-4">
+    <Card id="name" className="scroll-mt-20 space-y-4">
       <div>
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Lock aria-hidden="true" className="size-4 text-slate-500" />

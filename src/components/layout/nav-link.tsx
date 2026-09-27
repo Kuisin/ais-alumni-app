@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 import { cn } from "@/components/ui/cn";
+import { LinkPendingBar } from "@/components/ui/link-pending";
 import { Link, usePathname } from "@/i18n/navigation";
 
 function isActive(pathname: string, href: string): boolean {
@@ -41,9 +42,10 @@ export function NavLink({
       ref={ref}
       href={href}
       aria-current={active ? "page" : undefined}
-      className={cn(className, active && activeClassName)}
+      className={cn("relative", className, active && activeClassName)}
     >
       {children}
+      <LinkPendingBar />
     </Link>
   );
 }

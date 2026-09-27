@@ -10,12 +10,11 @@ export const MESSAGES_ENABLED = false;
 
 /**
  * Chat v2: the 「18歳以上」 group and 1:1 DMs, which use new ChatGroupKind
- * values (ADULTS, DIRECT). Off until the release that knows them is on main
- * (dev and main share the database, and main's Prisma client can't read an
- * enum value it doesn't know); then set CHAT_V2_RELEASED = true. Tests turn
- * it on with CHAT_V2=1.
+ * values (ADULTS, DIRECT). On since those values reached main (release #48);
+ * dev and main share the database, and a Prisma client can't read an enum
+ * value it doesn't know, so new kinds must reach main before being used.
  */
-const CHAT_V2_RELEASED = false;
+const CHAT_V2_RELEASED = true;
 export const CHAT_V2_ENABLED = CHAT_V2_RELEASED || process.env.CHAT_V2 === "1";
 export const ADULTS_CHAT_ENABLED = CHAT_V2_ENABLED;
 export const DIRECT_CHAT_ENABLED = CHAT_V2_ENABLED;

@@ -249,5 +249,12 @@
   "parentRegistered": {
     "title": "It looks like a parent has already registered you.",
     "body": "Ask them to send you a link with “Hand over to my child” on their Family page: you'll get the approved record with no new review. You can also continue here; the committee will then combine the two accounts."
+  },
+  "classYears": {
+    "title": "Class {number}: classes by year (to check)",
+    "hint": "The class for each school year (April–March). Check it matches the classes you remember.",
+    "year": "School year",
+    "class": "Class",
+    "now": "(this year)"
   }
 }

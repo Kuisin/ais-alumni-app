@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { CohortChoice } from "@/lib/cohorts";
 import { MIN_YEAR, maxYear } from "@/lib/verification/schema";
+import { ClassYearsTable } from "./class-years-table";
 
 /** Stable DOM id for a form path, e.g. "formerStudent.yearsTo" → "f-formerStudent-yearsTo". */
 export function fieldId(path: string): string {
@@ -266,6 +267,9 @@ export function CohortPicker({
           </Select>
         )}
       </Field>
+      {selected ? (
+        <ClassYearsTable cohortNumber={Number(selected.value)} />
+      ) : null}
     </div>
   );
 }

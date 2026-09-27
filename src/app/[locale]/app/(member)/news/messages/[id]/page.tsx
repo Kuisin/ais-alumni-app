@@ -11,6 +11,7 @@ import { openMessage } from "@/lib/announcements";
 import { effectiveAudiences } from "@/lib/audience";
 import { cohortLabel } from "@/lib/cohorts";
 import { asLocale } from "@/lib/events";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { formatDateTime } from "@/lib/format";
 import { getCurrentUser, requireActive } from "@/lib/session";
 
@@ -33,6 +34,7 @@ export async function generateMetadata({
 export default async function MessagePage({
   params,
 }: PageProps<"/[locale]/app/news/messages/[id]">) {
+  if (!MESSAGES_ENABLED) notFound();
   const { id, locale: rawLocale } = await params;
   const locale = asLocale(rawLocale);
   await requireActive();

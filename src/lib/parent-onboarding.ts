@@ -16,7 +16,7 @@ import { nameColumns } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
 import { syncMemberStatus } from "@/lib/status-sync";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 import type { ChildData } from "@/lib/verification/schema";
 
 /**
@@ -325,7 +325,7 @@ export async function notifyChildConfirmations(
           return {
             subject: t("notify.asChildSubject", { name }),
             text: t("notify.asChildText", { name }),
-            url: appUrl(`/${locale}/app/family`),
+            url: publicUrl(`/${locale}/app/family`),
           };
         },
       });

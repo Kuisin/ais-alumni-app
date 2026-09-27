@@ -26,7 +26,7 @@ import {
 } from "@/lib/record-requests";
 import { AuthError, actionActive, actionAdmin } from "@/lib/session";
 import { syncMemberStatus } from "@/lib/status-sync";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 export type RecordRequestFormState = {
   ok?: boolean;
@@ -120,7 +120,7 @@ export async function submitRecordRequestAction(
       return {
         subject: t("notify.admin.subject"),
         text: t("notify.admin.text", { name: displayName(me, locale) }),
-        url: appUrl(`/${locale}/app/admin/record-requests`),
+        url: publicUrl(`/${locale}/app/admin/record-requests`),
       };
     },
   }).catch((e) => console.error("[record-requests] admin notify failed", e));
@@ -226,7 +226,7 @@ export async function decideRecordRequestAction(
       return {
         subject: t(`notify.${key}.subject`),
         text: t(`notify.${key}.text`, { note: note || "—" }),
-        url: appUrl(`/${locale}/app/profile/record`),
+        url: publicUrl(`/${locale}/app/profile/record`),
       };
     },
   }).catch((e) => console.error("[record-requests] member notify failed", e));

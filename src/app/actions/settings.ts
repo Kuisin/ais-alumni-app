@@ -25,7 +25,7 @@ import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { ssoReady } from "@/lib/sso";
 import { assertTransition } from "@/lib/state-machine";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /** Result shape for useActionState forms on /settings. Messages are pre-translated. */
 export type SettingsFormState = {
@@ -193,7 +193,7 @@ export async function removeSignInMethodAction(
           text: tr("notify.methodRemoved.text", {
             method: tr(`methods.${provider}`),
           }),
-          url: appUrl(`/${locale}/app/settings`),
+          url: publicUrl(`/${locale}/app/settings`),
         };
       },
     }).catch((e) => console.error("[settings] notify failed", e));
@@ -316,7 +316,7 @@ export async function emailChangeAction(
       );
 
       const tr = await getTranslatorFor(user.locale, "settings");
-      const settingsUrl = appUrl(`/${user.locale}/app/settings`);
+      const settingsUrl = publicUrl(`/${user.locale}/app/settings`);
       const sends: Promise<void>[] = [
         sendEmail({
           to: email,

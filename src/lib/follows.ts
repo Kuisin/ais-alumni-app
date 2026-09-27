@@ -16,7 +16,7 @@ import { PUBLIC_CARD_SELECT } from "@/lib/directory";
 import { displayName } from "@/lib/format";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
-import { appUrl } from "@/lib/urls";
+import { publicUrl } from "@/lib/urls";
 
 /** Follow requests and blocks (§9.2). */
 
@@ -152,7 +152,7 @@ export async function requestFollow(
             name,
           }),
           text: t(auto ? "notify.autoText" : "notify.requestText", { name }),
-          url: appUrl(
+          url: publicUrl(
             `/${locale}/app/follows?tab=${auto ? "followers" : "incoming"}`,
           ),
         };
@@ -187,7 +187,7 @@ export async function acceptFollow(
         return {
           subject: t("notify.acceptedSubject", { name }),
           text: t("notify.acceptedText", { name }),
-          url: appUrl(`/${locale}/app/members/${me.id}`),
+          url: publicUrl(`/${locale}/app/members/${me.id}`),
         };
       },
     });

@@ -9,6 +9,7 @@ import { listMessages, readNewsIds, unreadCounts } from "@/lib/announcements";
 import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { NEWS_PAGE_SIZE, publishedWhere, targetRolesWhere } from "@/lib/news";
 import { type CurrentUser, requireActive } from "@/lib/session";
 
@@ -27,7 +28,7 @@ export default async function NewsPage({
   const locale = asLocale((await params).locale);
   const sp = await searchParams;
   const page = parsePage(sp.page);
-  const tab = sp.tab === "messages" ? "messages" : "news";
+  const tab = MESSAGES_ENABLED && sp.tab === "messages" ? "messages" : "news";
   const user = await requireActive();
   const t = await getTranslations("news");
   const unread = await unreadCounts(user);
@@ -35,24 +36,26 @@ export default async function NewsPage({
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <Tabs
-        label={t("tabs.label")}
-        className="mb-6"
-        items={[
-          {
-            href: "/app/news",
-            label: t("tabs.news"),
-            count: unread.news || undefined,
-            active: tab === "news",
-          },
-          {
-            href: { pathname: "/app/news", query: { tab: "messages" } },
-            label: t("tabs.messages"),
-            count: unread.messages || undefined,
-            active: tab === "messages",
-          },
-        ]}
-      />
+      {MESSAGES_ENABLED ? (
+        <Tabs
+          label={t("tabs.label")}
+          className="mb-6"
+          items={[
+            {
+              href: "/app/news",
+              label: t("tabs.news"),
+              count: unread.news || undefined,
+              active: tab === "news",
+            },
+            {
+              href: { pathname: "/app/news", query: { tab: "messages" } },
+              label: t("tabs.messages"),
+              count: unread.messages || undefined,
+              active: tab === "messages",
+            },
+          ]}
+        />
+      ) : null}
       {tab === "messages" ? (
         <MessagesTab userId={user.id} page={page} locale={locale} />
       ) : (

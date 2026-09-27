@@ -5,5 +5,6 @@ export default async function OldNotifyPage({
   params,
 }: PageProps<"/[locale]/app/notify">) {
   const { locale } = await params;
-  redirect({ href: "/app/admin/notify", locale });
+  // Messages are switched off for now (src/lib/features.ts): go to ニュース.
+  redirect({ href: "/app/news", locale });
 }

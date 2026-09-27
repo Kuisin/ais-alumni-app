@@ -12,6 +12,7 @@ import { receiptCounts } from "@/lib/announcements";
 import { getBroadcastRights } from "@/lib/broadcasts";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { MESSAGES_ENABLED } from "@/lib/features";
 import { displayName, formatDateTime } from "@/lib/format";
 import { requireActive } from "@/lib/session";
 
@@ -26,6 +27,7 @@ const HISTORY_SIZE = 30;
 export default async function NotifyPage({
   searchParams,
 }: PageProps<"/[locale]/app/admin/notify">) {
+  if (!MESSAGES_ENABLED) notFound();
   const me = await requireActive();
   // Admin mode admits other positions too; this page needs a send right.
   const rights = await getBroadcastRights(me);

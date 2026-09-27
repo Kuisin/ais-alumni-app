@@ -39,7 +39,7 @@ test("photos: default icon for strangers; connections or everyone when public", 
   await strangerPage.goto(`/en/app/members/${owner.id}`);
   await expect(img(strangerPage)).toHaveAttribute(
     "src",
-    "/avatars/default-female.svg",
+    "/avatars/default-female.jpg",
   );
 
   const friendPage = await browser.newPage();

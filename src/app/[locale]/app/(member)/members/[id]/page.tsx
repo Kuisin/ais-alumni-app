@@ -36,7 +36,7 @@ import {
   loadFollowCounts,
   loadFollowStatus,
 } from "@/lib/follows";
-import { displayName } from "@/lib/format";
+import { displayName, otherNames } from "@/lib/format";
 import { visibleHistory } from "@/lib/history";
 import { requireActive } from "@/lib/session";
 
@@ -95,7 +95,7 @@ export default async function MemberProfilePage({ params }: Props) {
   const locale = (await getLocale()) as Locale;
   const p = view.public;
   const name = displayName(p, locale);
-  const altName = p.nameRomaji ? p.nameKanji : null;
+  const altName = otherNames(p);
 
   // Non-private columns needed to decide which relationship controls to show.
   const [counts, theirFollow] = await Promise.all([
@@ -176,9 +176,7 @@ export default async function MemberProfilePage({ params }: Props) {
           <Avatar src={photo} name={name} size={96} />
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
-            {altName && altName !== name ? (
-              <p className="text-slate-600">{altName}</p>
-            ) : null}
+            {altName ? <p className="text-slate-600">{altName}</p> : null}
             {p.nameAtAis ? (
               <p className="text-sm text-slate-600">
                 {t("nameAtAisValue", { name: p.nameAtAis })}

@@ -64,7 +64,8 @@
     "bio": "Bio",
     "phone": "Phone",
     "save": "Save profile",
-    "gender": "Gender"
+    "gender": "Gender",
+    "nameKana": "Name in katakana"
   },
   "roles": {
     "title": "Roles",
@@ -268,5 +269,49 @@
     "proposed": "Requested",
     "notSet": "Not registered",
     "approved": "Approved; the gender has been updated."
+  },
+  "family": {
+    "title": "Family",
+    "as": {
+      "parent": "Parent",
+      "child": "Child"
+    },
+    "noAccount": "(no account)",
+    "confirmed": "Confirmed",
+    "pending": "Pending",
+    "confirm": "Confirm",
+    "remove": "Unlink",
+    "removeLabel": "Unlink {name}",
+    "removeConfirmed": "Unlink them? If nothing else connects them, the family is split.",
+    "removePending": "Cancel this pending link?",
+    "none": "No family linked.",
+    "relatives": "Same family:",
+    "add": "Link family",
+    "addAs": "Link as",
+    "addChild": "Add a child",
+    "addParent": "Add a parent",
+    "search": "Search by name",
+    "addHint": "A parent needs a parent role and a child a student / graduate role. Links made by an admin are confirmed right away.",
+    "addLabel": "Link {name} as {as}",
+    "noResults": "No one found.",
+    "family": {
+      "linked": "Linked.",
+      "confirmed": "Confirmed.",
+      "removed": "Unlinked.",
+      "errors": {
+        "self": "They can't be linked to themselves.",
+        "wrongRole": "Wrong type (a parent needs a parent role, a child a student / graduate role).",
+        "already": "They're already linked.",
+        "notFound": "Not found.",
+        "forbidden": "Not allowed."
+      }
+    },
+    "errors": {
+      "self": "They can't be linked to themselves.",
+      "wrongRole": "Wrong type (a parent needs a parent role, a child a student / graduate role).",
+      "already": "They're already linked.",
+      "notFound": "Not found.",
+      "forbidden": "Not allowed."
+    }
   }
 }

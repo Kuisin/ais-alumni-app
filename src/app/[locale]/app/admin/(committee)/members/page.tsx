@@ -18,7 +18,7 @@ import {
   roleRowWhere,
 } from "@/lib/audience";
 import { db } from "@/lib/db";
-import { displayName } from "@/lib/format";
+import { displayName, otherNames } from "@/lib/format";
 import { toKatakana } from "@/lib/names";
 
 export async function generateMetadata({
@@ -101,6 +101,7 @@ export default async function AdminMembersPage({
         id: true,
         nameRomaji: true,
         nameKanji: true,
+        nameKana: true,
         primaryEmail: true,
         state: true,
         isAdmin: true,
@@ -293,6 +294,9 @@ export default async function AdminMembersPage({
                         <Badge tone="brand">{t("badge.admin")}</Badge>
                       ) : null}
                     </p>
+                    {otherNames(u) ? (
+                      <p className="text-sm text-slate-600">{otherNames(u)}</p>
+                    ) : null}
                     <p
                       className="truncate text-sm text-slate-600"
                       title={u.primaryEmail ?? undefined}
@@ -382,6 +386,11 @@ export default async function AdminMembersPage({
                         {u.isAdmin ? (
                           <span className="ml-2 whitespace-nowrap">
                             <Badge tone="brand">{t("badge.admin")}</Badge>
+                          </span>
+                        ) : null}
+                        {otherNames(u) ? (
+                          <span className="block text-xs font-normal text-slate-600">
+                            {otherNames(u)}
                           </span>
                         ) : null}
                         <span

@@ -84,6 +84,23 @@ export function displayName(
 }
 
 /**
+ * The names besides displayName(): 漢字 with its フリガナ, e.g.
+ * "山田 太郎（ヤマダ タロウ）" — or just the フリガナ when the kanji name is
+ * the display name. Null when nothing else is recorded.
+ */
+export function otherNames(user: {
+  nameRomaji: string | null;
+  nameKanji: string | null;
+  nameKana?: string | null;
+}): string | null {
+  const kana = user.nameKana?.trim() || null;
+  if (!user.nameRomaji) return kana;
+  const kanji = user.nameKanji?.trim() || null;
+  if (kanji && kana) return `${kanji}（${kana}）`;
+  return kanji ?? kana;
+}
+
+/**
  * Pick the locale's version of admin-authored content, falling back to the
  * other language with a flag so the UI can show "(English only)" (§12).
  */

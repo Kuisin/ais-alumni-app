@@ -194,10 +194,11 @@ test("parent links a child who is already registered; the child confirms", async
   const kid = await browser.newPage();
   await signInWithEmail(kid, child.email);
   await kid.goto("/en/app/family");
-  await kid
-    .getByRole("button", { name: /Confirm/ })
-    .first()
-    .click();
+  // Pages stream in after a loading skeleton: click once it has settled.
+  const confirm = kid.getByRole("button", { name: /Confirm/ }).first();
+  await expect(confirm).toBeVisible();
+  await kid.waitForLoadState("networkidle");
+  await confirm.click();
   await expect(kid.getByRole("button", { name: /Confirm/ })).toHaveCount(0);
 
   // The confirmation lets the parent in.

@@ -110,7 +110,8 @@
       "pinned": "Pinned"
     },
     "description": "Write, publish and notify members about news. Drafts are not visible to members.",
-    "emptyHint": "Create a post and publish it to show it in members' news list."
+    "emptyHint": "Create a post and publish it to show it in members' news list.",
+    "readOf": "Read {read} / {audience} in audience"
   },
   "notify": {
     "title": "Publish & notify",
@@ -130,6 +131,17 @@
     "sending": "Sending…",
     "cancel": "Cancel",
     "sent": "The post has been published and members have been notified.",
-    "alreadySent": "Members were notified on {date}."
+    "alreadySent": "Members were notified on {date}.",
+    "contentlessHint": "The notification doesn't include the post. Members get a notification and read the post in the app."
+  },
+  "reads": {
+    "title": "Reads",
+    "readOf": "Read {read} / {audience} in audience",
+    "percent": "{percent}%",
+    "audienceHint": "Audience is the current number of active members this post is aimed at.",
+    "readers": "Members who read it",
+    "empty": "No one has read it yet.",
+    "showAll": "Show all ({count} more)",
+    "truncated": "Showing the {count} most recent readers."
   }
 }

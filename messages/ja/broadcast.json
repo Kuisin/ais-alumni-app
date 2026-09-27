@@ -1,7 +1,7 @@
 {
   "pageTitle": "お知らせを送る",
-  "descriptionAny": "会員にLINE（LINE未連携の方にはメール）でメッセージを送ります。",
-  "descriptionLeader": "学年代表として、同じ学年の会員にLINE（またはメール）でメッセージを送れます。",
+  "descriptionAny": "会員にメッセージを送ります。会員にはLINE（LINE未連携の方にはメール）で新着の通知が届き、メッセージはアプリで読みます。",
+  "descriptionLeader": "学年代表として、同じ学年の会員にメッセージを送れます。会員にはLINE（またはメール）で新着の通知が届き、メッセージはアプリで読みます。",
   "audience": {
     "label": "送信先",
     "ALL": "すべての会員",
@@ -19,17 +19,17 @@
   },
   "title": "件名",
   "body": "本文",
-  "bodyHint": "末尾にあなたの名前と役職が追加されます。",
+  "bodyHint": "メッセージにはあなたの名前と役職が表示されます。LINE・メールの通知には件名・本文は含まれません。",
   "preview": "送信先を確認",
   "checking": "確認中…",
-  "confirmSummary": "{recipients}人の会員に届きます（LINE {line}人・メール {email}人）。LINEの月間メッセージ数を{line}通使用します。",
+  "confirmSummary": "{recipients}人の会員に届きます。LINE（{line}人）またはメール（{email}人）で新着の通知が届き、メッセージはアプリで読みます。LINEの月間メッセージ数を{line}通使用します。",
   "send": "{count}人に送信",
   "sending": "送信中…",
   "edit": "修正する",
-  "sentSummary": "{recipients}人に送信しました（LINE {line}人・メール {email}人）。",
+  "sentSummary": "{recipients}人に送信しました（LINE {line}人・メール {email}人に通知）。既読状況は送信履歴で確認できます。",
   "sendAnother": "続けて送る",
   "history": "送信履歴",
-  "historyCounts": "{recipients}人（LINE {line} / メール {email}）",
+  "historyCounts": "通知 {recipients}人（LINE {line} / メール {email}）",
   "signature": "— {name}（{position}）AIS同窓会より",
   "signatureCommittee": "— AIS同窓会委員会",
   "positions": {
@@ -51,5 +51,36 @@
     "noRecipients": "該当する会員がいません。"
   },
   "sent": "送信しました。",
-  "charCount": "{count} / {max}文字"
+  "charCount": "{count} / {max}文字",
+  "fromPosition": "{name}（{position}）",
+  "fromCommittee": "AIS同窓会委員会",
+  "notifyContentless": {
+    "subject": "【AIS同窓会】新しい連絡が届きました",
+    "text": "{from}から新しい連絡が届きました。\n内容はアプリでご確認ください。"
+  },
+  "historyMine": "自分の送信",
+  "historyAll": "すべての送信者",
+  "historyTabs": "表示する送信履歴",
+  "historyEmpty": "まだ送信したメッセージはありません。",
+  "sentBy": "送信者：{name}",
+  "receipts": {
+    "title": "既読状況",
+    "readOf": "既読 {read} / {total}",
+    "percent": "{percent}%",
+    "none": "既読の記録なし",
+    "legacy": "既読の記録が始まる前に送信されたメッセージのため、既読状況はありません。",
+    "read": "既読",
+    "unread": "未読",
+    "noneRead": "まだ誰も読んでいません。",
+    "allRead": "全員が読みました。",
+    "showAll": "すべて表示（ほか{count}人）"
+  },
+  "detail": {
+    "pageTitle": "送信したメッセージ",
+    "back": "お知らせを送るへ戻る",
+    "sentAt": "送信日時",
+    "audience": "送信先",
+    "from": "送信者",
+    "body": "本文"
+  }
 }

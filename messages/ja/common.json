@@ -59,7 +59,8 @@
     "profileShort": "マイページ",
     "adminModeShort": "管理",
     "memberModeShort": "会員画面",
-    "pending": "{count}件の対応待ち"
+    "pending": "{count}件の対応待ち",
+    "unread": "未読 {count}件"
   },
   "adminNav": {
     "verification": "本人確認",

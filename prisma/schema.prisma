@@ -73,15 +73,15 @@ enum LifeStage {
 }
 
 model User {
-  id                    String          @id @default(cuid())
+  id                    String               @id @default(cuid())
   // Nullable (spec says required): a LINE-first sign-up has no verified email
   // until it passes the mandatory OTP step (§4.2). Postgres allows many NULLs
   // under a unique index.
-  primaryEmail          String?         @unique
+  primaryEmail          String?              @unique
   emailVerifiedAt       DateTime?
-  state                 AccountState    @default(UNVERIFIED_EMAIL)
-  isAdmin               Boolean         @default(false)
-  locale                Locale          @default(ja)
+  state                 AccountState         @default(UNVERIFIED_EMAIL)
+  isAdmin               Boolean              @default(false)
+  locale                Locale               @default(ja)
   // Name parts are what members enter. nameRomaji ("First Middle Last") and
   // nameKanji ("姓 名") are the combined display/search names, always
   // recomputed from the parts by src/lib/names.ts when a name is saved.
@@ -97,28 +97,30 @@ model User {
   nameRomaji            String?
   nameKanji             String?
   nameAtAis             String?
-  dateOfBirth           DateTime?       @db.Date
+  dateOfBirth           DateTime?            @db.Date
   avatarUrl             String?
   bio                   String?
   phone                 String?
   socialLinks           Json?
-  lineUserId            String?         @unique
+  lineUserId            String?              @unique
   lineDisplayName       String?
-  lineFollowing         Boolean         @default(false)
+  lineFollowing         Boolean              @default(false)
   lineBannerDismissedAt DateTime?
   lineOnboardingSeenAt  DateTime?
-  notifyVia             NotifyChannel   @default(AUTO)
-  autoAcceptSameYear    Boolean         @default(false)
+  notifyVia             NotifyChannel        @default(AUTO)
+  autoAcceptSameYear    Boolean              @default(false)
   familyId              String?
-  family                Family?         @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  family                Family?              @relation(fields: [familyId], references: [id], onDelete: SetNull)
   deactivatedAt         DateTime?
   // Added: a child account created by a parent during sign-up. It has no
   // sign-in of its own; the parent manages it until the child takes it over.
   managedById           String?
-  managedBy             User?           @relation("managedChildren", fields: [managedById], references: [id], onDelete: SetNull)
-  managedChildren       User[]          @relation("managedChildren")
-  handoversAsChild      ChildHandover[] @relation("handoverChild")
-  handoversSent         ChildHandover[] @relation("handoverParent")
+  managedBy             User?                @relation("managedChildren", fields: [managedById], references: [id], onDelete: SetNull)
+  managedChildren       User[]               @relation("managedChildren")
+  handoversAsChild      ChildHandover[]      @relation("handoverChild")
+  handoversSent         ChildHandover[]      @relation("handoverParent")
+  broadcastInbox        BroadcastRecipient[] @relation("broadcastInbox")
+  newsReads             NewsRead[]           @relation("newsReads")
 
   roles          UserRole[]
   accounts       Account[]
@@ -441,6 +443,7 @@ model NewsPost {
   createdBy       User          @relation(fields: [createdById], references: [id])
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  reads           NewsRead[]
 
   @@index([publishedAt])
 }
@@ -533,24 +536,52 @@ enum BroadcastScope {
 
 // Added: notifications sent by members holding a position (history, limits).
 model Broadcast {
-  id              String         @id @default(cuid())
+  id              String               @id @default(cuid())
   senderId        String
-  sender          User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender          User                 @relation(fields: [senderId], references: [id], onDelete: Cascade)
   position        PositionKey? // null when sent by an admin
   scope           BroadcastScope
   targetRoles     RoleKey[] // ALL scope: empty = every member
   // Added: preferred over targetRoles when non-empty
-  targetAudiences AudienceKey[]  @default([])
+  targetAudiences AudienceKey[]        @default([])
   cohortId        String? // COHORT scope: the 学年
-  cohort          Cohort?        @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  cohort          Cohort?              @relation(fields: [cohortId], references: [id], onDelete: SetNull)
   title           String
   body            String
   recipientCount  Int
   lineCount       Int
   emailCount      Int
-  createdAt       DateTime       @default(now())
+  createdAt       DateTime             @default(now())
+  // Added: who received it and who has read it (read receipts)
+  recipients      BroadcastRecipient[]
 
   @@index([senderId, createdAt])
+}
+
+// Added: one row per member a Broadcast was sent to; readAt = opened in the
+// app. Notifications carry no content, so members read it in the app.
+model BroadcastRecipient {
+  broadcastId String
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("broadcastInbox", fields: [userId], references: [id], onDelete: Cascade)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@id([broadcastId, userId])
+  @@index([userId, readAt])
+}
+
+// Added: members who have opened a news post (read counts for admins).
+model NewsRead {
+  postId String
+  post   NewsPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User     @relation("newsReads", fields: [userId], references: [id], onDelete: Cascade)
+  readAt DateTime @default(now())
+
+  @@id([postId, userId])
+  @@index([userId])
 }
 
 // Added: 学年 (class), created on first use. Numbered 第N期 by the year the

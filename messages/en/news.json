@@ -13,6 +13,27 @@
   },
   "notify": {
     "subject": "[AIS Alumni] {title}",
-    "fallbackText": "A new announcement has been posted."
+    "fallbackText": "A new announcement has been posted.",
+    "contentlessSubject": "[AIS Alumni] New announcement",
+    "contentlessText": "The AIS Alumni Committee posted a new announcement.\nOpen the app to read it."
+  },
+  "emptyHint": "Announcements from the committee will appear here when they are posted.",
+  "unread": "Unread",
+  "tabs": {
+    "label": "Announcement types",
+    "news": "Committee news",
+    "messages": "Messages for you"
+  },
+  "messages": {
+    "title": "Messages for you",
+    "empty": "No messages for you yet.",
+    "emptyHint": "Messages sent to you by the committee, teachers and class representatives appear here. We let you know on LINE or by email when a new one arrives.",
+    "from": "From",
+    "sentAt": "Sent",
+    "sentTo": "To",
+    "toAll": "All members",
+    "backToList": "Messages for you",
+    "senderView": "You sent this message (you are not a recipient).",
+    "newCount": "{count, plural, one {You have # new message} other {You have # new messages}}"
   }
 }

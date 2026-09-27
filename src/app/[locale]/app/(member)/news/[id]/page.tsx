@@ -6,6 +6,7 @@ import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
 import { Badge } from "@/components/ui/card";
+import { markNewsRead } from "@/lib/announcements";
 import { isAudienceTargeted } from "@/lib/audience";
 import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
@@ -40,9 +41,11 @@ export default async function NewsDetailPage({
 }: PageProps<"/[locale]/app/news/[id]">) {
   const { id, locale: rawLocale } = await params;
   const locale = asLocale(rawLocale);
-  await requireActive();
+  const user = await requireActive();
   const post = await loadPost(id);
   if (!post?.publishedAt) notFound();
+  // Published and aimed at this member (checked in loadPost): record the read.
+  await markNewsRead(user.id, post.id);
 
   const t = await getTranslations("news");
   const title = localized(post.titleJa, post.titleEn, locale);

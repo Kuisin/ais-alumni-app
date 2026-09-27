@@ -13,6 +13,27 @@
   },
   "notify": {
     "subject": "【AIS同窓会】{title}",
-    "fallbackText": "新しいお知らせが投稿されました。"
+    "fallbackText": "新しいお知らせが投稿されました。",
+    "contentlessSubject": "【AIS同窓会】新しいお知らせがあります",
+    "contentlessText": "AIS同窓会委員会から新しいお知らせが投稿されました。\n内容はアプリでご確認ください。"
+  },
+  "emptyHint": "委員会からのお知らせが投稿されると、ここに表示されます。",
+  "unread": "未読",
+  "tabs": {
+    "label": "お知らせの種類",
+    "news": "委員会のお知らせ",
+    "messages": "あなた宛ての連絡"
+  },
+  "messages": {
+    "title": "あなた宛ての連絡",
+    "empty": "あなた宛ての連絡はまだありません。",
+    "emptyHint": "委員会・先生・学年代表からあなたに送られた連絡がここに表示されます。新しい連絡が届くと、LINEやメールでお知らせします。",
+    "from": "差出人",
+    "sentAt": "送信日時",
+    "sentTo": "宛先",
+    "toAll": "全員",
+    "backToList": "あなた宛ての連絡へ",
+    "senderView": "あなたが送信した連絡です（あなたは受信者ではありません）。",
+    "newCount": "新しい連絡が{count}件あります"
   }
 }

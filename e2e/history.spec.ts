@@ -39,10 +39,20 @@ test("education & work history with shared school search", async ({
   await add
     .getByRole("combobox", { name: "Company / organization" })
     .fill(company);
+  // 業種: the detail list follows the chosen category.
+  const detail = add.getByRole("combobox", { name: "Industry (detail)" });
+  await expect(detail).toBeDisabled();
+  await add
+    .getByRole("combobox", { name: "Industry", exact: true })
+    .selectOption({ label: "IT & telecommunications" });
+  await detail.selectOption({ label: "Software & SaaS" });
   await add.getByLabel("Start year").fill("2020");
   await add.getByLabel("End year").fill("2023");
   await add.getByRole("button", { name: "Add", exact: true }).click();
   await expect(ken.getByText(company).first()).toBeVisible();
+  await expect(
+    ken.getByText("IT & telecommunications › Software & SaaS").first(),
+  ).toBeVisible();
 
   const kenId = await ken.evaluate(async () => {
     const r = await fetch("/en/app/profile");

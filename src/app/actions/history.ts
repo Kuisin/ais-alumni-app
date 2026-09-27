@@ -77,6 +77,7 @@ export async function saveHistoryAction(
       ...common,
       company: str(fd, "company"),
       title: str(fd, "title"),
+      industry: str(fd, "industry"),
     });
     if (!parsed.success) return invalid(parsed.error.issues);
     const { company, ...rest } = parsed.data;

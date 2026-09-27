@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { deleteHistoryAction } from "@/app/actions/history";
 import { AddHistory } from "@/components/history/add-history";
 import { HistoryForm } from "@/components/history/history-form";
@@ -9,6 +9,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { ViewEdit } from "@/components/ui/view-edit";
 import { db } from "@/lib/db";
 import { isOngoing, sortHistory } from "@/lib/history";
+import { industryLabel } from "@/lib/industries";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,6 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HistoryPage() {
   const me = await requireActive();
   const t = await getTranslations("history");
+  const lang = (await getLocale()) === "en" ? "en" : "ja";
   const [education, work] = await Promise.all([
     db.educationEntry.findMany({
       where: { userId: me.id },
@@ -72,6 +74,11 @@ export default async function HistoryPage() {
                           : (e.title ?? "")}{" "}
                         · {years(e)}
                       </p>
+                      {"industry" in e && industryLabel(e.industry, lang) ? (
+                        <p className="text-xs text-slate-500">
+                          {industryLabel(e.industry, lang)}
+                        </p>
+                      ) : null}
                     </div>
                   }
                 >

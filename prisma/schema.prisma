@@ -883,6 +883,8 @@ model WorkEntry {
   companyId  String
   company    Company           @relation(fields: [companyId], references: [id])
   title      String? // position / department
+  // Added: 業種 code from src/lib/industries.ts (大分類 or 中分類)
+  industry   String?
   startYear  Int?
   endYear    Int? // null = current job
   visibility HistoryVisibility @default(FOLLOWERS)

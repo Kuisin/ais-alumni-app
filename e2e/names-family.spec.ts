@@ -181,3 +181,43 @@ test("admins edit a member's education and work", async ({ browser }) => {
   );
   expect(log.n).toBe(1);
 });
+
+test("chat details list the members; rows and member cards open profiles", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const a = await createActiveGraduate(`Info Alpha${stamp}`, "1990-01-01");
+  const b = await createActiveGraduate(`Info Beta${stamp}`, "1990-01-01");
+  const other = await browser.newPage();
+  await signInWithEmail(other, b.email);
+  await other.goto("/en/app/chat"); // joins the graduates' group
+  const page = await browser.newPage();
+  await signInWithEmail(page, a.email);
+  await page.goto("/en/app/chat");
+  await page
+    .getByRole("link", { name: /Graduates \+ former students/ })
+    .first()
+    .click();
+  // The talk's name opens its details.
+  await page
+    .getByRole("link", { name: /Chat details & members/ })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/en\/app\/chat\/[^/]+\/info$/);
+  await page.getByLabel("Search members by name").fill(`Beta${stamp}`);
+  await page
+    .getByRole("link", { name: new RegExp(`Beta${stamp}, Info`) })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`/en/app/members/${b.id}$`));
+
+  // Directory cards: the whole card opens the profile, not just the name.
+  await page.goto(`/en/app/directory?q=Beta${stamp}`);
+  const card = page
+    .getByRole("link", { name: new RegExp(`Beta${stamp}, Info`) })
+    .locator("xpath=ancestor::div[contains(@class,'relative')][1]");
+  const box = await card.boundingBox();
+  if (!box) throw new Error("card not found");
+  // Bottom-right corner: far from the name.
+  await page.mouse.click(box.x + box.width - 8, box.y + box.height - 8);
+  await expect(page).toHaveURL(new RegExp(`/en/app/members/${b.id}$`));
+});

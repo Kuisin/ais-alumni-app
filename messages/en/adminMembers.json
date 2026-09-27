@@ -317,5 +317,9 @@
       "notFound": "Not found.",
       "forbidden": "Not allowed."
     }
+  },
+  "history": {
+    "title": "Education & work",
+    "intro": "Add, edit or remove entries for the member (including who can see them). Changes are logged in the audit log and update their current status."
   }
 }

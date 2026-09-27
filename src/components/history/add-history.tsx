@@ -14,8 +14,11 @@ import { HistoryForm } from "./history-form";
 export function AddHistory({
   kind,
   empty,
+  userId,
 }: {
   kind: "education" | "work";
+  /** admins editing another member's history */
+  userId?: string;
   /** message shown when the member has no entries of this kind */
   empty?: string;
 }) {
@@ -60,7 +63,11 @@ export function AddHistory({
             {t("close")}
           </Button>
         </div>
-        <HistoryForm kind={kind} onSaved={() => toggle(false)} />
+        <HistoryForm
+          kind={kind}
+          userId={userId}
+          onSaved={() => toggle(false)}
+        />
       </section>
     );
   }

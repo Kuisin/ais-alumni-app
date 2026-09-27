@@ -44,7 +44,10 @@
       "profile_updated": "Edited profile",
       "role_added": "Added role",
       "role_removed": "Removed role",
-      "role_updated": "Edited role"
+      "role_updated": "Edited role",
+      "history_added": "Added an education / work entry",
+      "history_updated": "Edited an education / work entry",
+      "history_deleted": "Deleted an education / work entry"
     },
     "verification": {
       "approve": "Approved application",

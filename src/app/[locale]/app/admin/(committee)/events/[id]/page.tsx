@@ -1,4 +1,11 @@
-import { CircleCheck, Download, Eye, ListChecks, ScanLine } from "lucide-react";
+import {
+  CircleCheck,
+  Download,
+  Eye,
+  FileSpreadsheet,
+  ListChecks,
+  ScanLine,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
@@ -167,7 +174,18 @@ export default async function AdminEventPage({
                 <ScanLine aria-hidden="true" className="size-4" />
                 {t("staff.open")}
               </Link>
-              {/* API route: plain <a>, not locale-prefixed. */}
+              {/* API routes: plain <a>, not locale-prefixed. */}
+              <a
+                href={`/api/admin/events/${event.id}/xlsx?lang=${locale}`}
+                className={buttonClass(
+                  "secondary",
+                  "w-full sm:w-auto xl:w-full",
+                )}
+                download
+              >
+                <FileSpreadsheet aria-hidden="true" className="size-4" />
+                {t("xlsx.download")}
+              </a>
               <a
                 href={`/api/admin/events/${event.id}/csv`}
                 className={buttonClass(

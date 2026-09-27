@@ -339,5 +339,31 @@
       "reopen": "回答の受付を再開する",
       "hint": "締め切ると、会員は回答を変更できなくなり、リマインドも送られません。"
     }
+  },
+  "xlsx": {
+    "download": "Excelでダウンロード",
+    "summarySheet": "概要",
+    "attendeesSheet": "出欠",
+    "noLimit": "定員なし",
+    "rsvpStatus": "出欠の受付",
+    "rsvpOpen": "受付中",
+    "rsvpClosed": "締め切り（期限）",
+    "rsvpClosedManual": "締め切り（手動）",
+    "goingGuests": "参加者の同伴者",
+    "exportedAt": "出力日時",
+    "walkIn": "未回答（当日参加）",
+    "col": {
+      "nameRomaji": "氏名（ローマ字）",
+      "nameKanji": "氏名（漢字）",
+      "nameKana": "フリガナ",
+      "type": "区分・学年",
+      "answer": "回答",
+      "guests": "同伴者",
+      "answeredAt": "回答日時",
+      "checkedInAt": "受付日時",
+      "checkedInBy": "受付担当",
+      "email": "メールアドレス",
+      "phone": "電話番号"
+    }
   }
 }

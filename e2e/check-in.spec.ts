@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import ExcelJS from "exceljs";
 import { signInWithEmail } from "./helpers";
 
 /** Same ticket as src/lib/event-tickets.ts (the QR code's `t`). */
@@ -106,6 +107,27 @@ test("staff scan a member's QR ticket to check them in", async ({
       .filter({ hasText: /Hanako/ })
       .getByRole("button", { name: /^Check in/ }),
   ).toBeVisible();
+
+  // Excel export: summary and attendee sheets with the check-in.
+  await admin.goto(`/en/app/admin/events/${eventId}`);
+  const [download] = await Promise.all([
+    admin.waitForEvent("download"),
+    admin.getByRole("link", { name: "Download Excel" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^event-2030-07-01-.+\.xlsx$/);
+  const book = new ExcelJS.Workbook();
+  await book.xlsx.readFile(await download.path());
+  expect(book.worksheets.map((w) => w.name)).toEqual(["Summary", "Attendees"]);
+  const sheet = book.getWorksheet("Attendees");
+  const hanakoRow = sheet
+    ?.getSheetValues()
+    .find((r) => Array.isArray(r) && r.includes("Suzuki, Hanako")) as
+    | unknown[]
+    | undefined;
+  expect(hanakoRow).toBeDefined();
+  expect(hanakoRow).toContain("Going");
+  // Checked in (undone above, so the check-in time is empty again).
+  expect(sheet?.getRow(1).getCell(8).value).toBe("Checked in at");
 
   // Clean up.
   await admin.goto(`/en/app/admin/events/${eventId}`);

@@ -220,7 +220,8 @@
       "forbidden": "You don't have permission to do that.",
       "invalid": "Please check the input.",
       "notEligible": "This member doesn't have the role this position requires.",
-      "cohort": "Choose the 学年 they represent."
+      "cohort": "Choose the 学年 they represent.",
+      "ownCohort": "A 学年代表 must be a student or graduate of that 学年 (their own class)."
     },
     "cohort": "学年 (class)"
   },

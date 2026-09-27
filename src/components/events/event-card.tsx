@@ -2,6 +2,7 @@ import { Calendar, ChevronRight, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { Badge } from "@/components/ui/card";
+import { LinkPendingIcon } from "@/components/ui/link-pending";
 import { Link } from "@/i18n/navigation";
 import type { RsvpAnswerValue } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
@@ -61,10 +62,12 @@ export function EventCard({
           ) : null}
         </div>
       </div>
-      <ChevronRight
-        aria-hidden="true"
-        className="size-5 shrink-0 text-slate-400 transition-colors group-hover:text-brand-700"
-      />
+      <LinkPendingIcon>
+        <ChevronRight
+          aria-hidden="true"
+          className="size-5 shrink-0 text-slate-400 transition-colors group-hover:text-brand-700"
+        />
+      </LinkPendingIcon>
     </Link>
   );
 }

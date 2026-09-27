@@ -7,8 +7,8 @@
   "backToList": "ニュース一覧へ",
   "pager": {
     "label": "ページ",
-    "prev": "← 新しい記事",
-    "next": "古い記事 →",
+    "prev": "新しい記事",
+    "next": "古い記事",
     "page": "{page}ページ目"
   },
   "notify": {

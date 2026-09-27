@@ -138,8 +138,13 @@ test("1:1 talk between mutual followers, with 既読", async ({ browser }) => {
   // Admins can't open someone else's 1:1 talk.
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
-  const res = await admin.goto(talkUrl);
-  expect(res?.status()).toBe(404);
+  // The page streams behind its loading skeleton, so notFound() arrives as
+  // the not-found screen (noindex) rather than a 404 status.
+  await admin.goto(talkUrl);
+  await expect(
+    admin.getByRole("heading", { name: "Page not found" }),
+  ).toBeVisible();
+  await expect(admin.getByText(hi)).toHaveCount(0);
 
   // After a block, nobody can write any more.
   await sql(

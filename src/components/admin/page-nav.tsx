@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { buttonClass } from "@/components/ui/button";
+import { LinkPendingIcon } from "@/components/ui/link-pending";
 import { Link } from "@/i18n/navigation";
 
 type Href = { pathname: string; query: Record<string, string> };
@@ -33,7 +34,9 @@ export function PageNav({
     >
       {prev ? (
         <Link href={prev} rel="prev" className={buttonClass("secondary")}>
-          <ChevronLeft aria-hidden="true" className="size-4" />
+          <LinkPendingIcon>
+            <ChevronLeft aria-hidden="true" className="size-4" />
+          </LinkPendingIcon>
           {prevLabel}
         </Link>
       ) : (
@@ -45,7 +48,9 @@ export function PageNav({
       {next ? (
         <Link href={next} rel="next" className={buttonClass("secondary")}>
           {nextLabel}
-          <ChevronRight aria-hidden="true" className="size-4" />
+          <LinkPendingIcon>
+            <ChevronRight aria-hidden="true" className="size-4" />
+          </LinkPendingIcon>
         </Link>
       ) : (
         <span />

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { ChildrenReview } from "@/components/admin/children-review";
+import { InvitePanel } from "@/components/admin/invite-panel";
 import { ManagedDuplicate } from "@/components/admin/managed-duplicate";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
@@ -80,6 +81,17 @@ export default async function VerificationDetailPage({
               childName: true,
               childId: true,
               confirmedAt: true,
+            },
+          },
+          inviteUsed: {
+            select: {
+              type: true,
+              inviteeName: true,
+              createdAt: true,
+              cohort: { select: { number: true } },
+              inviter: {
+                select: { id: true, nameRomaji: true, nameKanji: true },
+              },
             },
           },
         },
@@ -228,6 +240,14 @@ export default async function VerificationDetailPage({
               ) : null}
             </dl>
           </Section>
+
+          {user.inviteUsed ? (
+            <InvitePanel
+              invite={user.inviteUsed}
+              answers={request.answers}
+              locale={lang}
+            />
+          ) : null}
 
           <ManagedDuplicate
             requestId={request.id}

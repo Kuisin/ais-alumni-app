@@ -76,5 +76,14 @@
     },
     "updated": "Last updated: September 2026"
   },
-  "operatedBy": "Run by the AIS Alumni Committee, a volunteer group of graduates (not an official school service)."
+  "operatedBy": "Run by the AIS Alumni Committee, a volunteer group of graduates (not an official school service).",
+  "invite": {
+    "from": "{name} invited you ({what}). Sign up below to get started.",
+    "invalid": "This invitation link isn't valid or has already been used. You can still sign up without it.",
+    "types": {
+      "STUDENT": "{cohort} student / graduate",
+      "PARENT": "{cohort} parent",
+      "TEACHER": "teacher / staff"
+    }
+  }
 }

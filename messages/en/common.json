@@ -61,7 +61,8 @@
     "memberModeShort": "Member",
     "pending": "{count} waiting",
     "unread": "{count} unread",
-    "chat": "Chat"
+    "chat": "Chat",
+    "invite": "Invite alumni"
   },
   "adminNav": {
     "verification": "Verification",

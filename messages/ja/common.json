@@ -61,7 +61,8 @@
     "memberModeShort": "会員画面",
     "pending": "{count}件の対応待ち",
     "unread": "未読 {count}件",
-    "chat": "チャット"
+    "chat": "チャット",
+    "invite": "同窓生を招待"
   },
   "adminNav": {
     "verification": "本人確認",

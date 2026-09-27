@@ -1,4 +1,5 @@
 import { MessageCircle } from "lucide-react";
+import { cookies } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   emailSignInAction,
@@ -8,8 +9,10 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { GoogleIcon } from "@/components/ui/brand-icons";
 import { buttonClass } from "@/components/ui/button";
-import { Badge, Card } from "@/components/ui/card";
+import { Alert, Badge, Card } from "@/components/ui/card";
 import { Link, redirect } from "@/i18n/navigation";
+import { cohortShort } from "@/lib/cohorts";
+import { findOpenInvite, INVITE_COOKIE } from "@/lib/invites";
 import { getCurrentUser } from "@/lib/session";
 import { ssoReady } from "@/lib/sso";
 import { homePathFor } from "@/lib/state-machine";
@@ -39,6 +42,11 @@ export default async function LandingPage({
 
   const error = authErrorKey(rawError);
   const t = await getTranslations("landing");
+  // Opened through a member's invitation link (src/app/api/invite).
+  const inviteParam = (await searchParams).invite;
+  const invite = await findOpenInvite(
+    (await cookies()).get(INVITE_COOKIE)?.value,
+  );
 
   return (
     <AppShell user={null} variant="onboarding">
@@ -74,6 +82,24 @@ export default async function LandingPage({
         </section>
 
         <Card className="order-first space-y-5 md:order-none">
+          {invite ? (
+            <Alert tone="success">
+              {t("invite.from", {
+                name:
+                  invite.inviter.nameRomaji ?? invite.inviter.nameKanji ?? "",
+                what: invite.cohort
+                  ? t(`invite.types.${invite.type}`, {
+                      cohort: cohortShort(
+                        invite.cohort,
+                        locale === "en" ? "en" : "ja",
+                      ),
+                    })
+                  : t(`invite.types.${invite.type}`, { cohort: "" }),
+              })}
+            </Alert>
+          ) : inviteParam === "invalid" ? (
+            <Alert tone="warning">{t("invite.invalid")}</Alert>
+          ) : null}
           <div>
             <h2 className="text-xl font-bold">{t("signIn.title")}</h2>
             <p className="mt-1 text-sm text-slate-600">

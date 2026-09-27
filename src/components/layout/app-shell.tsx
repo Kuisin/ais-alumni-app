@@ -12,6 +12,7 @@ import {
   IdCard,
   Layers,
   LogOut,
+  MailPlus,
   Megaphone,
   MessagesSquare,
   Newspaper,
@@ -193,6 +194,11 @@ export async function AppShell({
       label: t("nav.follows"),
       count: followRequests,
       icon: <UserPlus className={ICON} />,
+    },
+    {
+      href: "/app/invite",
+      label: t("nav.invite"),
+      icon: <MailPlus className={ICON} />,
     },
     {
       href: "/app/settings",

@@ -194,18 +194,10 @@ export async function claimHandover(
       select: NOTIFY_USER_SELECT,
     });
     await notify(parent, {
-      kind: "FAMILY_HANDOVER",
+      kind: "FAMILY_HANDOVER_DONE",
       refId: h.id,
-      render: async (locale) => {
-        const t = await getTranslatorFor(locale as AppLocale, "family");
-        return {
-          subject: t("handover.done.subject"),
-          text: t("handover.done.text", {
-            child: displayName(h.child, locale),
-          }),
-          url: publicUrl(`/${locale}/app/family`),
-        };
-      },
+      path: "/app/family",
+      params: (locale) => ({ child: displayName(h.child, locale) }),
     });
   } catch (e) {
     console.error("[handover] parent notification failed", e);

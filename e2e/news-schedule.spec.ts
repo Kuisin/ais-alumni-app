@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { Client } from "pg";
-import { clearMailbox, signInWithEmail } from "./helpers";
+import { clearMailbox, notificationTarget, signInWithEmail } from "./helpers";
 
 const mail = (email: string) =>
   readFile(
@@ -50,8 +50,19 @@ test("reserved news is sent when due, only to the chosen audience", async ({
 
   // A graduate got a notification with a production link and no content…
   const hanako = await mail("hanako@example.com");
-  expect(hanako).toContain(`https://ais.kai-lab.net/`);
-  expect(hanako).toContain(`/app/news/${postId}`);
+  // …through a short link that opens the post…
+  const { token, target } = await notificationTarget(page.request, hanako);
+  expect(target).toMatch(new RegExp(`^/(ja|en)/app/news/${postId}$`));
+  // …and gives link previews a card (no sign-in, no content).
+  const preview = await page.request.get(`/n/${token}`, {
+    headers: { "User-Agent": "facebookexternalhit/1.1;line-poker/1.0" },
+    maxRedirects: 0,
+  });
+  const html = await preview.text();
+  expect(html).toContain('property="og:image"');
+  expect(html).not.toContain("Secret body text");
+  const card = await page.request.get(`/n/${token}/og`);
+  expect(card.headers()["content-type"]).toContain("image/png");
   expect(hanako).not.toContain("Secret body text");
   expect(hanako).not.toContain(title);
   // …the admin (a current teacher, not a graduate) did not.

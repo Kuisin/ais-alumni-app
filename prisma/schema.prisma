@@ -108,6 +108,8 @@ model User {
   lineBannerDismissedAt DateTime?
   lineOnboardingSeenAt  DateTime?
   notifyVia             NotifyChannel        @default(AUTO)
+  // Added: notification categories the member turned off (src/lib/notify/catalog.ts)
+  notifyOff             String[]             @default([])
   autoAcceptSameYear    Boolean              @default(false)
   familyId              String?
   family                Family?              @relation(fields: [familyId], references: [id], onDelete: SetNull)
@@ -519,6 +521,28 @@ model NewsPost {
   attachments     NewsAttachment[]
 
   @@index([publishedAt])
+}
+
+/// Added: short link in a notification (/n/<token>). Opens the app page for
+/// the member and gives link-preview bots a card image built from `title`
+/// and `body` (no private content). One row per send and language.
+model NotificationLink {
+  id           String    @id @default(cuid())
+  token        String    @unique
+  kind         String
+  refId        String?
+  locale       Locale
+  /// app path without the locale, e.g. /app/news/<id>
+  path         String
+  title        String
+  body         String
+  category     String
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  opens        Int       @default(0)
+  lastOpenedAt DateTime?
+
+  @@index([kind, refId])
 }
 
 model NotificationLog {

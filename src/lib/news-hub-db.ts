@@ -1,6 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { NewsPollKind } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { parseJstLocal, toJstLocalInput } from "@/lib/format";
 import { targetedRecipients } from "@/lib/news";
@@ -20,7 +19,6 @@ import {
 } from "@/lib/news-hub";
 import { type NotifyUser, notifyMany } from "@/lib/notify";
 import { signedFileUrl } from "@/lib/storage";
-import { publicUrl } from "@/lib/urls";
 import { statEvidence } from "@/lib/verification/evidence";
 
 type Tx = Prisma.TransactionClient;
@@ -261,14 +259,7 @@ export async function sendDeadlineReminders(
         kind: "NEWS_REMINDER",
         refId: post.id,
         dedupe: true,
-        render: async (locale) => {
-          const t = await getTranslatorFor(locale, "news");
-          return {
-            subject: t("notify.reminderSubject"),
-            text: t("notify.reminderText"),
-            url: publicUrl(`/${locale}/app/news/${post.id}`),
-          };
-        },
+        path: `/app/news/${post.id}`,
       });
       posts++;
       recipients += pending.length;

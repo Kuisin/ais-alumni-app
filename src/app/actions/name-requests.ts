@@ -4,7 +4,6 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, ChangeRequestStatus } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
@@ -17,7 +16,6 @@ import {
 } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify, notifyMany } from "@/lib/notify";
 import { AuthError, actionActive, actionAdmin } from "@/lib/session";
-import { publicUrl } from "@/lib/urls";
 
 /**
  * Names are fixed once a member is approved (§6). Members ask the committee
@@ -114,16 +112,8 @@ export async function submitNameRequestAction(
   });
   await notifyMany(admins, {
     kind: "NAME_REQUEST_ADMIN",
-    render: async (locale) => {
-      const t = await getTranslatorFor(locale, "profile");
-      return {
-        subject: t("nameRequest.notify.admin.subject"),
-        text: t("nameRequest.notify.admin.text", {
-          name: displayName(me, locale),
-        }),
-        url: publicUrl(`/${locale}/app/admin/name-requests`),
-      };
-    },
+    path: "/app/admin/name-requests",
+    params: (locale) => ({ name: displayName(me, locale) }),
   }).catch((e) => console.error("[name-requests] admin notify failed", e));
   refresh();
   return { ok: true, message: "nameRequest.submitted" };
@@ -206,17 +196,10 @@ export async function decideNameRequestAction(
     { requestId: id, proposed: request.proposed, note: note || null },
   );
   await notify(request.user, {
-    kind: "NAME_REQUEST_RESULT",
+    kind: approved ? "NAME_REQUEST_APPROVED" : "NAME_REQUEST_REJECTED",
     refId: id,
-    render: async (locale) => {
-      const t = await getTranslatorFor(locale, "profile");
-      const key = approved ? "approved" : "rejected";
-      return {
-        subject: t(`nameRequest.notify.${key}.subject`),
-        text: t(`nameRequest.notify.${key}.text`, { note: note || "—" }),
-        url: publicUrl(`/${locale}/app/profile/edit`),
-      };
-    },
+    path: "/app/profile/edit",
+    note: note || null,
   }).catch((e) => console.error("[name-requests] member notify failed", e));
   refresh();
   return {

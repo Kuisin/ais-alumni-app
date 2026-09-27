@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { ChatGroupKind, PositionKey, RoleKey } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
 import {
   CHAT_PAGE_SIZE,
@@ -20,7 +19,6 @@ import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
 import { broadcast, channelTopic, realtimePublic } from "@/lib/realtime";
 import { actionActive, type CurrentUser } from "@/lib/session";
-import { publicUrl } from "@/lib/urls";
 
 export type ChatMessageView = {
   id: string;
@@ -238,14 +236,8 @@ async function notifyMentions(
     kind: "CHAT_MENTION",
     refId: `${groupId}:${bucket}`,
     dedupe: true,
-    render: async (locale) => {
-      const t = await getTranslatorFor(locale, "chat");
-      return {
-        subject: t("mention.subject", { name }),
-        text: t("mention.text", { name }),
-        url: publicUrl(`/${locale}/app/chat/${groupId}`),
-      };
-    },
+    path: `/app/chat/${groupId}`,
+    params: { name },
   });
 }
 

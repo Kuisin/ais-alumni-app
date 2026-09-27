@@ -2,7 +2,12 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { Client } from "pg";
-import { clearMailbox, createActiveGraduate, signInWithEmail } from "./helpers";
+import {
+  clearMailbox,
+  createActiveGraduate,
+  notificationTarget,
+  signInWithEmail,
+} from "./helpers";
 
 const mail = (email: string) =>
   readFile(
@@ -82,8 +87,9 @@ test("graduates are put in their group chat and can talk", async ({
   });
   expect(res.ok()).toBe(true);
   const digest = await mail(grad.email);
-  expect(digest).toContain("https://ais.kai-lab.net/");
-  expect(digest).toContain("/app/chat");
+  expect((await notificationTarget(hanako.request, digest)).target).toMatch(
+    /^\/(ja|en)\/app\/chat$/,
+  );
   expect(digest).not.toContain(late);
 });
 
@@ -184,7 +190,9 @@ test("mention a member with @ (and they're told)", async ({ browser }) => {
   ).toBeVisible();
   const notice = await mail(grad.email);
   expect(notice).toMatch(/mentioned you|メンションしました/);
-  expect(notice).toContain("/app/chat/");
+  expect((await notificationTarget(other.request, notice)).target).toMatch(
+    /^\/(ja|en)\/app\/chat\/.+/,
+  );
   expect(notice).not.toContain("see you!");
 });
 

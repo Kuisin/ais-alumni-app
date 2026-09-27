@@ -22,7 +22,6 @@ import {
   staffAccess,
 } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/session";
-import { publicUrl } from "@/lib/urls";
 
 /** The member's roles and positions, loaded once per request. */
 const loadHolder = cache(async (user: CurrentUser): Promise<Holder> => {
@@ -151,18 +150,16 @@ export async function sendBroadcast(params: {
     dedupe: true,
     // No content in the notification: members open it in the app, which
     // also records that they read it.
-    render: async (locale) => {
+    path: `/app/news/messages/${broadcast.id}`,
+    params: async (locale) => {
       const t = await getTranslatorFor(locale, "broadcast");
-      const from = right.position
-        ? t("fromPosition", {
-            name: displayName(sender, locale),
-            position: t(`positions.${right.position}`),
-          })
-        : t("fromCommittee");
       return {
-        subject: t("notifyContentless.subject"),
-        text: t("notifyContentless.text", { from }),
-        url: publicUrl(`/${locale}/app/news/messages/${broadcast.id}`),
+        from: right.position
+          ? t("fromPosition", {
+              name: displayName(sender, locale),
+              position: t(`positions.${right.position}`),
+            })
+          : t("fromCommittee"),
       };
     },
   });

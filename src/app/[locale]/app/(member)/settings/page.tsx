@@ -8,6 +8,7 @@ import {
 } from "@/components/settings/danger-zone";
 import { EmailChangeForm } from "@/components/settings/email-change-form";
 import { LanguageForm } from "@/components/settings/language-form";
+import { NotifyCategoriesForm } from "@/components/settings/notify-categories-form";
 import { NotifyForm } from "@/components/settings/notify-form";
 import { SettingsSection } from "@/components/settings/section";
 import {
@@ -27,6 +28,7 @@ import { getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { parseLinkOutcome } from "@/lib/line-link";
 import { chooseChannel } from "@/lib/notify";
+import { NOTIFY_CATEGORIES } from "@/lib/notify/catalog";
 import { requireActive } from "@/lib/session";
 import { ssoReady } from "@/lib/sso";
 
@@ -48,6 +50,7 @@ export default async function SettingsPage({
   const user = await requireActive();
   const sp = await searchParams;
   const t = await getTranslations("settings");
+  const tn = await getTranslations("notifications");
 
   const accounts = await db.account.findMany({
     where: { userId: user.id },
@@ -167,6 +170,28 @@ export default async function SettingsPage({
             }
           >
             <NotifyForm current={user.notifyVia} />
+          </ViewEdit>
+          <ViewEdit
+            view={
+              <div className="space-y-1 text-sm">
+                <p className="font-medium">{t("notifications.categories")}</p>
+                <ul className="flex flex-wrap gap-1.5">
+                  {NOTIFY_CATEGORIES.map((c) => {
+                    const on = c === "account" || !user.notifyOff.includes(c);
+                    return (
+                      <li
+                        key={c}
+                        className={`rounded-full px-2.5 py-1 text-xs ${on ? "bg-brand-50 font-medium text-brand-800" : "bg-slate-100 text-slate-500 line-through"}`}
+                      >
+                        {tn(`categories.${c}`)}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            }
+          >
+            <NotifyCategoriesForm off={user.notifyOff} />
           </ViewEdit>
           <p className="text-sm text-slate-600">{t("notifications.rule")}</p>
         </SettingsSection>

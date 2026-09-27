@@ -101,17 +101,27 @@ async function NewsTab({
     .filter((p): p is (typeof found)[number] => Boolean(p));
   const hasNext = rows.length > NEWS_PAGE_SIZE;
   const posts = rows.slice(0, NEWS_PAGE_SIZE);
+  // Shown only because the member is an admin: view only (no unread, no answer).
+  const adminView = new Set(
+    visible.filter((p) => p.adminView).map((p) => p.id),
+  );
   const [read, awaiting] = await Promise.all([
     readNewsIds(
       user.id,
       posts.map((p) => p.id),
     ),
-    awaitingResponse(user.id, posts),
+    awaitingResponse(
+      user.id,
+      posts.filter((p) => !adminView.has(p.id)),
+    ),
   ]);
   // Same rule as the unread count: posts from before the member joined
   // are never "unread".
   const isUnread = (p: (typeof posts)[number]) =>
-    !read.has(p.id) && !!p.publishedAt && p.publishedAt >= user.createdAt;
+    !adminView.has(p.id) &&
+    !read.has(p.id) &&
+    !!p.publishedAt &&
+    p.publishedAt >= user.createdAt;
 
   return (
     <section data-results aria-label={t("tabs.news")}>
@@ -128,6 +138,7 @@ async function NewsTab({
                 locale={locale}
                 unread={isUnread(p)}
                 needsAnswer={awaiting.has(p.id)}
+                adminView={adminView.has(p.id)}
               />
             </li>
           ))}

@@ -30,8 +30,10 @@ export const unreadCounts = cache(
         : 0,
       // News posted since the member joined that they haven't opened.
       visibleNews(user).then(async (posts) => {
+        // Posts shown only to admins (outside their audience) never count.
         const recent = posts.filter(
-          (p) => p.publishedAt && p.publishedAt >= user.createdAt,
+          (p) =>
+            !p.adminView && p.publishedAt && p.publishedAt >= user.createdAt,
         );
         if (recent.length === 0) return 0;
         const read = await db.newsRead.count({

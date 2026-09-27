@@ -2,23 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import {
-  AccountState,
-  type Locale,
-  VerificationStatus,
-} from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
+import { AccountState, VerificationStatus } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { mergeUsers } from "@/lib/merge";
-import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
+import { NOTIFY_USER_SELECT } from "@/lib/notify";
 import {
   findManagedMatches,
+  type ParentOutcome,
+  settleAfterChildDecision,
   settleManagedChildren,
 } from "@/lib/parent-onboarding";
 import { AuthError, actionAdmin, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
-import { publicUrl } from "@/lib/urls";
+import {
+  notifyDecision,
+  notifyParentOutcomes,
+} from "@/lib/verification/decision-notify";
 import { deleteAfterFrom } from "@/lib/verification/evidence";
 import { ROSTER_MATCH_THRESHOLD } from "@/lib/verification/roster";
 import { notifyVoucher } from "@/lib/verification/vouch";
@@ -99,13 +99,18 @@ export async function decideVerificationAction(
 
   const request = await db.verificationRequest.findUnique({
     where: { id: requestId },
-    include: { user: { select: { ...NOTIFY_USER_SELECT, state: true } } },
+    include: {
+      user: {
+        select: { ...NOTIFY_USER_SELECT, state: true, managedById: true },
+      },
+    },
   });
   if (!request) return { ok: false, message: "notFound" };
   if (request.status !== VerificationStatus.PENDING)
     return { ok: false, message: "conflict" };
 
   const decidedAt = new Date();
+  let parents: ParentOutcome[] = [];
   try {
     assertTransition(request.user.state, outcome.state);
     await db.$transaction(async (tx) => {
@@ -147,8 +152,16 @@ export async function decideVerificationAction(
       // §8: for minors, this admin approval also serves as the admin
       // confirmation — no separate step is required, so nothing extra is stored.
 
-      // Parents: the child accounts they created share this decision.
+      // Older parent applications: their children had none of their own.
       await settleManagedChildren(tx, request.userId, decision, decidedAt);
+      // Parents follow their children's approval (they aren't reviewed).
+      parents = await settleAfterChildDecision(
+        tx,
+        request.userId,
+        decision,
+        note || null,
+        decidedAt,
+      );
     });
   } catch (e) {
     if (e instanceof ConflictError) return { ok: false, message: "conflict" };
@@ -166,37 +179,10 @@ export async function decideVerificationAction(
     },
   );
 
-  try {
-    await notify(request.user, {
-      kind: "VERIFICATION",
-      refId: requestId,
-      alwaysEmail: true,
-      render: async (locale: Locale) => {
-        const t = await getTranslatorFor(locale, "adminVerify");
-        const k =
-          decision === "APPROVE"
-            ? "approved"
-            : decision === "REJECT"
-              ? "rejected"
-              : "needsInfo";
-        const path =
-          decision === "APPROVE"
-            ? "/app/dashboard"
-            : decision === "REJECT"
-              ? "/app/onboarding/status"
-              : "/app/onboarding/verify";
-        return {
-          subject: t(`notify.${k}.subject`),
-          text: note
-            ? t(`notify.${k}.bodyWithNote`, { note })
-            : t(`notify.${k}.body`),
-          url: publicUrl(`/${locale}${path}`),
-        };
-      },
-    });
-  } catch (e) {
-    console.error("[admin-verify] notify failed", e);
-  }
+  // A child registered by a parent can't sign in: the parent hears instead.
+  if (!request.user.managedById)
+    await notifyDecision(request.user, requestId, decision, note || null);
+  await notifyParentOutcomes(parents);
 
   revalidate(requestId);
   return { ok: true, message: "saved" };

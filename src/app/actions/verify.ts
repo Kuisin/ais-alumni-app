@@ -23,12 +23,15 @@ import {
   findManagedMatches,
   findRegisteredChildren,
   notifyChildConfirmations,
+  type ParentOutcome,
   type RegisteredChild,
   saveParentChildren,
+  settleParentFromChildren,
 } from "@/lib/parent-onboarding";
 import { AuthError, actionUser, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { deletePrivate, putPrivate } from "@/lib/storage";
+import { notifyParentOutcomes } from "@/lib/verification/decision-notify";
 import {
   evidenceAcceptable,
   isEvidenceType,
@@ -149,6 +152,7 @@ export async function submitVerificationAction(
 
   let requestId: string;
   let childLinksToConfirm: string[] = [];
+  let settled: ParentOutcome | null = null;
   try {
     assertTransition(user.state, AccountState.PENDING_REVIEW);
     requestId = await db.$transaction(async (tx) => {
@@ -177,6 +181,8 @@ export async function submitVerificationAction(
       await saveRoles(tx, user, data, schoolEmailVerified);
 
       const answers: StoredAnswers = { version: 2, ...omitEvidence(data) };
+      // Parents alone aren't reviewed: they follow their children's approval.
+      const followsChildren = data.types.every((x) => x === "PARENT");
       const request = await tx.verificationRequest.upsert({
         where: { userId: user.id },
         create: {
@@ -184,6 +190,7 @@ export async function submitVerificationAction(
           answers: answers as Prisma.InputJsonValue,
           rosterScore: roster?.score ?? null,
           rosterRowId: roster?.rowId ?? null,
+          followsChildren,
         },
         // Resubmission after NEEDS_INFO keeps the original submittedAt so the
         // queue stays first-come-first-served; reviewNote is kept for context.
@@ -194,6 +201,7 @@ export async function submitVerificationAction(
           status: VerificationStatus.PENDING,
           decidedAt: null,
           reviewerId: null,
+          followsChildren,
         },
         select: { id: true },
       });
@@ -226,6 +234,8 @@ export async function submitVerificationAction(
       childLinksToConfirm = data.parent
         ? await saveParentChildren(tx, user, data.parent.children, data.locale)
         : [];
+      // A child approved earlier may already let the parent in.
+      settled = await settleParentFromChildren(tx, user.id);
       return request.id;
     });
   } catch (e) {
@@ -241,6 +251,7 @@ export async function submitVerificationAction(
   // Vouch requests (§6.4.2) are best-effort; a failure must not undo the submission.
   // Registered children are asked to confirm the parent (best-effort).
   await notifyChildConfirmations(user, childLinksToConfirm);
+  if (settled) await notifyParentOutcomes([settled]);
   await createVouchesForRequest(requestId).catch((e) =>
     console.error("[verify] vouches failed", e),
   );

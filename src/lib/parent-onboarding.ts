@@ -3,6 +3,7 @@ import {
   AccountState,
   FamilyLinkInitiator,
   RoleKey,
+  VerificationStatus,
 } from "@/generated/prisma/enums";
 import type { AppLocale } from "@/i18n/routing";
 import { getTranslatorFor } from "@/i18n/translator";
@@ -27,14 +28,22 @@ import type { ChildData } from "@/lib/verification/schema";
  *    approval does; or
  *  - new: the parent enters the child's details and a child account managed
  *    by the parent is created (no sign-in of its own, PENDING_REVIEW).
- * The admin reviews the children's details; approving the parent's
- * application also approves the child accounts they created and confirms
- * those links (settleManagedChildren).
+ * Admins review students and teachers, not parents: each new child gets its
+ * own application (a student one) in the queue, and a parent-only
+ * application (followsChildren) is approved as soon as one linked child is
+ * approved and the link confirmed (settleParentFromChildren). A question
+ * about a child goes back to the parent; if every child is rejected, so is
+ * the parent.
  */
 
 type Tx = Prisma.TransactionClient;
 
 const STUDENT_ROLES = [RoleKey.CURRENT_STUDENT, RoleKey.FORMER_STUDENT];
+const OPEN_OR_APPROVED = [
+  AccountState.PENDING_REVIEW,
+  AccountState.NEEDS_INFO,
+  AccountState.ACTIVE,
+];
 
 export type RegisteredChild = {
   id: string;
@@ -147,13 +156,13 @@ export async function saveParentChildren(
   }
 
   const managed = await tx.user.findMany({
-    where: { managedById: parent.id, state: AccountState.PENDING_REVIEW },
-    select: { id: true, nameRomaji: true, dateOfBirth: true },
+    where: { managedById: parent.id, state: { in: OPEN_OR_APPROVED } },
+    select: { id: true, nameRomaji: true, dateOfBirth: true, state: true },
   });
   const managedKey = (name: string | null, dob: Date | null) =>
     `${normalizeName(name ?? "")}|${dayKey(dob)}`;
   const managedByKey = new Map(
-    managed.map((m) => [managedKey(m.nameRomaji, m.dateOfBirth), m.id]),
+    managed.map((m) => [managedKey(m.nameRomaji, m.dateOfBirth), m]),
   );
 
   const keptChildIds = new Set<string>();
@@ -180,11 +189,16 @@ export async function saveParentChildren(
       childLeftYear = c.leftYear;
       const existing = managedByKey.get(managedKey(cols.nameRomaji, dob));
       const data = { ...cols, dateOfBirth: dob, familyId, locale };
+      if (existing?.state === AccountState.ACTIVE) {
+        // Already approved: its details are settled; keep the link only.
+        keptChildIds.add(existing.id);
+        continue;
+      }
       childId = existing
         ? (
             await tx.user.update({
-              where: { id: existing },
-              data,
+              where: { id: existing.id },
+              data: { ...data, state: AccountState.PENDING_REVIEW },
               select: { id: true },
             })
           ).id
@@ -227,6 +241,45 @@ export async function saveParentChildren(
         },
       });
       childName = cols.nameKanji ?? cols.nameRomaji ?? c.lastNameRomaji;
+      // The child's own (student) application, reviewed by the admins.
+      const answers = {
+        version: 2,
+        types: ["STUDENT"],
+        lastNameRomaji: c.lastNameRomaji,
+        firstNameRomaji: c.firstNameRomaji,
+        middleNameRomaji: null,
+        lastNameKanji: c.lastNameKanji,
+        firstNameKanji: c.firstNameKanji,
+        lastNameKana: c.lastNameKana,
+        firstNameKana: c.firstNameKana,
+        nameRomaji: cols.nameRomaji,
+        nameKanji: cols.nameKanji,
+        nameKana: cols.nameKana,
+        nameAtAis: null,
+        dateOfBirth: c.dateOfBirth,
+        locale,
+        student: {
+          cohortNumber: c.cohortNumber,
+          joinedYear: c.joinedYear,
+          leftYear: c.leftYear,
+          studentIdNo: c.studentIdNo,
+          homeroomTeacher: null,
+          classmates: [],
+        },
+        registeredByParentId: parent.id,
+      };
+      await tx.verificationRequest.upsert({
+        where: { userId: childId },
+        create: { userId: childId, answers },
+        update: {
+          answers,
+          status: VerificationStatus.PENDING,
+          decidedAt: null,
+          reviewerId: null,
+          reviewNote: null,
+          submittedAt: now,
+        },
+      });
     } else {
       const child = await tx.user.findFirst({
         where: {
@@ -288,7 +341,7 @@ export async function saveParentChildren(
   await tx.user.deleteMany({
     where: {
       managedById: parent.id,
-      state: AccountState.PENDING_REVIEW,
+      state: { in: [AccountState.PENDING_REVIEW, AccountState.NEEDS_INFO] },
       id: { notIn: [...keptChildIds] },
     },
   });
@@ -336,10 +389,10 @@ export async function notifyChildConfirmations(
 }
 
 /**
- * On the admin's decision about a parent's application: approve (or reject)
- * the child accounts the parent created, and on approval confirm the links
- * to managed children (theirs or another parent's). Links to children who
- * sign in themselves stay for the child to confirm.
+ * Older applications (before children had their own): on the admin's
+ * decision about the parent, approve (or reject) the child accounts the
+ * parent created without an application of their own, and on approval
+ * confirm the links to managed children.
  */
 export async function settleManagedChildren(
   tx: Tx,
@@ -349,7 +402,11 @@ export async function settleManagedChildren(
 ): Promise<void> {
   if (decision === "NEEDS_INFO") return;
   const pending = await tx.user.findMany({
-    where: { managedById: parentId, state: AccountState.PENDING_REVIEW },
+    where: {
+      managedById: parentId,
+      state: AccountState.PENDING_REVIEW,
+      verification: null,
+    },
     select: { id: true },
   });
   await tx.user.updateMany({
@@ -371,6 +428,143 @@ export async function settleManagedChildren(
   for (const l of links) await confirmLinkInTx(tx, l, "ADMIN", now);
   for (const p of pending) await syncMemberStatus(p.id, tx, now);
   await syncMemberStatus(parentId, tx, now);
+}
+
+export type ParentOutcome = {
+  parentId: string;
+  requestId: string;
+  decision: "APPROVE" | "REJECT" | "NEEDS_INFO";
+  note: string | null;
+};
+
+/**
+ * A parent-only application follows the children: approved once a linked
+ * child is approved (ACTIVE) and the link confirmed; rejected when every
+ * linked child was rejected. Returns what happened (to notify the parent).
+ */
+export async function settleParentFromChildren(
+  tx: Tx,
+  parentId: string,
+  now: Date = new Date(),
+): Promise<ParentOutcome | null> {
+  const parent = await tx.user.findUnique({
+    where: { id: parentId },
+    select: {
+      state: true,
+      verification: {
+        select: { id: true, status: true, followsChildren: true },
+      },
+    },
+  });
+  const request = parent?.verification;
+  if (
+    parent?.state !== AccountState.PENDING_REVIEW ||
+    !request?.followsChildren ||
+    request.status !== VerificationStatus.PENDING
+  )
+    return null;
+  const links = await tx.familyLink.findMany({
+    where: { parentId, childId: { not: null } },
+    select: { confirmedAt: true, child: { select: { state: true } } },
+  });
+  let decision: "APPROVE" | "REJECT";
+  if (
+    links.some((l) => l.confirmedAt && l.child?.state === AccountState.ACTIVE)
+  )
+    decision = "APPROVE";
+  else if (
+    links.length > 0 &&
+    links.every((l) => l.child?.state === AccountState.REJECTED)
+  )
+    decision = "REJECT";
+  else return null;
+
+  const approve = decision === "APPROVE";
+  await tx.verificationRequest.update({
+    where: { id: request.id },
+    data: {
+      status: approve
+        ? VerificationStatus.APPROVED
+        : VerificationStatus.REJECTED,
+      decidedAt: now,
+    },
+  });
+  await tx.user.updateMany({
+    where: { id: parentId, state: AccountState.PENDING_REVIEW },
+    data: { state: approve ? AccountState.ACTIVE : AccountState.REJECTED },
+  });
+  if (approve) await syncMemberStatus(parentId, tx, now);
+  return { parentId, requestId: request.id, decision, note: null };
+}
+
+/**
+ * After the admin decides a student's application: a parent-registered child
+ * takes its parent along. Approving confirms the managing parent's link;
+ * a question about the child is sent back to the parent to answer.
+ */
+export async function settleAfterChildDecision(
+  tx: Tx,
+  childId: string,
+  decision: "APPROVE" | "REJECT" | "NEEDS_INFO",
+  note: string | null,
+  now: Date = new Date(),
+): Promise<ParentOutcome[]> {
+  const child = await tx.user.findUnique({
+    where: { id: childId },
+    select: { managedById: true },
+  });
+  if (!child) return [];
+  const out: ParentOutcome[] = [];
+
+  if (decision === "NEEDS_INFO") {
+    if (!child.managedById) return [];
+    const req = await tx.verificationRequest.findUnique({
+      where: { userId: child.managedById },
+      select: { id: true, status: true },
+    });
+    const moved = await tx.user.updateMany({
+      where: { id: child.managedById, state: AccountState.PENDING_REVIEW },
+      data: { state: AccountState.NEEDS_INFO },
+    });
+    if (req?.status === VerificationStatus.PENDING && moved.count) {
+      await tx.verificationRequest.update({
+        where: { id: req.id },
+        data: {
+          status: VerificationStatus.NEEDS_INFO,
+          decidedAt: now,
+          reviewNote: note,
+        },
+      });
+      out.push({
+        parentId: child.managedById,
+        requestId: req.id,
+        decision: "NEEDS_INFO",
+        note,
+      });
+    }
+    return out;
+  }
+
+  if (decision === "APPROVE") {
+    await syncMemberStatus(childId, tx, now);
+    if (child.managedById) {
+      const links = await tx.familyLink.findMany({
+        where: { parentId: child.managedById, childId, confirmedAt: null },
+        select: { id: true, parentId: true, childId: true },
+      });
+      for (const l of links) await confirmLinkInTx(tx, l, "ADMIN", now);
+    }
+  }
+  const parents = await tx.familyLink.findMany({
+    where: { childId },
+    select: { parentId: true },
+    distinct: ["parentId"],
+  });
+  for (const p of parents) {
+    const r = await settleParentFromChildren(tx, p.parentId, now);
+    if (r) out.push(r);
+  }
+  return out;
 }
 
 /**

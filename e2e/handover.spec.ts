@@ -1,7 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 import { readLink, signInWithEmail, uniqueEmail } from "./helpers";
 
-// A parent registers a (current-student) child, the committee approves.
+// A parent registers a (current-student) child; approving the child lets
+// the parent in.
 async function parentWithApprovedChild(
   browser: import("@playwright/test").Browser,
   lastName: string,
@@ -38,7 +39,7 @@ async function parentWithApprovedChild(
   await admin.getByRole("searchbox", { name: "Search" }).fill(lastName);
   await admin.getByRole("button", { name: "Search" }).click();
   await admin
-    .getByRole("link", { name: new RegExp(`${lastName}, Parent`) })
+    .getByRole("link", { name: new RegExp(`${lastName}, Kid`) })
     .first()
     .click();
   await admin.getByRole("radio", { name: "Approve" }).check();

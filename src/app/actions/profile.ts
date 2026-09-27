@@ -14,7 +14,7 @@ import {
   type SocialLinks,
 } from "@/components/profile/social-links";
 import type { Prisma } from "@/generated/prisma/client";
-import { LifeStage, RoleKey } from "@/generated/prisma/enums";
+import { RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
@@ -59,11 +59,6 @@ const ProfileSchema = z.object({
   facebook: socialUrl,
   x: socialUrl,
   website: socialUrl,
-});
-
-const StageSchema = z.object({
-  currentStage: z.enum(LifeStage),
-  currentStageDetail: optionalText(200),
 });
 
 async function member(): Promise<CurrentUser | null> {
@@ -161,46 +156,6 @@ export async function removeAvatarAction(): Promise<void> {
   refresh();
 }
 
-function isFormerStudent(me: CurrentUser): boolean {
+function _isFormerStudent(me: CurrentUser): boolean {
   return me.roles.some((r) => r.role === RoleKey.FORMER_STUDENT);
-}
-
-/** Current stage + private detail (§7). Bumps currentStageUpdatedAt. */
-export async function updateStageAction(
-  _prev: ProfileActionState,
-  formData: FormData,
-): Promise<ProfileActionState> {
-  const me = await member();
-  if (!me || !isFormerStudent(me)) return FORBIDDEN;
-  const parsed = StageSchema.safeParse({
-    currentStage: field(formData, "currentStage"),
-    currentStageDetail: field(formData, "currentStageDetail"),
-  });
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: "errors.validation",
-      fields: [...new Set(parsed.error.issues.map((i) => String(i.path[0])))],
-    };
-  }
-  await db.userRole.update({
-    where: { userId_role: { userId: me.id, role: RoleKey.FORMER_STUDENT } },
-    data: { ...parsed.data, currentStageUpdatedAt: new Date() },
-  });
-  refresh();
-  return { ok: true, message: "stageSaved" };
-}
-
-/** "My status is still current" — only bumps currentStageUpdatedAt (§7). */
-export async function confirmStageAction(
-  _prev: ProfileActionState,
-): Promise<ProfileActionState> {
-  const me = await member();
-  if (!me || !isFormerStudent(me)) return FORBIDDEN;
-  await db.userRole.update({
-    where: { userId_role: { userId: me.id, role: RoleKey.FORMER_STUDENT } },
-    data: { currentStageUpdatedAt: new Date() },
-  });
-  refresh();
-  return { ok: true, message: "stageConfirmed" };
 }

@@ -51,9 +51,10 @@ export async function getStaffAccess(user: CurrentUser): Promise<StaffAccess> {
 }
 
 /**
- * ACTIVE members in the audience, excluding the sender and anyone who has
- * blocked (or been blocked by) the sender. A 学年 (COHORT) audience is the
- * current and former students who selected that class.
+ * ACTIVE members in the audience, excluding anyone who has blocked (or been
+ * blocked by) the sender. The sender is included when they match the
+ * audience, like everyone else. A 学年 (COHORT) audience is the current and
+ * former students who selected that class.
  */
 export async function recipientsWhere(
   senderId: string,
@@ -62,7 +63,7 @@ export async function recipientsWhere(
   const blocked = await blockedUserIds(senderId);
   const base: Prisma.UserWhereInput = {
     state: AccountState.ACTIVE,
-    id: { notIn: [senderId, ...blocked] },
+    ...(blocked.length ? { id: { notIn: blocked } } : {}),
   };
   if (audience.scope === "ALL") {
     return { ...base, ...membersInAudiences(audience.audiences) };

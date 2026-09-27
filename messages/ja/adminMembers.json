@@ -115,7 +115,8 @@
       "CURRENT_PARENT": "保護者",
       "TEACHER": "教職員"
     },
-    "schoolEmailVerified": "確認済み"
+    "schoolEmailVerified": "確認済み",
+    "stageFromHistory": "学歴・職歴から自動で計算されます（編集は会員の学歴・職歴で）。"
   },
   "status": {
     "title": "アカウントの状態",

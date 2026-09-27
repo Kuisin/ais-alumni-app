@@ -5,7 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
-import { AccountState, LifeStage, RoleKey } from "@/generated/prisma/enums";
+import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { getTranslatorFor } from "@/i18n/translator";
 import { canRevokeAdmin } from "@/lib/account";
@@ -81,7 +81,7 @@ const optInt = (min: number, max: number) =>
     })
     .nullable();
 
-const optEnum = <T extends Record<string, string>>(e: T) =>
+const _optEnum = <T extends Record<string, string>>(e: T) =>
   z
     .union([z.literal(""), z.enum(e)])
     .transform((v) => (v === "" ? null : (v as T[keyof T])))
@@ -205,8 +205,6 @@ const roleSchema = z.object({
     .pipe(z.email().nullable())
     .nullable(),
   studentIdNo: optText(40),
-  currentStage: optEnum(LifeStage),
-  currentStageDetail: optText(200),
 });
 
 /**
@@ -232,8 +230,6 @@ export async function saveMemberRoleAction(
       subjects: raw("subjects"),
       schoolEmail: raw("schoolEmail"),
       studentIdNo: raw("studentIdNo"),
-      currentStage: raw("currentStage"),
-      currentStageDetail: raw("currentStageDetail"),
     });
     if (!parsed.success) {
       return {
@@ -269,15 +265,7 @@ export async function saveMemberRoleAction(
         yearsFrom: d.yearsFrom,
         yearsTo: d.yearsTo,
         studentIdNo: d.studentIdNo,
-        ...(d.role === RoleKey.FORMER_STUDENT
-          ? {
-              currentStage: d.currentStage,
-              currentStageDetail: d.currentStageDetail,
-              ...(existing?.currentStage !== d.currentStage
-                ? { currentStageUpdatedAt: d.currentStage ? new Date() : null }
-                : {}),
-            }
-          : {}),
+        // 現在の状況 comes from 学歴・職歴 (src/lib/stage.ts), not this form.
       };
     } else if (isTeacher) {
       data = {

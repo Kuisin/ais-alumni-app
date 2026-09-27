@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
-import { isLinkToken, isUserCode } from "./links";
+import { isLinkToken, isUserCode, linkText } from "./links";
 
 /** Link-preview fetchers (LINE, Slack, …) — not people opening the link. */
 const PREVIEW_BOT =
@@ -20,7 +20,8 @@ const esc = (s: string) =>
  * counted and, with a member code, recorded as that member's read receipt.
  * Link-preview bots get a tiny page with Open Graph tags and the generated
  * card image (title and body only — the notification's own text) and count
- * as nothing.
+ * as nothing. Texts and the page follow the member's current language
+ * (Japanese without a member).
  */
 export async function openNotificationLink(
   request: Request,
@@ -34,18 +35,30 @@ export async function openNotificationLink(
   if (!link || link.expiresAt < new Date())
     return NextResponse.redirect(new URL("/ja/app", url.origin), 302);
 
-  const target = new URL(`/${link.locale}${link.path}`, url.origin);
+  // The member this link was made for (their code): previews and the
+  // redirect use their current language.
+  const user =
+    userCode && isUserCode(userCode)
+      ? await db.user.findUnique({
+          where: { linkCode: userCode },
+          select: { id: true, locale: true },
+        })
+      : null;
+  const locale = user?.locale ?? link.locale ?? "ja";
+  const text = linkText(link, locale);
+
+  const target = new URL(`/${locale}${link.path}`, url.origin);
   const ua = request.headers.get("user-agent") ?? "";
   if (PREVIEW_BOT.test(ua)) {
-    const t = await getTranslatorFor(link.locale, "notifications");
-    const image = new URL(`/n/${token}/og`, url.origin).toString();
-    const title = `${link.title} | ${t("preview.brand")}`;
-    const html = `<!doctype html><html lang="${link.locale}"><head><meta charset="utf-8">
+    const t = await getTranslatorFor(locale, "notifications");
+    const image = new URL(`/n/${token}/og?l=${locale}`, url.origin).toString();
+    const title = `${text.title} | ${t("preview.brand")}`;
+    const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8">
 <title>${esc(title)}</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${esc(t("preview.brand"))}">
-<meta property="og:title" content="${esc(link.title)}">
-<meta property="og:description" content="${esc(link.body)}">
+<meta property="og:title" content="${esc(text.title)}">
+<meta property="og:description" content="${esc(text.body)}">
 <meta property="og:image" content="${esc(image)}">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:url" content="${esc(url.toString())}">
@@ -65,27 +78,21 @@ export async function openNotificationLink(
     where: { id: link.id },
     data: { opens: { increment: 1 }, lastOpenedAt: now },
   });
-  if (userCode && isUserCode(userCode)) {
-    const user = await db.user.findUnique({
-      where: { linkCode: userCode },
-      select: { id: true },
-    });
-    // Only members the link was sent to (a receipt exists) are recorded.
-    if (user) {
-      const where = { linkId_userId: { linkId: link.id, userId: user.id } };
-      await db.notificationReceipt
-        .update({
-          where,
-          data: { opens: { increment: 1 }, lastOpenedAt: now },
-        })
-        .then(() =>
-          db.notificationReceipt.updateMany({
-            where: { linkId: link.id, userId: user.id, openedAt: null },
-            data: { openedAt: now },
-          }),
-        )
-        .catch(() => undefined);
-    }
+  // Only members the link was sent to (a receipt exists) are recorded.
+  if (user) {
+    const where = { linkId_userId: { linkId: link.id, userId: user.id } };
+    await db.notificationReceipt
+      .update({
+        where,
+        data: { opens: { increment: 1 }, lastOpenedAt: now },
+      })
+      .then(() =>
+        db.notificationReceipt.updateMany({
+          where: { linkId: link.id, userId: user.id, openedAt: null },
+          data: { openedAt: now },
+        }),
+      )
+      .catch(() => undefined);
   }
   return NextResponse.redirect(target, 302);
 }

@@ -60,8 +60,12 @@ export async function submitSupportAction(
   if (await supportRateLimited(input.email, me?.id ?? null))
     return { error: t("errors.rateLimited") };
 
+  const rawPage = str("page");
+  const page =
+    rawPage.startsWith("/") && rawPage.length <= 200 ? rawPage : null;
   const { ref } = await createSupportRequest({
     ...input,
+    page,
     userId: me?.id ?? null,
     locale,
   });

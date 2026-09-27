@@ -78,10 +78,13 @@ export async function AppShell({
   user,
   children,
   variant = "member",
+  help,
 }: {
   user: CurrentUser | null;
   children: ReactNode;
   variant?: "member" | "admin" | "onboarding";
+  /** header help button (onboarding: 「お問い合わせ」 dialog) */
+  help?: ReactNode;
 }) {
   const t = await getTranslations("common");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
@@ -586,6 +589,7 @@ export async function AppShell({
           ) : null}
 
           <div className="flex items-center gap-1">
+            {help}
             {switchLink}
             {accountMenu}
           </div>

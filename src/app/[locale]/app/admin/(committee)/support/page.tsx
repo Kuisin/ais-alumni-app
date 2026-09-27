@@ -120,6 +120,14 @@ export default async function AdminSupportPage({
                     </dd>
                     <dt className="text-slate-500">{t("form.email")}</dt>
                     <dd className="break-all">{r.email}</dd>
+                    {r.page ? (
+                      <>
+                        <dt className="text-slate-500">{t("admin.page")}</dt>
+                        <dd className="font-mono text-xs break-all">
+                          {r.page}
+                        </dd>
+                      </>
+                    ) : null}
                     <dt className="text-slate-500">{t("admin.language")}</dt>
                     <dd>{r.locale === "en" ? "English" : "日本語"}</dd>
                     {r.closedAt ? (

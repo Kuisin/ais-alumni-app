@@ -86,7 +86,8 @@
     "body": "We've received your request and emailed you a copy. The committee will reply as soon as they can.",
     "ref": "Reference",
     "backApp": "Back to home",
-    "backHome": "Back to the top page"
+    "backHome": "Back to the top page",
+    "close": "Close"
   },
   "email": {
     "ref": "Reference",
@@ -115,6 +116,15 @@
     "closedAt": "Done",
     "reply": "Reply by email",
     "close": "Mark as done",
-    "reopen": "Reopen"
+    "reopen": "Reopen",
+    "page": "Sent from"
+  },
+  "dialog": {
+    "open": "Ask a question or report an error",
+    "short": "Help",
+    "title": "Questions & errors",
+    "intro": "Stuck, or seeing an error while signing up? Send it here — the committee also gets which screen you were on.",
+    "close": "Close",
+    "help": "Have a question or seeing an error?"
   }
 }

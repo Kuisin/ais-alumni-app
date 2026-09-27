@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NOTIFY_KINDS, type NotifyKind, wantsKind } from "./catalog";
-import { isLinkToken, isUserCode, newLinkToken } from "./links";
+import { isLinkToken, isUserCode, linkText, newLinkToken } from "./links";
 import { lineText, renderNotification } from "./render";
 
 const PARAMS = {
@@ -65,5 +65,23 @@ describe("notification catalog", () => {
     expect(isLinkToken("Ab3dE6g!")).toBe(false);
     expect(isUserCode("aB3xY9")).toBe(true);
     expect(isUserCode("aB3xY9z")).toBe(false);
+  });
+});
+
+describe("link texts", () => {
+  it("uses the opener's language, falling back for older links", () => {
+    const texts = {
+      ja: { title: "件名", body: "本文" },
+      en: { title: "Title", body: "Body" },
+    };
+    expect(linkText({ texts, title: null, body: null }, "en").title).toBe(
+      "Title",
+    );
+    expect(linkText({ texts, title: null, body: null }, "ja").body).toBe(
+      "本文",
+    );
+    expect(
+      linkText({ texts: null, title: "旧", body: "旧本文" }, "en"),
+    ).toEqual({ title: "旧", body: "旧本文" });
   });
 });

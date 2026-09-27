@@ -14,6 +14,8 @@ export type SupportInput = {
   subject: string;
   message: string;
   locale: Locale;
+  /** page the form was sent from */
+  page?: string | null;
 };
 
 /** Too many requests from this sender in the last hour? */
@@ -76,6 +78,7 @@ export async function createSupportRequest(input: SupportInput) {
         `${t("form.name")}: ${input.name}${input.userId ? ` (${t("email.admin.member")})` : ` (${t("email.admin.visitor")})`}`,
         `${t("form.email")}: ${input.email}`,
         `${t("email.ref")}: ${ref}`,
+        ...(input.page ? [`${t("admin.page")}: ${input.page}`] : []),
         "",
         input.message,
         "",

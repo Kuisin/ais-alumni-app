@@ -76,6 +76,22 @@ test("reserved news is sent when due, only to the chosen audience", async ({
      WHERE l.token = $1 AND u."primaryEmail" = 'hanako@example.com'`,
     [token],
   );
+  // The preview follows her current language, not the one at sending.
+  const ogTitle = async () =>
+    (
+      await (
+        await page.request.get(`/n/${code}/${token}`, {
+          headers: { "User-Agent": "facebookexternalhit/1.1" },
+          maxRedirects: 0,
+        })
+      ).text()
+    ).match(/og:title" content="([^"]+)"/)?.[1];
+  const setLocale = (l: string) =>
+    rdb.query(`UPDATE "User" SET locale = $1 WHERE "linkCode" = $2`, [l, code]);
+  await setLocale("en");
+  expect(await ogTitle()).toBe("New news from the committee");
+  await setLocale("ja");
+  expect(await ogTitle()).toBe("新しいニュースがあります");
   await rdb.end();
   expect(receipt.rows[0].openedAt).not.toBeNull();
   expect(receipt.rows[0].opens).toBe(1);

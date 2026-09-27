@@ -2,7 +2,6 @@ import { randomBytes } from "node:crypto";
 import type { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { publicUrl } from "@/lib/urls";
-import type { RenderedNotification } from "./render";
 
 /**
  * Short links for notifications (/n/<user code>/<token>): notifications
@@ -70,11 +69,18 @@ export function recipientUrl(token: string, userCode: string): string {
   return publicUrl(`/n/${userCode}/${token}`);
 }
 
-/** Create the short link for one send in one language (returns its id and token). */
+export type LinkTexts = Record<Locale, { title: string; body: string }>;
+
+/**
+ * Create the short link for one send: one link for all recipients, with
+ * the title and body in every language, so previews and redirects follow
+ * the opener's current language (returns its id and token).
+ */
 export async function createNotificationLink(input: {
-  rendered: RenderedNotification;
+  kind: string;
+  category: string;
+  texts: LinkTexts;
   refId?: string | null;
-  locale: Locale;
   path: string;
 }): Promise<{ id: string; token: string }> {
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -84,13 +90,11 @@ export async function createNotificationLink(input: {
         select: { id: true, token: true },
         data: {
           token,
-          kind: input.rendered.kind,
+          kind: input.kind,
           refId: input.refId ?? null,
-          locale: input.locale,
           path: input.path,
-          title: input.rendered.title,
-          body: input.rendered.body,
-          category: input.rendered.category,
+          texts: input.texts,
+          category: input.category,
           expiresAt: new Date(Date.now() + LINK_TTL_DAYS * 86_400_000),
         },
       });
@@ -99,4 +103,20 @@ export async function createNotificationLink(input: {
     }
   }
   throw new Error("unreachable");
+}
+
+/** A link's title and body in this language (older links: their one language). */
+export function linkText(
+  link: {
+    texts: unknown;
+    title: string | null;
+    body: string | null;
+  },
+  locale: Locale,
+): { title: string; body: string } {
+  const texts = link.texts as Partial<LinkTexts> | null;
+  return (
+    texts?.[locale] ??
+    texts?.ja ?? { title: link.title ?? "", body: link.body ?? "" }
+  );
 }

@@ -108,3 +108,41 @@ test("admins link and unlink family on the member page", async ({
   // Split: no longer the same family.
   expect(b.p === null || b.p !== b.c).toBe(true);
 });
+
+test("admins can merge into a parent-managed account by skipping the check", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const parentId = await createActiveMember(`Mgr Parent${stamp}`);
+  const managedId = await createActiveMember(`Managed Kid${stamp}`);
+  await sql(
+    `UPDATE "User" SET "managedById" = $2, "primaryEmail" = NULL WHERE id = $1`,
+    [managedId, parentId],
+  );
+  const own = await createActiveGraduate(`Own Kid${stamp}`, "2001-01-01");
+
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto(`/en/app/admin/members/${managedId}#merge`);
+  const section = admin.locator("#merge");
+  await section.getByLabel("Other account (ID or email)").fill(own.email);
+  await section.getByText("Keep this account", { exact: true }).click();
+  await section.getByRole("button", { name: "Review merge" }).click();
+  await section.getByRole("button", { name: "Merge accounts" }).click();
+  // Stopped by the check, with the option to skip it.
+  const bypass = section.getByRole("checkbox", {
+    name: /Merge anyway \(skip this check\)/,
+  });
+  await expect(bypass).toBeVisible();
+  await bypass.check();
+  await section.getByRole("button", { name: "Merge accounts" }).click();
+  await expect
+    .poll(async () => {
+      const [r] = await sql<{ email: string | null; managed: string | null }>(
+        `SELECT "primaryEmail" AS email, "managedById" AS managed FROM "User" WHERE id = $1`,
+        [managedId],
+      );
+      return r;
+    })
+    .toEqual({ email: own.email, managed: null });
+});

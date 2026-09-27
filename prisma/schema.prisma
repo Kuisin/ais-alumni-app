@@ -42,6 +42,18 @@ enum RoleKey {
   FORMER_PARENT
 }
 
+// Added: who content / notifications are aimed at. Like RoleKey, but former
+// students are split by UserRole.didGraduate into 卒業生 and 元在校生
+// (src/lib/audience.ts). targetRoles stays written for older code.
+enum AudienceKey {
+  TEACHER
+  CURRENT_STUDENT
+  CURRENT_PARENT
+  GRADUATE
+  LEFT_STUDENT
+  FORMER_PARENT
+}
+
 // AIS has kindergarten and elementary only (AIS_DIVISIONS in src/lib/school.ts).
 // JUNIOR_HIGH / HIGH_SCHOOL are deprecated: kept until the code on main stops
 // writing them, then removed in a later release (expand → contract).
@@ -354,23 +366,25 @@ model Block {
 }
 
 model Event {
-  id           String    @id @default(cuid())
-  titleJa      String?
-  titleEn      String?
-  bodyJa       String?
-  bodyEn       String?
-  startsAt     DateTime
-  endsAt       DateTime?
-  location     String?
-  mapUrl       String?
-  capacity     Int?
-  rsvpDeadline DateTime?
-  targetRoles  RoleKey[] // empty = all members
-  createdById  String
-  createdBy    User      @relation(fields: [createdById], references: [id])
-  rsvps        Rsvp[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id              String        @id @default(cuid())
+  titleJa         String?
+  titleEn         String?
+  bodyJa          String?
+  bodyEn          String?
+  startsAt        DateTime
+  endsAt          DateTime?
+  location        String?
+  mapUrl          String?
+  capacity        Int?
+  rsvpDeadline    DateTime?
+  targetRoles     RoleKey[] // empty = all members
+  // Added: preferred over targetRoles when non-empty
+  targetAudiences AudienceKey[] @default([])
+  createdById     String
+  createdBy       User          @relation(fields: [createdById], references: [id])
+  rsvps           Rsvp[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([startsAt])
 }
@@ -395,20 +409,22 @@ model Rsvp {
 }
 
 model NewsPost {
-  id          String    @id @default(cuid())
-  titleJa     String?
-  titleEn     String?
-  bodyJa      String?
-  bodyEn      String?
-  coverUrl    String?
-  targetRoles RoleKey[]
-  pinned      Boolean   @default(false)
-  publishedAt DateTime?
-  notifiedAt  DateTime? // added: set once the publish notification batch has gone out
-  createdById String
-  createdBy   User      @relation(fields: [createdById], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String        @id @default(cuid())
+  titleJa         String?
+  titleEn         String?
+  bodyJa          String?
+  bodyEn          String?
+  coverUrl        String?
+  targetRoles     RoleKey[]
+  // Added: preferred over targetRoles when non-empty
+  targetAudiences AudienceKey[] @default([])
+  pinned          Boolean       @default(false)
+  publishedAt     DateTime?
+  notifiedAt      DateTime? // added: set once the publish notification batch has gone out
+  createdById     String
+  createdBy       User          @relation(fields: [createdById], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([publishedAt])
 }
@@ -501,20 +517,22 @@ enum BroadcastScope {
 
 // Added: notifications sent by members holding a position (history, limits).
 model Broadcast {
-  id             String         @id @default(cuid())
-  senderId       String
-  sender         User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  position       PositionKey? // null when sent by an admin
-  scope          BroadcastScope
-  targetRoles    RoleKey[] // ALL scope: empty = every member
-  cohortId       String? // COHORT scope: the 学年
-  cohort         Cohort?        @relation(fields: [cohortId], references: [id], onDelete: SetNull)
-  title          String
-  body           String
-  recipientCount Int
-  lineCount      Int
-  emailCount     Int
-  createdAt      DateTime       @default(now())
+  id              String         @id @default(cuid())
+  senderId        String
+  sender          User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  position        PositionKey? // null when sent by an admin
+  scope           BroadcastScope
+  targetRoles     RoleKey[] // ALL scope: empty = every member
+  // Added: preferred over targetRoles when non-empty
+  targetAudiences AudienceKey[]  @default([])
+  cohortId        String? // COHORT scope: the 学年
+  cohort          Cohort?        @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  title           String
+  body            String
+  recipientCount  Int
+  lineCount       Int
+  emailCount      Int
+  createdAt       DateTime       @default(now())
 
   @@index([senderId, createdAt])
 }

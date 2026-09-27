@@ -6,6 +6,11 @@ import {
   RoleKey,
 } from "@/generated/prisma/enums";
 import {
+  type MemberFilterKey,
+  parseMemberFilter,
+  roleRowWhere,
+} from "@/lib/audience";
+import {
   ADULT_AGE,
   blockedUserIds,
   canSeeInDirectory,
@@ -52,7 +57,8 @@ export type PublicCard = Prisma.UserGetPayload<{
 
 export type DirectoryFilters = {
   q: string | null;
-  role: RoleKey | null;
+  /** 区分 (卒業生 / 元在校生 split; FORMER_STUDENT = both) */
+  role: MemberFilterKey | null;
   yearFrom: number | null;
   yearTo: number | null;
   division: Division | null;
@@ -95,7 +101,7 @@ export function parseDirectoryFilters(params: RawParams): DirectoryFilters {
   const cohort = first(params.cohort);
   return {
     q,
-    role: oneOf(RoleKey, first(params.role)),
+    role: parseMemberFilter(first(params.role)),
     yearFrom,
     yearTo,
     division: oneOf(Division, first(params.division)),
@@ -181,7 +187,7 @@ export function buildDirectoryWhere(
   // Role-specific filters apply to the same UserRole row, so "class of 2015,
   // high school, working" means one FORMER_STUDENT record matching all three.
   const roleWhere: Prisma.UserRoleWhereInput = {};
-  if (f.role) roleWhere.role = f.role;
+  if (f.role) Object.assign(roleWhere, roleRowWhere(f.role));
   if (f.yearFrom !== null || f.yearTo !== null) {
     roleWhere.graduationOrLeaveYear = {
       ...(f.yearFrom !== null ? { gte: f.yearFrom } : {}),

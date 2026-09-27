@@ -39,6 +39,7 @@ export default async function AdminEventsPage({
     capacity: true,
     rsvpDeadline: true,
     targetRoles: true,
+    targetAudiences: true,
     rsvps: { where: { answer: RsvpAnswer.GOING }, select: { guests: true } },
   } as const;
   const [upcoming, past] = await Promise.all([
@@ -115,7 +116,7 @@ export default async function AdminEventsPage({
                             capacity: e.capacity,
                           })}
                     </span>
-                    <TargetBadges roles={e.targetRoles} />
+                    <TargetBadges target={e} />
                   </div>
                 </div>
                 <ChevronRight

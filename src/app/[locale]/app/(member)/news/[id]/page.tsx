@@ -6,7 +6,8 @@ import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
 import { Badge } from "@/components/ui/card";
-import { isTargeted, toViewer } from "@/lib/authz";
+import { isAudienceTargeted } from "@/lib/audience";
+import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDate, localized } from "@/lib/format";
@@ -19,7 +20,7 @@ const loadPost = cache(async (id: string) => {
   if (!user || id.length > 64) return null;
   const post = await db.newsPost.findUnique({ where: { id } });
   if (!post?.publishedAt || post.publishedAt > new Date()) return null;
-  if (!isTargeted(post.targetRoles, toViewer(user))) return null;
+  if (!isAudienceTargeted(post, toViewer(user))) return null;
   return post;
 });
 

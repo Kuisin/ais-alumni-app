@@ -7,6 +7,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ChangeRequestStatus, RoleKey } from "@/generated/prisma/enums";
+import { roleLabelKey } from "@/lib/audience";
 import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
@@ -70,7 +71,7 @@ export default async function RecordPage() {
         );
         return (
           <Card key={r.role} className="space-y-4">
-            <h2 className="text-lg font-semibold">{tr(`role.${r.role}`)}</h2>
+            <h2 className="text-lg font-semibold">{tr(roleLabelKey(r))}</h2>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
               {fieldsFor(r.role).map((f) =>
                 // A teacher with no end year is still at AIS: say so plainly

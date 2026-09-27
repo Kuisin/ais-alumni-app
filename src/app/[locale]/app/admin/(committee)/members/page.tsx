@@ -6,8 +6,14 @@ import { buttonClass } from "@/components/ui/button";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/field";
 import type { Prisma } from "@/generated/prisma/client";
-import { AccountState, RoleKey } from "@/generated/prisma/enums";
+import { AccountState, type RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import {
+  AUDIENCE_KEYS,
+  parseMemberFilter,
+  roleLabelKey,
+  roleRowWhere,
+} from "@/lib/audience";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 
@@ -41,16 +47,20 @@ export default async function AdminMembersPage({
   const t = await getTranslations("adminMembers");
   const tr = await getTranslations("roles");
   // "教職員（元教職員）" for former teachers, so status is visible in the list.
-  const roleLabel = (r: { role: string; teacherStatus: string | null }) =>
+  const roleLabel = (r: {
+    role: RoleKey;
+    teacherStatus: string | null;
+    didGraduate: boolean | null;
+  }) =>
     r.role === "TEACHER" && r.teacherStatus === "FORMER"
       ? `${tr("role.TEACHER")}（${tr("teacherStatusShort.FORMER")}）`
-      : tr(`role.${r.role}`);
+      : tr(roleLabelKey(r));
   const tc = await getTranslations("common");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
 
   const q = one(sp.q).slice(0, 200);
   const state = pick(one(sp.state), Object.values(AccountState));
-  const role = pick(one(sp.role), Object.values(RoleKey));
+  const role = parseMemberFilter(one(sp.role));
   const line = pick<LineFilter>(one(sp.line), LINE_FILTERS);
   const adminOnly = one(sp.admin) === "1";
   const cursor = one(sp.cursor) || null;
@@ -68,7 +78,7 @@ export default async function AdminMembersPage({
     });
   }
   if (state) and.push({ state });
-  if (role) and.push({ roles: { some: { role } } });
+  if (role) and.push({ roles: { some: roleRowWhere(role) } });
   if (line === "linked") and.push({ lineUserId: { not: null } });
   if (line === "following")
     and.push({ lineUserId: { not: null }, lineFollowing: true });
@@ -92,7 +102,9 @@ export default async function AdminMembersPage({
         lineUserId: true,
         lineFollowing: true,
         createdAt: true,
-        roles: { select: { role: true, teacherStatus: true } },
+        roles: {
+          select: { role: true, teacherStatus: true, didGraduate: true },
+        },
       },
     }),
     db.user.count({ where }),
@@ -218,9 +230,9 @@ export default async function AdminMembersPage({
               </label>
               <Select id="f-role" name="role" defaultValue={role ?? ""}>
                 <option value="">{t("filters.any")}</option>
-                {Object.values(RoleKey).map((r) => (
+                {AUDIENCE_KEYS.map((r) => (
                   <option key={r} value={r}>
-                    {tr(`role.${r}`)}
+                    {tr(`audience.${r}`)}
                   </option>
                 ))}
               </Select>

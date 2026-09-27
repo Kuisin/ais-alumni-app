@@ -1,4 +1,9 @@
-import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
+import {
+  AccountState,
+  type AudienceKey,
+  PositionKey,
+  RoleKey,
+} from "@/generated/prisma/enums";
 
 /**
  * Positions and the permissions they grant (pure; unit-tested).
@@ -63,7 +68,7 @@ export function broadcastRights(h: Holder): BroadcastRight[] {
 }
 
 export type Audience =
-  | { scope: "ALL"; targetRoles: RoleKey[] } // [] = every member
+  | { scope: "ALL"; audiences: AudienceKey[] } // [] = every member
   | { scope: "COHORT"; cohortId: string };
 
 /**

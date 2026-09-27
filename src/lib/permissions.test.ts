@@ -52,7 +52,7 @@ describe("broadcast rights", () => {
       positions: [{ position: "TEACHER_MANAGER", cohortId: null }],
     });
     const rights = broadcastRights(mgr);
-    expect(rightFor(rights, { scope: "ALL", targetRoles: [] })).toMatchObject({
+    expect(rightFor(rights, { scope: "ALL", audiences: [] })).toMatchObject({
       kind: "ANY",
       position: "TEACHER_MANAGER",
     });
@@ -72,14 +72,14 @@ describe("broadcast rights", () => {
       { kind: "COHORT", cohortId: "c5" },
     );
     expect(rightFor(rights, { scope: "COHORT", cohortId: "c6" })).toBeNull();
-    expect(rightFor(rights, { scope: "ALL", targetRoles: [] })).toBeNull();
+    expect(rightFor(rights, { scope: "ALL", audiences: [] })).toBeNull();
   });
 
   it("admins may notify anyone", () => {
     expect(
       rightFor(broadcastRights(h({ isAdmin: true })), {
         scope: "ALL",
-        targetRoles: ["TEACHER"],
+        audiences: ["TEACHER"],
       }),
     ).toMatchObject({ position: null });
   });

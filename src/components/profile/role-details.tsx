@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/card";
 import { RoleKey } from "@/generated/prisma/enums";
+import { roleLabelKey } from "@/lib/audience";
 import { gradeLabel } from "@/lib/cohorts";
 import { cohortShortLabels } from "@/lib/cohorts-db";
 import type { PublicCard } from "@/lib/directory";
@@ -96,7 +97,7 @@ export async function RoleSummary({ roles }: { roles: readonly RoleRow[] }) {
           key={r.role}
           className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600"
         >
-          <Badge tone="brand">{tr(`role.${r.role}`)}</Badge>
+          <Badge tone="brand">{tr(roleLabelKey(r))}</Badge>
           {facts.length ? <span>{facts.join(" · ")}</span> : null}
         </li>
       ))}
@@ -122,7 +123,7 @@ export async function AisRecord({
     <dl className="space-y-3">
       {rows.map(({ r, facts }) => (
         <div key={r.role}>
-          <dt className="font-medium text-slate-900">{tr(`role.${r.role}`)}</dt>
+          <dt className="font-medium text-slate-900">{tr(roleLabelKey(r))}</dt>
           <dd className="text-sm text-slate-700">
             {facts.length ? facts.join(" · ") : t("record.noDetails")}
             {r.role === RoleKey.TEACHER && r.subjects ? (

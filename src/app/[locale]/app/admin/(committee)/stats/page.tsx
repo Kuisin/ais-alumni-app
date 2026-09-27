@@ -31,6 +31,7 @@ export default async function AdminStatsPage() {
     activeCount,
     lineLinked,
     lineFollowing,
+    byGraduated,
   ] = await Promise.all([
     db.user.groupBy({ by: ["state"], _count: { _all: true } }),
     db.userRole.groupBy({
@@ -60,6 +61,12 @@ export default async function AdminStatsPage() {
         lineFollowing: true,
       },
     }),
+    // 卒業生 / 元在校生 split of former students.
+    db.userRole.groupBy({
+      by: ["didGraduate"],
+      where: former,
+      _count: { _all: true },
+    }),
   ]);
   const totalUsers = byState.reduce((a, r) => a + r._count._all, 0);
 
@@ -68,11 +75,39 @@ export default async function AdminStatsPage() {
     label: tr(`state.${s}`),
     value: byState.find((r) => r.state === s)?._count._all ?? 0,
   }));
-  const roleRows = Object.values(RoleKey).map((r) => ({
-    key: r,
-    label: tr(`role.${r}`),
-    value: byRole.find((x) => x.role === r)?._count._all ?? 0,
-  }));
+  const gradCount = (v: boolean | null) =>
+    byGraduated.find((x) => x.didGraduate === v)?._count._all ?? 0;
+  const roleRows = Object.values(RoleKey).flatMap((r) =>
+    r === RoleKey.FORMER_STUDENT
+      ? [
+          {
+            key: "GRADUATE",
+            label: tr("audience.GRADUATE"),
+            value: gradCount(true),
+          },
+          {
+            key: "LEFT_STUDENT",
+            label: tr("audience.LEFT_STUDENT"),
+            value: gradCount(false),
+          },
+          ...(gradCount(null)
+            ? [
+                {
+                  key: "FORMER_UNKNOWN",
+                  label: `${tr("role.FORMER_STUDENT")}（${t("notSet")}）`,
+                  value: gradCount(null),
+                },
+              ]
+            : []),
+        ]
+      : [
+          {
+            key: r,
+            label: tr(`role.${r}`),
+            value: byRole.find((x) => x.role === r)?._count._all ?? 0,
+          },
+        ],
+  );
   const yearRows = byYear.map((r) => ({
     key: String(r.graduationOrLeaveYear ?? "none"),
     label:

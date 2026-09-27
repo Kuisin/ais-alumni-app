@@ -3,25 +3,7 @@ import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { NOTIFY_KINDS, type NotifyKind } from "@/lib/notify/catalog";
 import { isLinkToken, linkText } from "@/lib/notify/links";
-
-/** Japanese glyphs: a Noto Sans JP subset for just the text on the card. */
-async function loadFont(text: string): Promise<ArrayBuffer | null> {
-  try {
-    const css = await (
-      await fetch(
-        `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&text=${encodeURIComponent(text)}`,
-        { signal: AbortSignal.timeout(3000) },
-      )
-    ).text();
-    const src = css.match(/src: url\((.+?)\) format/)?.[1];
-    if (!src) return null;
-    return await (
-      await fetch(src, { signal: AbortSignal.timeout(3000) })
-    ).arrayBuffer();
-  } catch {
-    return null;
-  }
-}
+import { loadNotoSansJp } from "@/lib/og/font";
 
 /**
  * Preview card for a notification link (1200×630): brand, category, the
@@ -43,7 +25,9 @@ export async function GET(request: Request, ctx: RouteContext<"/n/[key]/og">) {
   const category = t(`categories.${link.category}`);
   const brand = t("preview.brand");
   const site = t("preview.site");
-  const font = await loadFont(`${brand}${category}${title}${body}${site}🎓`);
+  const font = await loadNotoSansJp(
+    `${brand}${category}${title}${body}${site}🎓`,
+  );
 
   return new ImageResponse(
     <div

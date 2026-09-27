@@ -22,6 +22,7 @@ import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { syncChatMembership } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { syncRichMenu } from "@/lib/line-richmenu";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { OPTIONAL_CATEGORIES } from "@/lib/notify/catalog";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
@@ -73,6 +74,8 @@ export async function updateLanguageAction(
     locale = parsed.data.locale;
     if (user.locale !== locale) {
       await db.user.update({ where: { id: user.id }, data: { locale } });
+      // LINE menu in the new language.
+      await syncRichMenu(user.lineUserId, locale);
     }
   } catch (e) {
     return { error: await errorText(e) };

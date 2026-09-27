@@ -1,12 +1,12 @@
 "use server";
 
 import { refresh } from "next/cache";
-import { RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { educationSchema, stageFromHistory, workSchema } from "@/lib/history";
+import { educationSchema, workSchema } from "@/lib/history";
 import type { OrgKind, OrgOption } from "@/lib/organizations";
 import { resolveOrg, searchOrgs } from "@/lib/organizations-db";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
+import { syncStageFromHistory } from "@/lib/stage";
 
 export type HistoryFormState = {
   ok?: boolean;
@@ -28,36 +28,7 @@ const str = (fd: FormData, k: string) => String(fd.get(k) ?? "");
 
 /** Keep a former student's current stage in step with their ongoing entries. */
 async function refreshStage(user: CurrentUser): Promise<void> {
-  const role = user.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
-  if (!role) return;
-  const [education, work] = await Promise.all([
-    db.educationEntry.findMany({
-      where: { userId: user.id },
-      include: { school: true },
-    }),
-    db.workEntry.findMany({
-      where: { userId: user.id },
-      include: { company: true },
-    }),
-  ]);
-  const derived = stageFromHistory(
-    education.map((e) => ({ ...e, school: e.school.name })),
-    work.map((e) => ({ ...e, company: e.company.name })),
-  );
-  if (!derived) return;
-  if (
-    derived.stage === role.currentStage &&
-    derived.detail === role.currentStageDetail
-  )
-    return;
-  await db.userRole.update({
-    where: { id: role.id },
-    data: {
-      currentStage: derived.stage,
-      currentStageDetail: derived.detail,
-      currentStageUpdatedAt: new Date(),
-    },
-  });
+  await syncStageFromHistory(user.id);
 }
 
 /** Add or edit one 学歴 / 職歴 entry (own entries only). */

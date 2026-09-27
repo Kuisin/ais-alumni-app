@@ -133,7 +133,9 @@
     "stagePrompt": {
       "subject": "Is your status still up to date?",
       "text": "It's a new school year! Is your current status still \"{stage}\"? Please update or confirm it on your profile.",
-      "textNoStage": "It's a new school year! Please tell your classmates what you're doing now by setting your current status on your profile."
+      "textNoStage": "It's a new school year! Please tell your classmates what you're doing now by setting your current status on your profile.",
+      "history": "Your current status shows as “{stage}”. If you've changed school or job, please update your schools & work.",
+      "historyNoStage": "Add your schools & work so your current status shows and people from the same places can find you."
     },
     "methodAdded": {
       "subject": "A new sign-in method was added",

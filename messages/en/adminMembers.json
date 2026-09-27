@@ -115,7 +115,8 @@
       "CURRENT_PARENT": "Parent",
       "TEACHER": "Teacher / Staff"
     },
-    "schoolEmailVerified": "Verified"
+    "schoolEmailVerified": "Verified",
+    "stageFromHistory": "Worked out from the member's schools & work."
   },
   "status": {
     "title": "Account status",

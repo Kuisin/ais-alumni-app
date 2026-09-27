@@ -9,6 +9,7 @@ import {
   studentRoleFields,
   teacherFields,
 } from "@/lib/member-status";
+import { syncStageFromHistory } from "@/lib/stage";
 
 type Client = Prisma.TransactionClient | typeof db;
 
@@ -114,6 +115,8 @@ export async function syncMemberStatus(
       }
     }
   }
+  // 現在の状況 follows 学歴・職歴 (e.g. a school's end year has passed).
+  if (await syncStageFromHistory(userId, client, now)) changed = true;
   return changed;
 }
 

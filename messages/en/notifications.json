@@ -229,5 +229,20 @@
     "site": "ais.kai-lab.net",
     "open": "Open in the app"
   },
-  "vouchYears": "(At AIS {years}) "
+  "vouchYears": "(At AIS {years}) ",
+  "receipts": {
+    "title": "Notification opens",
+    "openedOf": "Opened {opened} / {total}",
+    "percent": "{percent}%",
+    "hint": "Members notified by LINE or email who opened the notification's link (members who read it in the app count under “Read”).",
+    "opened": "Opened",
+    "unopened": "Not opened yet",
+    "noneOpened": "No one has opened it yet.",
+    "allOpened": "Everyone has opened it.",
+    "showAll": "Show all ({count} more)",
+    "channel": {
+      "LINE": "LINE",
+      "EMAIL": "Email"
+    }
+  }
 }

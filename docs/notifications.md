@@ -2,7 +2,7 @@
 
 Generated from `src/lib/notify/catalog.ts` and `messages/*/notifications.json`.
 
-Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the detail, the committee note (if any) and a footer. Links are `/n/<token>` short links. Members can turn off every category except アカウント.
+Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the detail, the committee note (if any) and a footer. Links are per-member short links `/n/<member code>/<token>`: opening one records that member's read receipt (shown to admins as 「通知の開封」 on news, events and messages). Members can turn off every category except アカウント.
 
 
 ## アカウント・申請結果 / Account & your requests

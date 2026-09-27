@@ -229,5 +229,20 @@
     "site": "ais.kai-lab.net",
     "open": "アプリで開く"
   },
-  "vouchYears": "（AIS在籍 {years}）"
+  "vouchYears": "（AIS在籍 {years}）",
+  "receipts": {
+    "title": "通知の開封",
+    "openedOf": "開封 {opened} / {total}",
+    "percent": "{percent}%",
+    "hint": "LINE・メールで通知した人のうち、通知のリンクを開いた人です（アプリから直接読んだ人は「既読」に数えます）。",
+    "opened": "開いた人",
+    "unopened": "まだ開いていない人",
+    "noneOpened": "まだ誰も開いていません。",
+    "allOpened": "全員が開きました。",
+    "showAll": "すべて表示（ほか{count}人）",
+    "channel": {
+      "LINE": "LINE",
+      "EMAIL": "メール"
+    }
+  }
 }

@@ -112,6 +112,22 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
       where: { userId: fromId },
       data: { userId: toId },
     });
+    // Read receipts: drop the source's where the target got the same link.
+    const toLinks = await tx.notificationReceipt.findMany({
+      where: { userId: toId },
+      select: { linkId: true },
+    });
+    await tx.notificationReceipt.deleteMany({
+      where: { userId: fromId, linkId: { in: toLinks.map((r) => r.linkId) } },
+    });
+    await tx.notificationReceipt.updateMany({
+      where: { userId: fromId },
+      data: { userId: toId },
+    });
+    await tx.supportRequest.updateMany({
+      where: { userId: fromId },
+      data: { userId: toId },
+    });
     // 学歴・職歴 move with the account.
     await tx.educationEntry.updateMany({
       where: { userId: fromId },

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
-import { isLinkToken } from "@/lib/notify/links";
+import { isLinkToken, isUserCode } from "./links";
 
 /** Link-preview fetchers (LINE, Slack, …) — not people opening the link. */
 const PREVIEW_BOT =
@@ -15,13 +15,18 @@ const esc = (s: string) =>
     .replaceAll('"', "&quot;");
 
 /**
- * Short notification link. People are sent to the app page (sign-in if
- * needed) and the open is counted; link-preview bots get a tiny page with
- * Open Graph tags and a generated card image (title and body only — the
- * same text as the notification, never private content).
+ * Open a notification link (/n/<user code>/<token>, or /n/<token> without a
+ * member). People are sent to the app page (sign-in if needed); the open is
+ * counted and, with a member code, recorded as that member's read receipt.
+ * Link-preview bots get a tiny page with Open Graph tags and the generated
+ * card image (title and body only — the notification's own text) and count
+ * as nothing.
  */
-export async function GET(request: Request, ctx: RouteContext<"/n/[token]">) {
-  const { token } = await ctx.params;
+export async function openNotificationLink(
+  request: Request,
+  token: string,
+  userCode: string | null,
+): Promise<Response> {
   const url = new URL(request.url);
   const link = isLinkToken(token)
     ? await db.notificationLink.findUnique({ where: { token } })
@@ -55,9 +60,32 @@ export async function GET(request: Request, ctx: RouteContext<"/n/[token]">) {
     });
   }
 
+  const now = new Date();
   await db.notificationLink.update({
-    where: { token },
-    data: { opens: { increment: 1 }, lastOpenedAt: new Date() },
+    where: { id: link.id },
+    data: { opens: { increment: 1 }, lastOpenedAt: now },
   });
+  if (userCode && isUserCode(userCode)) {
+    const user = await db.user.findUnique({
+      where: { linkCode: userCode },
+      select: { id: true },
+    });
+    // Only members the link was sent to (a receipt exists) are recorded.
+    if (user) {
+      const where = { linkId_userId: { linkId: link.id, userId: user.id } };
+      await db.notificationReceipt
+        .update({
+          where,
+          data: { opens: { increment: 1 }, lastOpenedAt: now },
+        })
+        .then(() =>
+          db.notificationReceipt.updateMany({
+            where: { linkId: link.id, userId: user.id, openedAt: null },
+            data: { openedAt: now },
+          }),
+        )
+        .catch(() => undefined);
+    }
+  }
   return NextResponse.redirect(target, 302);
 }

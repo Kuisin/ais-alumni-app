@@ -10,6 +10,8 @@ export type EmailMessage = {
   url?: string;
   /** Ready-made HTML (notification wrapper); otherwise built from text. */
   html?: string;
+  /** Where replies go (e.g. the person who sent a support request). */
+  replyTo?: string;
 };
 
 const FROM = process.env.EMAIL_FROM ?? "AIS Alumni <noreply@ais.kai-lab.net>";
@@ -69,6 +71,7 @@ export async function sendEmail(msg: EmailMessage): Promise<void> {
     subject: msg.subject,
     text,
     html: msg.html ?? toHtml(msg),
+    ...(msg.replyTo ? { replyTo: msg.replyTo } : {}),
   });
   if (error) throw new Error(`Resend error: ${error.message}`);
 }

@@ -62,7 +62,8 @@
     "pending": "{count}件の対応待ち",
     "unread": "未読 {count}件",
     "chat": "チャット",
-    "invite": "同窓生を招待"
+    "invite": "同窓生を招待",
+    "support": "お問い合わせ"
   },
   "adminNav": {
     "verification": "本人確認",
@@ -77,7 +78,8 @@
     "organizations": "学校・会社",
     "teachers": "教職員",
     "destinations": "進路",
-    "nameRequests": "氏名・生年月日"
+    "nameRequests": "氏名・生年月日",
+    "support": "お問い合わせ"
   },
   "notFoundTitle": "ページが見つかりません",
   "goHome": "ホームへ",
@@ -115,5 +117,6 @@
   "notSet": "未設定",
   "on": "オン",
   "off": "オフ",
-  "closed": "締め切り済み"
+  "closed": "締め切り済み",
+  "support": "お問い合わせ"
 }

@@ -81,5 +81,28 @@
     "linkLine": "Link LINE",
     "notifySettings": "Notification settings",
     "privacyButton": "Privacy policy"
+  },
+  "richMenu": {
+    "chatBar": "Menu",
+    "admin": {
+      "title": "LINE menu",
+      "intro": "Shows buttons to the app's pages (a rich menu) under the LINE Official Account chat, instead of the keyboard.",
+      "status": "Status",
+      "installed": "Installed",
+      "notDefault": "Installed (not the default)",
+      "notInstalled": "Not installed",
+      "how": "Creates a Japanese and an English menu; Japanese is the default and members who use English get the English one. Press “Update” after changing labels or pages (old menus are deleted).",
+      "install": "Install the menu",
+      "update": "Update the menu",
+      "installing": "Installing…",
+      "done": "Menu installed ({linked} English-language members got the English menu; {removed} old menus deleted).",
+      "previewJa": "Japanese menu",
+      "previewEn": "English menu",
+      "previewAlt": "Rich menu image",
+      "errors": {
+        "notConfigured": "LINE Messaging API credentials are not set.",
+        "failed": "Couldn't install the menu on LINE."
+      }
+    }
   }
 }

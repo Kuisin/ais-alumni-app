@@ -100,6 +100,53 @@ async function call(path: string, body: unknown): Promise<void> {
   }
 }
 
+/** Whether Messaging API credentials are configured. */
+export function lineConfigured(): boolean {
+  return Boolean(
+    (process.env.LINE_MESSAGING_CHANNEL_ID &&
+      process.env.LINE_MESSAGING_CHANNEL_SECRET) ||
+      process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN,
+  );
+}
+
+/**
+ * Any Messaging API request (rich menus etc.). `data` uses the api-data host
+ * (image uploads). Returns the parsed JSON body ({} when empty); throws on
+ * non-2xx with LINE's message.
+ */
+export async function lineRequest<T = Record<string, unknown>>(
+  method: "GET" | "POST" | "DELETE",
+  path: string,
+  body?: unknown,
+  opts: { data?: boolean; contentType?: string } = {},
+): Promise<T> {
+  const t = await token();
+  if (!t) throw new Error("LINE Messaging API is not configured");
+  const base = opts.data
+    ? "https://api-data.line.me/v2/bot"
+    : "https://api.line.me/v2/bot";
+  const raw = body instanceof ArrayBuffer || body instanceof Uint8Array;
+  const res = await fetch(`${base}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${t}`,
+      ...(body !== undefined
+        ? { "Content-Type": opts.contentType ?? "application/json" }
+        : {}),
+    },
+    body:
+      body === undefined
+        ? undefined
+        : raw
+          ? (body as BodyInit)
+          : JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok)
+    throw new Error(`LINE API ${method} ${path} failed: ${res.status} ${text}`);
+  return (text ? JSON.parse(text) : {}) as T;
+}
+
 export async function linePush(
   to: string,
   messages: LineTextMessage[],

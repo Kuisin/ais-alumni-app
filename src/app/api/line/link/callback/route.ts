@@ -12,6 +12,7 @@ import {
   returnUrl,
   verifyLinkState,
 } from "@/lib/line-link";
+import { syncRichMenu } from "@/lib/line-richmenu";
 import { notifySignInMethodAdded } from "@/lib/security-notice";
 import { appUrl } from "@/lib/urls";
 
@@ -203,5 +204,6 @@ export async function GET(req: NextRequest) {
   }
 
   await notifySignInMethodAdded(user.id, "line");
+  await syncRichMenu(profile.sub, user.locale);
   return finish(state, user.id, "linked");
 }

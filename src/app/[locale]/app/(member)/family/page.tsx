@@ -51,15 +51,16 @@ export default async function FamilyPage({ searchParams }: Props) {
   const mayClaimChild = canClaim(roles, "child");
   const mayClaimParent = canClaim(roles, "parent");
 
-  const [{ members, links }, childResults, parentResults] = await Promise.all([
-    loadFamily(me),
-    mayClaimChild && childQ
-      ? searchFamilyCandidates(me, childQ, "child")
-      : null,
-    mayClaimParent && parentQ
-      ? searchFamilyCandidates(me, parentQ, "parent")
-      : null,
-  ]);
+  const [{ members, links, managed }, childResults, parentResults] =
+    await Promise.all([
+      loadFamily(me),
+      mayClaimChild && childQ
+        ? searchFamilyCandidates(me, childQ, "child")
+        : null,
+      mayClaimParent && parentQ
+        ? searchFamilyCandidates(me, parentQ, "parent")
+        : null,
+    ]);
 
   // Where the empty state's call to action should jump to.
   const claimTarget = mayClaimChild
@@ -137,6 +138,29 @@ export default async function FamilyPage({ searchParams }: Props) {
                 </li>
               );
             })}
+          </ul>
+        </Card>
+      ) : null}
+
+      {managed.length ? (
+        <Card>
+          <h2 className="mb-1 text-lg font-semibold">{t("managed.title")}</h2>
+          <p className="mb-3 text-sm text-slate-600">
+            {t("managed.description")}
+          </p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {managed.map((m) => (
+              <li key={m.id} className="space-y-1">
+                <MemberCard member={m} />
+                <p>
+                  <Badge tone={m.state === "ACTIVE" ? "green" : "amber"}>
+                    {t(
+                      `managed.state.${m.state === "ACTIVE" ? "active" : m.state === "PENDING_REVIEW" ? "pending" : "other"}`,
+                    )}
+                  </Badge>
+                </p>
+              </li>
+            ))}
           </ul>
         </Card>
       ) : null}

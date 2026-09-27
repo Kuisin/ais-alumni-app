@@ -205,6 +205,7 @@ export function buildDirectoryWhere(
     const notMinor: Prisma.UserWhereInput = {
       AND: [
         { roles: { none: { role: RoleKey.CURRENT_STUDENT } } },
+        { managedById: null },
         {
           OR: [
             { dateOfBirth: null },

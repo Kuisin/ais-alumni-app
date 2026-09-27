@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { ChildrenReview } from "@/components/admin/children-review";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
@@ -226,6 +227,19 @@ export default async function VerificationDetailPage({
               ) : null}
             </dl>
           </Section>
+
+          {user.roles.some(
+            (r) =>
+              r.role === RoleKey.CURRENT_PARENT ||
+              r.role === RoleKey.FORMER_PARENT,
+          ) ? (
+            <Section title={t("children.title")}>
+              <p className="text-sm text-slate-600">
+                {t("children.description")}
+              </p>
+              <ChildrenReview parentId={user.id} />
+            </Section>
+          ) : null}
 
           <Section title={t("detail.answers")}>
             <AnswersView answers={request.answers} />

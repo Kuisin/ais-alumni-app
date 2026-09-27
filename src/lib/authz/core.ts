@@ -28,6 +28,8 @@ export type Target = {
   roles: readonly RoleKey[];
   dateOfBirth: Date | null;
   familyId: string | null;
+  /** child account managed by a parent (no sign-in of its own) */
+  managed?: boolean;
 };
 
 export type Relationship = {
@@ -48,10 +50,13 @@ export function ageOn(dateOfBirth: Date, now: Date): number {
 
 /** Minor = CURRENT_STUDENT role, or DOB less than 18 years ago (§8). */
 export function isMinor(
-  target: Pick<Target, "roles" | "dateOfBirth">,
+  target: Pick<Target, "roles" | "dateOfBirth" | "managed">,
   now: Date = new Date(),
 ): boolean {
   if (target.roles.includes(RoleKey.CURRENT_STUDENT)) return true;
+  // Parent-managed child accounts get the same protection until the child
+  // takes the account over.
+  if (target.managed) return true;
   if (target.dateOfBirth && ageOn(target.dateOfBirth, now) < ADULT_AGE)
     return true;
   return false;

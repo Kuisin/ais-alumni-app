@@ -11,6 +11,7 @@ import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
+import { settleManagedChildren } from "@/lib/parent-onboarding";
 import { AuthError, actionAdmin, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { appUrl } from "@/lib/urls";
@@ -141,6 +142,9 @@ export async function decideVerificationAction(
       }
       // §8: for minors, this admin approval also serves as the admin
       // confirmation — no separate step is required, so nothing extra is stored.
+
+      // Parents: the child accounts they created share this decision.
+      await settleManagedChildren(tx, request.userId, decision, decidedAt);
     });
   } catch (e) {
     if (e instanceof ConflictError) return { ok: false, message: "conflict" };

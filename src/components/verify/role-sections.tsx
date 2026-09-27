@@ -1,16 +1,18 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { UserPlus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
-import { type CohortChoice, elementaryEndFor, gradeLabel } from "@/lib/cohorts";
-import { isCurrentTeacher, studentStatus } from "@/lib/school";
+import type { CohortChoice } from "@/lib/cohorts";
+import { isCurrentTeacher } from "@/lib/school";
 import {
   emptyChild,
   MAX_CHILDREN,
   type VerifyFormState,
 } from "@/lib/verification/schema";
+import { ChildRow } from "./child-row";
 import {
   CohortPicker,
   type Errors,
@@ -19,6 +21,7 @@ import {
   YearInput,
 } from "./fields";
 import { SchoolEmail } from "./school-email";
+import { num, Preview, useStudentPreview } from "./student-preview";
 
 type SectionProps<K extends keyof VerifyFormState> = {
   value: VerifyFormState[K];
@@ -53,40 +56,6 @@ function Section({
 
 function YearsRow({ children }: { children: ReactNode }) {
   return <div className="grid gap-3 sm:grid-cols-2">{children}</div>;
-}
-
-/** "You'll be registered as …" — the status the app works out. */
-function Preview({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="animate-fade rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800"
-      aria-live="polite"
-    >
-      <span aria-hidden="true">→ </span>
-      {children}
-    </p>
-  );
-}
-
-const num = (v: string): number | null =>
-  /^\d{4}$/.test(v.trim()) ? Number(v) : null;
-
-/** Status preview for a 学年 number + optional leave year. */
-function useStudentPreview() {
-  const t = useTranslations("verify");
-  const locale = useLocale() === "en" ? "en" : "ja";
-  return (cohortNumber: string, leftYear: string): string | null => {
-    const n = Number(cohortNumber);
-    if (!Number.isInteger(n) || n < 1) return null;
-    const st = studentStatus(elementaryEndFor(n), num(leftYear));
-    if (st.current)
-      return st.currentGrade !== null
-        ? t("preview.current", { grade: gradeLabel(st.currentGrade, locale) })
-        : t("preview.upcoming");
-    return st.didGraduate
-      ? t("preview.graduated", { year: st.graduationOrLeaveYear ?? "" })
-      : t("preview.left", { year: st.graduationOrLeaveYear ?? "" });
-  };
 }
 
 export function StudentSection({
@@ -180,7 +149,6 @@ export function ParentSection({
   cohorts,
 }: SectionProps<"parent"> & { cohorts: CohortChoice[] }) {
   const t = useTranslations("verify");
-  const preview = useStudentPreview();
   const children = value.children;
   // Stable row keys so removing a middle child doesn't shuffle inputs.
   const [ids, setIds] = useState(() => children.map(() => crypto.randomUUID()));
@@ -194,63 +162,26 @@ export function ParentSection({
       title={t("types.PARENT.title")}
       intro={t("sections.parent")}
     >
+      <p className="text-sm text-slate-600">{t("child.reviewNote")}</p>
       <ol className="space-y-4">
-        {children.map((c, i) => {
-          const p = preview(c.cohortNumber, c.leftYear);
-          return (
-            <li
-              key={ids[i] ?? i}
-              className="animate-rise space-y-3 rounded-xl bg-slate-50 p-3"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">
-                  {t("childN", { n: i + 1 })}
-                </p>
-                {children.length > 1 ? (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setIds(ids.filter((_, j) => j !== i));
-                      onChange({
-                        children: children.filter((_, j) => j !== i),
-                      });
-                    }}
-                    aria-label={t("removeChildN", { n: i + 1 })}
-                  >
-                    {t("removeChild")}
-                  </Button>
-                ) : null}
-              </div>
-              <TextInput
-                path={`parent.children.${i}.name`}
-                label={t("fields.childName")}
-                required
-                value={c.name}
-                onChange={(v) => update(i, { name: v })}
-                errors={errors}
-              />
-              <CohortPicker
-                path={`parent.children.${i}.cohortNumber`}
-                value={c.cohortNumber}
-                onChange={(v) => update(i, { cohortNumber: v })}
-                errors={errors}
-                cohorts={cohorts}
-                defaultFilter="current"
-                required
-              />
-              <YearInput
-                path={`parent.children.${i}.leftYear`}
-                label={t("fields.leftYearStudent")}
-                hint={t("hints.leftYearStudent")}
-                required={false}
-                value={c.leftYear}
-                onChange={(v) => update(i, { leftYear: v })}
-                errors={errors}
-              />
-              {p ? <Preview>{p}</Preview> : null}
-            </li>
-          );
-        })}
+        {children.map((c, i) => (
+          <ChildRow
+            key={ids[i] ?? `child-${i}`}
+            index={i}
+            value={c}
+            onChange={(patch) => update(i, patch)}
+            onRemove={
+              children.length > 1
+                ? () => {
+                    setIds(ids.filter((_, j) => j !== i));
+                    onChange({ children: children.filter((_, j) => j !== i) });
+                  }
+                : null
+            }
+            errors={errors}
+            cohorts={cohorts}
+          />
+        ))}
       </ol>
       <GroupError errors={errors} path="parent.children" />
       {children.length < MAX_CHILDREN ? (
@@ -261,6 +192,7 @@ export function ParentSection({
             onChange({ children: [...children, emptyChild()] });
           }}
         >
+          <UserPlus aria-hidden="true" className="size-4" />
           {t("addChild")}
         </Button>
       ) : null}

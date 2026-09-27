@@ -288,3 +288,22 @@ describe("isTargeted", () => {
     );
   });
 });
+
+describe("parent-managed child accounts", () => {
+  it("are protected like minors", () => {
+    expect(
+      isMinor({
+        roles: [RoleKey.FORMER_STUDENT],
+        dateOfBirth: null,
+        managed: true,
+      }),
+    ).toBe(true);
+    expect(
+      isMinor({
+        roles: [RoleKey.FORMER_STUDENT],
+        dateOfBirth: null,
+        managed: false,
+      }),
+    ).toBe(false);
+  });
+});

@@ -108,6 +108,11 @@ model User {
   familyId              String?
   family                Family?       @relation(fields: [familyId], references: [id], onDelete: SetNull)
   deactivatedAt         DateTime?
+  // Added: a child account created by a parent during sign-up. It has no
+  // sign-in of its own; the parent manages it until the child takes it over.
+  managedById           String?
+  managedBy             User?         @relation("managedChildren", fields: [managedById], references: [id], onDelete: SetNull)
+  managedChildren       User[]        @relation("managedChildren")
 
   roles          UserRole[]
   accounts       Account[]
@@ -137,6 +142,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([state])
+  @@index([managedById])
 }
 
 // Auth.js account table (OAuth providers). Email OTP sign-in does not create rows here.

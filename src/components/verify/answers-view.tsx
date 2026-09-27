@@ -143,14 +143,49 @@ export async function AnswersView({ answers }: { answers: unknown }) {
               // biome-ignore lint/suspicious/noArrayIndexKey: answers are a fixed list
               <li key={i} className="rounded-lg bg-slate-50 p-3">
                 <List>
-                  <Row label={t("fields.childName")} value={str(c.name)} />
+                  <Row
+                    label={t("fields.childName")}
+                    value={
+                      c.mode === "new"
+                        ? [
+                            composeKanji({
+                              lastNameKanji: str(c.lastNameKanji),
+                              firstNameKanji: str(c.firstNameKanji),
+                            }),
+                            composeRomaji({
+                              lastNameRomaji: str(c.lastNameRomaji),
+                              firstNameRomaji: str(c.firstNameRomaji),
+                              middleNameRomaji: null,
+                            }),
+                          ]
+                            .filter(Boolean)
+                            .join(" / ")
+                        : str(c.name)
+                    }
+                  />
+                  <Row
+                    label={ta("children.source.title")}
+                    value={
+                      c.mode === "existing"
+                        ? ta("children.source.registered")
+                        : c.mode === "new"
+                          ? ta("children.source.created")
+                          : ta("children.source.nameOnly")
+                    }
+                  />
+                  <Row label={ta("children.dob")} value={str(c.dateOfBirth)} />
                   <Row
                     label={t("fields.cohort")}
                     value={classLabel(c.cohortNumber)}
                   />
+                  <Row label={ta("detail.years")} value={years(c)} />
                   <Row
                     label={ta("detail.status")}
                     value={statusOf(c.cohortNumber, c.leftYear)}
+                  />
+                  <Row
+                    label={ta("children.studentId")}
+                    value={str(c.studentIdNo)}
                   />
                 </List>
               </li>

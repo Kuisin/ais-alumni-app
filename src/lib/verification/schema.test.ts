@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   answersToFormState,
+  emptyChild,
   emptyFormState,
   issuesToErrors,
   stepOfPath,
@@ -34,7 +35,16 @@ function filled() {
 describe("verification schema (sign-up wizard)", () => {
   it("accepts a complete form and keeps only chosen sections", () => {
     const s = filled();
-    s.parent.children = [{ name: "Child", cohortNumber: "20", leftYear: "" }];
+    s.parent.children = [
+      {
+        ...emptyChild("new"),
+        lastNameRomaji: "Yamada",
+        firstNameRomaji: "Jiro",
+        dateOfBirth: "2018-05-05",
+        cohortNumber: "20",
+        joinedYear: "2021",
+      },
+    ];
     const r = verificationSchema({ requireKanji: false }).safeParse(
       toPayload(s),
     );
@@ -68,14 +78,16 @@ describe("verification schema (sign-up wizard)", () => {
 
     s.types = ["STUDENT", "PARENT"];
     s.student.cohortNumber = "";
-    s.parent.children = [{ name: "", cohortNumber: "", leftYear: "" }];
+    s.parent.children = [emptyChild("new"), emptyChild("existing")];
     r = verificationSchema({ requireKanji: false }).safeParse(toPayload(s));
     expect(r.success).toBe(false);
     if (r.success) return;
     errors = issuesToErrors(r.error.issues);
     expect(errors["student.cohortNumber"]).toBe("cohortRequired");
-    expect(errors["parent.children.0.name"]).toBe("required");
+    expect(errors["parent.children.0.lastNameRomaji"]).toBe("required");
+    expect(errors["parent.children.0.dateOfBirth"]).toBe("required");
     expect(errors["parent.children.0.cohortNumber"]).toBe("cohortRequired");
+    expect(errors["parent.children.1.existingUserId"]).toBe("childNotSelected");
   });
 
   it("left year can't be before joining", () => {
@@ -116,5 +128,41 @@ describe("verification schema (sign-up wizard)", () => {
     expect(stepOfPath("lastNameRomaji")).toBe("basics");
     expect(stepOfPath("parent.children.0.name")).toBe("details");
     expect(stepOfPath("evidence")).toBe("review");
+  });
+});
+
+describe("parent children", () => {
+  it("accepts a registered child picked by id", () => {
+    const s = filled();
+    s.types = ["PARENT"];
+    s.parent.children = [
+      { ...emptyChild("existing"), existingUserId: "u1", name: "鈴木花子" },
+    ];
+    const r = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(r.success).toBe(true);
+    if (!r.success) return;
+    expect(r.data.parent?.children[0]).toEqual({
+      mode: "existing",
+      existingUserId: "u1",
+      name: "鈴木花子",
+    });
+  });
+
+  it("maps older name-only answers into the new-child form", () => {
+    const state = answersToFormState(
+      {
+        version: 2,
+        types: ["PARENT"],
+        parent: { children: [{ name: "山田次郎", cohortNumber: 20 }] },
+      },
+      "ja",
+    );
+    expect(state.parent.children[0]).toMatchObject({
+      mode: "new",
+      lastNameKanji: "山田次郎",
+      cohortNumber: "20",
+    });
   });
 });

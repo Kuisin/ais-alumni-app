@@ -20,10 +20,9 @@ export const ADULTS_CHAT_ENABLED = CHAT_V2_ENABLED;
 export const DIRECT_CHAT_ENABLED = CHAT_V2_ENABLED;
 
 /**
- * The 「学年代表」 group chat (ChatGroupKind.CLASS_REPS). Off until the release
- * that knows CLASS_REPS is on main (same reason as chat v2); then set
- * CLASS_REPS_CHAT_RELEASED = true. Tests turn it on with CHAT_V3=1.
+ * The 「学年代表」 group chat (ChatGroupKind.CLASS_REPS). On since CLASS_REPS
+ * reached main (release #60); new kinds must reach main before being used.
  */
-const CLASS_REPS_CHAT_RELEASED = false;
+const CLASS_REPS_CHAT_RELEASED = true;
 export const CLASS_REPS_CHAT_ENABLED =
   CLASS_REPS_CHAT_RELEASED || process.env.CHAT_V3 === "1";

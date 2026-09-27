@@ -191,6 +191,24 @@
       "body": "{name} asked to correct their AIS record.",
       "detail": "Review it in admin mode.",
       "cta": "Review"
+    },
+    "GENDER_REQUEST_APPROVED": {
+      "title": "Your gender was updated",
+      "body": "Your gender change was approved.",
+      "detail": "Check it on your profile.",
+      "cta": "View profile"
+    },
+    "GENDER_REQUEST_REJECTED": {
+      "title": "Your gender change wasn't approved",
+      "body": "Your gender change request wasn't approved.",
+      "detail": "Please read the committee's note.",
+      "cta": "See details"
+    },
+    "GENDER_REQUEST_ADMIN": {
+      "title": "New gender change request",
+      "body": "{name} asked to change their gender.",
+      "detail": "Review it in admin mode.",
+      "cta": "Review"
     }
   },
   "categories": {

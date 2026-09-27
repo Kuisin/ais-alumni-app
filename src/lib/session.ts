@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
 import { cache } from "react";
 import { auth } from "@/auth";
@@ -6,6 +7,7 @@ import { AccountState } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
+import { NEXT_PATH_HEADER, safeNextPath } from "@/lib/next-path";
 import { homePathFor } from "@/lib/state-machine";
 
 export type CurrentUser = Prisma.UserGetPayload<{ include: { roles: true } }>;
@@ -23,10 +25,16 @@ async function go(href: string): Promise<never> {
   return redirect({ href, locale });
 }
 
-/** Any signed-in user, or redirect to the sign-in page. */
+/**
+ * Any signed-in user, or redirect to the sign-in page — with ?next= so
+ * signing in returns to the page that was asked for.
+ */
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) return go("/app");
+  if (!user) {
+    const next = safeNextPath((await headers()).get(NEXT_PATH_HEADER));
+    return go(next ? `/app?next=${encodeURIComponent(next)}` : "/app");
+  }
   return user;
 }
 

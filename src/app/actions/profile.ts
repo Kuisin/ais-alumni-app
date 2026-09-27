@@ -127,6 +127,21 @@ export async function updateFollowerFieldsAction(
   return { ok: true, message: "saved" };
 }
 
+/** Whether every member may see the photo (性別 is fixed: gender-requests). */
+export async function updateAvatarSettingsAction(
+  _prev: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const me = await member();
+  if (!me) return FORBIDDEN;
+  await db.user.update({
+    where: { id: me.id },
+    data: { avatarPublic: formData.get("avatarPublic") === "on" },
+  });
+  refresh();
+  return { ok: true, message: "saved" };
+}
+
 /** Keys we created for this user; Google avatar URLs are never deleted. */
 function ownedAvatarKey(userId: string, value: string | null): string | null {
   return value?.startsWith(`avatars/${userId}/`) ? value : null;

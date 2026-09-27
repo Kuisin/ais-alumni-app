@@ -37,7 +37,7 @@
     "bio": "Visible to all members.",
     "privateTier": "Your contact details and links are visible only to you, your family and the committee (admins). Choose below what followers can see too.",
     "socialUrl": "Enter full addresses starting with https://",
-    "avatar": "JPG or PNG, up to 2 MB. Visible to all members.",
+    "avatar": "JPG or PNG, up to 2 MB. Shown to your family and connections (you can show it to everyone below).",
     "stageDetail": "Only your family and approved followers can see the details."
   },
   "record": {
@@ -200,6 +200,51 @@
       "x": "X",
       "website": "Website",
       "currentStageDetail": "Current stage details"
+    }
+  },
+  "photo": {
+    "gender": "Gender",
+    "genderHint": "Used for the icon shown when you have no photo, or to people who can't see it. Not shown to other members.",
+    "genders": {
+      "none": "Prefer not to say",
+      "MALE": "Male",
+      "FEMALE": "Female",
+      "OTHER": "Other"
+    },
+    "public": "Show my photo to every member",
+    "publicHint": "When off, only you, your family, people you're connected with by an accepted follow (either way) and the committee see your photo. Other members see the default icon.",
+    "visibility": "Who sees your photo",
+    "onlyConnected": "Family and connections only",
+    "everyone": "Every member",
+    "genderLabel": "Icon"
+  },
+  "gender": {
+    "title": "Gender",
+    "lockedNote": "You can't change your gender yourself; ask the committee if it needs changing. It's only used for your default icon and isn't shown to other members.",
+    "notSet": "Not registered",
+    "setOnceHint": "Your gender isn't registered. It's used for your default icon (changes after that need a request).",
+    "setOnce": "Save",
+    "open": "Request a change",
+    "intro": "Choose the new value. The committee checks and applies it.",
+    "field": "Gender",
+    "reason": "Reason for the change",
+    "reasonHint": "e.g. I chose the wrong option when signing up",
+    "submit": "Send request",
+    "close": "Close",
+    "submitted": "Request sent. It will be applied once the committee approves it; we'll let you know.",
+    "saved": "Your gender has been saved.",
+    "pendingSince": "On {date} you asked to change it to “{value}”. The committee will check it.",
+    "cancel": "Withdraw request",
+    "reviewNote": "Committee note",
+    "fieldErrors": {
+      "invalid": "Choose a gender.",
+      "required": "Please give a reason.",
+      "tooLong": "That's too long."
+    },
+    "errors": {
+      "unchanged": "That's the same as your current gender.",
+      "pending": "You already have a request being checked.",
+      "alreadySet": "Your gender is already registered. Please send a request to change it."
     }
   }
 }

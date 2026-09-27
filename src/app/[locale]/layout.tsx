@@ -14,15 +14,25 @@ export async function generateMetadata({
     title: { default: t("appName"), template: `%s | ${t("appName")}` },
     description: t("tagline"),
     manifest: "/manifest.webmanifest",
-    appleWebApp: { capable: true, title: t("appNameShort") },
+    // Opaque white status bar, like the header.
+    appleWebApp: {
+      capable: true,
+      title: t("appNameShort"),
+      statusBarStyle: "default",
+    },
     icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
   };
 }
 
 export const viewport: Viewport = {
-  themeColor: "#1e3a8a",
+  // Browser / system bars match the white header and bottom bar (admin
+  // mode overrides it with its dark header).
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
+  // Draw under the notch / home indicator; the header, bottom bar, footer
+  // and chat composer pad themselves with env(safe-area-inset-*).
+  viewportFit: "cover",
   // The on-screen keyboard resizes the page (Android), so fixed screens
   // like a chat keep their header and composer in view.
   interactiveWidget: "resizes-content",

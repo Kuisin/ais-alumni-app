@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { decideBirthDateRequestAction } from "@/app/actions/birth-date-requests";
+import { decideGenderRequestAction } from "@/app/actions/gender-requests";
 import { decideNameRequestAction } from "@/app/actions/name-requests";
 
 type DecisionState = { ok: boolean; message: string } | null;
@@ -17,7 +18,7 @@ export function NameDecisionForm({
   kind = "name",
 }: {
   id: string;
-  kind?: "name" | "birthDate";
+  kind?: "name" | "birthDate" | "gender";
 }) {
   const t = useTranslations("adminMembers");
   const [decision, setDecision] = useState<"APPROVE" | "REJECT">("APPROVE");
@@ -25,7 +26,9 @@ export function NameDecisionForm({
   const decide = (
     kind === "birthDate"
       ? decideBirthDateRequestAction
-      : decideNameRequestAction
+      : kind === "gender"
+        ? decideGenderRequestAction
+        : decideNameRequestAction
   ) as (prev: DecisionState, fd: FormData) => Promise<DecisionState>;
   const [state, action] = useActionState<DecisionState, FormData>(decide, null);
   return (
@@ -60,8 +63,12 @@ export function NameDecisionForm({
       <div aria-live="polite">
         {state?.message ? (
           <Alert tone={state.ok ? "success" : "error"}>
-            {kind === "birthDate" && state.message === "nameRequests.approved"
-              ? t("birthDateRequests.approved")
+            {kind !== "name" && state.message === "nameRequests.approved"
+              ? t(
+                  kind === "gender"
+                    ? "genderRequests.approved"
+                    : "birthDateRequests.approved",
+                )
               : t(state.message)}
           </Alert>
         ) : null}

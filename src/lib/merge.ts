@@ -128,6 +128,10 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
       where: { userId: fromId },
       data: { userId: toId },
     });
+    await tx.genderRequest.updateMany({
+      where: { userId: fromId },
+      data: { userId: toId },
+    });
     // 学歴・職歴 move with the account.
     await tx.educationEntry.updateMany({
       where: { userId: fromId },
@@ -175,6 +179,7 @@ export async function mergeUsers(fromId: string, toId: string): Promise<void> {
         nameAtAis: to.nameAtAis ?? from.nameAtAis,
         dateOfBirth: to.dateOfBirth ?? from.dateOfBirth,
         avatarUrl: to.avatarUrl ?? from.avatarUrl,
+        gender: to.gender ?? from.gender,
         phone: to.phone ?? from.phone,
         familyId: to.familyId ?? from.familyId,
       },

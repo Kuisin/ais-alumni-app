@@ -63,7 +63,8 @@
     "dateOfBirth": "生年月日",
     "bio": "自己紹介",
     "phone": "電話番号",
-    "save": "プロフィールを保存"
+    "save": "プロフィールを保存",
+    "gender": "性別"
   },
   "roles": {
     "title": "区分",
@@ -226,7 +227,7 @@
     "cohort": "担当学年"
   },
   "nameRequests": {
-    "title": "氏名・生年月日の変更",
+    "title": "氏名・生年月日・性別の変更",
     "description": "承認後の氏名と生年月日は会員自身では変更できません。変更の申請を確認し、承認すると反映されます。",
     "tabsLabel": "氏名の変更申請",
     "tabs": {
@@ -260,5 +261,12 @@
     "proposed": "申請",
     "notSet": "未登録",
     "approved": "承認し、生年月日を変更しました。"
+  },
+  "genderRequests": {
+    "title": "性別の変更",
+    "current": "現在",
+    "proposed": "申請",
+    "notSet": "未登録",
+    "approved": "承認し、性別を変更しました。"
   }
 }

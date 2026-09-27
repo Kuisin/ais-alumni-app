@@ -19,6 +19,7 @@ import { Alert } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { type CohortChoice, parseCohortNumber } from "@/lib/cohorts";
+import { GENDERS } from "@/lib/gender";
 import { composeKanji, composeRomaji } from "@/lib/names";
 import {
   applicantGraduated,
@@ -88,6 +89,7 @@ export function VerifyForm({
   initialVerifiedSchoolEmail: string | null;
 }) {
   const t = useTranslations("verify");
+  const tg = useTranslations("profile.photo");
   const [state, setState] = useState<VerifyFormState>(initial);
   const [stepIndex, setStepIndex] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
@@ -424,6 +426,28 @@ export function VerifyForm({
               errors={errors}
             />
             <Field
+              id={fieldId("gender")}
+              label={t("fields.gender")}
+              hint={t("hints.gender")}
+              required
+              error={errors.gender ? t(`errors.${errors.gender}`) : null}
+            >
+              {(aria) => (
+                <Select
+                  {...aria}
+                  value={state.gender}
+                  onChange={(e) => set("gender", e.target.value)}
+                >
+                  <option value="">{t("choose")}</option>
+                  {GENDERS.map((g) => (
+                    <option key={g} value={g}>
+                      {tg(`genders.${g}`)}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field
               id={fieldId("locale")}
               label={t("fields.locale")}
               hint={t("hints.locale")}
@@ -506,6 +530,8 @@ export function VerifyForm({
                 ) : null}
                 <dt className="text-slate-600">{t("fields.dateOfBirth")}</dt>
                 <dd>{state.dateOfBirth}</dd>
+                <dt className="text-slate-600">{t("fields.gender")}</dt>
+                <dd>{state.gender ? tg(`genders.${state.gender}`) : "—"}</dd>
                 <dt className="text-slate-600">{t("review.types")}</dt>
                 <dd>
                   {state.types.map((x) => t(`types.${x}.title`)).join("・")}

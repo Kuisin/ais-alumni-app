@@ -19,6 +19,7 @@ async function startParentApplication(page: Page, lastName: string) {
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Parent");
   await page.getByLabel("Date of birth").fill("1980-01-01");
+  await page.getByLabel("Gender").selectOption("OTHER");
   await page.getByRole("button", { name: "Next" }).click();
 }
 

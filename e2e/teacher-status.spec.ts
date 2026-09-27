@@ -19,6 +19,7 @@ test("teacher with a leave year is registered as former automatically", async ({
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Teacher");
   await member.getByLabel("Date of birth").fill("1970-05-05");
+  await member.getByLabel("Gender").selectOption("OTHER");
   await member.getByRole("button", { name: "Next" }).click();
 
   // Former/current comes from the leave year — no manual status.

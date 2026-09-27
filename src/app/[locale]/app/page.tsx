@@ -10,9 +10,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { GoogleIcon } from "@/components/ui/brand-icons";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, Card } from "@/components/ui/card";
+import { AccountState } from "@/generated/prisma/enums";
 import { Link, redirect } from "@/i18n/navigation";
 import { cohortShort } from "@/lib/cohorts";
 import { findOpenInvite, INVITE_COOKIE } from "@/lib/invites";
+import { safeNextPath } from "@/lib/next-path";
 import { getCurrentUser } from "@/lib/session";
 import { ssoReady } from "@/lib/sso";
 import { homePathFor } from "@/lib/state-machine";
@@ -27,6 +29,8 @@ export default async function LandingPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const rawError = (await searchParams).error;
+  // The page they asked for before being sent here (src/lib/session.ts).
+  const next = safeNextPath((await searchParams).next);
   const user = await getCurrentUser();
   if (user) {
     // Auth.js sends errors to pages.signIn ("/"). A signed-in user who hit one
@@ -37,7 +41,11 @@ export default async function LandingPage({
         locale,
       });
     }
-    return redirect({ href: homePathFor(user), locale });
+    return redirect({
+      href:
+        next && user.state === AccountState.ACTIVE ? next : homePathFor(user),
+      locale,
+    });
   }
 
   const error = authErrorKey(rawError);
@@ -118,6 +126,9 @@ export default async function LandingPage({
             ).map(([provider, action, variant, Icon]) =>
               ssoReady(provider) ? (
                 <form key={provider} action={action}>
+                  {next ? (
+                    <input type="hidden" name="next" value={next} />
+                  ) : null}
                   <button
                     type="submit"
                     className={buttonClass(variant, "w-full")}
@@ -163,7 +174,7 @@ export default async function LandingPage({
             <h3 id="email-signin-title" className="text-sm font-semibold">
               {t("signIn.emailTitle")}
             </h3>
-            <OtpEmailForm action={emailSignInAction} />
+            <OtpEmailForm action={emailSignInAction} next={next} />
           </section>
 
           <p className="border-t border-slate-100 pt-4 text-xs text-slate-600">

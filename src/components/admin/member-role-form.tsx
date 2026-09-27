@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import {
   type AdminMemberFormState,
@@ -10,11 +10,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { Division, LifeStage, RoleKey } from "@/generated/prisma/enums";
+import {
+  type Division,
+  LifeStage,
+  RoleKey,
+  TeacherStatus,
+} from "@/generated/prisma/enums";
+import { type CohortChoice, gradeLabel } from "@/lib/cohorts";
 import { AdminFormResult } from "./form-result";
 
 export type RoleValues = {
   role: RoleKey;
+  /** 学年 as its 第N期 number */
+  cohortNumber: number | null;
+  teacherStatus: TeacherStatus | null;
   yearsFrom: number | null;
   yearsTo: number | null;
   subjects: string | null;
@@ -29,207 +38,195 @@ export type RoleValues = {
   currentStageDetail: string | null;
 };
 
-/** K (0) through grade 12 */
-const GRADES = Array.from({ length: 13 }, (_, i) => i);
-
 const s = (v: number | string | null | undefined) =>
   v === null || v === undefined ? "" : String(v);
 
+const STUDENT_ROLES: RoleKey[] = [
+  RoleKey.CURRENT_STUDENT,
+  RoleKey.FORMER_STUDENT,
+];
+
+/**
+ * Inputs only: whether someone is current or former, their grade and
+ * graduation are computed from the 学年 and years (src/lib/school.ts) and
+ * shown read-only.
+ */
 function RoleFields({
   role,
   values,
   idPrefix,
+  cohorts,
 }: {
   role: RoleKey;
   values?: RoleValues;
   idPrefix: string;
+  cohorts: CohortChoice[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tr = useTranslations("roles");
+  const locale = useLocale() === "en" ? "en" : "ja";
   const id = (k: string) => `${idPrefix}-${k}`;
+
+  const year = (
+    name: "yearsFrom" | "yearsTo",
+    label: string,
+    hint?: string,
+  ) => (
+    <Field id={id(name)} label={label} hint={hint}>
+      {(a) => (
+        <Input
+          {...a}
+          name={name}
+          inputMode="numeric"
+          maxLength={4}
+          defaultValue={s(values?.[name])}
+        />
+      )}
+    </Field>
+  );
+  const derived = (text: string) => (
+    <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+      <span className="font-medium">{t("derivedLabel")}: </span>
+      {text}
+    </p>
+  );
 
   if (role === RoleKey.TEACHER) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field id={id("yearsFrom")} label={t("yearsFrom")}>
-          {(a) => (
-            <Input
-              {...a}
-              name="yearsFrom"
-              inputMode="numeric"
-              defaultValue={s(values?.yearsFrom)}
-            />
-          )}
-        </Field>
-        <Field id={id("yearsTo")} label={t("yearsTo")} hint={t("yearsToHint")}>
-          {(a) => (
-            <Input
-              {...a}
-              name="yearsTo"
-              inputMode="numeric"
-              defaultValue={s(values?.yearsTo)}
-            />
-          )}
-        </Field>
-        <Field id={id("subjects")} label={t("subjects")}>
-          {(a) => (
-            <Input {...a} name="subjects" defaultValue={s(values?.subjects)} />
-          )}
-        </Field>
-        <Field
-          id={id("schoolEmail")}
-          label={t("schoolEmail")}
-          hint={
-            values?.schoolEmail
-              ? values.schoolEmailVerified
-                ? t("verified")
-                : t("unverified")
-              : undefined
-          }
-        >
-          {(a) => (
-            <Input
-              {...a}
-              type="email"
-              name="schoolEmail"
-              defaultValue={s(values?.schoolEmail)}
-            />
-          )}
-        </Field>
+      <div className="space-y-4">
+        {values
+          ? derived(
+              tr(
+                `teacherStatus.${values.teacherStatus === TeacherStatus.FORMER ? "FORMER" : "CURRENT"}`,
+              ),
+            )
+          : null}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {year("yearsFrom", t("joinedYear"))}
+          {year("yearsTo", t("leftYear"), t("leftYearTeacherHint"))}
+          <Field id={id("subjects")} label={t("subjects")}>
+            {(a) => (
+              <Input
+                {...a}
+                name="subjects"
+                defaultValue={s(values?.subjects)}
+              />
+            )}
+          </Field>
+          <Field
+            id={id("schoolEmail")}
+            label={t("schoolEmail")}
+            hint={
+              values?.schoolEmailVerified ? t("schoolEmailVerified") : undefined
+            }
+          >
+            {(a) => (
+              <Input
+                {...a}
+                type="email"
+                name="schoolEmail"
+                defaultValue={s(values?.schoolEmail)}
+              />
+            )}
+          </Field>
+        </div>
       </div>
     );
   }
-  if (role === RoleKey.CURRENT_STUDENT) {
+
+  if (STUDENT_ROLES.includes(role)) {
+    let status: string | null = null;
+    if (values) {
+      if (values.role === RoleKey.CURRENT_STUDENT)
+        status = `${tr("role.CURRENT_STUDENT")}${values.currentGrade !== null ? ` · ${gradeLabel(values.currentGrade, locale)}` : ""}`;
+      else if (values.graduationOrLeaveYear !== null)
+        status = values.didGraduate
+          ? t("derivedGraduated", { year: values.graduationOrLeaveYear })
+          : t("derivedLeft", { year: values.graduationOrLeaveYear });
+    }
     return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field id={id("currentGrade")} label={t("currentGrade")}>
+      <div className="space-y-4">
+        {status ? derived(status) : null}
+        <Field id={id("cohortNumber")} label={t("cohort")}>
           {(a) => (
             <Select
               {...a}
-              name="currentGrade"
-              defaultValue={s(values?.currentGrade)}
+              name="cohortNumber"
+              defaultValue={s(values?.cohortNumber)}
             >
               <option value="">{t("unknown")}</option>
-              {GRADES.map((g) => (
-                <option key={g} value={g}>
-                  {tr("grade", { grade: g })}
+              {cohorts.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
                 </option>
               ))}
             </Select>
           )}
         </Field>
-        <Field id={id("studentIdNo")} label={t("studentIdNo")}>
-          {(a) => (
-            <Input
-              {...a}
-              name="studentIdNo"
-              defaultValue={s(values?.studentIdNo)}
-            />
-          )}
-        </Field>
-      </div>
-    );
-  }
-  if (role === RoleKey.FORMER_STUDENT) {
-    return (
-      <div className="space-y-4">
-        <fieldset className="grid gap-4 sm:grid-cols-3">
-          <legend className="mb-2 text-sm font-semibold text-slate-700">
-            {t("aisRecord")}
-          </legend>
-          <Field id={id("lastDivision")} label={t("lastDivision")}>
-            {(a) => (
-              <Select
-                {...a}
-                name="lastDivision"
-                defaultValue={s(values?.lastDivision)}
-              >
-                <option value="">{t("unknown")}</option>
-                {Object.values(Division).map((d) => (
-                  <option key={d} value={d}>
-                    {tr(`division.${d}`)}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field
-            id={id("graduationOrLeaveYear")}
-            label={t("graduationOrLeaveYear")}
-          >
+        <div className="grid gap-4 sm:grid-cols-2">
+          {year("yearsFrom", t("joinedYear"))}
+          {year("yearsTo", t("leftYear"), t("leftYearStudentHint"))}
+          <Field id={id("studentIdNo")} label={t("studentIdNo")}>
             {(a) => (
               <Input
                 {...a}
-                name="graduationOrLeaveYear"
-                inputMode="numeric"
-                defaultValue={s(values?.graduationOrLeaveYear)}
+                name="studentIdNo"
+                defaultValue={s(values?.studentIdNo)}
               />
             )}
           </Field>
-          <Field id={id("didGraduate")} label={t("didGraduate")}>
-            {(a) => (
-              <Select
-                {...a}
-                name="didGraduate"
-                defaultValue={
-                  values?.didGraduate === null || !values
-                    ? ""
-                    : values.didGraduate
-                      ? "yes"
-                      : "no"
-                }
-              >
-                <option value="">{t("unknown")}</option>
-                <option value="yes">{t("didGraduateYes")}</option>
-                <option value="no">{t("didGraduateNo")}</option>
-              </Select>
-            )}
-          </Field>
-        </fieldset>
-        <fieldset className="grid gap-4 sm:grid-cols-2">
-          <legend className="mb-2 text-sm font-semibold text-slate-700">
-            {t("currentStatus")}
-          </legend>
-          <Field id={id("currentStage")} label={t("currentStage")}>
-            {(a) => (
-              <Select
-                {...a}
-                name="currentStage"
-                defaultValue={s(values?.currentStage)}
-              >
-                <option value="">{t("unknown")}</option>
-                {Object.values(LifeStage).map((st) => (
-                  <option key={st} value={st}>
-                    {tr(`stage.${st}`)}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-          <Field id={id("currentStageDetail")} label={t("currentStageDetail")}>
-            {(a) => (
-              <Input
-                {...a}
-                name="currentStageDetail"
-                defaultValue={s(values?.currentStageDetail)}
-              />
-            )}
-          </Field>
-        </fieldset>
+        </div>
+        {role === RoleKey.FORMER_STUDENT ? (
+          <fieldset className="grid gap-4 sm:grid-cols-2">
+            <legend className="mb-2 text-sm font-semibold text-slate-700">
+              {t("currentStatus")}
+            </legend>
+            <Field id={id("currentStage")} label={t("currentStage")}>
+              {(a) => (
+                <Select
+                  {...a}
+                  name="currentStage"
+                  defaultValue={s(values?.currentStage)}
+                >
+                  <option value="">{t("unknown")}</option>
+                  {Object.values(LifeStage).map((st) => (
+                    <option key={st} value={st}>
+                      {tr(`stage.${st}`)}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+            <Field
+              id={id("currentStageDetail")}
+              label={t("currentStageDetail")}
+            >
+              {(a) => (
+                <Input
+                  {...a}
+                  name="currentStageDetail"
+                  defaultValue={s(values?.currentStageDetail)}
+                />
+              )}
+            </Field>
+          </fieldset>
+        ) : null}
       </div>
     );
   }
-  // CURRENT_PARENT / FORMER_PARENT have no role-specific fields.
-  return <p className="text-sm text-slate-600">{t("noFields")}</p>;
+  // Parents: current / former follows their children (family links).
+  return <p className="text-sm text-slate-600">{t("parentDerived")}</p>;
 }
 
 /** Edit an existing role, with a remove button. */
 export function MemberRoleForm({
   userId,
   values,
+  cohorts,
 }: {
   userId: string;
   values: RoleValues;
+  cohorts: CohortChoice[];
 }) {
   const t = useTranslations("adminMembers.roles");
   const tc = useTranslations("common");
@@ -252,6 +249,7 @@ export function MemberRoleForm({
           role={values.role}
           values={values}
           idPrefix={`r-${values.role}`}
+          cohorts={cohorts}
         />
         <AdminFormResult state={state} />
         <SubmitButton variant="secondary" pendingText={tc("saving")}>
@@ -291,12 +289,13 @@ export function MemberRoleForm({
 export function AddRoleForm({
   userId,
   available,
+  cohorts,
 }: {
   userId: string;
   available: RoleKey[];
+  cohorts: CohortChoice[];
 }) {
   const t = useTranslations("adminMembers.roles");
-  const tr = useTranslations("roles");
   const tc = useTranslations("common");
   const [role, setRole] = useState<RoleKey | "">("");
   const [state, action] = useActionState<AdminMemberFormState, FormData>(
@@ -318,13 +317,15 @@ export function AddRoleForm({
             <option value="">—</option>
             {available.map((r) => (
               <option key={r} value={r}>
-                {tr(`role.${r}`)}
+                {t(`addTypes.${r}`)}
               </option>
             ))}
           </Select>
         )}
       </Field>
-      {role ? <RoleFields key={role} role={role} idPrefix="add" /> : null}
+      {role ? (
+        <RoleFields key={role} role={role} idPrefix="add" cohorts={cohorts} />
+      ) : null}
       <AdminFormResult state={state} />
       {role ? (
         <SubmitButton pendingText={tc("saving")}>{t("add")}</SubmitButton>

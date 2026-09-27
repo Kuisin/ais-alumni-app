@@ -7,6 +7,8 @@
  */
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { defaultCohort, elementaryEndFor } from "../src/lib/cohorts";
+import { studentRoleFields } from "../src/lib/member-status";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -25,8 +27,14 @@ async function main() {
         emailVerifiedAt: new Date(),
         state: "ACTIVE",
         isAdmin: true,
+        lastNameRomaji: "Admin",
+        firstNameRomaji: "AIS",
         nameRomaji: "AIS Admin",
-        roles: { create: [{ role: "TEACHER", yearsFrom: 2010 }] },
+        roles: {
+          create: [
+            { role: "TEACHER", yearsFrom: 2010, teacherStatus: "CURRENT" },
+          ],
+        },
       },
     });
     console.log(`Admin ready: ${admin.primaryEmail} (${admin.id})`);
@@ -36,30 +44,63 @@ async function main() {
   if (process.env.NODE_ENV === "production")
     throw new Error("Refusing to seed demo data in production");
 
-  const demo = [
+  // 学年 are created on first use, as in the app (ensureCohort).
+  const cohortId = async (n: number) =>
+    (
+      await db.cohort.upsert({
+        where: { number: n },
+        update: {},
+        create: defaultCohort(n),
+      })
+    ).id;
+
+  const demo: {
+    email: string;
+    cohort: number;
+    first: string;
+    last: string;
+    kanji: [string, string] | null;
+    year: number;
+    stage: "WORKING" | "UNIVERSITY_COLLEGE";
+  }[] = [
     {
       email: "hanako@example.com",
-      romaji: "Hanako Suzuki",
-      kanji: "鈴木花子",
+      cohort: 5,
+      first: "Hanako",
+      last: "Suzuki",
+      kanji: ["鈴木", "花子"],
       year: 2015,
-      stage: "WORKING" as const,
+      stage: "WORKING",
     },
     {
       email: "ken@example.com",
-      romaji: "Ken Tanaka",
-      kanji: "田中健",
+      cohort: 6,
+      first: "Ken",
+      last: "Tanaka",
+      kanji: ["田中", "健"],
       year: 2016,
-      stage: "UNIVERSITY_COLLEGE" as const,
+      stage: "UNIVERSITY_COLLEGE",
     },
     {
       email: "emma@example.com",
-      romaji: "Emma Brown",
+      cohort: 9,
+      first: "Emma",
+      last: "Brown",
       kanji: null,
       year: 2019,
-      stage: "UNIVERSITY_COLLEGE" as const,
+      stage: "UNIVERSITY_COLLEGE",
     },
   ];
   for (const m of demo) {
+    const existing = await db.user.findUnique({
+      where: { primaryEmail: m.email },
+    });
+    if (existing) {
+      await db.userRole.updateMany({
+        where: { userId: existing.id, role: "FORMER_STUDENT", cohortId: null },
+        data: { cohortId: await cohortId(m.cohort) },
+      });
+    }
     await db.user.upsert({
       where: { primaryEmail: m.email },
       update: {},
@@ -67,20 +108,25 @@ async function main() {
         primaryEmail: m.email,
         emailVerifiedAt: new Date(),
         state: "ACTIVE",
-        nameRomaji: m.romaji,
-        nameKanji: m.kanji,
+        firstNameRomaji: m.first,
+        lastNameRomaji: m.last,
+        nameRomaji: `${m.first} ${m.last}`,
+        lastNameKanji: m.kanji?.[0] ?? null,
+        firstNameKanji: m.kanji?.[1] ?? null,
+        nameKanji: m.kanji ? m.kanji.join(" ") : null,
         dateOfBirth: new Date(`${m.year - 18}-06-01`),
         bio: "Demo member",
         phone: "090-0000-0000",
         roles: {
           create: [
             {
-              role: "FORMER_STUDENT",
-              yearsFrom: m.year - 6,
-              yearsTo: m.year,
-              lastDivision: "HIGH_SCHOOL",
-              graduationOrLeaveYear: m.year,
-              didGraduate: true,
+              // Status, graduation and division derived as in the app.
+              ...studentRoleFields(
+                elementaryEndFor(m.cohort),
+                elementaryEndFor(m.cohort) - 7,
+                null,
+              ),
+              cohortId: await cohortId(m.cohort),
               currentStage: m.stage,
               currentStageUpdatedAt: new Date(),
               currentStageDetail: "Nagoya",

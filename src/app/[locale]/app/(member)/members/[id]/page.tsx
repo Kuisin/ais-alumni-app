@@ -1,3 +1,4 @@
+import { Pencil, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -6,6 +7,8 @@ import {
   FollowButton,
   type FollowUiState,
 } from "@/components/follows/follow-button";
+import { MemberMenu } from "@/components/follows/member-menu";
+import { HistoryList } from "@/components/history/history-list";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { AisRecord } from "@/components/profile/role-details";
 import {
@@ -25,7 +28,29 @@ import {
 } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
+import { visibleHistory } from "@/lib/history";
 import { requireActive } from "@/lib/session";
+
+/** Own profile: a missing section with a link to where it's filled in. */
+function EmptySection({
+  text,
+  href,
+  action,
+}: {
+  text: string;
+  href: string;
+  action: string;
+}) {
+  return (
+    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-slate-500">{text}</p>
+      <Link href={href} className={buttonClass("secondary", "shrink-0")}>
+        <Plus aria-hidden="true" className="size-4" />
+        {action}
+      </Link>
+    </div>
+  );
+}
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
@@ -39,6 +64,21 @@ export default async function MemberProfilePage({ params }: Props) {
   const me = await requireActive();
   const view = await getProfileForViewer(me, id);
   if (!view) notFound();
+  // 学歴・職歴: "followers only" entries need private-tier access.
+  const [education, work] = await Promise.all([
+    db.educationEntry.findMany({
+      where: { userId: id },
+      include: { school: true },
+    }),
+    db.workEntry.findMany({
+      where: { userId: id },
+      include: { company: true },
+    }),
+  ]);
+  const history = {
+    education: visibleHistory(education, view.private !== null),
+    work: visibleHistory(work, view.private !== null),
+  };
 
   const t = await getTranslations("profile");
   const tf = await getTranslations("follows");
@@ -91,8 +131,15 @@ export default async function MemberProfilePage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
+      <Card className="relative">
+        {!view.isSelf && !myBlock ? (
+          <div className="absolute top-2 right-2">
+            <MemberMenu targetId={id} name={name} />
+          </div>
+        ) : null}
+        <div
+          className={`flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left ${view.isSelf ? "sm:pr-48" : "sm:pr-12"}`}
+        >
           <Avatar src={avatarSrc(p.avatarUrl)} name={name} size={96} />
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
@@ -115,29 +162,49 @@ export default async function MemberProfilePage({ params }: Props) {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap items-start justify-center gap-2 sm:justify-start">
-          {view.isSelf ? (
-            <Link href="/app/profile/edit" className={buttonClass("primary")}>
+        {view.isSelf ? (
+          <div className="mt-4 sm:absolute sm:top-4 sm:right-4 sm:mt-0">
+            <Link
+              href="/app/profile/edit"
+              className={buttonClass("secondary", "w-full sm:w-auto")}
+            >
+              <Pencil aria-hidden="true" className="size-4" />
               {t("editProfile")}
             </Link>
-          ) : null}
-          {followState ? (
-            <FollowButton targetId={id} state={followState} />
-          ) : null}
-          {!view.isSelf ? (
-            <BlockControl
-              targetId={id}
-              name={name}
-              blocked={Boolean(myBlock)}
-            />
-          ) : null}
-        </div>
+          </div>
+        ) : null}
+        {followState || myBlock ? (
+          <div className="mt-4 flex flex-wrap items-start justify-center gap-2 sm:justify-start">
+            {followState ? (
+              <div className="flex flex-col items-center gap-1 sm:items-start">
+                <FollowButton targetId={id} state={followState} />
+                {followState === "none" ? (
+                  <p className="text-balance text-sm text-slate-500">
+                    {tf("followHint")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            {myBlock ? (
+              <BlockControl targetId={id} name={name} blocked />
+            ) : null}
+          </div>
+        ) : null}
       </Card>
 
       {p.bio ? (
         <Card>
           <h2 className="mb-2 text-lg font-semibold">{t("sections.about")}</h2>
           <p className="whitespace-pre-line text-slate-800">{p.bio}</p>
+        </Card>
+      ) : view.isSelf ? (
+        <Card>
+          <h2 className="mb-2 text-lg font-semibold">{t("sections.about")}</h2>
+          <EmptySection
+            text={t("emptyPrompt.bio")}
+            href="/app/profile/edit"
+            action={t("emptyPrompt.bioAction")}
+          />
         </Card>
       ) : null}
 
@@ -163,6 +230,26 @@ export default async function MemberProfilePage({ params }: Props) {
               {priv.currentStageDetail}
             </p>
           ) : null}
+        </Card>
+      ) : null}
+
+      {history.education.length || history.work.length ? (
+        <Card>
+          <h2 className="mb-3 text-lg font-semibold">
+            {t("sections.history")}
+          </h2>
+          <HistoryList education={history.education} work={history.work} />
+        </Card>
+      ) : view.isSelf ? (
+        <Card>
+          <h2 className="mb-2 text-lg font-semibold">
+            {t("sections.history")}
+          </h2>
+          <EmptySection
+            text={t("emptyPrompt.history")}
+            href="/app/profile/history"
+            action={t("emptyPrompt.historyAction")}
+          />
         </Card>
       ) : null}
 

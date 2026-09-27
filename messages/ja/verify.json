@@ -1,6 +1,6 @@
 {
-  "title": "AISとのつながりの確認",
-  "description": "愛知インターナショナルスクール（AIS）とのご関係を教えてください。いただいた申請は委員会のメンバーがすべて確認します（通常数日以内）。",
+  "title": "はじめに",
+  "description": "いくつかの質問に答えるだけで登録が完了します。所要時間はおよそ3分です。",
   "resubmitDescription": "内容を更新して、もう一度送信してください。",
   "needsInfo": {
     "title": "委員会から追加情報のお願いがあります："
@@ -8,9 +8,10 @@
   "progressLabel": "進行状況",
   "stepOf": "ステップ {n} / {total}",
   "steps": {
-    "basics": "ご本人について",
-    "roles": "AISでの情報",
-    "evidence": "書類と確認"
+    "basics": "基本情報",
+    "type": "あなたについて",
+    "details": "AISでのこと",
+    "review": "確認・送信"
   },
   "fixErrors": "{count} 件の項目を確認してください。",
   "serverErrors": {
@@ -43,11 +44,23 @@
     "didGraduate": "AISを卒業しましたか？",
     "classmates": "あなたを知っている同級生",
     "classmateN": "同級生 {n}",
-    "currentStage": "現在の状況"
+    "currentStage": "現在の状況",
+    "lastNameRomaji": "姓（Last name）",
+    "firstNameRomaji": "名（First name）",
+    "middleNameRomaji": "ミドルネーム",
+    "lastNameKanji": "姓",
+    "firstNameKanji": "名",
+    "cohort": "学年",
+    "cohortFilter": "表示する学年",
+    "teacherStatus": "ステータス",
+    "joinedYear": "AISに入った年",
+    "leftYearStudent": "AISを離れた年",
+    "joinedYearTeacher": "勤務を始めた年",
+    "leftYearTeacher": "退職した年"
   },
   "hints": {
-    "nameRomaji": "名・姓をローマ字で入力してください（例：Taro Yamada）。",
-    "nameKanji": "例：山田 太郎／やまだ たろう",
+    "nameRomaji": "ローマ字で入力してください。例：Yamada / Taro",
+    "nameKanji": "漢字またはかなで入力してください。例：山田 / 太郎、やまだ / たろう",
     "nameAtAis": "現在の氏名と異なる場合（旧姓やニックネームなど）。",
     "dateOfBirth": "本人確認と年齢に応じたプライバシー保護のためにのみ使用し、他の会員には表示されません。",
     "roles": "当てはまるものをすべて選んでください。",
@@ -55,7 +68,11 @@
     "subjects": "例：数学、9〜12年生",
     "schoolEmail": "AISのメールアドレスをお持ちの場合、確認コードを送ることで確認が早くなります。",
     "parentConfirmation": "在校生のアカウントは、AIS Alumniに登録済みの保護者、または委員会による確認も必要です。",
-    "classmates": "確認のため、これらの会員にあなたをご存じか問い合わせることがあります。1〜2名のお名前を入力してください。"
+    "classmates": "入力いただくと、同級生や先生に確認をお願いでき、承認が早くなることがあります。",
+    "cohort": "学年は小学6年生を修了する年で決まります（2016年修了＝第5期）。途中で入学・転校した場合も、所属していた学年を選んでください。",
+    "types": "あとから変更したい場合は、委員会に修正を依頼できます。",
+    "leftYearStudent": "卒業前にAISを離れた場合のみ入力してください。在校中・卒業した場合は空欄のままで大丈夫です。",
+    "leftYearTeacher": "現在もAISで勤務している場合は空欄のままにしてください。"
   },
   "didGraduate": {
     "yes": "はい、卒業しました",
@@ -72,13 +89,15 @@
     "invalidGrade": "学年を選んでください。",
     "invalidDate": "正しい日付を入力してください。",
     "invalidEmail": "正しいメールアドレスを入力してください。",
-    "yearsOrder": "終了年は開始年と同じか、それ以降にしてください。",
+    "yearsOrder": "離れた年は、入った年と同じかそれ以降にしてください。",
     "rolesRequired": "1つ以上選んでください。",
     "childrenRequired": "お子さまを1人以上追加してください。",
     "classmateRequired": "同級生のお名前を1名以上入力してください。",
     "tooManyFiles": "アップロードできるファイルは3つまでです。",
     "evidenceInvalid": "ファイルの一部を確認できませんでした。削除して、もう一度アップロードしてください。",
-    "invalid": "入力内容が正しくありません。"
+    "invalid": "入力内容が正しくありません。",
+    "typesRequired": "1つ以上選んでください。",
+    "cohortRequired": "学年を選んでください。"
   },
   "evidence": {
     "label": "確認書類（任意）",
@@ -110,16 +129,67 @@
       "rateLimited": "コードのリクエストが多すぎます。しばらく待ってからお試しください。",
       "invalid": "コードが正しくありません。",
       "expired": "コードの有効期限が切れました。新しいコードをリクエストしてください。",
-      "tooManyAttempts": "試行回数の上限に達しました。新しいコードをリクエストしてください。"
+      "tooManyAttempts": "試行回数の上限に達しました。新しいコードをリクエストしてください。",
+      "sendFailed": "現在メールを送信できません。数分後にもう一度お試しください。"
     }
   },
   "review": {
     "title": "入力内容の確認",
     "files": "書類",
-    "note": "送信後、委員会のメンバーが申請を確認します。結果はメール（LINE連携済みの場合はLINEでも）でお知らせします。"
+    "note": "送信後、委員会のメンバーが確認します。結果はメール（LINE連携済みならLINEでも）でお知らせします。",
+    "types": "区分",
+    "children": "お子さま",
+    "edit": "最初から見直す",
+    "addDocuments": "本人確認の書類を追加する（任意）"
   },
   "back": "戻る",
   "next": "次へ",
   "submit": "申請を送信",
-  "submitting": "送信中…"
+  "submitting": "送信中…",
+  "cohortNotListed": "一覧にない・わからない",
+  "cohortFilter": {
+    "graduated": "卒業済み",
+    "current": "在校中",
+    "all": "すべて"
+  },
+  "stepTitles": {
+    "type": "あなたはどなたですか？",
+    "basics": "お名前と生年月日",
+    "details": "AISでのことを教えてください",
+    "review": "内容を確認して送信"
+  },
+  "stepIntros": {
+    "type": "当てはまるものをすべて選んでください。卒業生で、今はお子さまが在校している方などは両方選べます。",
+    "basics": "委員会があなたを確認するために使います。生年月日は他の会員には表示されません。",
+    "details": "学年と在籍した年を入力するだけで、在校生・卒業生や現在の学年は自動で判定されます。",
+    "review": "内容に問題がなければ送信してください。委員会が確認し、結果をお知らせします。"
+  },
+  "types": {
+    "STUDENT": {
+      "title": "在校生・卒業生",
+      "description": "AISに通っている、または通っていた方"
+    },
+    "PARENT": {
+      "title": "保護者",
+      "description": "AISに通っている、または通っていたお子さまの保護者"
+    },
+    "TEACHER": {
+      "title": "教職員",
+      "description": "AISで働いている、または働いていた方"
+    }
+  },
+  "sections": {
+    "student": "学年と、AISに入った年を教えてください。",
+    "studentMore": "確認を早めるための情報（任意）",
+    "parent": "AISに通っている、または通っていたお子さまを追加してください。",
+    "teacher": "AISで勤務した期間と担当を教えてください。"
+  },
+  "preview": {
+    "current": "現在 {grade}（在校生）として登録されます",
+    "upcoming": "入学予定の在校生として登録されます",
+    "graduated": "{year}年に卒業（卒業生）として登録されます",
+    "left": "{year}年にAISを離れた元生徒として登録されます",
+    "teacherCurrent": "現職の教職員として登録されます",
+    "teacherFormer": "{year}年に退職した元教職員として登録されます"
+  }
 }

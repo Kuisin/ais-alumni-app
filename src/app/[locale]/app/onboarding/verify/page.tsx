@@ -3,7 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { Alert, PageHeader } from "@/components/ui/card";
 import { VerifyForm } from "@/components/verify/verify-form";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
+import { loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { namePartsOf } from "@/lib/names";
 import { requireState } from "@/lib/session";
 import { isBlobConfigured } from "@/lib/storage";
 import {
@@ -42,12 +44,23 @@ export default async function VerifyPage({ params }: Props) {
     size: e.size,
   }));
 
-  const initial = request
+  const userNames = namePartsOf(user);
+  const fromAnswers = request
     ? answersToFormState(request.answers, uiLocale, evidence)
+    : null;
+  const initial = fromAnswers
+    ? {
+        ...fromAnswers,
+        ...(Object.fromEntries(
+          Object.entries(userNames).map(([k, v]) => [
+            k,
+            fromAnswers[k as keyof typeof userNames] || v,
+          ]),
+        ) as typeof userNames),
+      }
     : {
         ...emptyFormState(uiLocale),
-        nameRomaji: user.nameRomaji ?? "",
-        nameKanji: user.nameKanji ?? "",
+        ...userNames,
         nameAtAis: user.nameAtAis ?? "",
         dateOfBirth: user.dateOfBirth
           ? user.dateOfBirth.toISOString().slice(0, 10)
@@ -84,6 +97,7 @@ export default async function VerifyPage({ params }: Props) {
         userId={user.id}
         useBlob={isBlobConfigured()}
         initialVerifiedSchoolEmail={verifiedSchoolEmail}
+        cohorts={await loadCohortChoices(uiLocale)}
       />
     </>
   );

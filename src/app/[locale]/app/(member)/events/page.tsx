@@ -1,3 +1,4 @@
+import { CalendarDays } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { EventCard } from "@/components/events/event-card";
 import { Pager, parsePage } from "@/components/news/pager";
@@ -86,7 +87,7 @@ export default async function EventsPage({
       </nav>
 
       {events.length === 0 ? (
-        <EmptyState>
+        <EmptyState icon={<CalendarDays />}>
           {tab === "past" ? t("emptyPast") : t("emptyUpcoming")}
         </EmptyState>
       ) : (

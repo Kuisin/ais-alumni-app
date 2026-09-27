@@ -16,10 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import type { RoleKey } from "@/generated/prisma/enums";
+import type { CohortChoice } from "@/lib/cohorts";
+import { composeKanji, composeRomaji } from "@/lib/names";
 import {
   issuesToErrors,
-  ROLE_ORDER,
+  MEMBER_TYPES,
+  type MemberType,
   STEPS,
   type Step,
   stepOfPath,
@@ -29,13 +31,13 @@ import {
 } from "@/lib/verification/schema";
 import { EvidenceUploader } from "./evidence-uploader";
 import { type Errors, fieldId, GroupError, TextInput } from "./fields";
-import {
-  CurrentParentSection,
-  CurrentStudentSection,
-  FormerParentSection,
-  FormerStudentSection,
-  TeacherSection,
-} from "./role-sections";
+import { ParentSection, StudentSection, TeacherSection } from "./role-sections";
+
+const TYPE_ICON: Record<MemberType, string> = {
+  STUDENT: "🎓",
+  PARENT: "👪",
+  TEACHER: "🧑‍🏫",
+};
 
 function validate(state: VerifyFormState, uiLocale: "ja" | "en"): Errors {
   const r = verificationSchema({ requireKanji: uiLocale === "ja" }).safeParse(
@@ -59,13 +61,13 @@ function focusFirstError(errors: Errors) {
       document.getElementById(fieldId(first)) ??
       document.getElementById(fieldId(first.split(".").slice(0, -1).join(".")));
     el?.focus();
-    el?.scrollIntoView({ block: "center" });
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
   });
 }
 
 /**
- * Verification form (§6, §14 screen 4): three steps on one page with
- * per-step validation using the shared Zod schema; the server re-validates.
+ * Sign-up wizard: who you are → about you → details → review & send.
+ * Each step is validated with the shared Zod schema; the server re-validates.
  */
 export function VerifyForm({
   initial,
@@ -73,7 +75,9 @@ export function VerifyForm({
   userId,
   useBlob,
   initialVerifiedSchoolEmail,
+  cohorts,
 }: {
+  cohorts: CohortChoice[];
   initial: VerifyFormState;
   uiLocale: "ja" | "en";
   userId: string;
@@ -81,7 +85,6 @@ export function VerifyForm({
   initialVerifiedSchoolEmail: string | null;
 }) {
   const t = useTranslations("verify");
-  const tr = useTranslations("roles");
   const [state, setState] = useState<VerifyFormState>(initial);
   const [stepIndex, setStepIndex] = useState(0);
   const [errors, setErrors] = useState<Errors>({});
@@ -114,16 +117,22 @@ export function VerifyForm({
     setState((s) => ({ ...s, [key]: value }));
   }
 
-  function toggleRole(role: RoleKey, on: boolean) {
+  function toggleType(type: MemberType) {
     setState((s) => ({
       ...s,
-      roles: on ? [...s.roles, role] : s.roles.filter((r) => r !== role),
+      types: s.types.includes(type)
+        ? s.types.filter((x) => x !== type)
+        : [...s.types, type],
     }));
   }
 
   function goTo(index: number) {
+    setErrors({});
     setStepIndex(index);
-    requestAnimationFrame(() => headingRef.current?.focus());
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    requestAnimationFrame(() =>
+      headingRef.current?.focus({ preventScroll: true }),
+    );
   }
 
   function next() {
@@ -137,7 +146,7 @@ export function VerifyForm({
   }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
-    if (step !== "evidence") {
+    if (step !== "review") {
       e.preventDefault();
       next();
       return;
@@ -153,6 +162,7 @@ export function VerifyForm({
   }
 
   const errorCount = Object.keys(errors).length;
+  const progress = ((stepIndex + 1) / STEPS.length) * 100;
 
   return (
     <form
@@ -168,17 +178,24 @@ export function VerifyForm({
       />
       <input type="hidden" name="uiLocale" value={uiLocale} />
 
-      <nav aria-label={t("progressLabel")}>
-        <ol className="grid grid-cols-3 gap-2">
+      {/* Progress */}
+      <nav aria-label={t("progressLabel")} className="space-y-2">
+        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full rounded-full bg-brand-700 transition-[width] duration-500 ease-out motion-reduce:transition-none"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <ol className="grid grid-cols-4 gap-1 text-center text-xs sm:text-sm">
           {STEPS.map((s, i) => (
             <li
               key={s}
               aria-current={i === stepIndex ? "step" : undefined}
-              className={`rounded-lg border-t-4 pt-2 text-xs sm:text-sm ${
+              className={
                 i <= stepIndex
-                  ? "border-brand-700 font-semibold text-brand-800"
-                  : "border-slate-200 text-slate-500"
-              }`}
+                  ? "font-semibold text-brand-800"
+                  : "text-slate-500"
+              }
             >
               <span className="sr-only">
                 {t("stepOf", { n: i + 1, total: STEPS.length })}:{" "}
@@ -189,228 +206,287 @@ export function VerifyForm({
         </ol>
       </nav>
 
-      <h2
-        ref={headingRef}
-        tabIndex={-1}
-        className="text-lg font-semibold focus:outline-none"
-      >
-        {t("stepOf", { n: stepIndex + 1, total: STEPS.length })} —{" "}
-        {t(`steps.${step}`)}
-      </h2>
+      <div key={step} className="animate-step space-y-6">
+        <header className="space-y-1">
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-xl font-bold focus:outline-none"
+          >
+            {t(`stepTitles.${step}`)}
+          </h2>
+          <p className="text-slate-600">{t(`stepIntros.${step}`)}</p>
+        </header>
 
-      <div aria-live="polite">
-        {errorCount ? (
-          <Alert tone="error">{t("fixErrors", { count: errorCount })}</Alert>
-        ) : null}
-        {serverState?.message && !serverState.errors ? (
-          <Alert tone="error">{t(`serverErrors.${serverState.message}`)}</Alert>
-        ) : null}
-      </div>
+        <div aria-live="polite">
+          {errorCount ? (
+            <Alert tone="error">{t("fixErrors", { count: errorCount })}</Alert>
+          ) : null}
+          {serverState?.message && !serverState.errors ? (
+            <Alert tone="error">
+              {t(`serverErrors.${serverState.message}`)}
+            </Alert>
+          ) : null}
+        </div>
 
-      {step === "basics" ? (
-        <div className="space-y-4">
-          <TextInput
-            path="nameRomaji"
-            label={t("fields.nameRomaji")}
-            hint={t("hints.nameRomaji")}
-            required
-            autoComplete="name"
-            lang="en"
-            value={state.nameRomaji}
-            onChange={(v) => set("nameRomaji", v)}
-            errors={errors}
-          />
-          <TextInput
-            path="nameKanji"
-            label={t("fields.nameKanji")}
-            hint={t("hints.nameKanji")}
-            required={uiLocale === "ja"}
-            lang="ja"
-            value={state.nameKanji}
-            onChange={(v) => set("nameKanji", v)}
-            errors={errors}
-          />
-          <TextInput
-            path="nameAtAis"
-            label={t("fields.nameAtAis")}
-            hint={t("hints.nameAtAis")}
-            value={state.nameAtAis}
-            onChange={(v) => set("nameAtAis", v)}
-            errors={errors}
-          />
-          <TextInput
-            path="dateOfBirth"
-            type="date"
-            label={t("fields.dateOfBirth")}
-            hint={t("hints.dateOfBirth")}
-            required
-            autoComplete="bday"
-            value={state.dateOfBirth}
-            onChange={(v) => set("dateOfBirth", v)}
-            errors={errors}
-          />
-
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-slate-800">
-              {t("fields.roles")}
-              <span className="ml-1 text-red-700" aria-hidden="true">
-                *
-              </span>
-            </legend>
-            <p className="text-sm text-slate-600">{t("hints.roles")}</p>
-            <div className="space-y-1">
-              {ROLE_ORDER.map((role, i) => (
-                <label
-                  key={role}
-                  className="flex min-h-11 items-center gap-3 rounded-lg px-2 hover:bg-slate-50"
-                >
-                  <input
-                    id={i === 0 ? fieldId("roles") : undefined}
-                    type="checkbox"
-                    className="size-5"
-                    checked={state.roles.includes(role)}
-                    onChange={(e) => toggleRole(role, e.target.checked)}
-                  />
-                  <span>{tr(`role.${role}`)}</span>
-                </label>
-              ))}
+        {step === "type" ? (
+          <fieldset>
+            <legend className="sr-only">{t("stepTitles.type")}</legend>
+            <div
+              id={fieldId("types")}
+              tabIndex={-1}
+              className="grid gap-3 sm:grid-cols-3"
+            >
+              {MEMBER_TYPES.map((type, i) => {
+                const on = state.types.includes(type);
+                return (
+                  <label
+                    key={type}
+                    style={{ animationDelay: `${i * 60}ms` }}
+                    className={`animate-rise relative flex cursor-pointer flex-col gap-2 rounded-2xl border-2 p-4 transition motion-reduce:transition-none ${
+                      on
+                        ? "border-brand-700 bg-brand-50 shadow-md"
+                        : "border-slate-200 bg-white hover:border-brand-100 hover:shadow-sm"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="absolute right-3 top-3 size-5"
+                      checked={on}
+                      onChange={() => toggleType(type)}
+                    />
+                    <span aria-hidden="true" className="text-3xl">
+                      {TYPE_ICON[type]}
+                    </span>
+                    <span className="font-semibold">
+                      {t(`types.${type}.title`)}
+                    </span>
+                    <span className="text-sm text-slate-600">
+                      {t(`types.${type}.description`)}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
-            {errors.roles ? (
-              <p className="text-sm text-red-700">
-                {t(`errors.${errors.roles}`)}
+            <p className="mt-3 text-sm text-slate-600">{t("hints.types")}</p>
+            {errors.types ? (
+              <p className="mt-1 text-sm text-red-700">
+                {t(`errors.${errors.types}`)}
               </p>
             ) : null}
           </fieldset>
+        ) : null}
 
-          <Field
-            id={fieldId("locale")}
-            label={t("fields.locale")}
-            hint={t("hints.locale")}
-            required
-          >
-            {(aria) => (
-              <Select
-                {...aria}
-                value={state.locale}
-                onChange={(e) =>
-                  set("locale", e.target.value === "en" ? "en" : "ja")
-                }
-              >
-                <option value="ja">日本語</option>
-                <option value="en">English</option>
-              </Select>
-            )}
-          </Field>
-        </div>
-      ) : null}
+        {step === "basics" ? (
+          <div className="space-y-5">
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-semibold text-slate-800">
+                {t("fields.nameRomaji")}
+              </legend>
+              <p className="text-sm text-slate-600">{t("hints.nameRomaji")}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <TextInput
+                  path="lastNameRomaji"
+                  label={t("fields.lastNameRomaji")}
+                  required
+                  autoComplete="family-name"
+                  lang="en"
+                  value={state.lastNameRomaji}
+                  onChange={(v) => set("lastNameRomaji", v)}
+                  errors={errors}
+                />
+                <TextInput
+                  path="firstNameRomaji"
+                  label={t("fields.firstNameRomaji")}
+                  required
+                  autoComplete="given-name"
+                  lang="en"
+                  value={state.firstNameRomaji}
+                  onChange={(v) => set("firstNameRomaji", v)}
+                  errors={errors}
+                />
+              </div>
+              <TextInput
+                path="middleNameRomaji"
+                label={t("fields.middleNameRomaji")}
+                autoComplete="additional-name"
+                lang="en"
+                value={state.middleNameRomaji}
+                onChange={(v) => set("middleNameRomaji", v)}
+                errors={errors}
+              />
+            </fieldset>
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-semibold text-slate-800">
+                {t("fields.nameKanji")}
+              </legend>
+              <p className="text-sm text-slate-600">{t("hints.nameKanji")}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <TextInput
+                  path="lastNameKanji"
+                  label={t("fields.lastNameKanji")}
+                  required={uiLocale === "ja"}
+                  lang="ja"
+                  value={state.lastNameKanji}
+                  onChange={(v) => set("lastNameKanji", v)}
+                  errors={errors}
+                />
+                <TextInput
+                  path="firstNameKanji"
+                  label={t("fields.firstNameKanji")}
+                  required={uiLocale === "ja"}
+                  lang="ja"
+                  value={state.firstNameKanji}
+                  onChange={(v) => set("firstNameKanji", v)}
+                  errors={errors}
+                />
+              </div>
+            </fieldset>
+            <TextInput
+              path="nameAtAis"
+              label={t("fields.nameAtAis")}
+              hint={t("hints.nameAtAis")}
+              value={state.nameAtAis}
+              onChange={(v) => set("nameAtAis", v)}
+              errors={errors}
+            />
+            <TextInput
+              path="dateOfBirth"
+              type="date"
+              label={t("fields.dateOfBirth")}
+              hint={t("hints.dateOfBirth")}
+              required
+              autoComplete="bday"
+              value={state.dateOfBirth}
+              onChange={(v) => set("dateOfBirth", v)}
+              errors={errors}
+            />
+            <Field
+              id={fieldId("locale")}
+              label={t("fields.locale")}
+              hint={t("hints.locale")}
+              required
+            >
+              {(aria) => (
+                <Select
+                  {...aria}
+                  value={state.locale}
+                  onChange={(e) =>
+                    set("locale", e.target.value === "en" ? "en" : "ja")
+                  }
+                >
+                  <option value="ja">日本語</option>
+                  <option value="en">English</option>
+                </Select>
+              )}
+            </Field>
+          </div>
+        ) : null}
 
-      {step === "roles" ? (
-        <div className="space-y-6">
-          {ROLE_ORDER.filter((r) => state.roles.includes(r)).map((role) => {
-            switch (role) {
-              case "TEACHER":
-                return (
-                  <TeacherSection
-                    key={role}
-                    value={state.teacher}
-                    onChange={(v) => set("teacher", v)}
-                    errors={errors}
-                    verifiedEmail={verifiedEmail}
-                    onVerified={setVerifiedEmail}
-                  />
-                );
-              case "CURRENT_STUDENT":
-                return (
-                  <CurrentStudentSection
-                    key={role}
-                    value={state.currentStudent}
-                    onChange={(v) => set("currentStudent", v)}
-                    errors={errors}
-                  />
-                );
-              case "CURRENT_PARENT":
-                return (
-                  <CurrentParentSection
-                    key={role}
-                    value={state.currentParent}
-                    onChange={(v) => set("currentParent", v)}
-                    errors={errors}
-                  />
-                );
-              case "FORMER_STUDENT":
-                return (
-                  <FormerStudentSection
-                    key={role}
-                    value={state.formerStudent}
-                    onChange={(v) => set("formerStudent", v)}
-                    errors={errors}
-                  />
-                );
-              case "FORMER_PARENT":
-                return (
-                  <FormerParentSection
-                    key={role}
-                    value={state.formerParent}
-                    onChange={(v) => set("formerParent", v)}
-                    errors={errors}
-                  />
-                );
-              default:
-                return null;
-            }
-          })}
-          {Object.keys(errors)
-            .filter((p) =>
-              [
-                "teacher",
-                "currentStudent",
-                "currentParent",
-                "formerStudent",
-                "formerParent",
-              ].includes(p),
-            )
-            .map((p) => (
+        {step === "details" ? (
+          <div className="space-y-6">
+            {state.types.includes("STUDENT") ? (
+              <StudentSection
+                value={state.student}
+                onChange={(v) => set("student", v)}
+                errors={errors}
+                cohorts={cohorts}
+              />
+            ) : null}
+            {state.types.includes("PARENT") ? (
+              <ParentSection
+                value={state.parent}
+                onChange={(v) => set("parent", v)}
+                errors={errors}
+                cohorts={cohorts}
+              />
+            ) : null}
+            {state.types.includes("TEACHER") ? (
+              <TeacherSection
+                value={state.teacher}
+                onChange={(v) => set("teacher", v)}
+                errors={errors}
+                verifiedEmail={verifiedEmail}
+                onVerified={setVerifiedEmail}
+              />
+            ) : null}
+            {["student", "parent", "teacher"].map((p) => (
               <GroupError key={p} errors={errors} path={p} />
             ))}
-        </div>
-      ) : null}
+          </div>
+        ) : null}
 
-      {step === "evidence" ? (
-        <div className="space-y-6">
-          <EvidenceUploader
-            userId={userId}
-            useBlob={useBlob}
-            items={state.evidence}
-            onChange={(items) => set("evidence", items)}
-            error={errors.evidence}
-          />
-          <section
-            aria-labelledby="review-heading"
-            className="space-y-2 rounded-xl bg-slate-50 p-4 text-sm"
-          >
-            <h3 id="review-heading" className="font-semibold">
-              {t("review.title")}
-            </h3>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-              <dt className="text-slate-600">{t("fields.nameRomaji")}</dt>
-              <dd>{state.nameRomaji}</dd>
-              {state.nameKanji ? (
-                <>
-                  <dt className="text-slate-600">{t("fields.nameKanji")}</dt>
-                  <dd>{state.nameKanji}</dd>
-                </>
-              ) : null}
-              <dt className="text-slate-600">{t("fields.dateOfBirth")}</dt>
-              <dd>{state.dateOfBirth}</dd>
-              <dt className="text-slate-600">{t("fields.roles")}</dt>
-              <dd>{state.roles.map((r) => tr(`role.${r}`)).join(", ")}</dd>
-              <dt className="text-slate-600">{t("review.files")}</dt>
-              <dd>{state.evidence.length}</dd>
-            </dl>
-            <p className="text-slate-600">{t("review.note")}</p>
-          </section>
-        </div>
-      ) : null}
+        {step === "review" ? (
+          <div className="space-y-6">
+            <section
+              aria-labelledby="review-heading"
+              className="animate-rise space-y-3 rounded-2xl bg-slate-50 p-4 text-sm"
+            >
+              <h3 id="review-heading" className="font-semibold">
+                {t("review.title")}
+              </h3>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+                <dt className="text-slate-600">{t("fields.nameRomaji")}</dt>
+                <dd>{composeRomaji(state)}</dd>
+                {composeKanji(state) ? (
+                  <>
+                    <dt className="text-slate-600">{t("fields.nameKanji")}</dt>
+                    <dd>{composeKanji(state)}</dd>
+                  </>
+                ) : null}
+                <dt className="text-slate-600">{t("fields.dateOfBirth")}</dt>
+                <dd>{state.dateOfBirth}</dd>
+                <dt className="text-slate-600">{t("review.types")}</dt>
+                <dd>
+                  {state.types.map((x) => t(`types.${x}.title`)).join("・")}
+                </dd>
+                {state.types.includes("STUDENT") ? (
+                  <>
+                    <dt className="text-slate-600">{t("fields.cohort")}</dt>
+                    <dd>
+                      {
+                        cohorts.find(
+                          (c) => c.value === state.student.cohortNumber,
+                        )?.label
+                      }
+                    </dd>
+                  </>
+                ) : null}
+                {state.types.includes("PARENT") ? (
+                  <>
+                    <dt className="text-slate-600">{t("review.children")}</dt>
+                    <dd>
+                      {state.parent.children.map((c) => c.name).join("、")}
+                    </dd>
+                  </>
+                ) : null}
+              </dl>
+              <Button variant="ghost" onClick={() => goTo(0)}>
+                {t("review.edit")}
+              </Button>
+            </section>
+
+            <details
+              className="rounded-2xl border border-slate-200 bg-white p-4"
+              open={state.evidence.length > 0}
+            >
+              <summary className="cursor-pointer font-medium text-brand-700">
+                {t("review.addDocuments")}
+              </summary>
+              <div className="mt-3">
+                <EvidenceUploader
+                  userId={userId}
+                  useBlob={useBlob}
+                  items={state.evidence}
+                  onChange={(items) => set("evidence", items)}
+                  error={errors.evidence}
+                />
+              </div>
+            </details>
+            <p className="text-sm text-slate-600">{t("review.note")}</p>
+          </div>
+        ) : null}
+      </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
         {stepIndex > 0 ? (
@@ -420,7 +496,7 @@ export function VerifyForm({
         ) : (
           <span />
         )}
-        {step === "evidence" ? (
+        {step === "review" ? (
           <SubmitButton pendingText={t("submitting")}>
             {t("submit")}
           </SubmitButton>

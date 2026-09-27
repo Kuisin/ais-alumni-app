@@ -1,5 +1,8 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { cohortLabel, elementaryEndFor, gradeLabel } from "@/lib/cohorts";
+import { composeKanji, composeRomaji } from "@/lib/names";
+import { isCurrentTeacher, studentStatus } from "@/lib/school";
 
 type Obj = Record<string, unknown>;
 const obj = (v: unknown): Obj =>
@@ -7,6 +10,7 @@ const obj = (v: unknown): Obj =>
 const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const str = (v: unknown): string | null =>
   typeof v === "string" && v ? v : typeof v === "number" ? String(v) : null;
+const num = (v: unknown): number | null => (typeof v === "number" ? v : null);
 
 function Row({ label, value }: { label: string; value: ReactNode }) {
   if (value === null || value === undefined || value === "") return null;
@@ -28,171 +32,154 @@ function List({ children }: { children: ReactNode }) {
 
 /**
  * Admin rendering of VerificationRequest.answers (§14 screen 15). Answers are
- * JSON written by the verify form; rendering is lenient about the shape.
+ * JSON written by the sign-up wizard (version 2); rendering is lenient. The
+ * status line shows what the app worked out from the 学年 and years.
  */
 export async function AnswersView({ answers }: { answers: unknown }) {
   const t = await getTranslations("verify");
   const ta = await getTranslations("adminVerify");
-  const tr = await getTranslations("roles");
+  const locale = (await getLocale()) === "en" ? "en" : "ja";
   const a = obj(answers);
-  const years = (s: Obj) => {
-    const from = str(s.yearsFrom);
-    if (!from) return null;
-    return `${from}–${str(s.yearsTo) ?? t("fields.present")}`;
-  };
-  const grade = (v: unknown) =>
-    typeof v === "number" ? tr("grade", { grade: v }) : null;
-  const yesNo = (v: unknown) =>
-    v === true
-      ? t("didGraduate.yes")
-      : v === false
-        ? t("didGraduate.no")
-        : null;
-  const roleLabel = (r: unknown) =>
-    typeof r === "string" ? tr(`role.${r}`) : "";
-
+  const student = obj(a.student);
   const teacher = obj(a.teacher);
-  const cs = obj(a.currentStudent);
-  const cp = obj(a.currentParent);
-  const fs = obj(a.formerStudent);
-  const fp = obj(a.formerParent);
+  const children = arr(obj(a.parent).children).map(obj);
+
+  const classLabel = (n: unknown) =>
+    typeof n === "number"
+      ? cohortLabel(
+          { number: n, elementaryEndYear: elementaryEndFor(n) },
+          locale,
+        )
+      : null;
+  const statusOf = (n: unknown, left: unknown) => {
+    if (typeof n !== "number") return null;
+    const st = studentStatus(elementaryEndFor(n), num(left));
+    if (st.current)
+      return st.currentGrade !== null
+        ? t("preview.current", { grade: gradeLabel(st.currentGrade, locale) })
+        : t("preview.upcoming");
+    return st.didGraduate
+      ? t("preview.graduated", { year: st.graduationOrLeaveYear ?? "" })
+      : t("preview.left", { year: st.graduationOrLeaveYear ?? "" });
+  };
+  const years = (s: Obj) => {
+    const from = str(s.joinedYear);
+    return from ? `${from}–${str(s.leftYear) ?? ""}` : null;
+  };
+
+  if (a.version !== 2) {
+    return <p className="text-sm text-slate-600">{ta("detail.oldFormat")}</p>;
+  }
 
   return (
     <div className="space-y-5">
       <section>
         <h3 className="mb-2 font-semibold">{ta("detail.basics")}</h3>
         <List>
-          <Row label={t("fields.nameRomaji")} value={str(a.nameRomaji)} />
-          <Row label={t("fields.nameKanji")} value={str(a.nameKanji)} />
+          <Row
+            label={t("fields.nameRomaji")}
+            value={composeRomaji({
+              lastNameRomaji: str(a.lastNameRomaji),
+              firstNameRomaji: str(a.firstNameRomaji),
+              middleNameRomaji: str(a.middleNameRomaji),
+            })}
+          />
+          <Row
+            label={t("fields.nameKanji")}
+            value={composeKanji({
+              lastNameKanji: str(a.lastNameKanji),
+              firstNameKanji: str(a.firstNameKanji),
+            })}
+          />
           <Row label={t("fields.nameAtAis")} value={str(a.nameAtAis)} />
           <Row label={t("fields.dateOfBirth")} value={str(a.dateOfBirth)} />
           <Row
-            label={t("fields.roles")}
-            value={arr(a.roles).map(roleLabel).join(", ")}
+            label={t("review.types")}
+            value={arr(a.types)
+              .map((x) => t(`types.${String(x)}.title`))
+              .join("・")}
           />
           <Row
             label={t("fields.locale")}
-            value={
-              a.locale === "en"
-                ? "English"
-                : a.locale === "ja"
-                  ? "日本語"
-                  : null
-            }
+            value={a.locale === "en" ? "English" : "日本語"}
           />
         </List>
       </section>
 
+      {Object.keys(student).length ? (
+        <section>
+          <h3 className="mb-2 font-semibold">{t("types.STUDENT.title")}</h3>
+          <List>
+            <Row
+              label={t("fields.cohort")}
+              value={classLabel(student.cohortNumber)}
+            />
+            <Row label={ta("detail.years")} value={years(student)} />
+            <Row
+              label={ta("detail.status")}
+              value={statusOf(student.cohortNumber, student.leftYear)}
+            />
+            <Row
+              label={t("fields.homeroomTeacher")}
+              value={str(student.homeroomTeacher)}
+            />
+            <Row
+              label={t("fields.studentIdNo")}
+              value={str(student.studentIdNo)}
+            />
+            <Row
+              label={t("fields.classmates")}
+              value={arr(student.classmates).map(String).join("、")}
+            />
+          </List>
+        </section>
+      ) : null}
+
+      {children.length ? (
+        <section>
+          <h3 className="mb-2 font-semibold">{t("types.PARENT.title")}</h3>
+          <ol className="space-y-2">
+            {children.map((c, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: answers are a fixed list
+              <li key={i} className="rounded-lg bg-slate-50 p-3">
+                <List>
+                  <Row label={t("fields.childName")} value={str(c.name)} />
+                  <Row
+                    label={t("fields.cohort")}
+                    value={classLabel(c.cohortNumber)}
+                  />
+                  <Row
+                    label={ta("detail.status")}
+                    value={statusOf(c.cohortNumber, c.leftYear)}
+                  />
+                </List>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
       {Object.keys(teacher).length ? (
         <section>
-          <h3 className="mb-2 font-semibold">{tr("role.TEACHER")}</h3>
+          <h3 className="mb-2 font-semibold">{t("types.TEACHER.title")}</h3>
           <List>
             <Row label={ta("detail.years")} value={years(teacher)} />
+            <Row
+              label={ta("detail.status")}
+              value={
+                isCurrentTeacher(num(teacher.leftYear))
+                  ? t("preview.teacherCurrent")
+                  : t("preview.teacherFormer", {
+                      year: str(teacher.leftYear) ?? "",
+                    })
+              }
+            />
             <Row label={t("fields.subjects")} value={str(teacher.subjects)} />
             <Row
               label={t("fields.schoolEmail")}
               value={str(teacher.schoolEmail)}
             />
           </List>
-        </section>
-      ) : null}
-
-      {Object.keys(cs).length ? (
-        <section>
-          <h3 className="mb-2 font-semibold">{tr("role.CURRENT_STUDENT")}</h3>
-          <List>
-            <Row label={t("fields.grade")} value={grade(cs.grade)} />
-            <Row
-              label={t("fields.homeroomTeacher")}
-              value={str(cs.homeroomTeacher)}
-            />
-            <Row label={t("fields.studentIdNo")} value={str(cs.studentIdNo)} />
-          </List>
-        </section>
-      ) : null}
-
-      {arr(cp.children).length ? (
-        <section>
-          <h3 className="mb-2 font-semibold">{tr("role.CURRENT_PARENT")}</h3>
-          <ol className="space-y-2">
-            {arr(cp.children)
-              .map(obj)
-              .map((c, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: static list
-                <li key={i} className="rounded-lg bg-slate-50 p-2">
-                  <List>
-                    <Row label={t("fields.childName")} value={str(c.name)} />
-                    <Row label={t("fields.grade")} value={grade(c.grade)} />
-                    <Row
-                      label={t("fields.homeroomTeacher")}
-                      value={str(c.homeroomTeacher)}
-                    />
-                  </List>
-                </li>
-              ))}
-          </ol>
-        </section>
-      ) : null}
-
-      {Object.keys(fs).length ? (
-        <section>
-          <h3 className="mb-2 font-semibold">{tr("role.FORMER_STUDENT")}</h3>
-          <List>
-            <Row label={ta("detail.years")} value={years(fs)} />
-            <Row
-              label={t("fields.lastDivision")}
-              value={
-                typeof fs.lastDivision === "string"
-                  ? tr(`division.${fs.lastDivision}`)
-                  : null
-              }
-            />
-            <Row
-              label={t("fields.graduationOrLeaveYear")}
-              value={str(fs.graduationOrLeaveYear)}
-            />
-            <Row
-              label={t("fields.didGraduate")}
-              value={yesNo(fs.didGraduate)}
-            />
-            <Row
-              label={t("fields.homeroomTeacherThen")}
-              value={str(fs.homeroomTeacher)}
-            />
-            <Row
-              label={t("fields.classmates")}
-              value={arr(fs.classmates)
-                .filter((c) => typeof c === "string")
-                .join(", ")}
-            />
-            <Row
-              label={t("fields.currentStage")}
-              value={
-                typeof fs.currentStage === "string"
-                  ? tr(`stage.${fs.currentStage}`)
-                  : null
-              }
-            />
-          </List>
-        </section>
-      ) : null}
-
-      {arr(fp.children).length ? (
-        <section>
-          <h3 className="mb-2 font-semibold">{tr("role.FORMER_PARENT")}</h3>
-          <ol className="space-y-2">
-            {arr(fp.children)
-              .map(obj)
-              .map((c, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: static list
-                <li key={i} className="rounded-lg bg-slate-50 p-2">
-                  <List>
-                    <Row label={t("fields.childName")} value={str(c.name)} />
-                    <Row label={ta("detail.years")} value={years(c)} />
-                  </List>
-                </li>
-              ))}
-          </ol>
         </section>
       ) : null}
     </div>

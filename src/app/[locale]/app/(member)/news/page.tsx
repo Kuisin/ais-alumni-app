@@ -1,3 +1,4 @@
+import { Newspaper } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { NewsCard } from "@/components/news/news-card";
 import { Pager, parsePage } from "@/components/news/pager";
@@ -47,7 +48,7 @@ export default async function NewsPage({
     <>
       <PageHeader title={t("title")} description={t("description")} />
       {posts.length === 0 ? (
-        <EmptyState>{t("empty")}</EmptyState>
+        <EmptyState icon={<Newspaper />}>{t("empty")}</EmptyState>
       ) : (
         <ul className="space-y-3">
           {posts.map((p) => (

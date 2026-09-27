@@ -1,0 +1,57 @@
+{
+  "title": "Getting set up",
+  "intro": "Almost there. Work down the list to get the most out of the alumni network.",
+  "complete": "All done. Welcome!",
+  "progress": "{done} of {total} done",
+  "progressLabel": "Setup progress",
+  "done": "done",
+  "todo": "to do",
+  "items": {
+    "email": {
+      "title": "Confirm your email",
+      "body": "Used to sign in and for notices.",
+      "action": "Confirm"
+    },
+    "apply": {
+      "title": "Send the verification form",
+      "body": "Tell us about your time at AIS. The committee will check it.",
+      "action": "Open form"
+    },
+    "approval": {
+      "title": "Committee approval",
+      "body": "Alumni volunteers on the committee are reviewing your details. We'll email you once approved (usually within a few days).",
+      "action": "Check"
+    },
+    "line": {
+      "title": "Link LINE and add us as a friend",
+      "body": "Get approvals and event notices on LINE. Just tap the button and sign in with LINE.",
+      "action": "Link LINE"
+    },
+    "photo": {
+      "title": "Add a profile photo",
+      "body": "A face makes it easier for old friends to find you.",
+      "action": "Add photo"
+    },
+    "bio": {
+      "title": "Write a short bio",
+      "body": "What you're up to, where you live — a line is enough.",
+      "action": "Write"
+    },
+    "history": {
+      "title": "Add schools and work",
+      "body": "Add the schools and workplaces after AIS to connect with people from the same places.",
+      "action": "Add"
+    },
+    "follow": {
+      "title": "Follow classmates and teachers",
+      "body": "Find people you know in the directory and follow them.",
+      "action": "Open directory"
+    },
+    "family": {
+      "title": "Link your family",
+      "body": "Link your child's account so their status updates automatically.",
+      "action": "Link"
+    }
+  },
+  "doneSummary": "Completed ({count})"
+}

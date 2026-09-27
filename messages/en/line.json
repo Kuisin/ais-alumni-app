@@ -20,7 +20,8 @@
     "qrStep2": "Log in to LINE and allow access. Tick \"Add friend\" for the AIS Alumni Committee.",
     "qrStep3": "Come back here and refresh the page.",
     "qrAlt": "QR code to link LINE on your phone",
-    "expiryNote": "For your security, this link and QR code work for 10 minutes."
+    "expiryNote": "For your security, this link and QR code work for 10 minutes.",
+    "notReady": "LINE linking isn't ready yet. We'll let you know when it is."
   },
   "banner": {
     "title": "Get updates on LINE",

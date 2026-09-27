@@ -1,3 +1,12 @@
+import {
+  ArrowRight,
+  CalendarDays,
+  HeartHandshake,
+  LockKeyhole,
+  MessageCircle,
+  Newspaper,
+  Users,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AppShell } from "@/components/layout/app-shell";
@@ -5,14 +14,14 @@ import { buttonClass } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getCurrentUser } from "@/lib/session";
 
-const FEATURES = [
-  "directory",
-  "events",
-  "news",
-  "line",
-  "privacy",
-  "family",
-] as const;
+const FEATURES = {
+  directory: Users,
+  events: CalendarDays,
+  news: Newspaper,
+  line: MessageCircle,
+  privacy: LockKeyhole,
+  family: HeartHandshake,
+} as const;
 const STEPS = ["signup", "verify", "approved"] as const;
 
 export async function generateMetadata({
@@ -37,15 +46,29 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   ]);
 
   const actions = user ? (
-    <Link href="/app" className={buttonClass("primary", "px-6 text-base")}>
+    <Link href="/app" className={buttonClass("primary", "h-12 px-6 text-base")}>
       {t("hero.openApp")}
+      <ArrowRight aria-hidden="true" className="size-4" />
     </Link>
   ) : (
     <>
-      <Link href="/app" className={buttonClass("primary", "px-6 text-base")}>
+      <Link
+        href="/app"
+        className={buttonClass(
+          "primary",
+          "h-12 w-full px-6 text-base sm:w-auto",
+        )}
+      >
         {t("hero.signUp")}
+        <ArrowRight aria-hidden="true" className="size-4" />
       </Link>
-      <Link href="/app" className={buttonClass("secondary", "px-6 text-base")}>
+      <Link
+        href="/app"
+        className={buttonClass(
+          "secondary",
+          "h-12 w-full px-6 text-base sm:w-auto",
+        )}
+      >
         {t("hero.logIn")}
       </Link>
     </>
@@ -63,11 +86,11 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
           </p>
           <h1
             id="hero-title"
-            className="mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl"
+            className="animate-rise mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight text-balance text-slate-900 sm:text-5xl"
           >
             {t("hero.title")}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-700">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-balance text-slate-700">
             {t("hero.lead")}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -85,11 +108,17 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
             {t("features.title")}
           </h2>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((key) => (
+            {Object.entries(FEATURES).map(([key, Icon]) => (
               <li
                 key={key}
-                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
               >
+                <span
+                  aria-hidden="true"
+                  className="mb-3 inline-flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"
+                >
+                  <Icon className="size-5" />
+                </span>
                 <h3 className="font-semibold text-brand-800">
                   {t(`features.items.${key}.title`)}
                 </h3>
@@ -131,6 +160,16 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
             </span>
             {t("audience.body")}
           </p>
+        </section>
+
+        <section
+          aria-labelledby="about-title"
+          className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 text-center"
+        >
+          <h2 id="about-title" className="text-lg font-bold">
+            {t("about.title")}
+          </h2>
+          <p className="mt-2 text-sm text-slate-700">{t("about.body")}</p>
         </section>
 
         <section

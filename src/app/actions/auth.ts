@@ -7,6 +7,7 @@ import { signIn } from "@/auth";
 import { OtpPurpose } from "@/generated/prisma/enums";
 import { issueOtp, normalizeEmail, OTP_MAX_ATTEMPTS } from "@/lib/auth/otp";
 import { db } from "@/lib/db";
+import { ssoReady } from "@/lib/sso";
 
 // Sign-in actions are, by nature, callable without a session, so they do not
 // call actionUser(); all input is validated with Zod and codes are
@@ -23,6 +24,7 @@ export type OtpFormState = {
     | "invalid_email"
     | "invalid_code_format"
     | "rate_limited"
+    | "send_failed"
     | "invalid"
     | "expired"
     | "too_many_attempts"
@@ -74,6 +76,9 @@ async function requestSignInCode(
     purpose: OtpPurpose.SIGN_IN,
     locale: await currentLocale(),
   });
+  if (!result.ok && result.error === "send_failed") {
+    return { step: "email", email, error: "send_failed" };
+  }
   if (!result.ok) {
     // Rate limiting means a code was sent recently (e.g. the page was
     // reloaded), so let the user enter that one.
@@ -141,6 +146,8 @@ export async function emailSignInAction(
 }
 
 async function oauthSignIn(provider: "google" | "line"): Promise<void> {
+  // The button is disabled when not configured; ignore stale forms.
+  if (!ssoReady(provider)) return;
   const locale = await currentLocale();
   await signIn(provider, { redirectTo: `/${locale}/app/onboarding` });
 }

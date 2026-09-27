@@ -6,13 +6,13 @@ import {
   type AdminMemberFormState,
   updateMemberProfileAction,
 } from "@/app/actions/admin-members";
+import { NameFields } from "@/components/names/name-fields";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import type { NameParts } from "@/lib/names";
 import { AdminFormResult } from "./form-result";
 
-export type MemberProfileValues = {
-  nameRomaji: string;
-  nameKanji: string;
+export type MemberProfileValues = Record<keyof NameParts, string> & {
   nameAtAis: string;
   dateOfBirth: string; // YYYY-MM-DD or ""
   bio: string;
@@ -38,31 +38,8 @@ export function MemberProfileForm({
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="userId" value={userId} />
+      <NameFields idPrefix="p-" values={values} error={(f) => err(f)} />
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          id="p-nameRomaji"
-          label={t("nameRomaji")}
-          error={err("nameRomaji")}
-        >
-          {(a) => (
-            <Input
-              {...a}
-              name="nameRomaji"
-              defaultValue={values.nameRomaji}
-              autoComplete="off"
-            />
-          )}
-        </Field>
-        <Field id="p-nameKanji" label={t("nameKanji")} error={err("nameKanji")}>
-          {(a) => (
-            <Input
-              {...a}
-              name="nameKanji"
-              defaultValue={values.nameKanji}
-              autoComplete="off"
-            />
-          )}
-        </Field>
         <Field id="p-nameAtAis" label={t("nameAtAis")} error={err("nameAtAis")}>
           {(a) => (
             <Input

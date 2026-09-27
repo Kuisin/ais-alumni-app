@@ -1,3 +1,4 @@
+import { Clock } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { toDataURL } from "qrcode";
 import { buttonClass } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import {
   lineAddFriendUrl,
   lineLinkStartUrl,
 } from "@/lib/line-link";
+import { ssoReady } from "@/lib/sso";
 
 /**
  * LINE link panel (§5.2), used by onboarding, settings and elsewhere.
@@ -90,6 +92,15 @@ export async function LineLinkPanel({
           </Link>
         </p>
       </div>
+    );
+  }
+
+  if (!ssoReady("line")) {
+    return (
+      <p className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+        <Clock aria-hidden="true" className="size-4 shrink-0" />
+        {t("panel.notReady")}
+      </p>
     );
   }
 

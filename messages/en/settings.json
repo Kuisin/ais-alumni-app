@@ -58,7 +58,8 @@
     "cannotRemoveLast": "You can't remove your last sign-in method.",
     "removed": "Sign-in method removed.",
     "addGoogle": "Add Google sign-in",
-    "addLineHint": "Link LINE in the LINE section above."
+    "addLineHint": "Link LINE in the LINE section above.",
+    "notReadyHint": "This method isn't ready yet. We'll let you know when it is."
   },
   "email": {
     "title": "Email address",
@@ -138,5 +139,20 @@
       "subject": "A new sign-in method was added",
       "text": "{method} was added as a sign-in method for your AIS Alumni account. If this wasn't you, please contact the committee right away."
     }
+  },
+  "adminMode": {
+    "title": "Admin mode",
+    "description": "You have a special role. Switch to admin mode to open the pages for what your role lets you do.",
+    "roles": "What you can do",
+    "access": {
+      "admin": "Committee admin (verification, members, events, news, stats and more)",
+      "broadcast": "Send notifications",
+      "teachers": "Add or remove current teachers"
+    },
+    "button": "Switch to admin mode"
+  },
+  "danger": {
+    "title": "Danger zone",
+    "description": "Deactivate or delete your account. Please read each option carefully first."
   }
 }

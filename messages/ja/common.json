@@ -8,7 +8,7 @@
   "signOut": "ログアウト",
   "menu": "メニュー",
   "privacy": "プライバシーポリシー",
-  "footer": "AIS Alumni Committee",
+  "footer": "AIS同窓会委員会（卒業生による有志）が運営 · 愛知インターナショナルスクールの公式サービスではありません",
   "save": "保存",
   "saved": "保存しました",
   "cancel": "キャンセル",
@@ -38,7 +38,8 @@
     "unauthenticated": "もう一度ログインしてください。",
     "notFound": "見つかりません。",
     "validation": "入力内容を確認してください。",
-    "rateLimited": "試行回数が多すぎます。しばらく待ってから再度お試しください。"
+    "rateLimited": "試行回数が多すぎます。しばらく待ってから再度お試しください。",
+    "emailSendFailed": "現在メールを送信できません。数分後にもう一度お試しください。"
   },
   "nav": {
     "label": "メイン",
@@ -50,8 +51,15 @@
     "family": "家族",
     "settings": "設定",
     "profile": "マイプロフィール",
-    "admin": "管理",
-    "backToMember": "会員サイトへ"
+    "notify": "お知らせを送る",
+    "adminMode": "管理モード",
+    "memberMode": "会員画面に戻る",
+    "account": "アカウントメニュー",
+    "adminLabel": "管理メニュー",
+    "profileShort": "マイページ",
+    "adminModeShort": "管理",
+    "memberModeShort": "会員画面",
+    "pending": "{count}件の対応待ち"
   },
   "adminNav": {
     "verification": "本人確認",
@@ -60,8 +68,37 @@
     "news": "お知らせ",
     "roster": "名簿データ",
     "stats": "統計",
-    "audit": "操作ログ"
+    "audit": "操作ログ",
+    "recordRequests": "在籍情報の修正",
+    "cohorts": "学年",
+    "organizations": "学校・会社",
+    "teachers": "教職員",
+    "destinations": "進路"
   },
   "notFoundTitle": "ページが見つかりません",
-  "goHome": "ホームへ"
+  "goHome": "ホームへ",
+  "names": {
+    "romaji": "氏名（ローマ字）",
+    "kanji": "氏名（漢字・かな）",
+    "lastNameRomaji": "姓（Last name）",
+    "firstNameRomaji": "名（First name）",
+    "middleNameRomaji": "ミドルネーム（任意）",
+    "lastNameKanji": "姓",
+    "firstNameKanji": "名",
+    "placeholders": {
+      "lastNameRomaji": "例: Yamada",
+      "firstNameRomaji": "例: Taro",
+      "middleNameRomaji": "例: James",
+      "lastNameKanji": "例: 山田",
+      "firstNameKanji": "例: 太郎"
+    }
+  },
+  "cohortNumber": "第{number}期",
+  "adminGroups": {
+    "review": "審査",
+    "people": "会員",
+    "outreach": "発信",
+    "data": "データ"
+  },
+  "notReady": "準備中"
 }

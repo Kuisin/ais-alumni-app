@@ -7,6 +7,7 @@
     "FORMER_PARENT": "卒業生保護者"
   },
   "division": {
+    "KINDERGARTEN": "幼稚部",
     "ELEMENTARY": "小学校",
     "JUNIOR_HIGH": "中学校（7〜9年）",
     "HIGH_SCHOOL": "高校（10〜12年）"
@@ -27,5 +28,13 @@
     "ACTIVE": "有効",
     "REJECTED": "却下",
     "DEACTIVATED": "無効"
+  },
+  "teacherStatus": {
+    "CURRENT": "現職の教職員",
+    "FORMER": "元教職員"
+  },
+  "teacherStatusShort": {
+    "CURRENT": "現職",
+    "FORMER": "元教職員"
   }
 }

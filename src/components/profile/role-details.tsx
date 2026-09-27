@@ -1,6 +1,8 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/card";
 import { RoleKey } from "@/generated/prisma/enums";
+import { gradeLabel } from "@/lib/cohorts";
+import { cohortShortLabels } from "@/lib/cohorts-db";
 import type { PublicCard } from "@/lib/directory";
 
 type RoleRow = PublicCard["roles"][number];
@@ -27,8 +29,23 @@ async function roleFacts(r: RoleRow, withStage: boolean): Promise<string[]> {
   const tr = await getTranslations("roles");
   const t = await getTranslations("profile");
   const facts: string[] = [];
+  // 学年 first for students ("第5期").
+  if (
+    r.cohortId &&
+    (r.role === RoleKey.CURRENT_STUDENT || r.role === RoleKey.FORMER_STUDENT)
+  ) {
+    const labels = await cohortShortLabels(
+      (await getLocale()) === "en" ? "en" : "ja",
+    );
+    if (labels[r.cohortId]) facts.push(labels[r.cohortId]);
+  }
   switch (r.role) {
     case RoleKey.TEACHER:
+      facts.push(
+        tr(
+          `teacherStatusShort.${r.teacherStatus === "FORMER" ? "FORMER" : "CURRENT"}`,
+        ),
+      );
       if (r.yearsFrom !== null) {
         facts.push(
           r.yearsTo !== null
@@ -39,7 +56,12 @@ async function roleFacts(r: RoleRow, withStage: boolean): Promise<string[]> {
       break;
     case RoleKey.CURRENT_STUDENT:
       if (r.currentGrade !== null)
-        facts.push(tr("grade", { grade: r.currentGrade }));
+        facts.push(
+          gradeLabel(
+            r.currentGrade,
+            (await getLocale()) === "en" ? "en" : "ja",
+          ),
+        );
       break;
     case RoleKey.FORMER_STUDENT:
       if (r.graduationOrLeaveYear !== null) {

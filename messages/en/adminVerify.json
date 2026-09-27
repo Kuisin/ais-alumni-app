@@ -9,7 +9,15 @@
       "needsInfo": "Waiting for applicant"
     },
     "empty": "No applications here.",
-    "submitted": "Submitted {date}"
+    "submitted": "Submitted {date}",
+    "emptyHint": "New membership applications appear here, oldest first.",
+    "emptyNeedsInfoHint": "Applications you asked for more information on wait here until the applicant replies.",
+    "pagination": "Pages",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pages}",
+    "search": "Search",
+    "searchPlaceholder": "Search by name (romaji or kanji)"
   },
   "badges": {
     "noRoster": "No roster data",
@@ -19,7 +27,10 @@
     "schoolEmail": "School email verified",
     "minor": "Minor",
     "parentConfirmed": "Parent confirmed",
-    "parentUnconfirmed": "No parent confirmation"
+    "parentUnconfirmed": "No parent confirmation",
+    "rosterMatch": "Roster match {score}",
+    "vouchCounts": "Vouches: {yes} yes · {no} no · {unsure} unsure · {pending} waiting",
+    "noVouches": "No vouches"
   },
   "status": {
     "PENDING": "Pending",
@@ -29,7 +40,7 @@
   },
   "detail": {
     "title": "Application",
-    "back": "← Back to queue",
+    "back": "Back to queue",
     "submitted": "Submitted {date}",
     "basics": "Basic information",
     "years": "Years",
@@ -59,7 +70,9 @@
     "evidence": "Documents",
     "noEvidence": "No documents uploaded.",
     "linkExpiry": "Links are valid for 15 minutes. Reload the page for new links.",
-    "deleteAfter": "deleted after {date}"
+    "deleteAfter": "deleted after {date}",
+    "status": "Status",
+    "oldFormat": "This application was sent with the earlier form; see the applicant's profile for details."
   },
   "roster": {
     "title": "Roster",
@@ -74,7 +87,6 @@
     "file": "CSV file",
     "fileTooLarge": "The file is too large (max 5 MB).",
     "paste": "Or paste CSV",
-    "columns": "Columns: nameRomaji, nameKanji, dateOfBirth (YYYY-MM-DD), yearsFrom, yearsTo, kind (TEACHER, CURRENT_STUDENT, CURRENT_PARENT, FORMER_STUDENT, FORMER_PARENT; blank = FORMER_STUDENT). A header row is optional.",
     "preview": "Preview",
     "import": "Import",
     "lineError": "Line {line}: {error}",
@@ -107,7 +119,27 @@
     "deleteTitle": "Delete roster",
     "deleteDescription": "Removes every roster row. Existing members are not affected.",
     "deleteConfirm": "I understand that all roster rows will be deleted.",
-    "deleteAll": "Delete all rows"
+    "deleteAll": "Delete all rows",
+    "chooseFile": "Choose file",
+    "noFile": "No file chosen",
+    "columnsHint": "Columns in the order shown in the table above.",
+    "emptyHint": "Import a roster to score applications against it. Add one under “Import CSV” below.",
+    "goToImport": "Import a CSV",
+    "spec": {
+      "title": "CSV columns (in this order)",
+      "column": "Column",
+      "meaning": "Contents",
+      "required": "required",
+      "note": "A header row is optional. Use UTF-8 encoding.",
+      "cols": {
+        "nameRomaji": "Name (romaji)",
+        "nameKanji": "Name (kanji / kana)",
+        "dateOfBirth": "Date of birth (YYYY-MM-DD)",
+        "yearsFrom": "First year at AIS (4 digits)",
+        "yearsTo": "Last year at AIS (4 digits)",
+        "kind": "Kind: TEACHER, CURRENT_STUDENT, CURRENT_PARENT, FORMER_STUDENT, FORMER_PARENT (blank = FORMER_STUDENT)"
+      }
+    }
   },
   "vouches": {
     "pending": "No answer yet",
@@ -120,8 +152,8 @@
   },
   "aisRecord": {
     "title": "AIS record",
-    "description": "Correct the former student’s AIS record if needed.",
-    "save": "Save AIS record"
+    "description": "Current / former status and grade are worked out from the 学年 and years. Edit them in the member editor.",
+    "edit": "Edit the member's roles"
   },
   "decision": {
     "title": "Decision",

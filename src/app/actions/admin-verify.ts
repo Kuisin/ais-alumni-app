@@ -4,9 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   AccountState,
-  Division,
   type Locale,
-  RoleKey,
   VerificationStatus,
 } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
@@ -18,7 +16,6 @@ import { assertTransition } from "@/lib/state-machine";
 import { appUrl } from "@/lib/urls";
 import { deleteAfterFrom } from "@/lib/verification/evidence";
 import { ROSTER_MATCH_THRESHOLD } from "@/lib/verification/roster";
-import { MIN_YEAR, maxYear } from "@/lib/verification/schema";
 import { notifyVoucher } from "@/lib/verification/vouch";
 
 export type AdminActionState = {
@@ -198,73 +195,6 @@ export async function decideVerificationAction(
 }
 
 class ConflictError extends Error {}
-
-// ---------------------------------------------------------------------------
-// FORMER_STUDENT AIS record (§7) — admins may correct it.
-
-const aisRecordSchema = z.object({
-  userId: z.string().min(1),
-  requestId: z.string().min(1),
-  lastDivision: z.enum(Division, { error: "required" }),
-  graduationOrLeaveYear: z.coerce
-    .number({ error: "invalidYear" })
-    .int("invalidYear")
-    .min(MIN_YEAR, "invalidYear")
-    .max(maxYear(), "invalidYear"),
-  didGraduate: z.enum(["yes", "no"], { error: "required" }),
-});
-
-export async function updateAisRecordAction(
-  _prev: AdminActionState,
-  formData: FormData,
-): Promise<AdminActionState> {
-  const me = await admin();
-  if (!me) return { ok: false, message: "forbidden" };
-  const parsed = aisRecordSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    const errors: Record<string, string> = {};
-    for (const i of parsed.error.issues) errors[i.path.join(".")] ??= i.message;
-    return { ok: false, message: "validation", errors };
-  }
-  const {
-    userId,
-    requestId,
-    lastDivision,
-    graduationOrLeaveYear,
-    didGraduate,
-  } = parsed.data;
-  const role = await db.userRole.findUnique({
-    where: { userId_role: { userId, role: RoleKey.FORMER_STUDENT } },
-    select: {
-      id: true,
-      lastDivision: true,
-      graduationOrLeaveYear: true,
-      didGraduate: true,
-    },
-  });
-  if (!role) return { ok: false, message: "notFound" };
-  const next = {
-    lastDivision,
-    graduationOrLeaveYear,
-    didGraduate: didGraduate === "yes",
-  };
-  await db.userRole.update({ where: { id: role.id }, data: next });
-  await audit(
-    me.id,
-    "verification.aisRecord.update",
-    { type: "User", id: userId },
-    {
-      before: {
-        lastDivision: role.lastDivision,
-        graduationOrLeaveYear: role.graduationOrLeaveYear,
-        didGraduate: role.didGraduate,
-      },
-      after: next,
-    },
-  );
-  revalidate(requestId);
-  return { ok: true, message: "saved" };
-}
 
 // ---------------------------------------------------------------------------
 // Manual vouchers (§6.4.2)

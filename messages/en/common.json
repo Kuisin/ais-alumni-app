@@ -8,7 +8,7 @@
   "signOut": "Sign out",
   "menu": "Menu",
   "privacy": "Privacy notice",
-  "footer": "AIS Alumni Committee",
+  "footer": "Run by the AIS Alumni Committee, a volunteer group of graduates · Not an official service of Aichi International School",
   "save": "Save",
   "saved": "Saved",
   "cancel": "Cancel",
@@ -38,7 +38,8 @@
     "unauthenticated": "Please sign in again.",
     "notFound": "Not found.",
     "validation": "Please check the highlighted fields.",
-    "rateLimited": "Too many attempts. Please wait a little and try again."
+    "rateLimited": "Too many attempts. Please wait a little and try again.",
+    "emailSendFailed": "We couldn't send the email right now. Please try again in a few minutes."
   },
   "nav": {
     "label": "Main",
@@ -50,8 +51,15 @@
     "family": "Family",
     "settings": "Settings",
     "profile": "My profile",
-    "admin": "Admin",
-    "backToMember": "Member site"
+    "notify": "Send notification",
+    "adminMode": "Admin mode",
+    "memberMode": "Back to member view",
+    "account": "Account menu",
+    "adminLabel": "Admin menu",
+    "profileShort": "Me",
+    "adminModeShort": "Admin",
+    "memberModeShort": "Member",
+    "pending": "{count} waiting"
   },
   "adminNav": {
     "verification": "Verification",
@@ -60,8 +68,37 @@
     "news": "News",
     "roster": "Roster",
     "stats": "Stats",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "recordRequests": "Record corrections",
+    "cohorts": "Classes",
+    "organizations": "Schools & companies",
+    "teachers": "Teachers",
+    "destinations": "Destinations"
   },
   "notFoundTitle": "Page not found",
-  "goHome": "Go to home"
+  "goHome": "Go to home",
+  "names": {
+    "romaji": "Name (romaji)",
+    "kanji": "Name (kanji / kana)",
+    "lastNameRomaji": "Last name",
+    "firstNameRomaji": "First name",
+    "middleNameRomaji": "Middle name (optional)",
+    "lastNameKanji": "Last name (姓)",
+    "firstNameKanji": "First name (名)",
+    "placeholders": {
+      "lastNameRomaji": "e.g. Yamada",
+      "firstNameRomaji": "e.g. Taro",
+      "middleNameRomaji": "e.g. James",
+      "lastNameKanji": "e.g. 山田",
+      "firstNameKanji": "e.g. 太郎"
+    }
+  },
+  "cohortNumber": "Class {number}",
+  "adminGroups": {
+    "review": "Review",
+    "people": "People",
+    "outreach": "Outreach",
+    "data": "Data"
+  },
+  "notReady": "Not ready yet"
 }

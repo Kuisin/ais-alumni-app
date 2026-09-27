@@ -7,6 +7,7 @@
     "FORMER_PARENT": "Parent of former student"
   },
   "division": {
+    "KINDERGARTEN": "Kindergarten",
     "ELEMENTARY": "Elementary",
     "JUNIOR_HIGH": "Junior high (G7–9)",
     "HIGH_SCHOOL": "High school (G10–12)"
@@ -27,5 +28,13 @@
     "ACTIVE": "Active",
     "REJECTED": "Rejected",
     "DEACTIVATED": "Deactivated"
+  },
+  "teacherStatus": {
+    "CURRENT": "Current teacher / staff",
+    "FORMER": "Former teacher / staff"
+  },
+  "teacherStatusShort": {
+    "CURRENT": "Current",
+    "FORMER": "Former"
   }
 }

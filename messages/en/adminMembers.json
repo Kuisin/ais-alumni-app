@@ -18,7 +18,9 @@
     "lineLinked": "Linked",
     "lineFollowing": "Linked and following",
     "lineUnlinked": "Not linked",
-    "adminOnly": "Admins only"
+    "adminOnly": "Admins only",
+    "more": "Filters",
+    "activeCount": "{count} on"
   },
   "columns": {
     "name": "Name",
@@ -34,7 +36,12 @@
   "line": {
     "notLinked": "Not linked",
     "linkedNotFollowing": "Linked, not following",
-    "following": "Linked and following"
+    "following": "Linked and following",
+    "short": {
+      "notLinked": "Not linked",
+      "linkedNotFollowing": "Linked",
+      "following": "Following"
+    }
   },
   "detail": {
     "title": "Member",
@@ -43,7 +50,10 @@
     "providers": "Sign-in methods",
     "notifyVia": "Notifications",
     "deactivatedAt": "Deactivated",
-    "merged": "Accounts merged. The duplicate account has been removed."
+    "merged": "Accounts merged. The duplicate account has been removed.",
+    "sections": "Sections on this page",
+    "overview": "Overview",
+    "account": "Account"
   },
   "profile": {
     "title": "Profile",
@@ -86,7 +96,26 @@
     "currentStatus": "Current status",
     "currentStage": "Current stage",
     "currentStageDetail": "Details (school, company…)",
-    "stageUpdatedAt": "Current stage last updated {date}"
+    "stageUpdatedAt": "Current stage last updated {date}",
+    "cohort": "学年 (class)",
+    "yearsToAny": "To (year)",
+    "yearsFromAny": "From (year)",
+    "teacherStatus": "Status",
+    "teacherStatusHint": "Former teachers lose teacher access (e.g. seeing students, 教職員・管理者).",
+    "derivedLabel": "Worked out",
+    "joinedYear": "Joined (year)",
+    "leftYear": "Left (year)",
+    "leftYearTeacherHint": "Empty = still at AIS",
+    "leftYearStudentHint": "Only if they left before graduating; empty = at AIS or graduated",
+    "derivedGraduated": "Graduated {year}",
+    "derivedLeft": "Left in {year} (before graduating)",
+    "parentDerived": "Whether a parent is current or former follows their children (family links).",
+    "addTypes": {
+      "CURRENT_STUDENT": "Student / Alumni",
+      "CURRENT_PARENT": "Parent",
+      "TEACHER": "Teacher / Staff"
+    },
+    "schoolEmailVerified": "Verified"
   },
   "status": {
     "title": "Account status",
@@ -160,5 +189,37 @@
       "subject": "Your AIS Alumni account is active again",
       "text": "Welcome back! Your AIS Alumni account has been reactivated."
     }
+  },
+  "positions": {
+    "title": "Positions",
+    "held": "Assigned",
+    "heldCohort": "Assigned · {cohort}",
+    "grant": "Assign",
+    "update": "Update",
+    "remove": "Remove",
+    "names": {
+      "TEACHER_MANAGER": "Teacher manager",
+      "STUDENT_LEADER": "Class representative",
+      "TEACHER_REGISTRAR": "Teacher registrar"
+    },
+    "descriptions": {
+      "TEACHER_MANAGER": "Can send notifications to all members, selected roles or any class (up to 20 per day).",
+      "STUDENT_LEADER": "Can send notifications to members of their own 学年 (up to 5 per week).",
+      "TEACHER_REGISTRAR": "Can mark members as current teachers or move them to former (Admin mode → Teachers). Current teachers can see children's profiles, so grant this only to someone you trust."
+    },
+    "requires": {
+      "TEACHER_MANAGER": "Requires the Teacher / Staff role.",
+      "STUDENT_LEADER": "Requires a current or former student role.",
+      "TEACHER_REGISTRAR": ""
+    },
+    "granted": "Position assigned.",
+    "removed": "Position removed.",
+    "errors": {
+      "forbidden": "You don't have permission to do that.",
+      "invalid": "Please check the input.",
+      "notEligible": "This member doesn't have the role this position requires.",
+      "cohort": "Choose the 学年 they represent."
+    },
+    "cohort": "学年 (class)"
   }
 }

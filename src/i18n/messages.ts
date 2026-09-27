@@ -21,11 +21,20 @@ export const NAMESPACES = [
   "adminContent",
   "directory",
   "profile",
+  "records",
+  "broadcast",
+  "cohorts",
+  "history",
+  "organizations",
   "follows",
   "family",
   "settings",
   "adminMembers",
   "adminStats",
+  "setup",
+  "teachers",
+  "destinations",
+  "audit",
 ] as const;
 
 export type Messages = Record<string, Record<string, unknown>>;

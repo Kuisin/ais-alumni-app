@@ -26,6 +26,7 @@ const viewer = (o: Partial<Viewer> = {}): Viewer => ({
   state: AccountState.ACTIVE,
   isAdmin: false,
   roles: [RoleKey.FORMER_STUDENT],
+  currentTeacher: false,
   familyId: null,
   ...o,
 });
@@ -49,6 +50,7 @@ describe("parseDirectoryFilters", () => {
       yearTo: 2015,
       division: Division.HIGH_SCHOOL,
       stage: LifeStage.WORKING,
+      cohort: null,
       cursor: "ckabc1234567890",
     });
   });
@@ -70,6 +72,7 @@ describe("parseDirectoryFilters", () => {
       yearTo: null,
       division: null,
       stage: null,
+      cohort: null,
       cursor: null,
     });
     expect(hasActiveFilters(f)).toBe(false);
@@ -189,7 +192,7 @@ describe("buildDirectoryWhere", () => {
 
   it("does not filter minors for teachers and admins", () => {
     for (const v of [
-      viewer({ roles: [RoleKey.TEACHER] }),
+      viewer({ roles: [RoleKey.TEACHER], currentTeacher: true }),
       viewer({ isAdmin: true }),
     ]) {
       const where = buildDirectoryWhere(f, {

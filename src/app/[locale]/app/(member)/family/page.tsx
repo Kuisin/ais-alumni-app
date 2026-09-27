@@ -1,3 +1,4 @@
+import { Search, UsersRound } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
@@ -7,9 +8,11 @@ import {
 import { MemberCard } from "@/components/directory/member-card";
 import { ChildNameForm } from "@/components/family/child-name-form";
 import { FamilySearch } from "@/components/family/family-search";
+import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FamilyLinkInitiator, type Locale } from "@/generated/prisma/enums";
+import { loadCohortChoices } from "@/lib/cohorts-db";
 import {
   canClaim,
   canConfirm,
@@ -57,6 +60,13 @@ export default async function FamilyPage({ searchParams }: Props) {
       ? searchFamilyCandidates(me, parentQ, "parent")
       : null,
   ]);
+
+  // Where the empty state's call to action should jump to.
+  const claimTarget = mayClaimChild
+    ? "childQ"
+    : mayClaimParent
+      ? "parentQ"
+      : null;
 
   const toConfirm = links.filter((l) => canConfirm(me.id, l));
   const others = links.filter((l) => !canConfirm(me.id, l));
@@ -132,8 +142,7 @@ export default async function FamilyPage({ searchParams }: Props) {
       ) : null}
 
       <Card>
-        <h2 className="mb-1 text-lg font-semibold">{t("members.title")}</h2>
-        <p className="mb-3 text-sm text-slate-600">{t("members.privacy")}</p>
+        <h2 className="mb-3 text-lg font-semibold">{t("members.title")}</h2>
         {members.length ? (
           <ul className="grid gap-3 sm:grid-cols-2">
             {members.map((m) => (
@@ -143,7 +152,40 @@ export default async function FamilyPage({ searchParams }: Props) {
             ))}
           </ul>
         ) : (
-          <EmptyState>{t("members.empty")}</EmptyState>
+          <EmptyState
+            icon={<UsersRound />}
+            hint={
+              claimTarget ? (
+                <ol className="mt-1 space-y-1 text-left">
+                  {(["one", "two", "three"] as const).map((step, i) => (
+                    <li key={step} className="flex gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-800"
+                      >
+                        {i + 1}
+                      </span>
+                      <span>{t(`members.steps.${step}`)}</span>
+                    </li>
+                  ))}
+                </ol>
+              ) : undefined
+            }
+            action={
+              claimTarget ? (
+                <a href={`#${claimTarget}`} className={buttonClass("primary")}>
+                  <Search aria-hidden="true" className="size-4" />
+                  {t(
+                    claimTarget === "childQ"
+                      ? "members.findChild"
+                      : "members.findParent",
+                  )}
+                </a>
+              ) : undefined
+            }
+          >
+            <span className="text-balance">{t("members.empty")}</span>
+          </EmptyState>
         )}
       </Card>
 
@@ -199,7 +241,13 @@ export default async function FamilyPage({ searchParams }: Props) {
             <h3 className="mb-3 font-semibold">
               {t("claimChild.manualTitle")}
             </h3>
-            <ChildNameForm />
+            <ChildNameForm
+              cohorts={
+                await loadCohortChoices(
+                  (await getLocale()) === "en" ? "en" : "ja",
+                )
+              }
+            />
           </div>
         </Card>
       ) : null}

@@ -62,5 +62,9 @@
   "cta": {
     "title": "Ready to reconnect?",
     "body": "Create your account and apply for membership today."
+  },
+  "about": {
+    "title": "Who runs this",
+    "body": "This app is run independently by the AIS Alumni Committee, a volunteer group of AIS graduates. It is not operated or managed by Aichi International School."
   }
 }

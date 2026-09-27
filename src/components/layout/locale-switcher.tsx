@@ -1,5 +1,6 @@
 "use client";
 
+import { Languages } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { setLocaleAction } from "@/app/actions/common";
@@ -24,9 +25,10 @@ export function LocaleSwitcher() {
           router.replace(pathname, { locale: next });
         })
       }
-      className="min-h-11 rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
       aria-label={t("switchLanguage")}
     >
+      <Languages aria-hidden="true" className="size-4" />
       {next === "ja" ? "日本語" : "English"}
     </button>
   );

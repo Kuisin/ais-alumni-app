@@ -16,6 +16,8 @@ export type MethodRow = {
   method: "email" | "google" | "line";
   linked: boolean;
   removable: boolean;
+  /** provider configured on this server */
+  ready: boolean;
 };
 
 export function SignInMethods({
@@ -44,21 +46,27 @@ export function SignInMethods({
             <div className="min-w-0">
               <p className="flex items-center gap-2 font-medium">
                 {t(row.method)}
-                <Badge tone={row.linked ? "green" : "slate"}>
-                  {row.linked ? t("linked") : t("notLinked")}
-                </Badge>
+                {row.linked || row.ready ? (
+                  <Badge tone={row.linked ? "green" : "slate"}>
+                    {row.linked ? t("linked") : t("notLinked")}
+                  </Badge>
+                ) : (
+                  <Badge tone="amber">{tc("notReady")}</Badge>
+                )}
               </p>
               {row.method === "email" && email ? (
                 <p className="text-sm break-all text-slate-600">
                   {t("emailHint", { email })}
                 </p>
               ) : null}
-              {row.method === "line" && !row.linked ? (
+              {!row.linked && !row.ready ? (
+                <p className="text-sm text-slate-600">{t("notReadyHint")}</p>
+              ) : row.method === "line" && !row.linked ? (
                 <p className="text-sm text-slate-600">{t("addLineHint")}</p>
               ) : null}
             </div>
 
-            {row.method === "google" && !row.linked ? (
+            {row.method === "google" && !row.linked && row.ready ? (
               <form action={linkGoogleAction}>
                 <SubmitButton variant="secondary" pendingText={tc("loading")}>
                   {t("addGoogle")}

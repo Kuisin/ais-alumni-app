@@ -26,37 +26,35 @@ export type VouchRef = { name: string; teacherOnly: boolean };
 /** Reference names from stored answers (lenient: answers are JSON). */
 export function vouchRefsFromAnswers(answers: unknown): VouchRef[] {
   const a = (answers ?? {}) as {
-    formerStudent?: { classmates?: unknown; homeroomTeacher?: unknown };
-    currentStudent?: { homeroomTeacher?: unknown };
+    student?: { classmates?: unknown; homeroomTeacher?: unknown };
   };
   const refs: VouchRef[] = [];
   const add = (name: unknown, teacherOnly: boolean) => {
     if (typeof name === "string" && name.trim())
       refs.push({ name: name.trim(), teacherOnly });
   };
-  if (Array.isArray(a.formerStudent?.classmates)) {
-    for (const c of a.formerStudent.classmates) add(c, false);
+  if (Array.isArray(a.student?.classmates)) {
+    for (const c of a.student.classmates) add(c, false);
   }
-  add(a.formerStudent?.homeroomTeacher, true);
-  add(a.currentStudent?.homeroomTeacher, true);
+  add(a.student?.homeroomTeacher, true);
   return refs;
 }
 
-/** "2006–2018", "2020–" (present), or "" when no years were given. */
+/** "2006–2014", "2020–" (still at AIS), or "" when no years were given. */
 export function yearsFromAnswers(
   answers: unknown,
   presentLabel: string,
 ): string {
   const a = (answers ?? {}) as Record<
     string,
-    { yearsFrom?: unknown; yearsTo?: unknown } | undefined
+    { joinedYear?: unknown; leftYear?: unknown } | undefined
   >;
-  for (const key of ["formerStudent", "teacher"]) {
+  for (const key of ["student", "teacher"]) {
     const s = a[key];
-    if (s && typeof s.yearsFrom === "number") {
+    if (s && typeof s.joinedYear === "number") {
       const to =
-        typeof s.yearsTo === "number" ? String(s.yearsTo) : presentLabel;
-      return `${s.yearsFrom}–${to}`;
+        typeof s.leftYear === "number" ? String(s.leftYear) : presentLabel;
+      return `${s.joinedYear}–${to}`;
     }
   }
   return "";

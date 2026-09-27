@@ -11,6 +11,7 @@ import { Card, PageHeader } from "@/components/ui/card";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { displayName, formatDate } from "@/lib/format";
+import { namePartsOf } from "@/lib/names";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -48,20 +49,17 @@ export default async function ProfileEditPage() {
         />
       </Card>
 
-      <Card>
-        <ProfileForm
-          showAutoAccept={Boolean(former)}
-          values={{
-            nameRomaji: me.nameRomaji ?? "",
-            nameKanji: me.nameKanji ?? "",
-            nameAtAis: me.nameAtAis ?? "",
-            bio: me.bio ?? "",
-            phone: me.phone ?? "",
-            autoAcceptSameYear: me.autoAcceptSameYear,
-            social,
-          }}
-        />
-      </Card>
+      <ProfileForm
+        showAutoAccept={Boolean(former)}
+        values={{
+          ...namePartsOf(me),
+          nameAtAis: me.nameAtAis ?? "",
+          bio: me.bio ?? "",
+          phone: me.phone ?? "",
+          autoAcceptSameYear: me.autoAcceptSameYear,
+          social,
+        }}
+      />
 
       {former ? (
         <Card id="stage" className="scroll-mt-20">
@@ -86,6 +84,20 @@ export default async function ProfileEditPage() {
         </h2>
         <p className="mb-3 text-sm text-slate-600">{t("recordReadOnly")}</p>
         <AisRecord roles={me.roles} />
+        <Link
+          href="/app/profile/record"
+          className={buttonClass("secondary", "mt-4")}
+        >
+          {t("requestRecordCorrection")}
+        </Link>
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 text-lg font-semibold">{t("sections.history")}</h2>
+        <p className="mb-3 text-sm text-slate-600">{t("historyIntro")}</p>
+        <Link href="/app/profile/history" className={buttonClass("secondary")}>
+          {t("editHistory")}
+        </Link>
       </Card>
 
       <Card>

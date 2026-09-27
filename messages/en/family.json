@@ -21,8 +21,14 @@
   },
   "members": {
     "title": "My family",
-    "privacy": "Everyone in your family can see each other's contact details, like mutual followers.",
-    "empty": "No family members linked yet."
+    "empty": "No family members linked yet.",
+    "steps": {
+      "one": "Search for your family member by name below.",
+      "two": "Choose “This is my child” (or parent) to send a request.",
+      "three": "Once they accept, you are linked and can see each other’s contact details."
+    },
+    "findChild": "Search for your child",
+    "findParent": "Search for your parent"
   },
   "links": {
     "title": "Family links",
@@ -37,7 +43,12 @@
     "manualTitle": "My child doesn't have an account",
     "manualLabel": "Child's full name",
     "manualHint": "An administrator will check and confirm this.",
-    "manualSubmit": "Add child"
+    "manualSubmit": "Add child",
+    "cohort": "Child's 学年 (class)",
+    "cohortHint": "Numbered by the year they finish (finished) 6th grade.",
+    "chooseCohort": "Choose a class",
+    "leftYear": "Year they left AIS (optional)",
+    "leftYearHint": "Only if they left before graduating."
   },
   "claimParent": {
     "title": "Add my parent",
@@ -51,7 +62,8 @@
     "wrongRole": "That member isn't registered as a parent or student.",
     "already": "This family link already exists or is waiting for confirmation.",
     "tooMany": "You have too many unconfirmed requests. Please wait for them to be confirmed.",
-    "invalid": "Please check your input."
+    "invalid": "Please check your input.",
+    "cohort": "Choose a class."
   },
   "notify": {
     "asChildSubject": "{name} added you as their child",

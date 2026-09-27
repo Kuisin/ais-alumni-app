@@ -1,12 +1,16 @@
+import { SearchX, Users } from "lucide-react";
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { DirectoryFilterForm } from "@/components/directory/filter-form";
 import { MemberCard } from "@/components/directory/member-card";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
-import { toViewer } from "@/lib/authz";
+import { blockedUserIds, toViewer } from "@/lib/authz";
+import { loadCohortOptions } from "@/lib/cohorts-db";
+import { db } from "@/lib/db";
 import {
+  buildDirectoryWhere,
   directoryQuery,
   hasActiveFilters,
   parseDirectoryFilters,
@@ -28,25 +32,64 @@ export default async function DirectoryPage({ searchParams }: Props) {
   const user = await requireActive();
   const t = await getTranslations("directory");
   const filters = parseDirectoryFilters(await searchParams);
-  const { items, nextCursor } = await searchDirectory(toViewer(user), filters);
+  const viewer = toViewer(user);
+  const [{ items, nextCursor }, total] = await Promise.all([
+    searchDirectory(viewer, filters),
+    // Total for "32 members"; same where-clause as the page query.
+    blockedUserIds(viewer.id).then((blockedIds) =>
+      db.user.count({
+        where: buildDirectoryWhere(filters, {
+          viewer,
+          blockedIds,
+          now: new Date(),
+        }),
+      }),
+    ),
+  ]);
+  const filtered = hasActiveFilters(filters) || Boolean(filters.cursor);
 
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <DirectoryFilterForm filters={filters} />
+      <DirectoryFilterForm
+        filters={filters}
+        cohorts={
+          await loadCohortOptions((await getLocale()) === "en" ? "en" : "ja")
+        }
+      />
 
       <section aria-labelledby="dir-results" className="mt-6">
-        <h2 id="dir-results" className="sr-only">
-          {t("results")}
-        </h2>
+        <div className="mb-3 flex items-baseline gap-2">
+          <h2 id="dir-results" className="text-sm font-medium text-slate-600">
+            {t("results")}
+          </h2>
+          <p
+            aria-live="polite"
+            className="text-sm font-semibold text-slate-900"
+          >
+            {t("count", { count: total })}
+          </p>
+        </div>
         {items.length === 0 ? (
-          <EmptyState>
-            {hasActiveFilters(filters) || filters.cursor
-              ? t("empty")
-              : t("emptyAll")}
+          <EmptyState
+            icon={filtered ? <SearchX /> : <Users />}
+            action={
+              filtered ? (
+                <Link
+                  href="/app/directory"
+                  className={buttonClass("secondary")}
+                >
+                  {t("filters.clear")}
+                </Link>
+              ) : undefined
+            }
+          >
+            <span className="text-balance">
+              {filtered ? t("empty") : t("emptyAll")}
+            </span>
           </EmptyState>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2">
             {items.map((m) => (
               <li key={m.id}>
                 <MemberCard member={m} />
@@ -60,7 +103,7 @@ export default async function DirectoryPage({ searchParams }: Props) {
         >
           {filters.cursor ? (
             <Link
-              href={`/directory${directoryQuery(filters)}`}
+              href={`/app/directory${directoryQuery(filters)}`}
               className={buttonClass("ghost")}
             >
               {t("firstPage")}
@@ -68,7 +111,7 @@ export default async function DirectoryPage({ searchParams }: Props) {
           ) : null}
           {nextCursor ? (
             <Link
-              href={`/directory${directoryQuery(filters, nextCursor)}`}
+              href={`/app/directory${directoryQuery(filters, nextCursor)}`}
               className={buttonClass("secondary")}
             >
               {t("loadMore")}

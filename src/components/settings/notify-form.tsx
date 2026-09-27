@@ -51,9 +51,7 @@ export function NotifyForm({ current }: { current: NotifyChannel }) {
         ))}
       </fieldset>
       <FormResult state={state} />
-      <SubmitButton variant="secondary" pendingText={tc("saving")}>
-        {t("save")}
-      </SubmitButton>
+      <SubmitButton pendingText={tc("saving")}>{t("save")}</SubmitButton>
     </form>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Field, Input, Select } from "@/components/ui/field";
+import type { CohortChoice } from "@/lib/cohorts";
 import { MIN_YEAR, maxYear } from "@/lib/verification/schema";
 
 /** Stable DOM id for a form path, e.g. "formerStudent.yearsTo" → "f-formerStudent-yearsTo". */
@@ -11,8 +13,6 @@ export function fieldId(path: string): string {
 }
 
 export type Errors = Record<string, string>;
-
-const GRADES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const; // 0 = K
 
 function useError(errors: Errors, path: string): string | null {
   const t = useTranslations("verify");
@@ -87,6 +87,7 @@ export function YearInput({
   errors,
   required = true,
   disabled,
+  hint,
 }: {
   path: string;
   label: ReactNode;
@@ -95,12 +96,14 @@ export function YearInput({
   errors: Errors;
   required?: boolean;
   disabled?: boolean;
+  hint?: ReactNode;
 }) {
   const error = useError(errors, path);
   return (
     <Field
       id={fieldId(path)}
-      label={label}
+      label={required ? label : <OptionalLabel>{label}</OptionalLabel>}
+      hint={hint}
       required={required && !disabled}
       error={error}
     >
@@ -117,42 +120,6 @@ export function YearInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
-      )}
-    </Field>
-  );
-}
-
-export function GradeSelect({
-  path,
-  label,
-  value,
-  onChange,
-  errors,
-}: {
-  path: string;
-  label: ReactNode;
-  value: string;
-  onChange: (v: string) => void;
-  errors: Errors;
-}) {
-  const t = useTranslations("verify");
-  const tr = useTranslations("roles");
-  const error = useError(errors, path);
-  return (
-    <Field id={fieldId(path)} label={label} required error={error}>
-      {(aria) => (
-        <Select
-          {...aria}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          <option value="">{t("select")}</option>
-          {GRADES.map((g) => (
-            <option key={g} value={String(g)}>
-              {tr("grade", { grade: g })}
-            </option>
-          ))}
-        </Select>
       )}
     </Field>
   );
@@ -203,5 +170,96 @@ export function GroupError({ errors, path }: { errors: Errors; path: string }) {
     <p id={fieldId(path)} tabIndex={-1} className="text-sm text-red-700">
       {error}
     </p>
+  );
+}
+
+/**
+ * 学年 picker: a 卒業済み / 在校中 / all toggle filters the list. Optional:
+ * "not listed / not sure" leaves it empty for the committee to fill in.
+ */
+export function CohortPicker({
+  path,
+  value,
+  onChange,
+  errors,
+  cohorts,
+  defaultFilter,
+  required = false,
+}: {
+  path: string;
+  value: string;
+  onChange: (v: string) => void;
+  errors: Errors;
+  cohorts: CohortChoice[];
+  defaultFilter: "graduated" | "current" | "all";
+  required?: boolean;
+}) {
+  const t = useTranslations("verify");
+  const error = useError(errors, path);
+  const selected = cohorts.find((c) => c.value === value);
+  const [filter, setFilter] = useState<"graduated" | "current" | "all">(
+    selected ? (selected.graduated ? "graduated" : "current") : defaultFilter,
+  );
+  const shown = cohorts.filter(
+    (c) =>
+      filter === "all" ||
+      (filter === "graduated") === c.graduated ||
+      c.value === value,
+  );
+  return (
+    <div className="space-y-2">
+      <fieldset>
+        <legend className="text-sm font-medium text-slate-800">
+          {t("fields.cohortFilter")}
+        </legend>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {(["graduated", "current", "all"] as const).map((f) => (
+            <label
+              key={f}
+              className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm ${filter === f ? "border-brand-700 bg-brand-50 font-medium" : "border-slate-300"}`}
+            >
+              <input
+                type="radio"
+                className="sr-only"
+                name={`${path}-filter`}
+                checked={filter === f}
+                onChange={() => setFilter(f)}
+              />
+              {t(`cohortFilter.${f}`)}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <Field
+        id={fieldId(path)}
+        label={
+          required ? (
+            t("fields.cohort")
+          ) : (
+            <OptionalLabel>{t("fields.cohort")}</OptionalLabel>
+          )
+        }
+        required={required}
+        hint={t("hints.cohort")}
+        error={error}
+      >
+        {(aria) => (
+          <Select
+            {...aria}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+          >
+            <option value="">
+              {required ? t("select") : t("cohortNotListed")}
+            </option>
+            {shown.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+    </div>
   );
 }

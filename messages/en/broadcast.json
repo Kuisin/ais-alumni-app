@@ -1,0 +1,55 @@
+{
+  "pageTitle": "Send a notification",
+  "descriptionAny": "Send a message to members by LINE (or email if they don't use LINE).",
+  "descriptionLeader": "As class representative, you can send a message to members of your 学年 by LINE (or email).",
+  "audience": {
+    "label": "Send to",
+    "ALL": "All members",
+    "ROLES": "Members with selected roles",
+    "COHORT": "A 学年 (class)",
+    "cohortHint": "Current and former students who selected this 学年.",
+    "leaderOnly": "Your 学年:",
+    "cohort": "学年 (class)",
+    "chooseCohort": "Choose a class",
+    "desc": {
+      "ALL": "Reaches every active member.",
+      "ROLES": "Reaches members in the roles you pick (students, alumni, parents, teachers…).",
+      "COHORT": "Reaches the students and alumni of the class you pick."
+    }
+  },
+  "title": "Title",
+  "body": "Message",
+  "bodyHint": "Your name and position are added at the end.",
+  "preview": "Check recipients",
+  "checking": "Checking…",
+  "confirmSummary": "This will reach {recipients} members: {line} by LINE and {email} by email. Sending uses {line} messages of the LINE monthly quota.",
+  "send": "Send to {count} members",
+  "sending": "Sending…",
+  "edit": "Edit",
+  "sentSummary": "Sent to {recipients} members ({line} by LINE, {email} by email).",
+  "sendAnother": "Send another",
+  "history": "Sent by you",
+  "historyCounts": "{recipients} recipients (LINE {line} / email {email})",
+  "signature": "— {name} ({position}), via AIS Alumni",
+  "signatureCommittee": "— AIS Alumni Committee",
+  "positions": {
+    "TEACHER_MANAGER": "Teacher manager",
+    "STUDENT_LEADER": "Class representative",
+    "TEACHER_REGISTRAR": "Teacher registrar"
+  },
+  "fieldErrors": {
+    "required": "This field is required.",
+    "tooLong": "This is too long.",
+    "rolesRequired": "Choose at least one role.",
+    "cohortRequired": "Choose a 学年."
+  },
+  "errors": {
+    "forbidden": "Please sign in again.",
+    "validation": "Please check the highlighted fields.",
+    "notAllowed": "You can't send to this audience.",
+    "limit": "You've reached your sending limit. Please try again later.",
+    "noRecipients": "No members match this audience."
+  },
+  "sent": "Sent.",
+  "charCount": "{count} / {max} characters"
+}

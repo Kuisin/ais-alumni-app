@@ -18,6 +18,9 @@ export const config: VercelConfig = {
     { path: "/api/cron/reminders", schedule: "0 0 * * *" },
     // 09:00 JST on April 1: yearly "is your status still X?" prompt (§7)
     { path: "/api/cron/stage-prompt", schedule: "0 0 1 4 *" },
+    // 00:05 JST daily: current/former, grades and graduation from 学年 and
+    // leave years (the school year rolls over on April 1)
+    { path: "/api/cron/sync-status", schedule: "5 15 * * *" },
     // 03:00 JST daily: delete evidence 30 days after decision (§6.3)
     { path: "/api/cron/cleanup-evidence", schedule: "0 18 * * *" },
   ],

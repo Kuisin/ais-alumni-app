@@ -18,7 +18,9 @@
     "lineLinked": "連携済み",
     "lineFollowing": "連携済み・友だち追加済み",
     "lineUnlinked": "未連携",
-    "adminOnly": "管理者のみ"
+    "adminOnly": "管理者のみ",
+    "more": "絞り込み",
+    "activeCount": "{count}件"
   },
   "columns": {
     "name": "氏名",
@@ -34,7 +36,12 @@
   "line": {
     "notLinked": "未連携",
     "linkedNotFollowing": "連携済み・友だち未追加",
-    "following": "連携済み・友だち追加済み"
+    "following": "連携済み・友だち追加済み",
+    "short": {
+      "notLinked": "未連携",
+      "linkedNotFollowing": "連携のみ",
+      "following": "友だち"
+    }
   },
   "detail": {
     "title": "会員詳細",
@@ -43,7 +50,10 @@
     "providers": "ログイン方法",
     "notifyVia": "通知",
     "deactivatedAt": "停止日時",
-    "merged": "アカウントを統合しました。重複アカウントは削除されました。"
+    "merged": "アカウントを統合しました。重複アカウントは削除されました。",
+    "sections": "ページ内の項目",
+    "overview": "概要",
+    "account": "アカウント"
   },
   "profile": {
     "title": "プロフィール",
@@ -86,7 +96,26 @@
     "currentStatus": "現在の状況",
     "currentStage": "現在の所属",
     "currentStageDetail": "詳細（学校名・勤務先など）",
-    "stageUpdatedAt": "現在の所属の最終更新：{date}"
+    "stageUpdatedAt": "現在の所属の最終更新：{date}",
+    "cohort": "学年",
+    "yearsToAny": "在籍終了（年）",
+    "yearsFromAny": "在籍開始（年）",
+    "teacherStatus": "ステータス",
+    "teacherStatusHint": "元教職員には教職員としての権限（生徒の閲覧、教職員・管理者など）がありません。",
+    "derivedLabel": "自動判定",
+    "joinedYear": "入った年",
+    "leftYear": "離れた年",
+    "leftYearTeacherHint": "空欄 = 現職",
+    "leftYearStudentHint": "卒業前に離れた場合のみ。空欄 = 在校中または卒業",
+    "derivedGraduated": "{year}年 卒業",
+    "derivedLeft": "{year}年 退学（卒業前）",
+    "parentDerived": "保護者の在校・卒業はお子さま（家族の連携）から自動で判定されます。",
+    "addTypes": {
+      "CURRENT_STUDENT": "在校生・卒業生",
+      "CURRENT_PARENT": "保護者",
+      "TEACHER": "教職員"
+    },
+    "schoolEmailVerified": "確認済み"
   },
   "status": {
     "title": "アカウントの状態",
@@ -160,5 +189,37 @@
       "subject": "AIS同窓会のアカウントが再開されました",
       "text": "おかえりなさい！AIS同窓会のアカウントが再開されました。"
     }
+  },
+  "positions": {
+    "title": "役職",
+    "held": "任命済み",
+    "heldCohort": "任命済み・{cohort}",
+    "grant": "任命する",
+    "update": "更新",
+    "remove": "解除",
+    "names": {
+      "TEACHER_MANAGER": "教職員・管理者",
+      "STUDENT_LEADER": "学年代表",
+      "TEACHER_REGISTRAR": "教職員登録担当"
+    },
+    "descriptions": {
+      "TEACHER_MANAGER": "すべての会員、選択した立場、または任意の学年にお知らせを送れます（1日20件まで）。",
+      "STUDENT_LEADER": "自分の学年の会員にお知らせを送れます（1週間に5件まで）。",
+      "TEACHER_REGISTRAR": "会員を現職の教職員として登録したり、元教職員に変更したりできます（管理モードの「教職員」）。現職の教職員はお子さんのプロフィールを見られるため、信頼できる方に付与してください。"
+    },
+    "requires": {
+      "TEACHER_MANAGER": "教職員の立場が必要です。",
+      "STUDENT_LEADER": "在校生または卒業生の立場が必要です。",
+      "TEACHER_REGISTRAR": ""
+    },
+    "granted": "役職を任命しました。",
+    "removed": "役職を解除しました。",
+    "errors": {
+      "forbidden": "この操作を行う権限がありません。",
+      "invalid": "入力内容を確認してください。",
+      "notEligible": "この役職に必要な立場がありません。",
+      "cohort": "担当する学年を選択してください。"
+    },
+    "cohort": "担当学年"
   }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { type RsvpState, rsvpAction } from "@/app/actions/events";
@@ -26,7 +27,9 @@ export function RsvpForm({
   );
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    // noValidate: a missing answer comes back from the server as a visible
+    // error rather than a browser bubble pinned to the visually-hidden radio.
+    <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <input type="hidden" name="eventId" value={eventId} />
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-slate-800">
@@ -36,7 +39,7 @@ export function RsvpForm({
           {ANSWERS.map((a) => (
             <label
               key={a}
-              className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-slate-300 px-3 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-50"
+              className="group flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 transition-colors hover:border-brand-300 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-700"
             >
               <input
                 type="radio"
@@ -45,9 +48,15 @@ export function RsvpForm({
                 required
                 checked={answer === a}
                 onChange={() => setAnswer(a)}
-                className="size-5"
+                className="peer sr-only"
               />
-              <span className="text-sm font-medium">{t(`answer.${a}`)}</span>
+              <span
+                aria-hidden="true"
+                className="flex size-5 shrink-0 items-center justify-center rounded-full border border-slate-400 peer-checked:border-white peer-checked:bg-white peer-checked:text-brand-700"
+              >
+                {answer === a ? <Check className="size-3.5" /> : null}
+              </span>
+              <span className="text-sm font-semibold">{t(`answer.${a}`)}</span>
             </label>
           ))}
         </div>
@@ -91,8 +100,9 @@ export function RsvpForm({
 
       <Button
         type="submit"
-        disabled={pending || !answer}
-        aria-disabled={pending || !answer}
+        disabled={pending}
+        aria-disabled={pending}
+        className="w-full sm:w-auto"
       >
         {pending
           ? t("rsvp.saving")

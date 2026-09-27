@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
+import { LinkPendingIcon } from "@/components/ui/link-pending";
 import { Link } from "@/i18n/navigation";
 
 /** Dashboard card with a heading and an optional "see all" link. */
@@ -53,7 +54,9 @@ export function ActionItem({
         className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 hover:bg-amber-100"
       >
         <span>{children}</span>
-        <span aria-hidden="true">→</span>
+        <LinkPendingIcon>
+          <span aria-hidden="true">→</span>
+        </LinkPendingIcon>
       </Link>
     </li>
   );

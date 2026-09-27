@@ -1,6 +1,7 @@
 import { Calendar, ChevronRight, UserRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/components/ui/cn";
+import { LinkPendingIcon } from "@/components/ui/link-pending";
 import type { PositionKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { displayName, formatDate } from "@/lib/format";
@@ -86,10 +87,12 @@ export function MessageRow({
           </span>
         </p>
       </div>
-      <ChevronRight
-        aria-hidden="true"
-        className="size-5 shrink-0 text-slate-400 transition-colors group-hover:text-brand-700"
-      />
+      <LinkPendingIcon>
+        <ChevronRight
+          aria-hidden="true"
+          className="size-5 shrink-0 text-slate-400 transition-colors group-hover:text-brand-700"
+        />
+      </LinkPendingIcon>
     </Link>
   );
 }

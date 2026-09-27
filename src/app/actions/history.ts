@@ -1,11 +1,17 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { educationSchema, workSchema } from "@/lib/history";
 import type { OrgKind, OrgOption } from "@/lib/organizations";
 import { resolveOrg, searchOrgs } from "@/lib/organizations-db";
-import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
+import {
+  AuthError,
+  actionActive,
+  actionAdmin,
+  type CurrentUser,
+} from "@/lib/session";
 import { syncStageFromHistory } from "@/lib/stage";
 
 export type HistoryFormState = {
@@ -26,9 +32,24 @@ async function me(): Promise<CurrentUser | null> {
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "");
 
-/** Keep a former student's current stage in step with their ongoing entries. */
-async function refreshStage(user: CurrentUser): Promise<void> {
-  await syncStageFromHistory(user.id);
+/**
+ * Whose history is edited: the member's own, or — for admins (管理 → 会員)
+ * — another member's. Null when not allowed.
+ */
+async function target(
+  userId: string,
+): Promise<{ id: string; actor: CurrentUser; admin: boolean } | null> {
+  if (!userId) {
+    const user = await me();
+    return user ? { id: user.id, actor: user, admin: false } : null;
+  }
+  const admin = await actionAdmin().catch(() => null);
+  if (!admin || userId.length > 64) return null;
+  const exists = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  return exists ? { id: userId, actor: admin, admin: true } : null;
 }
 
 /** Add or edit one 学歴 / 職歴 entry (own entries only). */
@@ -36,8 +57,9 @@ export async function saveHistoryAction(
   _prev: HistoryFormState,
   fd: FormData,
 ): Promise<HistoryFormState> {
-  const user = await me();
-  if (!user) return { ok: false, message: "errors.forbidden" };
+  const who = await target(str(fd, "userId"));
+  if (!who) return { ok: false, message: "errors.forbidden" };
+  const user = { id: who.id };
   const kind = str(fd, "kind");
   const id = str(fd, "id");
   const common = {
@@ -59,7 +81,7 @@ export async function saveHistoryAction(
     const schoolId = await resolveOrg(
       "school",
       { id: str(fd, "schoolId"), name: school },
-      user.id,
+      who.actor.id,
     );
     if (!schoolId) return invalid([{ path: ["school"], message: "required" }]);
     const data = { ...rest, schoolId };
@@ -85,7 +107,7 @@ export async function saveHistoryAction(
     const companyId = await resolveOrg(
       "company",
       { id: str(fd, "companyId"), name: company },
-      user.id,
+      who.actor.id,
     );
     if (!companyId)
       return invalid([{ path: ["company"], message: "required" }]);
@@ -103,7 +125,14 @@ export async function saveHistoryAction(
     return { ok: false, message: "errors.invalid" };
   }
 
-  await refreshStage(user);
+  await syncStageFromHistory(user.id);
+  if (who.admin)
+    await audit(
+      who.actor.id,
+      id ? "member.history_updated" : "member.history_added",
+      { type: "User", id: user.id },
+      { kind, entryId: id || null },
+    );
   refresh();
   return { ok: true, message: id ? "saved" : "added" };
 }
@@ -119,15 +148,30 @@ function invalid(
   return { ok: false, message: "errors.validation", fieldErrors };
 }
 
+/** Remove an entry (own; or, for admins, `userId`'s). */
 export async function deleteHistoryAction(
   kind: "education" | "work",
   id: string,
+  userId = "",
 ): Promise<void> {
-  const user = await actionActive();
-  if (kind === "education")
-    await db.educationEntry.deleteMany({ where: { id, userId: user.id } });
-  else await db.workEntry.deleteMany({ where: { id, userId: user.id } });
-  await refreshStage(user);
+  const who = await target(typeof userId === "string" ? userId : "");
+  if (!who) {
+    await actionActive(); // throws the usual error for signed-out users
+    return;
+  }
+  const where = { id, userId: who.id };
+  const res =
+    kind === "education"
+      ? await db.educationEntry.deleteMany({ where })
+      : await db.workEntry.deleteMany({ where });
+  await syncStageFromHistory(who.id);
+  if (who.admin && res.count)
+    await audit(
+      who.actor.id,
+      "member.history_deleted",
+      { type: "User", id: who.id },
+      { kind, entryId: id },
+    );
   refresh();
 }
 

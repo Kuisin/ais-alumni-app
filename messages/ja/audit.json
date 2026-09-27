@@ -44,7 +44,10 @@
       "profile_updated": "プロフィールを編集",
       "role_added": "区分を追加",
       "role_removed": "区分を削除",
-      "role_updated": "区分を編集"
+      "role_updated": "区分を編集",
+      "history_added": "学歴・職歴を追加",
+      "history_updated": "学歴・職歴を編集",
+      "history_deleted": "学歴・職歴を削除"
     },
     "verification": {
       "approve": "入会申請を承認",

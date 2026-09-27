@@ -146,3 +146,38 @@ test("admins can merge into a parent-managed account by skipping the check", asy
     })
     .toEqual({ email: own.email, managed: null });
 });
+
+test("admins edit a member's education and work", async ({ browser }) => {
+  const stamp = Date.now();
+  const m = await createActiveGraduate(`Hist Admin${stamp}`, "1995-01-01");
+  const company = `Admin Added Co ${stamp}`;
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto(`/en/app/admin/members/${m.id}#history`);
+  const section = admin.locator("#history");
+  await section.getByRole("button", { name: "Add a job" }).click();
+  await section
+    .getByRole("combobox", { name: "Company / organization" })
+    .fill(company);
+  await admin.getByRole("option", { name: `＋ Add “${company}”` }).click();
+  await section.getByLabel("Start year").fill("2022");
+  await section.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(section.getByText(company).first()).toBeVisible();
+
+  // Saved on the member (not the admin), and their current status follows.
+  await expect
+    .poll(async () => {
+      const [r] = await sql<{ stage: string | null; n: number }>(
+        `SELECT (SELECT "currentStage"::text FROM "UserRole" WHERE "userId" = $1 AND role = 'FORMER_STUDENT') AS stage,
+                (SELECT count(*)::int FROM "WorkEntry" WHERE "userId" = $1) AS n`,
+        [m.id],
+      );
+      return r;
+    })
+    .toEqual({ stage: "WORKING", n: 1 });
+  const [log] = await sql<{ n: number }>(
+    `SELECT count(*)::int AS n FROM "AuditLog" WHERE action = 'member.history_added' AND "targetId" = $1`,
+    [m.id],
+  );
+  expect(log.n).toBe(1);
+});

@@ -21,7 +21,9 @@ async function loadGroup(id: string, viewer: { id: string; isAdmin: boolean }) {
         ...GROUP_SELECT,
         members: {
           orderBy: { user: { nameRomaji: "asc" } },
-          take: 500,
+          // Everyone in the group, for the member list and @mentions (a
+          // whole year group of graduates can pass 500).
+          take: 2000,
           select: {
             user: {
               select: {

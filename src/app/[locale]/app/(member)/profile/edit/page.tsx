@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { AvatarForm } from "@/components/profile/avatar-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { BirthDateCard } from "@/components/profile/birth-date-card";
+import { FollowerFieldsForm } from "@/components/profile/follower-fields-form";
 import { NameCard } from "@/components/profile/name-card";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { AisRecord } from "@/components/profile/role-details";
@@ -17,6 +18,11 @@ import { ViewEdit } from "@/components/ui/view-edit";
 import { type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { displayName } from "@/lib/format";
+import {
+  followerFieldSet,
+  PERSONAL_FIELDS,
+  type PersonalField,
+} from "@/lib/personal-fields";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,6 +39,18 @@ export default async function ProfileEditPage() {
   const locale = (await getLocale()) as Locale;
   const former = me.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
   const social = parseSocialLinks(me.socialLinks);
+  const shared = [...followerFieldSet(me.followerFields)];
+  const personal: Record<PersonalField, string | null> = {
+    email: me.primaryEmail,
+    phone: me.phone,
+    lineDisplayName: me.lineDisplayName,
+    instagram: social.instagram ?? null,
+    linkedin: social.linkedin ?? null,
+    facebook: social.facebook ?? null,
+    x: social.x ?? null,
+    website: social.website ?? null,
+    currentStageDetail: former?.currentStageDetail ?? null,
+  };
 
   return (
     <div className="space-y-4">
@@ -114,6 +132,45 @@ export default async function ProfileEditPage() {
           }}
         />
       </ViewEdit>
+
+      <section id="follower-fields" aria-labelledby="follower-fields-title">
+        <h2 id="follower-fields-title" className="mb-2 text-lg font-semibold">
+          {t("followerFields.title")}
+        </h2>
+        <ViewEdit
+          actionsClassName="flex justify-end"
+          view={
+            <Card>
+              <p className="mb-3 text-sm text-slate-600">
+                {t("hints.privateTier")}
+              </p>
+              <ul className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+                {PERSONAL_FIELDS.map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <span>{t(`followerFields.fields.${f}`)}</span>
+                    <span
+                      className={
+                        shared.includes(f)
+                          ? "rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800"
+                          : "rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
+                      }
+                    >
+                      {shared.includes(f) ? tc("on") : tc("off")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          }
+        >
+          <Card>
+            <FollowerFieldsForm shared={shared} values={personal} />
+          </Card>
+        </ViewEdit>
+      </section>
 
       {former ? (
         <Card id="stage" className="scroll-mt-20">

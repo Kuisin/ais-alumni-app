@@ -113,6 +113,9 @@ model User {
   /// short code in notification links (/n/<linkCode>/<token>) for read receipts
   linkCode              String?              @unique
   autoAcceptSameYear    Boolean              @default(false)
+  /// personal fields also shown to accepted followers (src/lib/personal-fields.ts);
+  /// otherwise only family (and admins) see them
+  followerFields        String[]             @default([])
   familyId              String?
   family                Family?              @relation(fields: [familyId], references: [id], onDelete: SetNull)
   deactivatedAt         DateTime?

@@ -7,6 +7,7 @@ import {
   canViewProfile,
   isMinor,
   isTargeted,
+  privateAccess,
   type Relationship,
   shouldAutoAccept,
   type Target,
@@ -68,7 +69,55 @@ describe("isMinor", () => {
   });
 });
 
-describe("canViewPrivate", () => {
+describe("privateAccess (personal fields)", () => {
+  it("gives self, family and admins everything", () => {
+    expect(privateAccess(viewer({ id: "t" }), target(), rel(), NOW)).toBe(
+      "all",
+    );
+    expect(
+      privateAccess(
+        viewer({ familyId: "f" }),
+        target({ familyId: "f" }),
+        rel(),
+        NOW,
+      ),
+    ).toBe("all");
+    expect(privateAccess(viewer({ isAdmin: true }), target(), rel(), NOW)).toBe(
+      "all",
+    );
+  });
+  it("gives accepted followers only the shared fields", () => {
+    expect(
+      privateAccess(
+        viewer(),
+        target(),
+        rel({ follow: FollowStatus.ACCEPTED }),
+        NOW,
+      ),
+    ).toBe("followers");
+  });
+  it("gives other members nothing", () => {
+    expect(privateAccess(viewer(), target(), rel(), NOW)).toBe("none");
+    expect(
+      privateAccess(
+        viewer(),
+        target(),
+        rel({ follow: FollowStatus.REQUESTED }),
+        NOW,
+      ),
+    ).toBe("none");
+    expect(
+      privateAccess(
+        viewer(),
+        target(),
+        rel({ follow: FollowStatus.ACCEPTED, blocked: true }),
+        NOW,
+      ),
+    ).toBe("none");
+  });
+});
+
+describe("canViewPrivate (followers-or-family tier)", () => {
   it("allows self", () => {
     expect(canViewPrivate(viewer({ id: "t" }), target(), rel(), NOW)).toBe(
       true,

@@ -3,8 +3,15 @@ import { RoleKey, TeacherStatus } from "@/generated/prisma/enums";
 import { audiencesOfMember } from "@/lib/audience";
 import { db } from "@/lib/db";
 import {
+  followerFieldSet,
+  isPersonalField,
+  type PersonalField,
+} from "@/lib/personal-fields";
+import {
   canViewPrivate as canViewPrivateCore,
   canViewProfile,
+  type PrivateAccess,
+  privateAccess,
   type Relationship,
   type Target,
   type Viewer,
@@ -122,8 +129,15 @@ export type PrivateProfile = {
 
 export type ProfileView = {
   public: PublicProfile;
-  /** null unless canViewPrivate() allowed it */
+  /**
+   * Personal fields the viewer may see (privateAccess): all of them for
+   * self / family / admins, only the shared ones for followers (others
+   * null); null for everyone else.
+   */
   private: PrivateProfile | null;
+  access: PrivateAccess;
+  /** the member shares at least one field with followers */
+  sharesWithFollowers: boolean;
   relationship: Relationship;
   isSelf: boolean;
 };
@@ -152,15 +166,36 @@ export function projectPublic(user: UserWithRoles): PublicProfile {
   };
 }
 
-function projectPrivate(user: UserWithRoles): PrivateProfile {
+export function projectPrivate(
+  user: UserWithRoles,
+  access: PrivateAccess,
+): PrivateProfile | null {
+  if (access === "none") return null;
+  const shared = followerFieldSet(user.followerFields);
+  // A follower of a member who shares nothing: same as no access.
+  if (access === "followers" && shared.size === 0) return null;
+  const show = (f: PersonalField) => access === "all" || shared.has(f);
+  const social = (
+    user.socialLinks && typeof user.socialLinks === "object"
+      ? user.socialLinks
+      : {}
+  ) as Record<string, unknown>;
+  const socialShown = Object.fromEntries(
+    Object.entries(social).filter(
+      ([k]) => isPersonalField(k) && show(k as PersonalField),
+    ),
+  );
   return {
-    email: user.primaryEmail,
-    phone: user.phone,
-    lineDisplayName: user.lineDisplayName,
-    currentStageDetail:
-      user.roles.find((r) => r.role === RoleKey.FORMER_STUDENT)
-        ?.currentStageDetail ?? null,
-    socialLinks: user.socialLinks ?? null,
+    email: show("email") ? user.primaryEmail : null,
+    phone: show("phone") ? user.phone : null,
+    lineDisplayName: show("lineDisplayName") ? user.lineDisplayName : null,
+    currentStageDetail: show("currentStageDetail")
+      ? (user.roles.find((r) => r.role === RoleKey.FORMER_STUDENT)
+          ?.currentStageDetail ?? null)
+      : null,
+    socialLinks: Object.keys(socialShown).length
+      ? (socialShown as Prisma.JsonValue)
+      : null,
   };
 }
 
@@ -182,9 +217,12 @@ export async function getProfileForViewer(
   const v = toViewer(viewer);
   const t = toTarget(target);
   if (!canViewProfile(v, t, rel)) return null;
+  const access = privateAccess(v, t, rel);
   return {
     public: projectPublic(target),
-    private: canViewPrivateCore(v, t, rel) ? projectPrivate(target) : null,
+    private: projectPrivate(target, access),
+    access,
+    sharesWithFollowers: followerFieldSet(target.followerFields).size > 0,
     relationship: rel,
     isSelf: viewer.id === target.id,
   };

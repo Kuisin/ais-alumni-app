@@ -32,7 +32,9 @@
     "title": "部署・役職（任意）",
     "startYear": "開始年",
     "endYear": "終了年",
-    "visibility": "公開範囲"
+    "visibility": "公開範囲",
+    "industry": "業種",
+    "industryDetail": "業種（詳細）"
   },
   "hints": {
     "endYear": {
@@ -76,5 +78,9 @@
     "company": "会社名を入力すると候補が表示されます。"
   },
   "yearPlaceholder": "例: 2020",
-  "close": "閉じる"
+  "close": "閉じる",
+  "industryHint": "大分類を選ぶと、詳細を選べます。",
+  "industryNone": "選択しない",
+  "industryDetailAny": "詳細は選択しない",
+  "industryPickGroup": "先に業種を選んでください"
 }

@@ -32,7 +32,9 @@
     "title": "Department / position (optional)",
     "startYear": "Start year",
     "endYear": "End year",
-    "visibility": "Visible to"
+    "visibility": "Visible to",
+    "industry": "Industry",
+    "industryDetail": "Industry (detail)"
   },
   "hints": {
     "endYear": {
@@ -76,5 +78,9 @@
     "company": "Start typing to see existing companies."
   },
   "yearPlaceholder": "e.g. 2020",
-  "close": "Close"
+  "close": "Close",
+  "industryHint": "Pick a category, then optionally the detail.",
+  "industryNone": "Not specified",
+  "industryDetailAny": "No detail",
+  "industryPickGroup": "Choose an industry first"
 }

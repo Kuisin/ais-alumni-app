@@ -4,6 +4,7 @@ import {
   HistoryVisibility,
   LifeStage,
 } from "@/generated/prisma/enums";
+import { isIndustryCode } from "@/lib/industries";
 import { calendarYear } from "@/lib/school";
 
 /**
@@ -49,6 +50,13 @@ export const workSchema = z
   .object({
     company: text(120).min(1, "required"),
     title: optional(120),
+    /** 業種 code (src/lib/industries.ts); empty = not given */
+    industry: z
+      .string()
+      .trim()
+      .max(40)
+      .refine((v) => !v || isIndustryCode(v), "invalid")
+      .transform((v) => v || null),
     startYear: year,
     endYear: year,
     visibility: z.enum(HistoryVisibility),

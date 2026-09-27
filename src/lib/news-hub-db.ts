@@ -10,6 +10,7 @@ import {
   asksAnything,
   hasResponded,
   isAttachmentKey,
+  isOpen,
   type PollInput,
   REACTIONS,
   reminderDue,
@@ -238,6 +239,7 @@ export async function sendDeadlineReminders(
     where: {
       deadline: { gt: now },
       remindedAt: null,
+      closedAt: null,
       archivedAt: null,
       publishedAt: { lte: now },
     },
@@ -477,10 +479,11 @@ export async function awaitingResponse(
     id: string;
     requireConfirm: boolean;
     deadline: Date | null;
+    closedAt?: Date | null;
   }[],
   now: Date = new Date(),
 ): Promise<Set<string>> {
-  const open = posts.filter((p) => !p.deadline || p.deadline > now);
+  const open = posts.filter((p) => isOpen(p, now));
   if (open.length === 0) return new Set();
   const ids = open.map((p) => p.id);
   const [polls, confirms, votes] = await Promise.all([

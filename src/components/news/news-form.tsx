@@ -31,6 +31,7 @@ import { useFormAction } from "@/components/events/use-form-action";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import type { CohortOption } from "@/lib/cohorts";
 import type { NewsStatus } from "@/lib/news";
 import { type AudienceSpec, EVERYONE } from "@/lib/news-audience";
@@ -113,6 +114,7 @@ export function NewsForm({
     saveNewsAction,
     {},
   );
+  useCloseOnSave(state);
   const err = (name: string) => {
     const key = state.fieldErrors?.[name];
     return key ? t(`errors.${key}`) : null;

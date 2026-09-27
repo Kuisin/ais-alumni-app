@@ -612,3 +612,35 @@ export async function searchAudienceMembersAction(
     kanji: r.nameRomaji ? r.nameKanji : null,
   }));
 }
+
+/** Close RSVPs early (or reopen them until the deadline). */
+export async function setEventRsvpClosedAction(fd: FormData): Promise<void> {
+  const admin = await actionAdmin();
+  const id = Id.parse(str(fd, "id"));
+  const close = str(fd, "close") === "1";
+  await db.event.update({
+    where: { id },
+    data: { rsvpClosedAt: close ? new Date() : null },
+  });
+  await audit(admin.id, close ? "event.rsvp_close" : "event.rsvp_reopen", {
+    type: "Event",
+    id,
+  });
+  revalidateEvents();
+}
+
+/** Close answers to a ニュース post early (or reopen them). */
+export async function setNewsClosedAction(fd: FormData): Promise<void> {
+  const admin = await actionAdmin();
+  const id = Id.parse(str(fd, "id"));
+  const close = str(fd, "close") === "1";
+  await db.newsPost.update({
+    where: { id },
+    data: { closedAt: close ? new Date() : null },
+  });
+  await audit(admin.id, close ? "news.close" : "news.reopen", {
+    type: "NewsPost",
+    id,
+  });
+  revalidateNews();
+}

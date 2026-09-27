@@ -1,4 +1,3 @@
-import { Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { deleteHistoryAction } from "@/app/actions/history";
@@ -7,6 +6,7 @@ import { HistoryForm } from "@/components/history/history-form";
 import { BackLink } from "@/components/ui/back-link";
 import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ViewEdit } from "@/components/ui/view-edit";
 import { db } from "@/lib/db";
 import { isOngoing, sortHistory } from "@/lib/history";
 import { requireActive } from "@/lib/session";
@@ -49,35 +49,37 @@ export default async function HistoryPage() {
                 key={e.id}
                 className="animate-rise rounded-xl border border-slate-200 p-3"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium">
-                    {"school" in e ? e.school.name : e.company.name}
-                  </span>
-                  {isOngoing(e) && e.endYear === null ? (
-                    <Badge tone="green">{t("current")}</Badge>
-                  ) : null}
-                  <Badge tone={e.visibility === "MEMBERS" ? "brand" : "slate"}>
-                    {t(`visibility.${e.visibility}`)}
-                  </Badge>
-                </div>
-                <p className="text-sm text-slate-600">
-                  {"level" in e
-                    ? `${t(`levels.${e.level}`)}${e.field ? ` · ${e.field}` : ""}`
-                    : (e.title ?? "")}{" "}
-                  · {years(e)}
-                </p>
-                <details className="mt-2">
-                  <summary className="inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-lg text-sm font-medium text-brand-700 hover:underline">
-                    <Pencil aria-hidden="true" className="size-4" />
-                    {t("edit")}
-                  </summary>
-                  <div className="mt-3 space-y-3">
-                    <HistoryForm kind={kind} values={e} />
-                    <form action={deleteHistoryAction.bind(null, kind, e.id)}>
-                      <SubmitButton variant="ghost">{t("delete")}</SubmitButton>
-                    </form>
-                  </div>
-                </details>
+                <ViewEdit
+                  editLabel={t("edit")}
+                  view={
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">
+                          {"school" in e ? e.school.name : e.company.name}
+                        </span>
+                        {isOngoing(e) && e.endYear === null ? (
+                          <Badge tone="green">{t("current")}</Badge>
+                        ) : null}
+                        <Badge
+                          tone={e.visibility === "MEMBERS" ? "brand" : "slate"}
+                        >
+                          {t(`visibility.${e.visibility}`)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-slate-600">
+                        {"level" in e
+                          ? `${t(`levels.${e.level}`)}${e.field ? ` · ${e.field}` : ""}`
+                          : (e.title ?? "")}{" "}
+                        · {years(e)}
+                      </p>
+                    </div>
+                  }
+                >
+                  <HistoryForm kind={kind} values={e} />
+                  <form action={deleteHistoryAction.bind(null, kind, e.id)}>
+                    <SubmitButton variant="ghost">{t("delete")}</SubmitButton>
+                  </form>
+                </ViewEdit>
               </li>
             ))}
           </ul>

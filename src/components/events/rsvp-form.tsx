@@ -7,6 +7,7 @@ import { type RsvpState, rsvpAction } from "@/app/actions/events";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Select } from "@/components/ui/field";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import { MAX_GUESTS, type RsvpAnswerValue } from "@/lib/events";
 import { useFormAction } from "./use-form-action";
 
@@ -22,6 +23,7 @@ export function RsvpForm({
 }) {
   const t = useTranslations("events");
   const { state, pending, onSubmit } = useFormAction<RsvpState>(rsvpAction, {});
+  useCloseOnSave(state);
   const [answer, setAnswer] = useState<RsvpAnswerValue | null>(
     current?.answer ?? null,
   );

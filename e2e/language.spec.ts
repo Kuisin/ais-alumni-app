@@ -25,10 +25,20 @@ test("language is changed in Settings, not the header", async ({ page }) => {
     page.getByRole("contentinfo").getByRole("button", { name: lang }),
   ).toHaveCount(0);
   await page.goto("/ja/app/settings#language");
+  // The current setting is shown first; 編集 opens the choices.
+  await expect(page.getByRole("radio", { name: /English/ })).toHaveCount(0);
+  await page
+    .locator("#language")
+    .getByRole("button", { name: "編集", exact: true })
+    .click();
   await page.getByRole("radio", { name: /English/ }).check();
   await page.getByRole("button", { name: "言語を保存" }).click();
   await expect(page).toHaveURL(/\/en\/app\/settings/);
   // Back to Japanese so other tests see the default.
+  await page
+    .locator("#language")
+    .getByRole("button", { name: "Edit", exact: true })
+    .click();
   await page.getByRole("radio", { name: /日本語/ }).check();
   await page.getByRole("button", { name: "Save language" }).click();
   await expect(page).toHaveURL(/\/ja\/app\/settings/);

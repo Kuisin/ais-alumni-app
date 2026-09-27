@@ -65,6 +65,7 @@ test("reserved news is sent when due, only to the chosen audience", async ({
 
   // Clean up.
   await page.goto(`/en/app/admin/news/${postId}`);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /Delete/ }).click();
   await expect(page).toHaveURL(/\/en\/app\/admin\/news(\?|$)/);

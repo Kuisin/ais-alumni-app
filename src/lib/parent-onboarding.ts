@@ -78,7 +78,9 @@ export async function findRegisteredChildren(
         select: { cohort: { select: { number: true } } },
       },
     },
-    take: 50,
+    // Everyone born that day, then the exact name match: a small cap here
+    // could drop the right person before the name check.
+    take: 2000,
   });
   return candidates
     .filter((u) => exactNameMatch(q.name, u))

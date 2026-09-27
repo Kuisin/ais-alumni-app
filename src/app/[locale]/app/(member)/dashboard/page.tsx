@@ -78,6 +78,7 @@ export default async function DashboardPage({
             publishedAt: true,
             requireConfirm: true,
             deadline: true,
+            closedAt: true,
           },
         }),
       ),

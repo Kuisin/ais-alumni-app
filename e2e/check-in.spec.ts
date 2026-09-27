@@ -32,7 +32,11 @@ test("staff scan a member's QR ticket to check them in", async ({
   await hanako.goto(`/en/app/events/${eventId}`);
   await hanako.getByText("Going", { exact: true }).click();
   await hanako.getByRole("button", { name: "Send RSVP" }).click();
-  await expect(hanako.getByText("Your RSVP has been saved.")).toBeVisible();
+  // After answering, the answer is shown with a button to change it.
+  await expect(hanako.getByText(/^Your answer: Going/)).toBeVisible();
+  await expect(
+    hanako.getByRole("button", { name: "Change my answer" }),
+  ).toBeVisible();
   await hanako.reload();
   const qr = hanako.getByRole("img", { name: /^Check-in QR code for/ });
   await expect(qr).toBeVisible();
@@ -105,6 +109,7 @@ test("staff scan a member's QR ticket to check them in", async ({
 
   // Clean up.
   await admin.goto(`/en/app/admin/events/${eventId}`);
+  await admin.getByRole("button", { name: "Edit", exact: true }).click();
   admin.once("dialog", (d) => d.accept());
   await admin.getByRole("button", { name: /Delete/ }).click();
   await expect(admin).toHaveURL(/\/en\/app\/admin\/events(\?|$)/);

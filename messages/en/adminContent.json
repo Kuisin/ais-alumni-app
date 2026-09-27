@@ -81,6 +81,19 @@
       "open": "Open",
       "closed": "RSVP closed",
       "full": "Full"
+    },
+    "details": "Event details",
+    "body": "Details",
+    "titles": "Title",
+    "audience": "Who it's for",
+    "rsvp": {
+      "title": "RSVPs",
+      "open": "Open (until {time})",
+      "closedManual": "Closed ({time})",
+      "closedDeadline": "Closed — the deadline has passed",
+      "close": "Close RSVPs",
+      "reopen": "Reopen RSVPs",
+      "hint": "Once closed, members can't change their answers. Reopening accepts answers until the deadline."
     }
   },
   "attendees": {
@@ -126,7 +139,15 @@
     "restore": "Restore",
     "archivedHint": "Hidden from members and never notified.",
     "scheduledFor": "Scheduled: {date}",
-    "noNotify": "No notification"
+    "noNotify": "No notification",
+    "details": "Post details",
+    "body": "Body",
+    "titles": "Title",
+    "delivery": "Delivery",
+    "notifyOn": "Notified by LINE and email",
+    "notifyOff": "In the app only",
+    "pinned": "Pinned",
+    "files": "{count, plural, one {# attachment} other {# attachments}}"
   },
   "notify": {
     "title": "Publish & notify",
@@ -299,6 +320,24 @@
       "reminded": "Reminder sent ({time})",
       "reminderPlanned": "A reminder goes to those who haven't responded about a day before the deadline.",
       "deadline": "Respond by {time}"
+    },
+    "view": {
+      "confirm": "“Got it” button",
+      "comments": "Comments and reactions on",
+      "commentsOff": "No comments or reactions",
+      "poll": "Poll: {question}",
+      "schedule": "Scheduling: {count, plural, one {# date} other {# dates}}",
+      "none": "No response requested"
+    },
+    "close": {
+      "title": "Answers",
+      "open": "Open (deadline {time})",
+      "openNoDeadline": "Open",
+      "closedManual": "Closed ({time})",
+      "closedDeadline": "Closed — the deadline has passed",
+      "close": "Close answers",
+      "reopen": "Reopen answers",
+      "hint": "Once closed, members can't change their answers and no reminder is sent."
     }
   }
 }

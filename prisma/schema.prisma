@@ -409,6 +409,8 @@ model Event {
   mapUrl          String?
   capacity        Int?
   rsvpDeadline    DateTime?
+  // Added: RSVPs closed early by the organiser (null = open until the deadline)
+  rsvpClosedAt    DateTime?
   targetRoles     RoleKey[] // empty = all members
   // Added: preferred over targetRoles when non-empty
   targetAudiences AudienceKey[]  @default([])
@@ -499,6 +501,8 @@ model NewsPost {
   // those who haven't, a day before (remindedAt)
   deadline        DateTime?
   remindedAt      DateTime?
+  // Added (hub): answers closed early by the sender (null = open until deadline)
+  closedAt        DateTime?
   createdById     String
   createdBy       User             @relation(fields: [createdById], references: [id])
   createdAt       DateTime         @default(now())

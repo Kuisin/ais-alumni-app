@@ -45,7 +45,10 @@
       "validation": "Please choose an answer.",
       "forbidden": "Please sign in again.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "closedByOrganizer": "The organiser has closed RSVPs for this event.",
+    "change": "Change my answer",
+    "none": "You haven't answered yet."
   },
   "reminder": {
     "week": {

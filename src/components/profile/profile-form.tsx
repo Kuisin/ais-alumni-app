@@ -9,6 +9,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import { SOCIAL_KEYS, type SocialLinks } from "./social-links";
 
 export type ProfileFormValues = {
@@ -44,6 +45,7 @@ export function ProfileForm({
 }) {
   const t = useTranslations("profile");
   const [state, action] = useActionState(updateProfileAction, null);
+  useCloseOnSave(state);
   const err = (f: string) =>
     state?.fields?.includes(f) ? t("errors.invalid") : null;
 

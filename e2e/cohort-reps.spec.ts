@@ -68,3 +68,35 @@ test("学年代表 are chosen per 学年, from that 学年's students", async ({
   ).toEqual([]);
   expect(other.id).toBeTruthy();
 });
+
+test("学年代表 can be assigned from the member's 役職 panel (own 学年 only)", async ({
+  page,
+}) => {
+  const stamp = Date.now();
+  const grad = await createActiveGraduate(`Pos P${stamp}`, "1993-07-07");
+  await sql(
+    `UPDATE "UserRole" SET "cohortId" = (SELECT id FROM "Cohort" WHERE number = 5)
+     WHERE "userId" = $1`,
+    [grad.id],
+  );
+  await signInWithEmail(page, "admin@example.com");
+  await page.goto(`/en/app/admin/members/${grad.id}`);
+  const panel = page
+    .locator("div")
+    .filter({ has: page.getByText("Class representative", { exact: true }) })
+    .filter({ has: page.getByRole("button", { name: "Assign" }) })
+    .last();
+  const select = panel.getByLabel("学年 (class)");
+  // Only their own 学年 is offered (plus the empty choice).
+  await expect(select.locator("option")).toHaveCount(2);
+  await select.selectOption({ index: 1 });
+  await panel.getByRole("button", { name: "Assign" }).click();
+  await expect(panel.getByText("Position assigned.")).toBeVisible();
+  const chats = await sql(
+    `SELECT g.kind FROM "ChatMember" m JOIN "ChatGroup" g ON g.id = m."groupId"
+     WHERE m."userId" = $1`,
+    [grad.id],
+  );
+  expect(chats.map((c) => c.kind)).toContain("CLASS_REPS");
+  await sql(`DELETE FROM "UserPosition" WHERE "userId" = $1`, [grad.id]);
+});

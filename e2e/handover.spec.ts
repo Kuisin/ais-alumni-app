@@ -143,6 +143,7 @@ test("a student signing up after a parent registered them is caught and merged",
       name: "A parent already registered this person",
     }),
   ).toBeVisible();
+  admin.once("dialog", (d) => d.accept());
   await admin
     .getByRole("button", { name: "Merge into applicant's account" })
     .click();

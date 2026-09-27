@@ -229,7 +229,8 @@
       "cohort": "Choose the 学年 they represent.",
       "ownCohort": "A 学年代表 must be a student or graduate of that 学年 (their own class)."
     },
-    "cohort": "学年 (class)"
+    "cohort": "学年 (class)",
+    "removeConfirm": "Remove this position?"
   },
   "nameRequests": {
     "title": "Name, birth date and gender changes",

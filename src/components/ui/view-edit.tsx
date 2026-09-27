@@ -28,7 +28,9 @@ const ViewEditContext = createContext<Ctx | null>(null);
  * View first, edit on purpose: saved data is shown read-only with an
  * "Edit" button; the form (children) appears only after pressing it and
  * closes again once saved (forms call useCloseOnSave) or cancelled. Keeps
- * members from changing things by accident.
+ * members from changing things by accident. With `title`, the section heading
+ * and the 編集 / キャンセル button share one row (like EditableCard, without a
+ * card: for editors that bring their own cards, e.g. events and news).
  */
 export function ViewEdit({
   view,
@@ -38,6 +40,8 @@ export function ViewEdit({
   startEditing = false,
   className,
   actionsClassName,
+  title,
+  titleId,
 }: {
   /** read-only rendering of the saved data */
   view: ReactNode;
@@ -50,6 +54,9 @@ export function ViewEdit({
   startEditing?: boolean;
   className?: string;
   actionsClassName?: string;
+  /** section heading (h2) with the button beside it */
+  title?: ReactNode;
+  titleId?: string;
 }) {
   const tc = useTranslations("common");
   const [editing, setEditing] = useState(startEditing);
@@ -72,6 +79,52 @@ export function ViewEdit({
     [tc],
   );
   const cancel = useCallback(() => setEditing(false), []);
+  const open = () => {
+    setSaved(null);
+    setRound((r) => r + 1);
+    setEditing(true);
+  };
+
+  if (title !== undefined) {
+    const isEditing = editing && canEdit;
+    return (
+      <div className={cn("space-y-3", className)}>
+        <div className="flex items-center justify-between gap-3">
+          <h2 id={titleId} className="min-w-0 text-lg font-semibold">
+            {title}
+          </h2>
+          {canEdit && (!isEditing || round > 0) ? (
+            <Button
+              ref={editButton}
+              variant={isEditing ? "ghost" : "secondary"}
+              className="shrink-0 px-3"
+              aria-expanded={isEditing}
+              onClick={isEditing ? cancel : open}
+            >
+              {isEditing ? (
+                <X aria-hidden="true" className="size-4" />
+              ) : (
+                <Pencil aria-hidden="true" className="size-4" />
+              )}
+              {isEditing ? tc("cancel") : (editLabel ?? tc("edit"))}
+            </Button>
+          ) : null}
+        </div>
+        {isEditing ? (
+          <ViewEditContext.Provider value={{ editing, done, cancel }}>
+            <div key={round} className="animate-rise">
+              {children}
+            </div>
+          </ViewEditContext.Provider>
+        ) : (
+          <>
+            {saved ? <Alert tone="success">{saved}</Alert> : null}
+            {view}
+          </>
+        )}
+      </div>
+    );
+  }
 
   if (editing && canEdit) {
     return (
@@ -96,15 +149,7 @@ export function ViewEdit({
       {view}
       {canEdit ? (
         <div className={actionsClassName}>
-          <Button
-            ref={editButton}
-            variant="secondary"
-            onClick={() => {
-              setSaved(null);
-              setRound((r) => r + 1);
-              setEditing(true);
-            }}
-          >
+          <Button ref={editButton} variant="secondary" onClick={open}>
             <Pencil aria-hidden="true" className="size-4" />
             {editLabel ?? tc("edit")}
           </Button>

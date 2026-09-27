@@ -16,9 +16,10 @@ import { CloseControl, EventView } from "@/components/admin/content-views";
 import { NotificationOpensCard } from "@/components/admin/notification-opens-card";
 import { EventForm } from "@/components/events/event-form";
 import { EventStaffPanel } from "@/components/events/event-staff-panel";
+import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui/card";
-import { ViewEdit } from "@/components/ui/view-edit";
+import { EditableCard, ViewEdit } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -82,6 +83,7 @@ export default async function AdminEventPage({
       : [],
   ]);
   const t = await getTranslations("adminContent");
+  const tc = await getTranslations("common");
   const te = await getTranslations("events");
 
   const summary = answerSummary(event.rsvps);
@@ -95,12 +97,7 @@ export default async function AdminEventPage({
 
   return (
     <>
-      <Link
-        href="/app/admin/events"
-        className="inline-flex min-h-11 items-center text-sm text-brand-700 underline"
-      >
-        {t("events.backToList")}
-      </Link>
+      <BackLink href="/app/admin/events">{t("events.backToList")}</BackLink>
       <div className="mt-1">
         <PageHeader
           title={title}
@@ -226,8 +223,25 @@ export default async function AdminEventPage({
               locale={locale}
             />
           </div>
-          <Card className="mt-4">
-            <h2 className="mb-3 text-lg font-semibold">{t("staff.title")}</h2>
+          {/* Staff: names first; 編集 opens search / remove (applies at once). */}
+          <EditableCard
+            id="staff"
+            className="mt-4"
+            title={t("staff.title")}
+            editLabel={t("staff.edit")}
+            closeLabel={tc("close")}
+            view={
+              <p className="text-sm">
+                {event.staff.length ? (
+                  event.staff
+                    .map(({ user: u }) => u.nameRomaji ?? u.nameKanji ?? "—")
+                    .join("、")
+                ) : (
+                  <span className="text-slate-500">{t("staff.none")}</span>
+                )}
+              </p>
+            }
+          >
             <EventStaffPanel
               eventId={event.id}
               staff={event.staff.map(({ user: u }) => ({
@@ -236,15 +250,14 @@ export default async function AdminEventPage({
                 kanji: u.nameRomaji ? u.nameKanji : null,
               }))}
             />
-          </Card>
+          </EditableCard>
         </aside>
 
         <div className="min-w-0 space-y-8 xl:col-start-1 xl:row-start-1">
           <section aria-labelledby="edit">
-            <h2 id="edit" className="mb-3 text-lg font-semibold">
-              {t("events.details")}
-            </h2>
             <ViewEdit
+              title={t("events.details")}
+              titleId="edit"
               view={
                 <EventView event={event} audience={audience} locale={locale} />
               }

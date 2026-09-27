@@ -40,6 +40,8 @@
     "search": "この学年の在校生・卒業生を検索",
     "add": "{name}さんを学年代表にする",
     "remove": "{name}さんを学年代表から外す",
-    "noResults": "この学年に該当する会員はいません。"
-  }
+    "noResults": "この学年に該当する会員はいません。",
+    "removeConfirm": "{name} を学年代表から外しますか？"
+  },
+  "deleteConfirm": "この学年を削除しますか？"
 }

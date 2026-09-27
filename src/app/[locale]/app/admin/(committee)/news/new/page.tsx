@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { EMPTY_NEWS, NewsForm } from "@/components/news/news-form";
+import { BackLink } from "@/components/ui/back-link";
 import { PageHeader } from "@/components/ui/card";
-import { Link } from "@/i18n/navigation";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { asLocale } from "@/lib/events";
 import { requireAdmin } from "@/lib/session";
@@ -24,12 +24,7 @@ export default async function NewNewsPage({
   const cohorts = await loadCohortOptions(locale);
   return (
     <>
-      <Link
-        href="/app/admin/news"
-        className="inline-flex min-h-11 items-center text-sm text-brand-700 underline"
-      >
-        {t("news.backToList")}
-      </Link>
+      <BackLink href="/app/admin/news">{t("news.backToList")}</BackLink>
       <div className="mt-1">
         <PageHeader title={t("news.new")} />
       </div>

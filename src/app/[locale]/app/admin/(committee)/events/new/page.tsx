@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { EMPTY_EVENT, EventForm } from "@/components/events/event-form";
+import { BackLink } from "@/components/ui/back-link";
 import { PageHeader } from "@/components/ui/card";
-import { Link } from "@/i18n/navigation";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { requireAdmin } from "@/lib/session";
 
@@ -18,12 +18,7 @@ export default async function NewEventPage() {
   const t = await getTranslations("adminContent");
   return (
     <>
-      <Link
-        href="/app/admin/events"
-        className="inline-flex min-h-11 items-center text-sm text-brand-700 underline"
-      >
-        {t("events.backToList")}
-      </Link>
+      <BackLink href="/app/admin/events">{t("events.backToList")}</BackLink>
       <div className="mt-1">
         <PageHeader title={t("events.new")} />
       </div>

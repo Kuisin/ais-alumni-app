@@ -42,15 +42,17 @@
     "CURRENT_STUDENT": "Current student",
     "CURRENT_PARENT": "Parent of current student",
     "GRADUATE": "Graduate",
-    "LEFT_STUDENT": "Former student (left before graduating)",
-    "FORMER_PARENT": "Parent of former student"
+    "LEFT_STUDENT": "Former student (didn't graduate)",
+    "FORMER_PARENT": "Parent of former student",
+    "FORMER_STUDENT": "Graduates + former students"
   },
   "audienceHint": {
     "TEACHER": "Current and former",
     "CURRENT_STUDENT": "Nursery to grade 6",
     "CURRENT_PARENT": "Families of current students",
-    "GRADUATE": "Finished elementary school at AIS",
+    "GRADUATE": "Finished elementary school at AIS only",
     "LEFT_STUDENT": "Moved or left before graduating",
-    "FORMER_PARENT": "Families of graduates and former students"
+    "FORMER_PARENT": "Families of graduates and former students",
+    "FORMER_STUDENT": "Everyone who attended AIS (graduated or left before graduating)"
   }
 }

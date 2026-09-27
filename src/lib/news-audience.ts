@@ -12,24 +12,27 @@ import { audiencesForRoles, rolesForAudiences } from "@/lib/audience";
  *  - userIds: individually chosen members
  */
 
+/**
+ * Groups offered in the picker. Former students: 「卒業生」 (GRADUATE) or
+ * 「卒業生＋元在校生」 (FORMER_STUDENT = everyone who attended AIS and left).
+ */
 export const AUDIENCE_GROUPS = [
   "TEACHER_CURRENT",
   "TEACHER_FORMER",
   "CURRENT_STUDENT",
   "CURRENT_PARENT",
   "GRADUATE",
-  "LEFT_STUDENT",
+  "FORMER_STUDENT",
   "FORMER_PARENT",
 ] as const;
-export type AudienceGroup = (typeof AUDIENCE_GROUPS)[number];
+/** Stored values: the offered groups plus LEFT_STUDENT from older posts. */
+export const STORED_GROUPS = [...AUDIENCE_GROUPS, "LEFT_STUDENT"] as const;
+export type AudienceGroup = (typeof STORED_GROUPS)[number];
 
 export const MAX_AUDIENCE_USERS = 200;
 
 export const audienceSpecSchema = z.object({
-  groups: z
-    .array(z.enum(AUDIENCE_GROUPS))
-    .max(AUDIENCE_GROUPS.length)
-    .default([]),
+  groups: z.array(z.enum(STORED_GROUPS)).max(STORED_GROUPS.length).default([]),
   cohortIds: z.array(z.string().min(1).max(64)).max(100).default([]),
   includeParents: z.boolean().default(false),
   userIds: z
@@ -67,11 +70,17 @@ export function specFromPost(post: {
   const keys = post.targetAudiences.length
     ? post.targetAudiences
     : audiencesForRoles(post.targetRoles);
-  const groups = keys.flatMap((k): AudienceGroup[] =>
+  let groups = keys.flatMap((k): AudienceGroup[] =>
     k === AudienceKey.TEACHER
       ? ["TEACHER_CURRENT", "TEACHER_FORMER"]
       : [k as AudienceGroup],
   );
+  // Both halves of former students = 「卒業生＋元在校生」.
+  if (groups.includes("GRADUATE") && groups.includes("LEFT_STUDENT"))
+    groups = [
+      ...groups.filter((g) => g !== "GRADUATE" && g !== "LEFT_STUDENT"),
+      "FORMER_STUDENT",
+    ];
   return { ...EVERYONE, groups: [...new Set(groups)] };
 }
 
@@ -86,10 +95,13 @@ export function legacyColumns(s: AudienceSpec): {
 } {
   if (isEveryone(s)) return { targetAudiences: [], targetRoles: [] };
   const keys = new Set<AudienceKey>();
-  for (const g of s.groups)
-    keys.add(
-      g.startsWith("TEACHER") ? AudienceKey.TEACHER : (g as AudienceKey),
-    );
+  for (const g of s.groups) {
+    if (g.startsWith("TEACHER")) keys.add(AudienceKey.TEACHER);
+    else if (g === "FORMER_STUDENT") {
+      keys.add(AudienceKey.GRADUATE);
+      keys.add(AudienceKey.LEFT_STUDENT);
+    } else keys.add(g as AudienceKey);
+  }
   if (s.cohortIds.length) {
     keys.add(AudienceKey.CURRENT_STUDENT);
     keys.add(AudienceKey.GRADUATE);
@@ -127,6 +139,7 @@ export function groupsOfMember(v: AudienceViewer): AudienceGroup[] {
           : "TEACHER_CURRENT",
       );
     else if (r.role === RoleKey.FORMER_STUDENT) {
+      out.add("FORMER_STUDENT");
       if (r.didGraduate !== false) out.add("GRADUATE");
       if (r.didGraduate !== true) out.add("LEFT_STUDENT");
     } else out.add(r.role as AudienceGroup);
@@ -170,6 +183,8 @@ export function audienceUserWhere(s: AudienceSpec): Prisma.UserWhereInput {
         role: RoleKey.TEACHER,
         teacherStatus: TeacherStatus.FORMER,
       });
+    else if (g === "FORMER_STUDENT")
+      roleOr.push({ role: RoleKey.FORMER_STUDENT });
     else if (g === "GRADUATE")
       roleOr.push({
         role: RoleKey.FORMER_STUDENT,

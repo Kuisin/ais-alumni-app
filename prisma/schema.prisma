@@ -398,6 +398,8 @@ model Event {
   targetRoles     RoleKey[] // empty = all members
   // Added: preferred over targetRoles when non-empty
   targetAudiences AudienceKey[] @default([])
+  // Added: who it's for, same conditions as ニュース (src/lib/news-audience.ts)
+  audience        Json?
   createdById     String
   createdBy       User          @relation(fields: [createdById], references: [id])
   rsvps           Rsvp[]

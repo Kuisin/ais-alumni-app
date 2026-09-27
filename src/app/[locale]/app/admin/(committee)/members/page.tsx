@@ -9,7 +9,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, type RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import {
-  AUDIENCE_KEYS,
+  MEMBER_FILTER_OPTIONS,
   parseMemberFilter,
   roleLabelKey,
   roleRowWhere,
@@ -232,7 +232,7 @@ export default async function AdminMembersPage({
               </label>
               <Select id="f-role" name="role" defaultValue={role ?? ""}>
                 <option value="">{t("filters.any")}</option>
-                {AUDIENCE_KEYS.map((r) => (
+                {MEMBER_FILTER_OPTIONS.map((r) => (
                   <option key={r} value={r}>
                     {tr(`audience.${r}`)}
                   </option>

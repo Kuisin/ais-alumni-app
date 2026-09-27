@@ -183,3 +183,16 @@ export function roleRowWhere(k: MemberFilterKey): Prisma.UserRoleWhereInput {
     return { role: RoleKey.FORMER_STUDENT, didGraduate: false };
   return { role: k as RoleKey };
 }
+
+/**
+ * Member-list filter options (directory, admin): former students are
+ * 「卒業生」 or 「卒業生＋元在校生」 (FORMER_STUDENT = everyone who left AIS).
+ */
+export const MEMBER_FILTER_OPTIONS: readonly MemberFilterKey[] = [
+  AudienceKey.TEACHER,
+  AudienceKey.CURRENT_STUDENT,
+  AudienceKey.CURRENT_PARENT,
+  AudienceKey.GRADUATE,
+  RoleKey.FORMER_STUDENT,
+  AudienceKey.FORMER_PARENT,
+];

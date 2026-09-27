@@ -6,7 +6,7 @@ import { EventForm } from "@/components/events/event-form";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
-import { effectiveAudiences } from "@/lib/audience";
+import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { answerSummary, asLocale, headcount } from "@/lib/events";
 import {
@@ -15,6 +15,7 @@ import {
   localized,
   toJstLocalInput,
 } from "@/lib/format";
+import { specFromPost } from "@/lib/news-audience";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -48,6 +49,16 @@ export default async function AdminEventPage({
     },
   });
   if (!event) notFound();
+  const audience = specFromPost(event);
+  const [cohorts, audienceMembers] = await Promise.all([
+    loadCohortOptions(locale === "en" ? "en" : "ja"),
+    audience.userIds.length
+      ? db.user.findMany({
+          where: { id: { in: audience.userIds } },
+          select: { id: true, nameRomaji: true, nameKanji: true },
+        })
+      : [],
+  ]);
   const t = await getTranslations("adminContent");
   const te = await getTranslations("events");
 
@@ -171,8 +182,14 @@ export default async function AdminEventPage({
                 location: event.location ?? "",
                 mapUrl: event.mapUrl ?? "",
                 capacity: event.capacity === null ? "" : String(event.capacity),
-                targetAudiences: effectiveAudiences(event),
+                audience,
+                audienceMembers: audienceMembers.map((m) => ({
+                  id: m.id,
+                  name: m.nameRomaji ?? m.nameKanji ?? "—",
+                  kanji: m.nameRomaji ? m.nameKanji : null,
+                })),
               }}
+              cohorts={cohorts}
               deleteAction={{
                 action: deleteEventAction,
                 message: `${t("events.deleteConfirm")}\n${t("events.deleteHint")}`,

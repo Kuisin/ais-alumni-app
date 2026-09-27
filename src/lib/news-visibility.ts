@@ -66,3 +66,26 @@ export const visibleNews = cache(
     return posts.filter((p) => matchesAudience(specFromPost(p), viewer));
   },
 );
+
+type Targeted = {
+  audience: unknown;
+  targetAudiences: Parameters<typeof specFromPost>[0]["targetAudiences"];
+  targetRoles: Parameters<typeof specFromPost>[0]["targetRoles"];
+};
+
+/** Keep the rows (news or events) the member is in the audience for. */
+export async function filterByAudience<T extends Targeted>(
+  user: CurrentUser,
+  rows: readonly T[],
+): Promise<T[]> {
+  const viewer = await newsViewer(user);
+  return rows.filter((r) => matchesAudience(specFromPost(r), viewer));
+}
+
+/** Whether the member is in the audience of one post or event. */
+export async function inAudience(
+  user: CurrentUser,
+  row: Targeted,
+): Promise<boolean> {
+  return matchesAudience(specFromPost(row), await newsViewer(user));
+}

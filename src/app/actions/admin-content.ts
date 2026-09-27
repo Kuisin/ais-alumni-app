@@ -5,9 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
-import { AudienceKey } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
-import { rolesForAudiences } from "@/lib/audience";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { parseJstLocal } from "@/lib/format";
@@ -99,7 +97,18 @@ const reqDate = z
   .refine(validDate, "invalidDate")
   .transform(parseJstLocal);
 
-const targetAudiences = z.array(z.enum(AudienceKey, "invalid"));
+/** Who it's for: an AudienceSpec as JSON (src/lib/news-audience.ts). */
+const audienceField = z
+  .string()
+  .max(20000)
+  .transform((v, ctx) => {
+    try {
+      const r = audienceSpecSchema.safeParse(v ? JSON.parse(v) : {});
+      if (r.success) return r.data;
+    } catch {}
+    ctx.addIssue({ code: "custom", message: "invalidAudience" });
+    return z.NEVER;
+  });
 
 const Id = z.string().min(1).max(64);
 
@@ -129,7 +138,7 @@ const EventSchema = z
         "invalidCapacity",
       )
       .transform((v) => (v ? Number(v) : null)),
-    targetAudiences,
+    audience: audienceField,
   })
   .superRefine((d, ctx) => {
     if (!d.titleJa && !d.titleEn) {
@@ -181,20 +190,22 @@ export async function saveEventAction(
     location: str(fd, "location"),
     mapUrl: str(fd, "mapUrl"),
     capacity: str(fd, "capacity"),
-    targetAudiences: fd.getAll("targetAudiences"),
+    audience: str(fd, "audience"),
   });
   if (!parsed.success)
     return { error: "validation", fieldErrors: toFieldErrors(parsed.error) };
-  // Keep the legacy role column filled for older code (src/lib/audience.ts).
+  // Same conditions as ニュース; older columns kept filled for older code.
+  const { audience, ...eventFields } = parsed.data;
   const data = {
-    ...parsed.data,
-    targetRoles: rolesForAudiences(parsed.data.targetAudiences),
+    ...eventFields,
+    audience: audience as Prisma.InputJsonValue,
+    ...legacyColumns(audience),
   };
   const summary = {
     title: data.titleJa ?? data.titleEn,
     startsAt: data.startsAt.toISOString(),
     capacity: data.capacity,
-    targetAudiences: data.targetAudiences,
+    audience: audience as Prisma.InputJsonValue,
   };
 
   if (id) {
@@ -268,17 +279,7 @@ const NewsSchema = z
     sendAt: optDate,
     notifyOnPublish: z.boolean(),
     pinned: z.boolean(),
-    audience: z
-      .string()
-      .max(20000)
-      .transform((v, ctx) => {
-        try {
-          const r = audienceSpecSchema.safeParse(v ? JSON.parse(v) : {});
-          if (r.success) return r.data;
-        } catch {}
-        ctx.addIssue({ code: "custom", message: "invalidAudience" });
-        return z.NEVER;
-      }),
+    audience: audienceField,
   })
   .superRefine((d, ctx) => {
     if (!d.titleJa && !d.titleEn) {

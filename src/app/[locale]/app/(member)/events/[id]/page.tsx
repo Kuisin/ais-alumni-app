@@ -8,8 +8,6 @@ import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
 import { Alert, Card } from "@/components/ui/card";
 import { RsvpAnswer } from "@/generated/prisma/enums";
-import { isAudienceTargeted } from "@/lib/audience";
-import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import {
   asLocale,
@@ -19,6 +17,7 @@ import {
   rsvpClosesAt,
 } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
+import { inAudience } from "@/lib/news-visibility";
 import { getCurrentUser, requireActive } from "@/lib/session";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -29,7 +28,7 @@ const loadEvent = cache(async (id: string) => {
   const user = await getCurrentUser();
   if (!user || id.length > 64) return null;
   const event = await db.event.findUnique({ where: { id } });
-  if (!event || !isAudienceTargeted(event, toViewer(user))) return null;
+  if (!event || !(await inAudience(user, event))) return null;
   return event;
 });
 

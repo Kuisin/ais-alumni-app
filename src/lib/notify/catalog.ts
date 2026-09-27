@@ -11,7 +11,7 @@
  *  - email: the same, plus `detail` (what to do next) and the committee
  *    note if any, in a branded wrapper with a button and a footer saying
  *    why it was sent and where to change settings.
- *  - link: always a short /n/<token> link (see links.ts), never a direct
+ *  - link: always a short /n/<member code>/<token> link (see links.ts), never a direct
  *    app URL.
  *
  * Categories let members turn groups of notifications off (Settings);

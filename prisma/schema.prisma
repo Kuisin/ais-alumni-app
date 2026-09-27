@@ -110,6 +110,8 @@ model User {
   notifyVia             NotifyChannel        @default(AUTO)
   // Added: notification categories the member turned off (src/lib/notify/catalog.ts)
   notifyOff             String[]             @default([])
+  /// short code in notification links (/n/<linkCode>/<token>) for read receipts
+  linkCode              String?              @unique
   autoAcceptSameYear    Boolean              @default(false)
   familyId              String?
   family                Family?              @relation(fields: [familyId], references: [id], onDelete: SetNull)
@@ -124,46 +126,48 @@ model User {
   broadcastInbox        BroadcastRecipient[] @relation("broadcastInbox")
   newsReads             NewsRead[]           @relation("newsReads")
 
-  roles             UserRole[]
-  accounts          Account[]
-  verification      VerificationRequest?  @relation("applicant")
-  reviewed          VerificationRequest[] @relation("reviewer")
-  followsOut        Follow[]              @relation("follower")
-  followsIn         Follow[]              @relation("followee")
-  blocksOut         Block[]               @relation("blocker")
-  blocksIn          Block[]               @relation("blocked")
-  rsvps             Rsvp[]
-  eventStaff        EventStaff[]
-  newsConfirms      NewsConfirm[]
-  newsVotes         NewsPollVote[]
-  newsComments      NewsComment[]         @relation("newsComments")
-  newsHidden        NewsComment[]         @relation("newsCommentsHidden")
-  newsReactions     NewsReaction[]
-  chatMembers       ChatMember[]
-  birthDateRequests BirthDateRequest[]    @relation("birthDateRequester")
-  invitesSent       Invite[]              @relation("invitesSent")
-  inviteUsed        Invite?               @relation("inviteUsed")
-  birthDateReviews  BirthDateRequest[]    @relation("birthDateReviewer")
-  chatMessages      ChatMessage[]         @relation("chatMessages")
-  chatDeleted       ChatMessage[]         @relation("chatDeleted")
-  eventCheckIns     EventCheckIn[]        @relation("CheckedIn")
-  checkInsDone      EventCheckIn[]        @relation("CheckedInBy")
-  parentLinks       FamilyLink[]          @relation("parent")
-  childLinks        FamilyLink[]          @relation("child")
-  vouchesGiven      Vouch[]
-  notifications     NotificationLog[]
-  eventsCreated     Event[]
-  newsCreated       NewsPost[]
-  auditActions      AuditLog[]
-  recordRequests    RecordChangeRequest[] @relation("recordRequester")
-  recordReviews     RecordChangeRequest[] @relation("recordReviewer")
-  nameRequests      NameChangeRequest[]   @relation("nameRequester")
-  nameReviews       NameChangeRequest[]   @relation("nameReviewer")
-  positions         UserPosition[]        @relation("positionHolder")
-  positionGrants    UserPosition[]        @relation("positionGrantor")
-  broadcasts        Broadcast[]
-  education         EducationEntry[]
-  work              WorkEntry[]
+  roles                UserRole[]
+  accounts             Account[]
+  verification         VerificationRequest?  @relation("applicant")
+  reviewed             VerificationRequest[] @relation("reviewer")
+  followsOut           Follow[]              @relation("follower")
+  followsIn            Follow[]              @relation("followee")
+  blocksOut            Block[]               @relation("blocker")
+  blocksIn             Block[]               @relation("blocked")
+  rsvps                Rsvp[]
+  eventStaff           EventStaff[]
+  newsConfirms         NewsConfirm[]
+  newsVotes            NewsPollVote[]
+  newsComments         NewsComment[]         @relation("newsComments")
+  newsHidden           NewsComment[]         @relation("newsCommentsHidden")
+  newsReactions        NewsReaction[]
+  chatMembers          ChatMember[]
+  birthDateRequests    BirthDateRequest[]    @relation("birthDateRequester")
+  invitesSent          Invite[]              @relation("invitesSent")
+  inviteUsed           Invite?               @relation("inviteUsed")
+  birthDateReviews     BirthDateRequest[]    @relation("birthDateReviewer")
+  chatMessages         ChatMessage[]         @relation("chatMessages")
+  chatDeleted          ChatMessage[]         @relation("chatDeleted")
+  eventCheckIns        EventCheckIn[]        @relation("CheckedIn")
+  checkInsDone         EventCheckIn[]        @relation("CheckedInBy")
+  parentLinks          FamilyLink[]          @relation("parent")
+  childLinks           FamilyLink[]          @relation("child")
+  vouchesGiven         Vouch[]
+  notifications        NotificationLog[]
+  notificationReceipts NotificationReceipt[]
+  supportRequests      SupportRequest[]
+  eventsCreated        Event[]
+  newsCreated          NewsPost[]
+  auditActions         AuditLog[]
+  recordRequests       RecordChangeRequest[] @relation("recordRequester")
+  recordReviews        RecordChangeRequest[] @relation("recordReviewer")
+  nameRequests         NameChangeRequest[]   @relation("nameRequester")
+  nameReviews          NameChangeRequest[]   @relation("nameReviewer")
+  positions            UserPosition[]        @relation("positionHolder")
+  positionGrants       UserPosition[]        @relation("positionGrantor")
+  broadcasts           Broadcast[]
+  education            EducationEntry[]
+  work                 WorkEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -527,8 +531,8 @@ model NewsPost {
 /// the member and gives link-preview bots a card image built from `title`
 /// and `body` (no private content). One row per send and language.
 model NotificationLink {
-  id           String    @id @default(cuid())
-  token        String    @unique
+  id           String                @id @default(cuid())
+  token        String                @unique
   kind         String
   refId        String?
   locale       Locale
@@ -537,12 +541,52 @@ model NotificationLink {
   title        String
   body         String
   category     String
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime              @default(now())
   expiresAt    DateTime
-  opens        Int       @default(0)
+  opens        Int                   @default(0)
   lastOpenedAt DateTime?
+  receipts     NotificationReceipt[]
 
   @@index([kind, refId])
+}
+
+/// One recipient of a notification link: sent, and when they opened it.
+model NotificationReceipt {
+  id           String           @id @default(cuid())
+  linkId       String
+  link         NotificationLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// LINE | EMAIL
+  channels     String[]
+  sentAt       DateTime         @default(now())
+  openedAt     DateTime?
+  lastOpenedAt DateTime?
+  opens        Int              @default(0)
+
+  @@unique([linkId, userId])
+  @@index([userId])
+}
+
+/// お問い合わせ: sent from /support (members or visitors); emailed to admins.
+model SupportRequest {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name       String
+  email      String
+  /// ISSUE | QUESTION | COMPLAINT | FEATURE (src/lib/support.ts)
+  type       String
+  topic      String
+  subject    String
+  message    String
+  locale     Locale
+  createdAt  DateTime  @default(now())
+  closedAt   DateTime?
+  closedById String?
+
+  @@index([closedAt, createdAt])
+  @@index([email, createdAt])
 }
 
 model NotificationLog {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NOTIFY_KINDS, type NotifyKind, wantsKind } from "./catalog";
-import { isLinkToken, newLinkToken } from "./links";
+import { isLinkToken, isUserCode, newLinkToken } from "./links";
 import { lineText, renderNotification } from "./render";
 
 const PARAMS = {
@@ -63,5 +63,7 @@ describe("notification catalog", () => {
     expect(isLinkToken(t)).toBe(true);
     expect(isLinkToken("abc")).toBe(false);
     expect(isLinkToken("Ab3dE6g!")).toBe(false);
+    expect(isUserCode("aB3xY9")).toBe(true);
+    expect(isUserCode("aB3xY9z")).toBe(false);
   });
 });

@@ -28,11 +28,8 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
  * notification's headline and sentence. No sign-in needed; nothing beyond
  * what the notification itself says.
  */
-export async function GET(
-  _request: Request,
-  ctx: RouteContext<"/n/[token]/og">,
-) {
-  const { token } = await ctx.params;
+export async function GET(_request: Request, ctx: RouteContext<"/n/[key]/og">) {
+  const { key: token } = await ctx.params;
   const link = isLinkToken(token)
     ? await db.notificationLink.findUnique({ where: { token } })
     : null;

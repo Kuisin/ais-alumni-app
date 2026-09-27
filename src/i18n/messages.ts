@@ -31,6 +31,7 @@ export const NAMESPACES = [
   "chat",
   "invites",
   "notifications",
+  "support",
   "settings",
   "adminMembers",
   "adminStats",

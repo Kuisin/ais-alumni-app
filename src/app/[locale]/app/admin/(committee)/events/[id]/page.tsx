@@ -13,6 +13,7 @@ import {
   setEventRsvpClosedAction,
 } from "@/app/actions/admin-content";
 import { CloseControl, EventView } from "@/components/admin/content-views";
+import { NotificationOpensCard } from "@/components/admin/notification-opens-card";
 import { EventForm } from "@/components/events/event-form";
 import { EventStaffPanel } from "@/components/events/event-staff-panel";
 import { buttonClass } from "@/components/ui/button";
@@ -215,6 +216,13 @@ export default async function AdminEventPage({
               closedAt={event.rsvpClosedAt}
               deadline={rsvpClosesAt(event)}
               action={setEventRsvpClosedAction}
+              locale={locale}
+            />
+          </div>
+          <div className="mt-4 empty:hidden">
+            <NotificationOpensCard
+              kinds={["EVENT_REMINDER_7D", "EVENT_REMINDER_1D"]}
+              refId={event.id}
               locale={locale}
             />
           </div>

@@ -62,7 +62,8 @@
     "pending": "{count} waiting",
     "unread": "{count} unread",
     "chat": "Chat",
-    "invite": "Invite alumni"
+    "invite": "Invite alumni",
+    "support": "Contact & support"
   },
   "adminNav": {
     "verification": "Verification",
@@ -77,7 +78,8 @@
     "organizations": "Schools & companies",
     "teachers": "Teachers",
     "destinations": "Destinations",
-    "nameRequests": "Name & birth date"
+    "nameRequests": "Name & birth date",
+    "support": "Support requests"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",
@@ -115,5 +117,6 @@
   "notSet": "Not set",
   "on": "On",
   "off": "Off",
-  "closed": "Closed"
+  "closed": "Closed",
+  "support": "Contact & support"
 }

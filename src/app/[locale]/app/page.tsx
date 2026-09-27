@@ -175,6 +175,18 @@ export default async function LandingPage({
               ),
             })}
           </p>
+          <p className="text-xs text-slate-600">
+            {t.rich("signIn.help", {
+              link: (chunks) => (
+                <Link
+                  href="/support?type=ISSUE&topic=SIGN_IN"
+                  className="text-brand-700 underline"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </p>
         </Card>
       </div>
     </AppShell>

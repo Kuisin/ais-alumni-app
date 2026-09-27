@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx --env-file=.env prisma/seed.ts"
+    "db:seed": "tsx --env-file=.env prisma/seed.ts",
+    "realtime:setup": "node scripts/realtime-setup.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

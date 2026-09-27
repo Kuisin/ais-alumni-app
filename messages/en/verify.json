@@ -58,7 +58,8 @@
     "joinedYearTeacher": "Year you started",
     "leftYearTeacher": "Year you left",
     "lastNameKana": "Last name in katakana (フリガナ)",
-    "firstNameKana": "First name in katakana (フリガナ)"
+    "firstNameKana": "First name in katakana (フリガナ)",
+    "gender": "Gender"
   },
   "hints": {
     "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",
@@ -74,7 +75,8 @@
     "cohort": "Classes are numbered by the year they finish 6th grade (2016 = 第5期). If you joined or left partway, choose the class you were in.",
     "types": "You can ask the committee to change this later.",
     "leftYearStudent": "Only if you left AIS before graduating. Leave empty if you're still at AIS or graduated.",
-    "leftYearTeacher": "Leave empty if you still work at AIS."
+    "leftYearTeacher": "Leave empty if you still work at AIS.",
+    "gender": "Used for your default profile icon; not shown to other members. After sending, changes need a request."
   },
   "didGraduate": {
     "yes": "Yes, I graduated",
@@ -103,7 +105,8 @@
     "childNotSelected": "Use “Find” to look up your child and select them.",
     "kanaOnly": "Use katakana (hiragana is converted automatically).",
     "kanaRequired": "Please add the katakana reading (フリガナ) for your kanji name.",
-    "diplomaRequired": "Upload your diploma, or tick “I don't have my diploma”."
+    "diplomaRequired": "Upload your diploma, or tick “I don't have my diploma”.",
+    "genderRequired": "Choose your gender."
   },
   "evidence": {
     "label": "Supporting documents (optional)",
@@ -256,5 +259,6 @@
     "year": "School year",
     "class": "Class",
     "now": "(this year)"
-  }
+  },
+  "choose": "Choose…"
 }

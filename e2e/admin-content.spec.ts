@@ -91,7 +91,7 @@ test("admin schedules a news post for graduates", async ({ page }) => {
   ).toBeChecked();
   await page.getByRole("radio", { name: /^Choose conditions/ }).check();
   await page.getByRole("checkbox", { name: /^Graduate(?!s)/ }).check();
-  await expect(page.getByText(/^Recipients: \d+ members?$/)).toBeVisible();
+  await expect(page.getByText(/^Recipients: [\d,]+ members?$/)).toBeVisible();
   await page.getByRole("button", { name: "Schedule", exact: true }).click();
   await expect(page.getByText("The post has been saved.")).toBeVisible();
 

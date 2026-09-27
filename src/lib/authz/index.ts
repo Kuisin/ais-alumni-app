@@ -103,6 +103,8 @@ export type PublicProfile = {
   nameKanji: string | null;
   nameAtAis: string | null;
   avatarUrl: string | null;
+  avatarPublic: boolean;
+  gender: string | null;
   bio: string | null;
   roles: {
     role: RoleKey;
@@ -149,6 +151,8 @@ export function projectPublic(user: UserWithRoles): PublicProfile {
     nameKanji: user.nameKanji,
     nameAtAis: user.nameAtAis,
     avatarUrl: user.avatarUrl,
+    avatarPublic: user.avatarPublic,
+    gender: user.gender,
     bio: user.bio,
     roles: user.roles.map((r) => ({
       role: r.role,

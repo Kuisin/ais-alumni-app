@@ -52,6 +52,7 @@ test("invite a classmate: one-time link, pre-filled sign-up, shown to admins", a
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Invited");
   await member.getByLabel("Date of birth").fill("1996-05-05");
+  await member.getByLabel("Gender").selectOption("OTHER");
   await member.getByRole("button", { name: "Next" }).click();
   await expect(member.getByRole("combobox", { name: /学年/ })).toHaveValue("3");
   await member.getByLabel("Year you joined AIS").fill("2008");

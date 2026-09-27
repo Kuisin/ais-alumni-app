@@ -8,7 +8,6 @@ import { FollowButton } from "@/components/follows/follow-button";
 import { FollowCounts } from "@/components/follows/follow-counts";
 import { MemberMenu } from "@/components/follows/member-menu";
 import { HistoryList } from "@/components/history/history-list";
-import { avatarSrc } from "@/components/profile/avatar-src";
 import { formatBirthDate } from "@/components/profile/birth-date-card";
 import { AisRecord } from "@/components/profile/role-details";
 import {
@@ -27,6 +26,7 @@ import {
   sameFamily,
   toViewer,
 } from "@/lib/authz";
+import { loadConnections, photoFor } from "@/lib/avatar";
 import { directChatDenial } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import {
@@ -148,6 +148,10 @@ export default async function MemberProfilePage({ params }: Props) {
   const canRequest = followState === "none" || followState === "followBack";
 
   const former = p.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
+  const photo = photoFor(await loadConnections(me.id), {
+    ...p,
+    familyId: targetMeta?.familyId ?? null,
+  });
   const priv = view.private;
   const social = priv ? parseSocialLinks(priv.socialLinks) : {};
   const hasContact = Boolean(
@@ -169,7 +173,7 @@ export default async function MemberProfilePage({ params }: Props) {
         <div
           className={`flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left ${view.isSelf ? "sm:pr-48" : "sm:pr-12"}`}
         >
-          <Avatar src={avatarSrc(p.avatarUrl)} name={name} size={96} />
+          <Avatar src={photo} name={name} size={96} />
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
             {altName && altName !== name ? (

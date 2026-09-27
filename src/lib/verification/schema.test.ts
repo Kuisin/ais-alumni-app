@@ -15,6 +15,7 @@ function filled() {
   s.lastNameRomaji = "Yamada";
   s.firstNameRomaji = "Taro";
   s.dateOfBirth = "2000-04-02";
+  s.gender = "FEMALE";
   s.student = {
     cohortNumber: "5",
     joinedYear: "2008",

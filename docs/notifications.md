@@ -21,6 +21,8 @@ Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the d
 | `NAME_REQUEST_REJECTED` 📋 | **氏名の変更は承認されませんでした** — 氏名の変更申請は承認されませんでした。 | **Your name change wasn't approved** — Your name change request wasn't approved. |  |
 | `BIRTH_DATE_REQUEST_APPROVED` ✅ | **生年月日の変更が承認されました** — 申請した生年月日に変更しました。 | **Your date of birth was updated** — Your date of birth change was approved. |  |
 | `BIRTH_DATE_REQUEST_REJECTED` 📋 | **生年月日の変更は承認されませんでした** — 生年月日の変更申請は承認されませんでした。 | **Your date of birth change wasn't approved** — Your date of birth request wasn't approved. |  |
+| `GENDER_REQUEST_APPROVED` ✅ | **性別の変更が承認されました** — 申請した性別に変更しました。 | **Your gender was updated** — Your gender change was approved. |  |
+| `GENDER_REQUEST_REJECTED` 📋 | **性別の変更は承認されませんでした** — 性別の変更申請は承認されませんでした。 | **Your gender change wasn't approved** — Your gender change request wasn't approved. |  |
 | `RECORD_REQUEST_APPROVED` ✅ | **在籍記録の修正が承認されました** — AIS在籍記録を修正しました。 | **Your record correction was approved** — Your AIS record has been corrected. |  |
 | `RECORD_REQUEST_REJECTED` 📋 | **在籍記録の修正は承認されませんでした** — 在籍記録の修正申請は承認されませんでした。 | **Your record correction wasn't approved** — Your record correction request wasn't approved. |  |
 
@@ -75,4 +77,5 @@ Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the d
 |---|---|---|---|
 | `NAME_REQUEST_ADMIN` 🗂️ | **氏名の変更申請があります** — {name}さんから氏名の変更申請がありました。 | **New name change request** — {name} asked to change their name. |  |
 | `BIRTH_DATE_REQUEST_ADMIN` 🗂️ | **生年月日の変更申請があります** — {name}さんから生年月日の登録・変更申請がありました。 | **New date of birth request** — {name} asked to add or correct their date of birth. |  |
+| `GENDER_REQUEST_ADMIN` 🗂️ | **性別の変更申請があります** — {name}さんから性別の変更申請がありました。 | **New gender change request** — {name} asked to change their gender. |  |
 | `RECORD_REQUEST_ADMIN` 🗂️ | **在籍記録の修正申請があります** — {name}さんから在籍記録の修正申請がありました。 | **New record correction request** — {name} asked to correct their AIS record. |  |

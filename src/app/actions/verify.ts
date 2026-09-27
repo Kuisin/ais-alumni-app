@@ -174,6 +174,7 @@ export async function submitVerificationAction(
           nameKanji: data.nameKanji,
           nameAtAis: data.nameAtAis,
           dateOfBirth: new Date(`${data.dateOfBirth}T00:00:00Z`),
+          gender: data.gender,
           locale: data.locale,
           state: AccountState.PENDING_REVIEW,
         },

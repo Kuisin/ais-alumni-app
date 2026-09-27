@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { elementaryEndFor, parseCohortNumber } from "@/lib/cohorts";
+import { GENDERS } from "@/lib/gender";
 import { kanaPart, nameColumns, requireKanaForKanji } from "@/lib/names";
 import { studentStatus } from "@/lib/school";
 
@@ -231,6 +232,8 @@ export function verificationSchema(_opts: { requireKanji: boolean }) {
       firstNameKana: kanaPart(),
       nameAtAis: optionalText(100),
       dateOfBirth: isoDate,
+      // Fixed after sending; changed later only by request (like the birth date).
+      gender: z.enum(GENDERS, { error: "genderRequired" }),
       locale: z.enum(["ja", "en"]),
       student: studentSchema.optional(),
       parent: parentSchema.optional(),
@@ -332,6 +335,7 @@ export type VerifyFormState = {
   firstNameKana: string;
   nameAtAis: string;
   dateOfBirth: string;
+  gender: string;
   locale: "ja" | "en";
   student: {
     cohortNumber: string;
@@ -381,6 +385,7 @@ export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
     firstNameKana: "",
     nameAtAis: "",
     dateOfBirth: "",
+    gender: "",
     locale,
     student: {
       cohortNumber: "",
@@ -444,6 +449,7 @@ export function answersToFormState(
     firstNameKana: s(a.firstNameKana),
     nameAtAis: s(a.nameAtAis),
     dateOfBirth: s(a.dateOfBirth),
+    gender: s(a.gender),
     locale: a.locale === "en" ? "en" : a.locale === "ja" ? "ja" : locale,
     student: {
       cohortNumber: s(st.cohortNumber),
@@ -515,6 +521,7 @@ const KNOWN_CODES = new Set([
   "kanaRequired",
   "diplomaRequired",
   "tooManyFiles",
+  "genderRequired",
 ]);
 
 function normalizeMessage(message: string): string {

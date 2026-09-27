@@ -19,7 +19,8 @@ test.describe("landing & i18n", () => {
 
   test("members-only pages redirect signed-out visitors", async ({ page }) => {
     await page.goto("/en/app/directory");
-    await expect(page).toHaveURL(/\/en\/app$/);
+    // …to sign-in, which then returns them to the page (?next=).
+    await expect(page).toHaveURL(/\/en\/app\?next=%2Fapp%2Fdirectory$/);
   });
 
   test("landing page links to sign-up in the app", async ({ page }) => {
@@ -80,6 +81,7 @@ test("email sign-up → verification → admin approval → member dashboard", a
     .getByRole("textbox", { name: "First name", exact: true })
     .fill("Smoke");
   await member.getByLabel("Date of birth").fill("1996-04-02");
+  await member.getByLabel("Gender").selectOption("OTHER");
   await member.getByRole("button", { name: "Next" }).click();
 
   // 学年: every class is offered (created on first use); the Graduated /

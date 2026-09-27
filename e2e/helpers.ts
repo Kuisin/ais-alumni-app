@@ -57,14 +57,18 @@ export async function resetBroadcasts(email: string): Promise<void> {
   }
 }
 
-/** Email-code sign-in from the English sign-in page (/en/app). */
+/**
+ * Email-code sign-in from the English sign-in page (/en/app), or from
+ * where `from` (a signed-out page) sends us.
+ */
 export async function signInWithEmail(
   page: Page,
   email: string,
+  from = "/en/app",
 ): Promise<void> {
   await clearMailbox(email);
   await resetCodes(email);
-  await page.goto("/en/app");
+  await page.goto(from);
   await page.getByLabel("Email address").fill(email);
   await page.getByRole("button", { name: "Email me a sign-in code" }).click();
   const code = await readCode(email);

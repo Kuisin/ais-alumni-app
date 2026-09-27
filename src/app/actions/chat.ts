@@ -1,9 +1,14 @@
 "use server";
 
 import { z } from "zod";
-import { avatarSrc } from "@/components/profile/avatar-src";
 import { ChatGroupKind, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
+import {
+  AVATAR_SELECT,
+  type Connections,
+  loadConnections,
+  photoFor,
+} from "@/lib/avatar";
 import {
   CHAT_PAGE_SIZE,
   directKey,
@@ -48,10 +53,9 @@ const STUDENT_ROLE_KEYS: RoleKey[] = [
 
 /** Sender details shown in a talk: name, photo, 第N期, 学年代表. */
 const SENDER_SELECT = {
-  id: true,
   nameRomaji: true,
   nameKanji: true,
-  avatarUrl: true,
+  ...AVATAR_SELECT,
   roles: {
     where: {
       role: { in: STUDENT_ROLE_KEYS },
@@ -88,18 +92,22 @@ type MessageRow = {
   user: {
     nameRomaji: string | null;
     nameKanji: string | null;
+    id: string;
     avatarUrl: string | null;
+    avatarPublic: boolean;
+    familyId: string | null;
+    gender: string | null;
     roles: { cohort: { number: number } | null }[];
     positions: { id: string }[];
   };
 };
 
-function toView(m: MessageRow): ChatMessageView {
+function toView(m: MessageRow, conn: Connections): ChatMessageView {
   return {
     id: m.id,
     userId: m.userId,
     name: m.user.nameRomaji ?? m.user.nameKanji ?? "—",
-    avatar: avatarSrc(m.user.avatarUrl),
+    avatar: photoFor(conn, m.user),
     cohort: m.user.roles[0]?.cohort?.number ?? null,
     rep: m.user.positions.length > 0,
     body: m.deletedAt ? "" : m.body,
@@ -200,7 +208,7 @@ export async function sendChatMessageAction(
     where: { groupId_userId: { groupId: g.groupId, userId: g.user.id } },
     data: { lastReadAt: row.createdAt },
   });
-  const message = toView(row);
+  const message = toView(row, await loadConnections(g.user.id));
   // A signal only; members load the message through chatMessagesAction.
   await broadcast([
     {
@@ -257,7 +265,8 @@ export async function chatMessagesAction(
       take: 200,
       select: MESSAGE_SELECT,
     });
-    return rows.map(toView);
+    const conn = await loadConnections(g.user.id);
+    return rows.map((r) => toView(r, conn));
   }
   const rows = await db.chatMessage.findMany({
     where: {
@@ -268,7 +277,8 @@ export async function chatMessagesAction(
     take: CHAT_PAGE_SIZE,
     select: MESSAGE_SELECT,
   });
-  return rows.reverse().map(toView);
+  const conn = await loadConnections(g.user.id);
+  return rows.reverse().map((r) => toView(r, conn));
 }
 
 /** The member has seen everything up to now. */

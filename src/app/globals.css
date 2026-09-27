@@ -1,6 +1,9 @@
 /* biome-ignore-all lint/complexity/noImportantStyles: the reduced-motion override below must beat every animation utility */
 @import "tailwindcss";
 
+/* Opened as an installed app (PWA). */
+@custom-variant standalone (@media (display-mode: standalone));
+
 @theme {
   --color-brand-50: #eff4ff;
   --color-brand-100: #dbe6fe;
@@ -60,6 +63,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Overscroll above the header / below the footer matches them. */
+  background-color: #ffffff;
 }
 
 body {

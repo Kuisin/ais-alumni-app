@@ -63,7 +63,8 @@
     "dateOfBirth": "Date of birth",
     "bio": "Bio",
     "phone": "Phone",
-    "save": "Save profile"
+    "save": "Save profile",
+    "gender": "Gender"
   },
   "roles": {
     "title": "Roles",
@@ -226,7 +227,7 @@
     "cohort": "学年 (class)"
   },
   "nameRequests": {
-    "title": "Name and birth date changes",
+    "title": "Name, birth date and gender changes",
     "description": "Members can't change their name or date of birth after approval. Review requests here; approving applies them.",
     "tabsLabel": "Name change requests",
     "tabs": {
@@ -260,5 +261,12 @@
     "proposed": "Requested",
     "notSet": "Not registered",
     "approved": "Approved; the date of birth has been updated."
+  },
+  "genderRequests": {
+    "title": "Gender changes",
+    "current": "Current",
+    "proposed": "Requested",
+    "notSet": "Not registered",
+    "approved": "Approved; the gender has been updated."
   }
 }

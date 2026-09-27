@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { StartTalkList } from "@/components/chat/start-talk";
-import { avatarSrc } from "@/components/profile/avatar-src";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { loadConnections, photoFor } from "@/lib/avatar";
 import { directChatCandidates } from "@/lib/chat-db";
 import { DIRECT_CHAT_ENABLED } from "@/lib/features";
 import { requireActive } from "@/lib/session";
@@ -23,7 +23,10 @@ export default async function NewTalkPage() {
   if (!DIRECT_CHAT_ENABLED) notFound();
   const user = await requireActive();
   const t = await getTranslations("chat");
-  const people = await directChatCandidates(user.id);
+  const [people, conn] = await Promise.all([
+    directChatCandidates(user.id),
+    loadConnections(user.id),
+  ]);
   return (
     <div className="space-y-4">
       <div>
@@ -36,7 +39,7 @@ export default async function NewTalkPage() {
             id: p.id,
             name: p.nameRomaji ?? p.nameKanji ?? "—",
             kanji: p.nameRomaji ? p.nameKanji : null,
-            avatar: avatarSrc(p.avatarUrl),
+            avatar: photoFor(conn, p),
           }))}
         />
       ) : (

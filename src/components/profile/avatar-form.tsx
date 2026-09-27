@@ -12,9 +12,12 @@ import { ResultMessage } from "./profile-form";
 export function AvatarForm({
   src,
   name,
+  fallback,
 }: {
   src: string | null;
   name: string;
+  /** default icon shown while there is no photo */
+  fallback?: string;
 }) {
   const t = useTranslations("profile");
   const [state, action] = useActionState(uploadAvatarAction, null);
@@ -44,7 +47,7 @@ export function AvatarForm({
 
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-      <Avatar src={preview?.url ?? src} name={name} size={96} />
+      <Avatar src={preview?.url ?? src ?? fallback} name={name} size={96} />
       <div className="w-full flex-1 space-y-3">
         <form action={action} className="space-y-3">
           <div className="space-y-1">

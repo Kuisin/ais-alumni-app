@@ -212,6 +212,9 @@ export async function searchFamilyCandidates(
       nameKanji: r.nameKanji,
       nameAtAis: r.nameAtAis,
       avatarUrl: r.avatarUrl,
+      avatarPublic: r.avatarPublic,
+      familyId: r.familyId,
+      gender: r.gender,
       roles: r.roles,
     };
     if (canViewProfile(viewer, target, { follow: null, blocked: false }, now)) {

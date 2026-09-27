@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { chatMessagesAction, chatReadStateAction } from "@/app/actions/chat";
 import { ChatRoom } from "@/components/chat/chat-room";
-import { avatarSrc } from "@/components/profile/avatar-src";
 import { ChatGroupKind, PositionKey, RoleKey } from "@/generated/prisma/enums";
+import { AVATAR_SELECT, loadConnections, photoFor } from "@/lib/avatar";
 import { GROUP_SELECT } from "@/lib/chat-db";
 import { chatGroupName } from "@/lib/chat-labels";
 import { db } from "@/lib/db";
@@ -25,10 +25,9 @@ async function loadGroup(id: string, viewer: { id: string; isAdmin: boolean }) {
           select: {
             user: {
               select: {
-                id: true,
                 nameRomaji: true,
                 nameKanji: true,
-                avatarUrl: true,
+                ...AVATAR_SELECT,
                 roles: {
                   where: {
                     role: {
@@ -92,10 +91,11 @@ export default async function ChatRoomPage({
     chatMessagesAction(id, {}),
     chatReadStateAction(id),
   ]);
+  const conn = await loadConnections(user.id);
   const members = group.members.map(({ user: u }) => ({
     id: u.id,
     name: u.nameRomaji ?? u.nameKanji ?? "—",
-    avatar: avatarSrc(u.avatarUrl),
+    avatar: photoFor(conn, u),
     cohort: u.roles[0]?.cohort?.number ?? null,
     rep: u.positions.length > 0,
   }));

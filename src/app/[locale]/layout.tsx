@@ -23,6 +23,9 @@ export const viewport: Viewport = {
   themeColor: "#1e3a8a",
   width: "device-width",
   initialScale: 1,
+  // The on-screen keyboard resizes the page (Android), so fixed screens
+  // like a chat keep their header and composer in view.
+  interactiveWidget: "resizes-content",
 };
 
 export default async function LocaleLayout({

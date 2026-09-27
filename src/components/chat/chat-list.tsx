@@ -81,7 +81,7 @@ export function ChatList({
             ) : (
               <span
                 aria-hidden="true"
-                className="inline-flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#06c755]/15 text-[#06a045]"
+                className="inline-flex size-[52px] shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-800"
               >
                 <Users className="size-6" />
               </span>
@@ -110,7 +110,7 @@ export function ChatList({
                   {r.preview}
                 </span>
                 {r.unread ? (
-                  <span className="inline-flex min-w-5 shrink-0 justify-center rounded-full bg-[#06c755] px-1.5 text-xs leading-5 font-semibold text-white tabular-nums">
+                  <span className="inline-flex min-w-5 shrink-0 justify-center rounded-full bg-red-600 px-1.5 text-xs leading-5 font-semibold text-white tabular-nums">
                     <span aria-hidden="true">
                       {r.unread > 999 ? "999+" : r.unread}
                     </span>
@@ -135,7 +135,7 @@ export function ChatList({
           {canStartDirect ? (
             <Link
               href="/app/chat/new"
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-[#06a045] hover:bg-[#06c755]/10"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"
             >
               <MessageCirclePlus aria-hidden="true" className="size-5" />
               {t("newTalk")}
@@ -156,7 +156,7 @@ export function ChatList({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("search")}
-            className="block min-h-10 w-full rounded-full border-0 bg-slate-100 py-2 pr-4 pl-9 text-base placeholder:text-slate-500 focus-visible:outline-2 focus-visible:outline-[#06c755]"
+            className="block min-h-10 w-full rounded-full border-0 bg-slate-100 py-2 pr-4 pl-9 text-base placeholder:text-slate-500 focus-visible:outline-2 focus-visible:outline-brand-600"
           />
         </div>
         <fieldset className="flex gap-2">
@@ -166,7 +166,7 @@ export function ChatList({
               key={f}
               className={cn(
                 "inline-flex min-h-9 cursor-pointer items-center rounded-full border px-3 text-sm",
-                "border-slate-300 text-slate-700 has-checked:border-[#06c755] has-checked:bg-[#06c755] has-checked:font-semibold has-checked:text-white",
+                "border-slate-300 text-slate-700 has-checked:border-brand-700 has-checked:bg-brand-50 has-checked:font-semibold has-checked:text-brand-800",
               )}
             >
               <input

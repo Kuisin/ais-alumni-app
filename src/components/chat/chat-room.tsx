@@ -38,9 +38,9 @@ import { Link } from "@/i18n/navigation";
 import { CHAT_PAGE_SIZE, MAX_CHAT_MESSAGE } from "@/lib/chat";
 
 const POLL_MS = 5000;
-/** LINE-like colours: blue-grey talk background, green own bubbles. */
-const BG = "bg-[#8cabd9]";
-const MINE = "bg-[#8de055]";
+/** The app's colours: light background, brand-blue own bubbles. */
+const BG = "bg-slate-100";
+const MINE = "bg-brand-700 text-white";
 
 const jstDay = (iso: string) =>
   new Date(new Date(iso).getTime() + 9 * 3600_000).toISOString().slice(0, 10);
@@ -131,6 +131,40 @@ export function ChatRoom({
     const html = document.documentElement;
     html.classList.add("max-lg:overflow-hidden");
     return () => html.classList.remove("max-lg:overflow-hidden");
+  }, []);
+
+  // With the on-screen keyboard open, fit the talk to the visible area so
+  // the header and messages stay in view above the keyboard (iOS shrinks
+  // only the visual viewport; Android resizes via interactive-widget).
+  const shell = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = shell.current;
+    if (!vv || !el) return;
+    const phone = window.matchMedia("(max-width: 1023px)");
+    const fit = () => {
+      if (!phone.matches) {
+        el.style.removeProperty("height");
+        el.style.removeProperty("top");
+        el.style.removeProperty("bottom");
+        return;
+      }
+      el.style.height = `${vv.height}px`;
+      el.style.top = `${vv.offsetTop}px`;
+      el.style.bottom = "auto";
+      // Keep the latest messages visible as the keyboard opens.
+      const list = scroller.current;
+      if (list && stick.current) list.scrollTop = list.scrollHeight;
+    };
+    fit();
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    phone.addEventListener("change", fit);
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+      phone.removeEventListener("change", fit);
+    };
   }, []);
 
   const fmtTime = (iso: string) =>
@@ -283,6 +317,7 @@ export function ChatRoom({
 
   return (
     <div
+      ref={shell}
       className={cn(
         "fixed inset-0 z-50 flex flex-col",
         BG,
@@ -290,11 +325,11 @@ export function ChatRoom({
       )}
     >
       {/* Talk header */}
-      <header className="flex items-center gap-1 bg-[#8cabd9] px-1 pt-[env(safe-area-inset-top)] text-slate-900 lg:bg-[#7c9dcf]">
+      <header className="flex items-center gap-1 border-b border-slate-200 bg-white px-1 pt-[env(safe-area-inset-top)] text-slate-900">
         <Link
           href="/app/chat"
           aria-label={t("back")}
-          className="inline-flex size-11 items-center justify-center rounded-full hover:bg-black/10"
+          className="inline-flex size-11 items-center justify-center rounded-full hover:bg-slate-100"
         >
           <ChevronLeft aria-hidden="true" className="size-6" />
         </Link>
@@ -309,16 +344,16 @@ export function ChatRoom({
           title={live ? t("live") : t("polling")}
         >
           {live ? (
-            <Radio aria-hidden="true" className="size-4 text-emerald-800" />
+            <Radio aria-hidden="true" className="size-4 text-emerald-600" />
           ) : (
-            <RefreshCw aria-hidden="true" className="size-4 text-slate-700" />
+            <RefreshCw aria-hidden="true" className="size-4 text-slate-500" />
           )}
           <span className="sr-only">{live ? t("live") : t("polling")}</span>
         </span>
         <details className="relative">
           <summary
             aria-label={t("menu")}
-            className="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-full hover:bg-black/10 [&::-webkit-details-marker]:hidden"
+            className="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-full hover:bg-slate-100 [&::-webkit-details-marker]:hidden"
           >
             <EllipsisVertical aria-hidden="true" className="size-5" />
           </summary>
@@ -344,7 +379,7 @@ export function ChatRoom({
               <label className="flex items-start gap-2 border-t border-slate-100 pt-3">
                 <input
                   type="checkbox"
-                  className="mt-0.5 size-4 accent-[#06c755]"
+                  className="mt-0.5 size-4 accent-brand-700"
                   checked={!muted}
                   onChange={async (e) => {
                     const next = !e.target.checked;
@@ -374,14 +409,14 @@ export function ChatRoom({
             <button
               type="button"
               onClick={loadOlder}
-              className="rounded-full bg-black/20 px-4 py-1.5 text-xs font-medium text-white hover:bg-black/30"
+              className="rounded-full bg-white px-4 py-1.5 text-xs font-medium text-brand-700 shadow-sm hover:bg-brand-50"
             >
               {t("older")}
             </button>
           </div>
         ) : null}
         {messages.length === 0 ? (
-          <p className="mx-auto mt-10 max-w-xs rounded-2xl bg-white/70 p-4 text-center text-sm text-slate-700">
+          <p className="mx-auto mt-10 max-w-xs rounded-2xl bg-white p-4 text-center text-sm text-slate-600 shadow-sm">
             {tc("noMessages")}
           </p>
         ) : (
@@ -403,14 +438,14 @@ export function ChatRoom({
                 <Fragment key={m.id}>
                   {newDay ? (
                     <li className="flex justify-center py-2">
-                      <span className="rounded-full bg-black/20 px-3 py-1 text-xs font-medium text-white">
+                      <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
                         {fmtDay(m.createdAt)}
                       </span>
                     </li>
                   ) : null}
                   {m.id === divider ? (
                     <li data-divider className="flex justify-center py-2">
-                      <span className="rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-slate-700">
+                      <span className="rounded-full bg-red-50 px-4 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
                         {t("unreadDivider")}
                       </span>
                     </li>
@@ -436,7 +471,7 @@ export function ChatRoom({
                       )}
                     >
                       {!mine && runStart && !direct ? (
-                        <span className="mb-0.5 px-1 text-xs text-slate-800">
+                        <span className="mb-0.5 px-1 text-xs font-medium text-slate-600">
                           {m.name}
                         </span>
                       ) : null}
@@ -447,7 +482,7 @@ export function ChatRoom({
                         )}
                       >
                         {m.deleted ? (
-                          <p className="rounded-2xl bg-white/50 px-3 py-2 text-sm text-slate-600 italic">
+                          <p className="rounded-2xl border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-500 italic">
                             {t("deleted")}
                           </p>
                         ) : (
@@ -458,8 +493,10 @@ export function ChatRoom({
                             }
                             aria-expanded={selected === m.id}
                             className={cn(
-                              "rounded-[18px] px-3.5 py-2 text-left text-[15px] leading-relaxed whitespace-pre-wrap break-words text-slate-900 shadow-sm select-text",
-                              mine ? MINE : "bg-white",
+                              "rounded-[18px] px-3.5 py-2 text-left text-[15px] leading-relaxed whitespace-pre-wrap break-words shadow-sm select-text",
+                              mine
+                                ? MINE
+                                : "bg-white text-slate-900 ring-1 ring-slate-200",
                               runStart &&
                                 (mine ? "rounded-tr-md" : "rounded-tl-md"),
                             )}
@@ -469,7 +506,7 @@ export function ChatRoom({
                         )}
                         <span
                           className={cn(
-                            "flex shrink-0 flex-col pb-0.5 text-[10px] leading-tight text-slate-800",
+                            "flex shrink-0 flex-col pb-0.5 text-[10px] leading-tight text-slate-500",
                             mine ? "items-end" : "items-start",
                           )}
                         >
@@ -559,13 +596,13 @@ export function ChatRoom({
                   void send();
                 }
               }}
-              className="block max-h-36 min-h-10 flex-1 resize-none rounded-[20px] border-0 bg-slate-100 px-4 py-2 text-base focus-visible:outline-2 focus-visible:outline-[#06c755]"
+              className="block max-h-36 min-h-10 flex-1 resize-none rounded-[20px] border-0 bg-slate-100 px-4 py-2 text-base focus-visible:outline-2 focus-visible:outline-brand-600"
             />
             <button
               type="submit"
               disabled={sending || !text.trim()}
               aria-label={sending ? t("sending") : t("send")}
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-[#06c755] hover:bg-[#06c755]/10 disabled:text-slate-300"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-700 hover:bg-brand-50 disabled:text-slate-300"
             >
               <SendHorizontal aria-hidden="true" className="size-6" />
             </button>

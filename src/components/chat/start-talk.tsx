@@ -57,7 +57,7 @@ export function StartTalkList({ people }: { people: Person[] }) {
               </span>
               <MessageCircle
                 aria-hidden="true"
-                className="size-5 text-[#06a045]"
+                className="size-5 text-brand-700"
               />
             </button>
           </li>

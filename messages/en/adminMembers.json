@@ -206,7 +206,7 @@
     },
     "descriptions": {
       "TEACHER_MANAGER": "Can send notifications to all members, selected roles or any class (up to 20 per day).",
-      "STUDENT_LEADER": "Can send notifications to members of their own 学年 (up to 5 per week).",
+      "STUDENT_LEADER": "Represents their own 学年: joins the 学年代表 chat and is the contact for their class. You can also manage class reps per 学年 on the 学年 page.",
       "TEACHER_REGISTRAR": "Can mark members as current teachers or move them to former (Admin mode → Teachers). Current teachers can see children's profiles, so grant this only to someone you trust."
     },
     "requires": {
@@ -220,13 +220,14 @@
       "forbidden": "You don't have permission to do that.",
       "invalid": "Please check the input.",
       "notEligible": "This member doesn't have the role this position requires.",
-      "cohort": "Choose the 学年 they represent."
+      "cohort": "Choose the 学年 they represent.",
+      "ownCohort": "A 学年代表 must be a student or graduate of that 学年 (their own class)."
     },
     "cohort": "学年 (class)"
   },
   "nameRequests": {
-    "title": "Name changes",
-    "description": "Members can't change their name after approval. Review requests here; approving applies the new name.",
+    "title": "Name and birth date changes",
+    "description": "Members can't change their name or date of birth after approval. Review requests here; approving applies them.",
     "tabsLabel": "Name change requests",
     "tabs": {
       "pending": "To review",
@@ -252,5 +253,12 @@
       "noteRequired": "Please give a reason when rejecting.",
       "decided": "This request has already been decided."
     }
+  },
+  "birthDateRequests": {
+    "title": "Date of birth changes",
+    "current": "Current",
+    "proposed": "Requested",
+    "notSet": "Not registered",
+    "approved": "Approved; the date of birth has been updated."
   }
 }

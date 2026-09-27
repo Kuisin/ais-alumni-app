@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { Client } from "pg";
-import { clearMailbox, signInWithEmail } from "./helpers";
+import { clearMailbox, notificationTarget, signInWithEmail } from "./helpers";
 
 const mail = (email: string) =>
   readFile(
@@ -50,8 +50,55 @@ test("reserved news is sent when due, only to the chosen audience", async ({
 
   // A graduate got a notification with a production link and no content…
   const hanako = await mail("hanako@example.com");
-  expect(hanako).toContain(`https://ais.kai-lab.net/`);
-  expect(hanako).toContain(`/app/news/${postId}`);
+  // …through a short link that opens the post…
+  const { code, token, target } = await notificationTarget(
+    page.request,
+    hanako,
+  );
+  expect(target).toMatch(new RegExp(`^/(ja|en)/app/news/${postId}$`));
+  // …and gives link previews a card (no sign-in, no content)…
+  const preview = await page.request.get(`/n/${code}/${token}`, {
+    headers: { "User-Agent": "facebookexternalhit/1.1;line-poker/1.0" },
+    maxRedirects: 0,
+  });
+  const html = await preview.text();
+  expect(html).toContain('property="og:image"');
+  expect(html).not.toContain("Secret body text");
+  const card = await page.request.get(`/n/${token}/og`);
+  expect(card.headers()["content-type"]).toContain("image/png");
+  // …and her open (not the preview's) is her read receipt.
+  const rdb = new Client({ connectionString: process.env.DATABASE_URL });
+  await rdb.connect();
+  const receipt = await rdb.query(
+    `SELECT r."openedAt", r.opens, r.channels FROM "NotificationReceipt" r
+       JOIN "NotificationLink" l ON l.id = r."linkId"
+       JOIN "User" u ON u.id = r."userId"
+     WHERE l.token = $1 AND u."primaryEmail" = 'hanako@example.com'`,
+    [token],
+  );
+  // The preview follows her current language, not the one at sending.
+  const ogTitle = async () =>
+    (
+      await (
+        await page.request.get(`/n/${code}/${token}`, {
+          headers: { "User-Agent": "facebookexternalhit/1.1" },
+          maxRedirects: 0,
+        })
+      ).text()
+    ).match(/og:title" content="([^"]+)"/)?.[1];
+  const setLocale = (l: string) =>
+    rdb.query(`UPDATE "User" SET locale = $1 WHERE "linkCode" = $2`, [l, code]);
+  await setLocale("en");
+  expect(await ogTitle()).toBe("New news from the committee");
+  await setLocale("ja");
+  expect(await ogTitle()).toBe("新しいニュースがあります");
+  await rdb.end();
+  expect(receipt.rows[0].openedAt).not.toBeNull();
+  expect(receipt.rows[0].opens).toBe(1);
+  await page.goto(`/en/app/admin/news/${postId}`);
+  await expect(
+    page.getByRole("heading", { name: "Notification opens" }),
+  ).toBeVisible();
   expect(hanako).not.toContain("Secret body text");
   expect(hanako).not.toContain(title);
   // …the admin (a current teacher, not a graduate) did not.

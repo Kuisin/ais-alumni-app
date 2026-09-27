@@ -54,6 +54,10 @@ async function addNewChild(parent: Page, lastName: string) {
   await parent
     .getByRole("combobox", { name: /学年/ })
     .selectOption({ index: 1 });
+  // The class names by year help to check the 学年.
+  const years = parent.getByRole("table", { name: /classes by year/ });
+  await expect(years).toContainText("Jellyfish");
+  await expect(years).toContainText("6th grade");
   await parent.getByLabel(/Year your child joined AIS/).fill("2023");
   await parent.getByRole("button", { name: "Next" }).click();
   await parent.getByRole("button", { name: "Submit application" }).click();

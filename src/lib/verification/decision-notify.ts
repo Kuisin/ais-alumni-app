@@ -1,9 +1,6 @@
-import type { Locale } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, type NotifyUser, notify } from "@/lib/notify";
 import type { ParentOutcome } from "@/lib/parent-onboarding";
-import { publicUrl } from "@/lib/urls";
 
 export type Decision = "APPROVE" | "REJECT" | "NEEDS_INFO";
 
@@ -16,31 +13,21 @@ export async function notifyDecision(
 ): Promise<void> {
   try {
     await notify(to, {
-      kind: "VERIFICATION",
+      kind:
+        decision === "APPROVE"
+          ? "VERIFICATION_APPROVED"
+          : decision === "REJECT"
+            ? "VERIFICATION_REJECTED"
+            : "VERIFICATION_NEEDS_INFO",
       refId: requestId,
-      alwaysEmail: true,
-      render: async (locale: Locale) => {
-        const t = await getTranslatorFor(locale, "adminVerify");
-        const k =
-          decision === "APPROVE"
-            ? "approved"
-            : decision === "REJECT"
-              ? "rejected"
-              : "needsInfo";
-        const path =
-          decision === "APPROVE"
-            ? "/app/dashboard"
-            : decision === "REJECT"
-              ? "/app/onboarding/status"
-              : "/app/onboarding/verify";
-        return {
-          subject: t(`notify.${k}.subject`),
-          text: note
-            ? t(`notify.${k}.bodyWithNote`, { note })
-            : t(`notify.${k}.body`),
-          url: publicUrl(`/${locale}${path}`),
-        };
-      },
+      path:
+        decision === "APPROVE"
+          ? "/app/dashboard"
+          : decision === "REJECT"
+            ? "/app/onboarding/status"
+            : "/app/onboarding/verify",
+      // The committee's note goes by email only, never on LINE.
+      note,
     });
   } catch (e) {
     console.error("[verification] notify failed", e);

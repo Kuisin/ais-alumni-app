@@ -26,7 +26,8 @@
     "emailTitle": "Sign in with an email code",
     "privacy": "By continuing you agree to how we handle your information, as described in our <link>privacy notice</link>.",
     "notReady": "Not ready yet",
-    "notReadyNote": "Methods marked “Not ready yet” can't be used yet — please sign in with email."
+    "notReadyNote": "Methods marked “Not ready yet” can't be used yet — please sign in with email.",
+    "help": "Can't sign in? <link>Contact us</link>."
   },
   "privacy": {
     "title": "Privacy notice",
@@ -76,5 +77,14 @@
     },
     "updated": "Last updated: September 2026"
   },
-  "operatedBy": "Run by the AIS Alumni Committee, a volunteer group of graduates (not an official school service)."
+  "operatedBy": "Run by the AIS Alumni Committee, a volunteer group of graduates (not an official school service).",
+  "invite": {
+    "from": "{name} invited you ({what}). Sign up below to get started.",
+    "invalid": "This invitation link isn't valid or has already been used. You can still sign up without it.",
+    "types": {
+      "STUDENT": "{cohort} student / graduate",
+      "PARENT": "{cohort} parent",
+      "TEACHER": "teacher / staff"
+    }
+  }
 }

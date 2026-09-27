@@ -140,5 +140,47 @@
     "none": "Not shown yet: add your schools and work.",
     "fromHistory": "Your current status is worked out from your schools and work (your current school, or else your current job).",
     "editHistory": "Edit schools & work"
+  },
+  "birthDate": {
+    "title": "Date of birth",
+    "lockedNote": "Your date of birth can't be changed by you after approval. To add or correct it, ask the committee.",
+    "notSet": "Not registered",
+    "notSetHint": "Your date of birth isn't registered. It's needed for groups such as 18 and over.",
+    "open": "Request a correction",
+    "openAdd": "Request to add it",
+    "intro": "Enter your correct date of birth. The committee checks and applies it.",
+    "field": "Date of birth",
+    "reason": "Reason for the change",
+    "reasonOptional": "Reason (optional)",
+    "reasonHint": "e.g. I entered it wrongly when signing up",
+    "submit": "Send request",
+    "close": "Close",
+    "submitted": "Request sent. It will be applied once the committee approves it; we'll let you know.",
+    "pendingSince": "On {date} you asked to change it to {value}. The committee will check it.",
+    "cancel": "Withdraw request",
+    "reviewNote": "Committee note",
+    "fieldErrors": {
+      "invalidDate": "Please enter a valid date.",
+      "required": "Please give a reason.",
+      "tooLong": "That's too long."
+    },
+    "errors": {
+      "unchanged": "That's the same as your current date of birth.",
+      "pending": "You already have a request being checked."
+    },
+    "notify": {
+      "admin": {
+        "subject": "New date of birth request",
+        "text": "{name} asked to add or correct their date of birth."
+      },
+      "approved": {
+        "subject": "Your date of birth change was approved",
+        "text": "Your date of birth has been updated.\n\nCommittee note: {note}"
+      },
+      "rejected": {
+        "subject": "Your date of birth change wasn't approved",
+        "text": "Committee note: {note}"
+      }
+    }
   }
 }

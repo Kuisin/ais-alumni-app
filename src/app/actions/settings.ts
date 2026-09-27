@@ -23,6 +23,7 @@ import { syncChatMembership } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
+import { OPTIONAL_CATEGORIES } from "@/lib/notify/catalog";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { ssoReady } from "@/lib/sso";
 import { assertTransition } from "@/lib/state-machine";
@@ -111,6 +112,26 @@ export async function updateNotifyViaAction(
   }
 }
 
+/** Which notification categories to receive (account ones always come). */
+export async function updateNotifyCategoriesAction(
+  _prev: SettingsFormState,
+  formData: FormData,
+): Promise<SettingsFormState> {
+  try {
+    const user = await guard();
+    const on = new Set(formData.getAll("on").map(String));
+    const off = OPTIONAL_CATEGORIES.filter((c) => !on.has(c));
+    await db.user.update({
+      where: { id: user.id },
+      data: { notifyOff: off },
+    });
+    refresh();
+    return { ok: true, message: (await getTranslations("common"))("saved") };
+  } catch (e) {
+    return { error: await errorText(e) };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Sign-in methods (§4.3)
 // ---------------------------------------------------------------------------
@@ -185,17 +206,11 @@ export async function removeSignInMethodAction(
       select: NOTIFY_USER_SELECT,
     });
     await notify(fresh, {
-      kind: "SECURITY",
-      alwaysEmail: true,
-      render: async (locale) => {
+      kind: "SECURITY_METHOD_REMOVED",
+      path: "/app/settings",
+      params: async (locale) => {
         const tr = await getTranslatorFor(locale, "settings");
-        return {
-          subject: tr("notify.methodRemoved.subject"),
-          text: tr("notify.methodRemoved.text", {
-            method: tr(`methods.${provider}`),
-          }),
-          url: publicUrl(`/${locale}/app/settings`),
-        };
+        return { method: tr(`methods.${provider}`) };
       },
     }).catch((e) => console.error("[settings] notify failed", e));
 
@@ -386,15 +401,8 @@ export async function deactivateSelfAction(
     );
     await audit(user.id, "self.deactivated", { type: "User", id: user.id });
     await notify(user, {
-      kind: "DEACTIVATED",
-      alwaysEmail: true,
-      render: async (l) => {
-        const tr = await getTranslatorFor(l, "settings");
-        return {
-          subject: tr("notify.deactivated.subject"),
-          text: tr("notify.deactivated.text"),
-        };
-      },
+      kind: "ACCOUNT_DEACTIVATED_SELF",
+      path: null,
     }).catch((e) => console.error("[settings] notify failed", e));
     locale = await getLocale();
   } catch (e) {

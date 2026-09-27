@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import {
@@ -13,6 +14,7 @@ import { redirect } from "@/i18n/navigation";
 import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { consumeInvite, INVITE_COOKIE } from "@/lib/invites";
 import {
   parentRole,
   studentRoleFields,
@@ -250,6 +252,10 @@ export async function submitVerificationAction(
   }
   // Vouch requests (§6.4.2) are best-effort; a failure must not undo the submission.
   // Registered children are asked to confirm the parent (best-effort).
+  // Invited: the invitation is used by this application (one time).
+  const jar = await cookies();
+  if (await consumeInvite(jar.get(INVITE_COOKIE)?.value, user.id))
+    jar.delete(INVITE_COOKIE);
   await notifyChildConfirmations(user, childLinksToConfirm);
   if (settled) await notifyParentOutcomes([settled]);
   await createVouchesForRequest(requestId).catch((e) =>

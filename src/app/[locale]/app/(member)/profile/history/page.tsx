@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { deleteHistoryAction } from "@/app/actions/history";
 import { AddHistory } from "@/components/history/add-history";
 import { HistoryForm } from "@/components/history/history-form";
+import { WorkTags } from "@/components/history/work-tags";
 import { BackLink } from "@/components/ui/back-link";
 import { Badge, Card, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -20,6 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HistoryPage() {
   const me = await requireActive();
   const t = await getTranslations("history");
+  const lang = (await getLocale()) === "en" ? "en" : "ja";
   const [education, work] = await Promise.all([
     db.educationEntry.findMany({
       where: { userId: me.id },
@@ -72,6 +74,13 @@ export default async function HistoryPage() {
                           : (e.title ?? "")}{" "}
                         · {years(e)}
                       </p>
+                      {"industry" in e ? (
+                        <WorkTags
+                          industry={e.industry}
+                          jobType={e.jobType}
+                          locale={lang}
+                        />
+                      ) : null}
                     </div>
                   }
                 >

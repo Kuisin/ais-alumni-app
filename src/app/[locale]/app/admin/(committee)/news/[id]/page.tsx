@@ -9,6 +9,7 @@ import {
 import { CloseControl, NewsView } from "@/components/admin/content-views";
 import { NewsReadsCard } from "@/components/admin/news-reads-card";
 import { NewsResponsesCard } from "@/components/admin/news-responses-card";
+import { NotificationOpensCard } from "@/components/admin/notification-opens-card";
 import { NewsForm } from "@/components/news/news-form";
 import { NotifyPanel } from "@/components/news/notify-panel";
 import { NewsStatusBadges } from "@/components/news/status-badges";
@@ -160,6 +161,11 @@ export default async function AdminNewsEditPage({
           {status === "published" ? (
             <NewsReadsCard post={post} locale={locale} />
           ) : null}
+          <NotificationOpensCard
+            kinds={["NEWS", "NEWS_REMINDER"]}
+            refId={post.id}
+            locale={locale}
+          />
         </aside>
 
         <section

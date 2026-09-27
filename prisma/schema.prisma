@@ -108,6 +108,10 @@ model User {
   lineBannerDismissedAt DateTime?
   lineOnboardingSeenAt  DateTime?
   notifyVia             NotifyChannel        @default(AUTO)
+  // Added: notification categories the member turned off (src/lib/notify/catalog.ts)
+  notifyOff             String[]             @default([])
+  /// short code in notification links (/n/<linkCode>/<token>) for read receipts
+  linkCode              String?              @unique
   autoAcceptSameYear    Boolean              @default(false)
   familyId              String?
   family                Family?              @relation(fields: [familyId], references: [id], onDelete: SetNull)
@@ -122,42 +126,48 @@ model User {
   broadcastInbox        BroadcastRecipient[] @relation("broadcastInbox")
   newsReads             NewsRead[]           @relation("newsReads")
 
-  roles          UserRole[]
-  accounts       Account[]
-  verification   VerificationRequest?  @relation("applicant")
-  reviewed       VerificationRequest[] @relation("reviewer")
-  followsOut     Follow[]              @relation("follower")
-  followsIn      Follow[]              @relation("followee")
-  blocksOut      Block[]               @relation("blocker")
-  blocksIn       Block[]               @relation("blocked")
-  rsvps          Rsvp[]
-  eventStaff     EventStaff[]
-  newsConfirms   NewsConfirm[]
-  newsVotes      NewsPollVote[]
-  newsComments   NewsComment[]         @relation("newsComments")
-  newsHidden     NewsComment[]         @relation("newsCommentsHidden")
-  newsReactions  NewsReaction[]
-  chatMembers    ChatMember[]
-  chatMessages   ChatMessage[]         @relation("chatMessages")
-  chatDeleted    ChatMessage[]         @relation("chatDeleted")
-  eventCheckIns  EventCheckIn[]        @relation("CheckedIn")
-  checkInsDone   EventCheckIn[]        @relation("CheckedInBy")
-  parentLinks    FamilyLink[]          @relation("parent")
-  childLinks     FamilyLink[]          @relation("child")
-  vouchesGiven   Vouch[]
-  notifications  NotificationLog[]
-  eventsCreated  Event[]
-  newsCreated    NewsPost[]
-  auditActions   AuditLog[]
-  recordRequests RecordChangeRequest[] @relation("recordRequester")
-  recordReviews  RecordChangeRequest[] @relation("recordReviewer")
-  nameRequests   NameChangeRequest[]   @relation("nameRequester")
-  nameReviews    NameChangeRequest[]   @relation("nameReviewer")
-  positions      UserPosition[]        @relation("positionHolder")
-  positionGrants UserPosition[]        @relation("positionGrantor")
-  broadcasts     Broadcast[]
-  education      EducationEntry[]
-  work           WorkEntry[]
+  roles                UserRole[]
+  accounts             Account[]
+  verification         VerificationRequest?  @relation("applicant")
+  reviewed             VerificationRequest[] @relation("reviewer")
+  followsOut           Follow[]              @relation("follower")
+  followsIn            Follow[]              @relation("followee")
+  blocksOut            Block[]               @relation("blocker")
+  blocksIn             Block[]               @relation("blocked")
+  rsvps                Rsvp[]
+  eventStaff           EventStaff[]
+  newsConfirms         NewsConfirm[]
+  newsVotes            NewsPollVote[]
+  newsComments         NewsComment[]         @relation("newsComments")
+  newsHidden           NewsComment[]         @relation("newsCommentsHidden")
+  newsReactions        NewsReaction[]
+  chatMembers          ChatMember[]
+  birthDateRequests    BirthDateRequest[]    @relation("birthDateRequester")
+  invitesSent          Invite[]              @relation("invitesSent")
+  inviteUsed           Invite?               @relation("inviteUsed")
+  birthDateReviews     BirthDateRequest[]    @relation("birthDateReviewer")
+  chatMessages         ChatMessage[]         @relation("chatMessages")
+  chatDeleted          ChatMessage[]         @relation("chatDeleted")
+  eventCheckIns        EventCheckIn[]        @relation("CheckedIn")
+  checkInsDone         EventCheckIn[]        @relation("CheckedInBy")
+  parentLinks          FamilyLink[]          @relation("parent")
+  childLinks           FamilyLink[]          @relation("child")
+  vouchesGiven         Vouch[]
+  notifications        NotificationLog[]
+  notificationReceipts NotificationReceipt[]
+  supportRequests      SupportRequest[]
+  eventsCreated        Event[]
+  newsCreated          NewsPost[]
+  auditActions         AuditLog[]
+  recordRequests       RecordChangeRequest[] @relation("recordRequester")
+  recordReviews        RecordChangeRequest[] @relation("recordReviewer")
+  nameRequests         NameChangeRequest[]   @relation("nameRequester")
+  nameReviews          NameChangeRequest[]   @relation("nameReviewer")
+  positions            UserPosition[]        @relation("positionHolder")
+  positionGrants       UserPosition[]        @relation("positionGrantor")
+  broadcasts           Broadcast[]
+  education            EducationEntry[]
+  work                 WorkEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -517,6 +527,75 @@ model NewsPost {
   @@index([publishedAt])
 }
 
+/// Added: short link in a notification (/n/<token>). Opens the app page for
+/// the member and gives link-preview bots a card image built from `title`
+/// and `body` (no private content). One row per send and language.
+model NotificationLink {
+  id           String                @id @default(cuid())
+  token        String                @unique
+  kind         String
+  refId        String?
+  /// legacy (per-language links); now null — see texts
+  locale       Locale?
+  /// app path without the locale, e.g. /app/news/<id>
+  path         String
+  /// legacy; now in texts
+  title        String?
+  body         String?
+  /// { ja: { title, body }, en: { title, body } } — previews use the
+  /// opener's language
+  texts        Json?
+  category     String
+  createdAt    DateTime              @default(now())
+  expiresAt    DateTime
+  opens        Int                   @default(0)
+  lastOpenedAt DateTime?
+  receipts     NotificationReceipt[]
+
+  @@index([kind, refId])
+}
+
+/// One recipient of a notification link: sent, and when they opened it.
+model NotificationReceipt {
+  id           String           @id @default(cuid())
+  linkId       String
+  link         NotificationLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// LINE | EMAIL
+  channels     String[]
+  sentAt       DateTime         @default(now())
+  openedAt     DateTime?
+  lastOpenedAt DateTime?
+  opens        Int              @default(0)
+
+  @@unique([linkId, userId])
+  @@index([userId])
+}
+
+/// お問い合わせ: sent from /support (members or visitors); emailed to admins.
+model SupportRequest {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name       String
+  email      String
+  /// ISSUE | QUESTION | COMPLAINT | FEATURE (src/lib/support.ts)
+  type       String
+  topic      String
+  subject    String
+  message    String
+  locale     Locale
+  /// page the form was sent from (e.g. onboarding step)
+  page       String?
+  createdAt  DateTime  @default(now())
+  closedAt   DateTime?
+  closedById String?
+
+  @@index([closedAt, createdAt])
+  @@index([email, createdAt])
+}
+
 model NotificationLog {
   id      String   @id @default(cuid())
   userId  String
@@ -836,6 +915,7 @@ model Cohort {
   broadcasts          Broadcast[]
   childLinks          FamilyLink[]
   chatGroups          ChatGroup[]
+  invites             Invite[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 }
@@ -881,6 +961,10 @@ model WorkEntry {
   companyId  String
   company    Company           @relation(fields: [companyId], references: [id])
   title      String? // position / department
+  // Added: 業種 code from src/lib/industries.ts (大分類 or 中分類)
+  industry   String?
+  // Added: 職種 code from src/lib/job-types.ts (大分類 or 職種)
+  jobType    String?
   startYear  Int?
   endYear    Int? // null = current job
   visibility HistoryVisibility @default(FOLLOWERS)
@@ -923,6 +1007,55 @@ model NameChangeRequest {
   status     ChangeRequestStatus @default(PENDING)
   reviewerId String?
   reviewer   User?               @relation("nameReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote String?
+  createdAt  DateTime            @default(now())
+  decidedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+enum InviteType {
+  STUDENT // 卒業生・在校生
+  PARENT // 保護者
+  TEACHER // 教職員
+}
+
+/// Added: a member invites someone with a one-time link (token hashed).
+/// The inviter vouches for who they are (type, 学年); admins see it on the
+/// application to approve faster.
+model Invite {
+  id          String     @id @default(cuid())
+  tokenHash   String     @unique
+  inviterId   String
+  inviter     User       @relation("invitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  type        InviteType
+  /// the invitee's 学年 (STUDENT) or their child's (PARENT)
+  cohortId    String?
+  cohort      Cohort?    @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  inviteeName String?
+  createdAt   DateTime   @default(now())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    String?    @unique
+  usedBy      User?      @relation("inviteUsed", fields: [usedById], references: [id], onDelete: SetNull)
+  revokedAt   DateTime?
+
+  @@index([inviterId])
+}
+
+/// Added: a member asks the committee to set or correct their birth date
+/// (fixed after approval, like names). Approving applies `proposed`.
+model BirthDateRequest {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation("birthDateRequester", fields: [userId], references: [id], onDelete: Cascade)
+  current    DateTime?           @db.Date
+  proposed   DateTime            @db.Date
+  reason     String
+  status     ChangeRequestStatus @default(PENDING)
+  reviewerId String?
+  reviewer   User?               @relation("birthDateReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
   reviewNote String?
   createdAt  DateTime            @default(now())
   decidedAt  DateTime?

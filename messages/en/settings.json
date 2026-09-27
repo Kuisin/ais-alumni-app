@@ -29,7 +29,8 @@
       "EMAIL": "Email",
       "NONE": "Nowhere (no LINE or email)"
     },
-    "save": "Save notification setting"
+    "save": "Save notification setting",
+    "categories": "Notifications to receive"
   },
   "line": {
     "title": "LINE",

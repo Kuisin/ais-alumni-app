@@ -49,9 +49,11 @@
     },
     "family": {
       "title": "Link your family",
-      "body": "Link your child's account so their status updates automatically.",
-      "action": "Link"
+      "body": "Connect parents, children, siblings and other family members. Children's status updates automatically, and you see each other on the family page.",
+      "action": "Link family"
     }
   },
-  "doneSummary": "Completed ({count})"
+  "doneSummary": "Completed ({count})",
+  "optional": "Optional",
+  "afterApproval": "Available after approval"
 }

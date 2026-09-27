@@ -5,8 +5,6 @@ import {
   RoleKey,
   VerificationStatus,
 } from "@/generated/prisma/enums";
-import type { AppLocale } from "@/i18n/routing";
-import { getTranslatorFor } from "@/i18n/translator";
 import { cohortShort } from "@/lib/cohorts";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -17,7 +15,6 @@ import { nameColumns } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
 import { syncMemberStatus } from "@/lib/status-sync";
-import { publicUrl } from "@/lib/urls";
 import type { ChildData } from "@/lib/verification/schema";
 
 /**
@@ -372,17 +369,10 @@ export async function notifyChildConfirmations(
       const to = link?.child?.managedBy ?? link?.child;
       if (!to) continue;
       await notify(to, {
-        kind: "FAMILY_LINK_REQUEST",
+        kind: "FAMILY_LINK_REQUEST_AS_CHILD",
         refId: linkId,
-        render: async (locale) => {
-          const t = await getTranslatorFor(locale as AppLocale, "family");
-          const name = displayName(parent, locale);
-          return {
-            subject: t("notify.asChildSubject", { name }),
-            text: t("notify.asChildText", { name }),
-            url: publicUrl(`/${locale}/app/family`),
-          };
-        },
+        path: "/app/family",
+        params: (locale) => ({ name: displayName(parent, locale) }),
       });
     } catch (e) {
       console.error("[parent-onboarding] notification failed", e);

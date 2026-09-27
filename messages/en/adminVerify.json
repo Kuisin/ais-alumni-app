@@ -33,7 +33,8 @@
     "rosterMatch": "Roster match {score}",
     "vouchCounts": "Vouches: {yes} yes · {no} no · {unsure} unsure · {pending} waiting",
     "noVouches": "No vouches",
-    "diploma": "Diploma"
+    "diploma": "Diploma",
+    "invited": "Invited"
   },
   "status": {
     "PENDING": "Pending",
@@ -237,5 +238,16 @@
     "body": "A child account created by a parent has the same name and birth date as this applicant. Merging moves its AIS record and family links into the applicant's account (the applicant's account is kept). Then decide the application as usual.",
     "registeredBy": "Registered by: {parent}",
     "merge": "Merge into applicant's account"
+  },
+  "invite": {
+    "title": "Invitation",
+    "by": "Signed up through an invitation from <name></name> (created {date}).",
+    "said": "The inviter said: {what}",
+    "name": "Name note: {name}",
+    "match": {
+      "match": "Matches the application",
+      "mismatch": "Differs from the application. Please check",
+      "unknown": "The 学年 can't be compared"
+    }
   }
 }

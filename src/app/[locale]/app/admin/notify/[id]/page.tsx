@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { formatCompactDate, formatTime } from "@/components/admin/admin-format";
+import { NotificationOpensCard } from "@/components/admin/notification-opens-card";
 import {
   ReadMeter,
   ReceiptList,
@@ -110,77 +111,86 @@ export default async function SentMessagePage({
           </div>
         </section>
 
-        <AdminSection
-          id="receipts"
-          title={t("receipts.title")}
-          icon={<CheckCheck />}
-          className="lg:col-start-2 lg:row-start-1"
-        >
-          {total === 0 ? (
-            <Alert tone="info">{t("receipts.legacy")}</Alert>
-          ) : (
-            <div className="space-y-6">
-              <ReadMeter
-                size="lg"
-                read={read}
-                total={total}
-                label={t("receipts.readOf", { read, total })}
-                percentLabel={t("receipts.percent", {
-                  percent: readPercent(read, total),
-                })}
-              />
-              <section aria-labelledby="receipts-read">
-                <div className="mb-1 flex items-center gap-2">
-                  <h3
-                    id="receipts-read"
-                    className="flex items-center gap-2 text-sm font-semibold text-slate-800"
-                  >
-                    <Eye aria-hidden="true" className="size-4 text-brand-700" />
-                    {t("receipts.read")}
-                  </h3>
-                  <CountPill>{read}</CountPill>
-                </div>
-                <ReceiptList
-                  empty={t("receipts.noneRead")}
-                  moreLabel={more(read)}
-                  items={receipts.read.map((r) => ({
-                    key: r.user.id,
-                    name: displayName(r.user, locale),
-                    time: r.readAt
-                      ? {
-                          iso: r.readAt.toISOString(),
-                          label: `${formatCompactDate(r.readAt, locale)} ${formatTime(r.readAt, locale)}`,
-                        }
-                      : undefined,
-                  }))}
+        <div className="space-y-6 lg:col-start-2 lg:row-start-1">
+          <AdminSection
+            id="receipts"
+            title={t("receipts.title")}
+            icon={<CheckCheck />}
+          >
+            {total === 0 ? (
+              <Alert tone="info">{t("receipts.legacy")}</Alert>
+            ) : (
+              <div className="space-y-6">
+                <ReadMeter
+                  size="lg"
+                  read={read}
+                  total={total}
+                  label={t("receipts.readOf", { read, total })}
+                  percentLabel={t("receipts.percent", {
+                    percent: readPercent(read, total),
+                  })}
                 />
-              </section>
-              <section aria-labelledby="receipts-unread">
-                <div className="mb-1 flex items-center gap-2">
-                  <h3
-                    id="receipts-unread"
-                    className="flex items-center gap-2 text-sm font-semibold text-slate-800"
-                  >
-                    <EyeOff
-                      aria-hidden="true"
-                      className="size-4 text-slate-500"
-                    />
-                    {t("receipts.unread")}
-                  </h3>
-                  <CountPill>{receipts.unread.length}</CountPill>
-                </div>
-                <ReceiptList
-                  empty={t("receipts.allRead")}
-                  moreLabel={more(receipts.unread.length)}
-                  items={receipts.unread.map((r) => ({
-                    key: r.user.id,
-                    name: displayName(r.user, locale),
-                  }))}
-                />
-              </section>
-            </div>
-          )}
-        </AdminSection>
+                <section aria-labelledby="receipts-read">
+                  <div className="mb-1 flex items-center gap-2">
+                    <h3
+                      id="receipts-read"
+                      className="flex items-center gap-2 text-sm font-semibold text-slate-800"
+                    >
+                      <Eye
+                        aria-hidden="true"
+                        className="size-4 text-brand-700"
+                      />
+                      {t("receipts.read")}
+                    </h3>
+                    <CountPill>{read}</CountPill>
+                  </div>
+                  <ReceiptList
+                    empty={t("receipts.noneRead")}
+                    moreLabel={more(read)}
+                    items={receipts.read.map((r) => ({
+                      key: r.user.id,
+                      name: displayName(r.user, locale),
+                      time: r.readAt
+                        ? {
+                            iso: r.readAt.toISOString(),
+                            label: `${formatCompactDate(r.readAt, locale)} ${formatTime(r.readAt, locale)}`,
+                          }
+                        : undefined,
+                    }))}
+                  />
+                </section>
+                <section aria-labelledby="receipts-unread">
+                  <div className="mb-1 flex items-center gap-2">
+                    <h3
+                      id="receipts-unread"
+                      className="flex items-center gap-2 text-sm font-semibold text-slate-800"
+                    >
+                      <EyeOff
+                        aria-hidden="true"
+                        className="size-4 text-slate-500"
+                      />
+                      {t("receipts.unread")}
+                    </h3>
+                    <CountPill>{receipts.unread.length}</CountPill>
+                  </div>
+                  <ReceiptList
+                    empty={t("receipts.allRead")}
+                    moreLabel={more(receipts.unread.length)}
+                    items={receipts.unread.map((r) => ({
+                      key: r.user.id,
+                      name: displayName(r.user, locale),
+                    }))}
+                  />
+                </section>
+              </div>
+            )}
+          </AdminSection>
+          <NotificationOpensCard
+            kinds={["BROADCAST"]}
+            refId={b.id}
+            locale={locale}
+          />
+        </div>
       </div>
     </div>
   );

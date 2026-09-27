@@ -1,9 +1,10 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import type {
   EducationLevel,
   HistoryVisibility,
 } from "@/generated/prisma/enums";
 import { isOngoing, sortHistory } from "@/lib/history";
+import { WorkTags } from "./work-tags";
 
 type Edu = {
   id: string;
@@ -18,6 +19,8 @@ type Job = {
   id: string;
   company: { name: string };
   title: string | null;
+  industry?: string | null;
+  jobType?: string | null;
   startYear: number | null;
   endYear: number | null;
   visibility: HistoryVisibility;
@@ -32,6 +35,7 @@ export async function HistoryList({
   work: Job[];
 }) {
   const t = await getTranslations("history");
+  const locale = (await getLocale()) === "en" ? "en" : "ja";
   const years = (e: { startYear: number | null; endYear: number | null }) =>
     `${e.startYear ?? ""}–${isOngoing(e) && e.endYear === null ? t("present") : (e.endYear ?? "")}`;
   if (!education.length && !work.length) return null;
@@ -60,6 +64,11 @@ export async function HistoryList({
             {sortHistory(work).map((e) => (
               <li key={e.id} className="animate-rise">
                 <p className="font-medium">{e.company.name}</p>
+                <WorkTags
+                  industry={e.industry}
+                  jobType={e.jobType}
+                  locale={locale}
+                />
                 <p className="text-sm text-slate-600">
                   {e.title ? `${e.title} · ` : ""}
                   {years(e)}

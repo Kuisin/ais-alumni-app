@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { clearMailbox, signInWithEmail } from "./helpers";
+import { clearMailbox, notificationTarget, signInWithEmail } from "./helpers";
 
 const mail = (email: string) =>
   readFile(
@@ -115,7 +115,10 @@ test("ニュース hub: confirm, poll, 日程調整, files, comments and a remin
   });
   expect((await res.json()).reminders.posts).toBeGreaterThanOrEqual(1);
   expect(await mail("hanako@example.com")).not.toContain(postId);
-  expect(await mail("admin@example.com")).toContain(`/app/news/${postId}`);
+  expect(
+    (await notificationTarget(admin.request, await mail("admin@example.com")))
+      .target,
+  ).toMatch(new RegExp(`^/(ja|en)/app/news/${postId}$`));
 
   // Clean up.
   await admin.goto(`/en/app/admin/news/${postId}`);

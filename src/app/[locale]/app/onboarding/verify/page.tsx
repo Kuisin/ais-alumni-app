@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { Alert, PageHeader } from "@/components/ui/card";
 import { VerifyForm } from "@/components/verify/verify-form";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { findOpenInvite, INVITE_COOKIE } from "@/lib/invites";
 import { namePartsOf } from "@/lib/names";
 import { requireState } from "@/lib/session";
 import { isBlobConfigured } from "@/lib/storage";
 import {
   answersToFormState,
   type EvidenceItem,
+  emptyChild,
   emptyFormState,
 } from "@/lib/verification/schema";
 
@@ -23,6 +26,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /** §14 screen 4 — verification form (first submission or NEEDS_INFO resubmission). */
+/** Start from what the inviter said: the type and 学年. */
+function prefillFromInvite(
+  state: ReturnType<typeof emptyFormState>,
+  invite: Awaited<ReturnType<typeof findOpenInvite>>,
+): ReturnType<typeof emptyFormState> {
+  if (!invite) return state;
+  const cohort = invite.cohort ? String(invite.cohort.number) : "";
+  if (invite.type === "STUDENT")
+    return {
+      ...state,
+      types: ["STUDENT"],
+      student: { ...state.student, cohortNumber: cohort },
+    };
+  if (invite.type === "PARENT")
+    return {
+      ...state,
+      types: ["PARENT"],
+      parent: {
+        ...state.parent,
+        children: [{ ...emptyChild("new"), cohortNumber: cohort }],
+      },
+    };
+  return { ...state, types: ["TEACHER"] };
+}
+
 export default async function VerifyPage({ params }: Props) {
   const { locale } = await params;
   const uiLocale = locale === "en" ? "en" : "ja";
@@ -59,14 +87,17 @@ export default async function VerifyPage({ params }: Props) {
           ]),
         ) as typeof userNames),
       }
-    : {
-        ...emptyFormState(uiLocale),
-        ...userNames,
-        nameAtAis: user.nameAtAis ?? "",
-        dateOfBirth: user.dateOfBirth
-          ? user.dateOfBirth.toISOString().slice(0, 10)
-          : "",
-      };
+    : prefillFromInvite(
+        {
+          ...emptyFormState(uiLocale),
+          ...userNames,
+          nameAtAis: user.nameAtAis ?? "",
+          dateOfBirth: user.dateOfBirth
+            ? user.dateOfBirth.toISOString().slice(0, 10)
+            : "",
+        },
+        await findOpenInvite((await cookies()).get(INVITE_COOKIE)?.value),
+      );
 
   const teacher = user.roles.find((r) => r.role === RoleKey.TEACHER);
   const verifiedSchoolEmail =

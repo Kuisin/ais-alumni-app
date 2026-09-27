@@ -6,5 +6,6 @@ import { routing } from "./i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
-  matcher: "/((?!api|_next|_vercel|.*\\..*).*)",
+  // /n/<member code>/<token>: notification short links (no locale).
+  matcher: "/((?!api|n/|_next|_vercel|.*\\..*).*)",
 };

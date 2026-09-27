@@ -11,6 +11,7 @@ import { Field, Input, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { useCloseOnSave } from "@/components/ui/view-edit";
 import { EducationLevel, HistoryVisibility } from "@/generated/prisma/enums";
+import { TwoLevelPicker } from "./industry-picker";
 import { OrgCombobox } from "./org-combobox";
 
 export type HistoryValues = {
@@ -20,6 +21,8 @@ export type HistoryValues = {
   field?: string | null;
   company?: { id: string; name: string };
   title?: string | null;
+  industry?: string | null;
+  jobType?: string | null;
   startYear: number | null;
   endYear: number | null;
   visibility: HistoryVisibility;
@@ -134,6 +137,18 @@ export function HistoryForm({
               />
             )}
           </Field>
+          <TwoLevelPicker
+            kind="industry"
+            idPrefix={prefix}
+            defaultValue={values?.industry}
+            error={err("industry")}
+          />
+          <TwoLevelPicker
+            kind="jobType"
+            idPrefix={prefix}
+            defaultValue={values?.jobType}
+            error={err("jobType")}
+          />
         </div>
       )}
       <div className="grid grid-cols-2 gap-3 sm:max-w-md sm:gap-4">

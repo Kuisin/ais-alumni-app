@@ -11,7 +11,9 @@ import {
   House,
   IdCard,
   Layers,
+  LifeBuoy,
   LogOut,
+  MailPlus,
   Megaphone,
   MessagesSquare,
   Newspaper,
@@ -76,10 +78,13 @@ export async function AppShell({
   user,
   children,
   variant = "member",
+  help,
 }: {
   user: CurrentUser | null;
   children: ReactNode;
   variant?: "member" | "admin" | "onboarding";
+  /** header help button (onboarding: 「お問い合わせ」 dialog) */
+  help?: ReactNode;
 }) {
   const t = await getTranslations("common");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
@@ -88,35 +93,50 @@ export async function AppShell({
   const isStaff = access ? hasStaffAccess(access) : false;
   const admin = variant === "admin";
   // Badges: work waiting for this person.
-  const [pendingVerify, pendingRecords, pendingNames, followRequests, unread] =
-    await Promise.all([
-      admin && access?.admin
-        ? db.verificationRequest.count({
-            where: {
-              status: VerificationStatus.PENDING,
-              followsChildren: false,
-            },
-          })
-        : 0,
-      admin && access?.admin
-        ? db.recordChangeRequest.count({
+  const [
+    pendingVerify,
+    pendingRecords,
+    pendingNames,
+    followRequests,
+    unread,
+    openSupport,
+  ] = await Promise.all([
+    admin && access?.admin
+      ? db.verificationRequest.count({
+          where: {
+            status: VerificationStatus.PENDING,
+            followsChildren: false,
+          },
+        })
+      : 0,
+    admin && access?.admin
+      ? db.recordChangeRequest.count({
+          where: { status: ChangeRequestStatus.PENDING },
+        })
+      : 0,
+    // Name and birth date change requests share one admin page.
+    admin && access?.admin
+      ? Promise.all([
+          db.nameChangeRequest.count({
             where: { status: ChangeRequestStatus.PENDING },
-          })
-        : 0,
-      admin && access?.admin
-        ? db.nameChangeRequest.count({
+          }),
+          db.birthDateRequest.count({
             where: { status: ChangeRequestStatus.PENDING },
-          })
-        : 0,
-      variant === "member" && user
-        ? db.follow.count({
-            where: { followeeId: user.id, status: FollowStatus.REQUESTED },
-          })
-        : 0,
-      variant === "member" && user
-        ? unreadCounts(user)
-        : { news: 0, messages: 0 },
-    ]);
+          }),
+        ]).then(([a, b]) => a + b)
+      : 0,
+    variant === "member" && user
+      ? db.follow.count({
+          where: { followeeId: user.id, status: FollowStatus.REQUESTED },
+        })
+      : 0,
+    variant === "member" && user
+      ? unreadCounts(user)
+      : { news: 0, messages: 0 },
+    admin && access?.admin
+      ? db.supportRequest.count({ where: { closedAt: null } })
+      : 0,
+  ]);
   const unreadTotal = unread.news + unread.messages;
   // Group chats: unread badge and the channels joined for live updates.
   const live = user && user.state === "ACTIVE" && variant !== "onboarding";
@@ -189,9 +209,19 @@ export async function AppShell({
       icon: <UserPlus className={ICON} />,
     },
     {
+      href: "/app/invite",
+      label: t("nav.invite"),
+      icon: <MailPlus className={ICON} />,
+    },
+    {
       href: "/app/settings",
       label: t("nav.settings"),
       icon: <Settings className={ICON} />,
+    },
+    {
+      href: "/support",
+      label: t("nav.support"),
+      icon: <LifeBuoy className={ICON} />,
     },
   ];
 
@@ -218,6 +248,12 @@ export async function AppShell({
               label: t("adminNav.nameRequests"),
               count: pendingNames,
               icon: <IdCard className={ICON} />,
+            },
+            {
+              href: "/app/admin/support",
+              label: t("adminNav.support"),
+              count: openSupport,
+              icon: <LifeBuoy className={ICON} />,
             },
           ]
         : [],
@@ -434,6 +470,9 @@ export async function AppShell({
         <Link href="/privacy" className="inline-block py-2 underline">
           {t("privacy")}
         </Link>
+        <Link href="/support" className="inline-block py-2 underline">
+          {t("support")}
+        </Link>
         {/* Members change language in 設定; visitors and applicants here. */}
         {variant === "onboarding" ? <LocaleSwitcher compact /> : null}
         <span>{t("footer")}</span>
@@ -550,6 +589,7 @@ export async function AppShell({
           ) : null}
 
           <div className="flex items-center gap-1">
+            {help}
             {switchLink}
             {accountMenu}
           </div>

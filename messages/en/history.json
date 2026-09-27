@@ -32,7 +32,11 @@
     "title": "Department / position (optional)",
     "startYear": "Start year",
     "endYear": "End year",
-    "visibility": "Visible to"
+    "visibility": "Visible to",
+    "industry": "Industry",
+    "industryDetail": "Industry (detail)",
+    "jobType": "Job type",
+    "jobTypeDetail": "Job type (detail)"
   },
   "hints": {
     "endYear": {
@@ -76,5 +80,12 @@
     "company": "Start typing to see existing companies."
   },
   "yearPlaceholder": "e.g. 2020",
-  "close": "Close"
+  "close": "Close",
+  "industryNone": "Not specified",
+  "industryDetailAny": "No detail",
+  "twoLevelHint": "Pick a category, then optionally the detail.",
+  "pickGroup": {
+    "industry": "Choose an industry first",
+    "jobType": "Choose a job type first"
+  }
 }

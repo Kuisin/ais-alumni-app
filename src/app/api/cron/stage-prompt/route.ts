@@ -5,7 +5,6 @@ import { jstYear } from "@/lib/account";
 import { isAuthorizedCron } from "@/lib/cron";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
-import { publicUrl } from "@/lib/urls";
 
 export const maxDuration = 300;
 
@@ -61,26 +60,11 @@ export async function GET(request: Request) {
           kind: "STAGE_PROMPT",
           refId: year,
           dedupe: true,
-          render: async (locale) => {
-            // 現在の状況 follows 学歴・職歴, so the prompt asks to keep that
-            // up to date.
-            const t = await getTranslatorFor(locale, "settings");
-            const url = publicUrl(`/${locale}/app/profile/history`);
-            if (!stage) {
-              return {
-                subject: t("notify.stagePrompt.subject"),
-                text: t("notify.stagePrompt.historyNoStage"),
-                url,
-              };
-            }
+          path: "/app/profile/history",
+          params: async (locale) => {
+            if (!stage) return { stage: "—" };
             const tr = await getTranslatorFor(locale, "roles");
-            return {
-              subject: t("notify.stagePrompt.subject"),
-              text: t("notify.stagePrompt.history", {
-                stage: tr(`stage.${stage}`),
-              }),
-              url,
-            };
+            return { stage: tr(`stage.${stage}`) };
           },
         });
         sent += result.size;

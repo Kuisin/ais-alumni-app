@@ -1,11 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { AccountState, type Locale, RoleKey } from "@/generated/prisma/enums";
+import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { toKatakana } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
-import { publicUrl } from "@/lib/urls";
 import {
   bestNameSimilarity,
   isCjk,
@@ -145,16 +144,12 @@ export async function notifyVoucher(vouchId: string): Promise<void> {
       kind: "VOUCH_REQUEST",
       refId: vouch.id,
       dedupe: true,
-      render: async (locale: Locale) => {
+      path: `/app/vouch/${vouch.id}`,
+      params: async (locale) => {
         const t = await getTranslatorFor(locale, "vouch");
-        const name = displayName(vouch.request.user, locale);
-        const years = yearsFromAnswers(vouch.request.answers, t("present"));
         return {
-          subject: t("notify.subject", { name }),
-          text: years
-            ? t("notify.bodyYears", { name, years })
-            : t("notify.body", { name }),
-          url: publicUrl(`/${locale}/app/vouch/${vouch.id}`),
+          name: displayName(vouch.request.user, locale),
+          years: yearsFromAnswers(vouch.request.answers, t("present")) ?? "",
         };
       },
     });

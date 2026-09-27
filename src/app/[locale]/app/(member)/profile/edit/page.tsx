@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Fragment } from "react";
 import { AvatarForm } from "@/components/profile/avatar-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
+import { BirthDateCard } from "@/components/profile/birth-date-card";
 import { NameCard } from "@/components/profile/name-card";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { AisRecord } from "@/components/profile/role-details";
@@ -56,6 +57,8 @@ export default async function ProfileEditPage() {
       </Card>
 
       <NameCard me={me} />
+
+      <BirthDateCard me={me} />
 
       <ViewEdit
         actionsClassName="flex justify-end"

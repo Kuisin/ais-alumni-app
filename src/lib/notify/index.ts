@@ -1,31 +1,54 @@
 import type { Locale } from "@/generated/prisma/enums";
+
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { lineMulticast, linePush } from "@/lib/line";
+import { linePush } from "@/lib/line";
+import { NOTIFY_KINDS, type NotifyKind, wantsKind } from "./catalog";
+import { renderEmail } from "./email-template";
+import {
+  createNotificationLink,
+  ensureLinkCode,
+  linkUrl,
+  recipientUrl,
+} from "./links";
+import {
+  lineText,
+  type NotifyParams,
+  type RenderedNotification,
+  renderNotification,
+} from "./render";
 import { type Channel, channelsFor, type RoutableUser } from "./route";
 
+const LOCALES: Locale[] = ["ja", "en"];
+
+export { NOTIFY_KINDS, type NotifyKind } from "./catalog";
 export { channelsFor, chooseChannel } from "./route";
 
-export type NotifyUser = RoutableUser & { id: string; locale: Locale };
-
-export type RenderedMessage = { subject: string; text: string; url?: string };
-
-export type Notification = {
-  /** NotificationLog.kind, e.g. EVENT_REMINDER_7D, NEWS, VERIFICATION */
-  kind: string;
-  refId?: string;
-  /** Also email even when LINE is the routed channel (§11). */
-  alwaysEmail?: boolean;
-  /** Skip users who already have a log row for (kind, refId). */
-  dedupe?: boolean;
-  render: (locale: Locale) => Promise<RenderedMessage> | RenderedMessage;
+export type NotifyUser = RoutableUser & {
+  id: string;
+  locale: Locale;
+  /** categories turned off (Settings → Notifications) */
+  notifyOff?: string[];
+  nameRomaji?: string | null;
+  nameKanji?: string | null;
+  /** short code for their notification links (created on first send) */
+  linkCode?: string | null;
 };
 
-function lineText(m: RenderedMessage): string {
-  return m.url
-    ? `${m.subject}\n\n${m.text}\n\n${m.url}`
-    : `${m.subject}\n\n${m.text}`;
-}
+export type Notification = {
+  kind: NotifyKind;
+  refId?: string;
+  /** Skip users who already have a log row for (kind, refId). */
+  dedupe?: boolean;
+  /** App page without the locale ("/app/news/x"); null = no link. */
+  path: string | null;
+  /** Template values; a function when they depend on the language. */
+  params?:
+    | NotifyParams
+    | ((locale: Locale) => NotifyParams | Promise<NotifyParams>);
+  /** Committee note etc. — email only, never on LINE. */
+  note?: string | null;
+};
 
 async function alreadySent(
   userIds: string[],
@@ -47,9 +70,24 @@ export async function notify(
   return (await notifyMany([user], n)).get(user.id) ?? [];
 }
 
+/** Run `fn` over `items`, at most `limit` at a time. */
+async function inBatches<T>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  for (let i = 0; i < items.length; i += limit) {
+    await Promise.all(items.slice(i, i + limit).map(fn));
+  }
+}
+
 /**
- * Send one notification to many users. LINE recipients sharing a locale are
- * batched into multicast calls to conserve the push quota (§11).
+ * Send one notification to many users (src/lib/notify/catalog.ts rules):
+ * members who turned the category off are skipped; texts are rendered once
+ * per language with one short link for everyone, and every recipient gets
+ * their own URL (/n/<their code>/<token>) so their open is recorded as a
+ * read receipt. LINE pushes go one per member (the push quota counts
+ * recipients either way).
  */
 export async function notifyMany(
   users: NotifyUser[],
@@ -60,41 +98,100 @@ export async function notifyMany(
     n,
   );
   const result = new Map<string, Channel[]>();
-  const rendered = new Map<Locale, RenderedMessage>();
-  const lineByLocale = new Map<Locale, string[]>();
-  const logs: { userId: string; channel: Channel }[] = [];
-
+  const spec = NOTIFY_KINDS[n.kind];
+  const recipients: { user: NotifyUser; channels: Channel[] }[] = [];
   for (const u of users) {
-    if (skip.has(u.id)) continue;
-    if (!rendered.has(u.locale))
-      rendered.set(u.locale, await n.render(u.locale));
-    const msg = rendered.get(u.locale) as RenderedMessage;
-    const channels = channelsFor(u, { alwaysEmail: n.alwaysEmail });
-    for (const ch of channels) {
-      if (ch === "LINE" && u.lineUserId) {
-        const list = lineByLocale.get(u.locale) ?? [];
-        list.push(u.lineUserId);
-        lineByLocale.set(u.locale, list);
-      } else if (ch === "EMAIL" && u.primaryEmail) {
-        try {
-          await sendEmail({ to: u.primaryEmail, ...msg });
-        } catch (e) {
-          console.error(`[notify] email to ${u.id} failed`, e);
-          continue;
-        }
+    if (skip.has(u.id) || !wantsKind(u.notifyOff, n.kind)) continue;
+    const channels = channelsFor(u, {
+      alwaysEmail: "alwaysEmail" in spec,
+    }).filter((ch) =>
+      ch === "LINE" ? Boolean(u.lineUserId) : Boolean(u.primaryEmail),
+    );
+    if (channels.length) recipients.push({ user: u, channels });
+    else result.set(u.id, []);
+  }
+  if (!recipients.length) return result;
+
+  // Both languages: messages use each member's, and the one link keeps
+  // both so its preview follows the opener's current language.
+  const rendered = {} as Record<Locale, RenderedNotification>;
+  for (const locale of LOCALES) {
+    const params =
+      typeof n.params === "function" ? await n.params(locale) : n.params;
+    rendered[locale] = await renderNotification(n.kind, locale, params);
+  }
+  const link = n.path
+    ? await createNotificationLink({
+        kind: n.kind,
+        category: spec.category,
+        texts: {
+          ja: { title: rendered.ja.title, body: rendered.ja.body },
+          en: { title: rendered.en.title, body: rendered.en.body },
+        },
+        refId: n.refId,
+        path: n.path,
+      })
+    : null;
+  type Job = {
+    user: NotifyUser;
+    channels: Channel[];
+    rendered: RenderedNotification;
+    link: { id: string; token: string } | null;
+  };
+  const jobs: Job[] = recipients.map((r) => ({
+    ...r,
+    rendered: rendered[r.user.locale],
+    link,
+  }));
+
+  const logs: { userId: string; channel: Channel }[] = [];
+  const receipts: { linkId: string; userId: string; channels: Channel[] }[] =
+    [];
+  await inBatches(jobs, 8, async ({ user: u, channels, rendered, link }) => {
+    let url: string | null = null;
+    if (link) {
+      try {
+        url = recipientUrl(link.token, await ensureLinkCode(u));
+      } catch (e) {
+        // Still deliver, without a read receipt.
+        console.error(`[notify] link code for ${u.id} failed`, e);
+        url = linkUrl(link.token);
       }
-      logs.push({ userId: u.id, channel: ch });
     }
-    result.set(u.id, channels);
-  }
+    const sent: Channel[] = [];
+    for (const ch of channels) {
+      try {
+        if (ch === "LINE" && u.lineUserId) {
+          await linePush(u.lineUserId, [
+            { type: "text", text: lineText(rendered, url) },
+          ]);
+        } else if (ch === "EMAIL" && u.primaryEmail) {
+          const mail = await renderEmail({
+            rendered,
+            locale: u.locale,
+            recipientName: u.nameRomaji ?? u.nameKanji ?? null,
+            url,
+            note: n.note,
+          });
+          await sendEmail({ to: u.primaryEmail, ...mail });
+        }
+        sent.push(ch);
+      } catch (e) {
+        console.error(`[notify] ${ch} to ${u.id} failed`, e);
+      }
+    }
+    for (const ch of sent) logs.push({ userId: u.id, channel: ch });
+    if (link && sent.length)
+      receipts.push({ linkId: link.id, userId: u.id, channels: sent });
+    result.set(u.id, sent);
+  });
 
-  for (const [locale, ids] of lineByLocale) {
-    const msg = rendered.get(locale) as RenderedMessage;
-    const messages = [{ type: "text" as const, text: lineText(msg) }];
-    if (ids.length === 1) await linePush(ids[0], messages);
-    else await lineMulticast(ids, messages);
+  if (receipts.length) {
+    await db.notificationReceipt.createMany({
+      data: receipts,
+      skipDuplicates: true,
+    });
   }
-
   if (logs.length) {
     await db.notificationLog.createMany({
       data: logs.map((l) => ({
@@ -130,4 +227,8 @@ export const NOTIFY_USER_SELECT = {
   lineFollowing: true,
   notifyVia: true,
   primaryEmail: true,
+  notifyOff: true,
+  nameRomaji: true,
+  nameKanji: true,
+  linkCode: true,
 } as const;

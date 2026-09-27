@@ -433,6 +433,30 @@ function NewChild({
             onChange={(v) => onChange({ firstNameKanji: v })}
             errors={errors}
           />
+          <TextInput
+            path={`${base}.lastNameKana`}
+            label={t("fields.lastNameKana")}
+            required={Boolean(value.lastNameKanji.trim())}
+            lang="ja"
+            autoComplete="off"
+            maxLength={50}
+            placeholder={t("placeholders.lastNameKana")}
+            value={value.lastNameKana}
+            onChange={(v) => onChange({ lastNameKana: v })}
+            errors={errors}
+          />
+          <TextInput
+            path={`${base}.firstNameKana`}
+            label={t("fields.firstNameKana")}
+            required={Boolean(value.firstNameKanji.trim())}
+            lang="ja"
+            autoComplete="off"
+            maxLength={50}
+            placeholder={t("placeholders.firstNameKana")}
+            value={value.firstNameKana}
+            onChange={(v) => onChange({ firstNameKana: v })}
+            errors={errors}
+          />
         </div>
       </fieldset>
       <TextInput

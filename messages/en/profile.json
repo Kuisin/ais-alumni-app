@@ -96,5 +96,44 @@
     "bioAction": "Write a bio",
     "history": "No schools or jobs added yet.",
     "historyAction": "Add education & work"
+  },
+  "nameRequest": {
+    "title": "Name",
+    "lockedNote": "To prevent impersonation, your name can't be changed by you after approval. If it needs to change, ask the committee.",
+    "nameAtAis": "Name at AIS",
+    "status": {
+      "PENDING": "Requested",
+      "APPROVED": "Approved",
+      "REJECTED": "Not approved",
+      "CANCELLED": "Withdrawn"
+    },
+    "pendingSince": "Requested on {date}. The committee will check it.",
+    "cancel": "Withdraw request",
+    "reviewNote": "Committee note",
+    "open": "Request a name change",
+    "intro": "Enter your new name and why it changes (marriage, a spelling fix, …). The committee checks and applies it.",
+    "reason": "Reason for the change",
+    "reasonHint": "e.g. My family name changed after marriage / the romaji spelling was wrong",
+    "submit": "Send request",
+    "close": "Close",
+    "submitted": "Request sent. It will be applied once the committee approves it; we'll let you know.",
+    "errors": {
+      "unchanged": "That's the same as your current name.",
+      "pending": "You already have a request being checked."
+    },
+    "notify": {
+      "admin": {
+        "subject": "New name change request",
+        "text": "{name} asked to change their name."
+      },
+      "approved": {
+        "subject": "Your name change was approved",
+        "text": "Your name has been updated.\n\nCommittee note: {note}"
+      },
+      "rejected": {
+        "subject": "Your name change wasn't approved",
+        "text": "Committee note: {note}"
+      }
+    }
   }
 }

@@ -137,6 +137,7 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await expect(checklist.getByText("3 of 8 done")).toBeVisible();
   await checklist.getByRole("link", { name: "Add", exact: true }).click();
   await expect(member).toHaveURL(/\/en\/app\/profile\/history/);
-  await member.goto("/en/app/directory");
+  // Search: test members from earlier runs fill the first page.
+  await member.goto("/en/app/directory?q=Hanako");
   await expect(member.getByText("Hanako Suzuki").first()).toBeVisible();
 });

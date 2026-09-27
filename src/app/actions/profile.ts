@@ -16,7 +16,6 @@ import {
 import type { Prisma } from "@/generated/prisma/client";
 import { LifeStage, RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
@@ -49,8 +48,9 @@ const socialUrl = z
   .max(SOCIAL_URL_MAX)
   .refine((v) => v === "" || isHttpUrl(v));
 
-const ProfileSchema = nameFormSchema.extend({
-  nameAtAis: optionalText(100),
+// Names are fixed after approval: they change through a name request
+// (src/app/actions/name-requests.ts), never here.
+const ProfileSchema = z.object({
   bio: optionalText(1000),
   phone: optionalText(40).refine((v) => v === null || /^[0-9+\-() ]+$/.test(v)),
   autoAcceptSameYear: z.boolean(),
@@ -84,8 +84,6 @@ export async function updateProfileAction(
   const me = await member();
   if (!me) return FORBIDDEN;
   const parsed = ProfileSchema.safeParse({
-    ...nameFormInput(formData),
-    nameAtAis: field(formData, "nameAtAis"),
     bio: field(formData, "bio"),
     phone: field(formData, "phone"),
     autoAcceptSameYear: formData.get("autoAcceptSameYear") === "on",
@@ -104,8 +102,6 @@ export async function updateProfileAction(
   await db.user.update({
     where: { id: me.id },
     data: {
-      ...nameColumns(d),
-      nameAtAis: d.nameAtAis,
       bio: d.bio,
       phone: d.phone,
       autoAcceptSameYear: d.autoAcceptSameYear,

@@ -172,6 +172,8 @@ export async function saveParentChildren(
         middleNameRomaji: null,
         lastNameKanji: c.lastNameKanji,
         firstNameKanji: c.firstNameKanji,
+        lastNameKana: c.lastNameKana,
+        firstNameKana: c.firstNameKana,
       });
       const dob = new Date(`${c.dateOfBirth}T00:00:00Z`);
       childCohortId = await ensureCohort(c.cohortNumber, tx);

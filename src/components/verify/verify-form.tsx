@@ -325,7 +325,6 @@ export function VerifyForm({
                 <TextInput
                   path="lastNameKanji"
                   label={t("fields.lastNameKanji")}
-                  required={uiLocale === "ja"}
                   lang="ja"
                   value={state.lastNameKanji}
                   onChange={(v) => set("lastNameKanji", v)}
@@ -334,10 +333,29 @@ export function VerifyForm({
                 <TextInput
                   path="firstNameKanji"
                   label={t("fields.firstNameKanji")}
-                  required={uiLocale === "ja"}
                   lang="ja"
                   value={state.firstNameKanji}
                   onChange={(v) => set("firstNameKanji", v)}
+                  errors={errors}
+                />
+                <TextInput
+                  path="lastNameKana"
+                  label={t("fields.lastNameKana")}
+                  required={Boolean(state.lastNameKanji.trim())}
+                  lang="ja"
+                  placeholder={t("placeholders.lastNameKana")}
+                  value={state.lastNameKana}
+                  onChange={(v) => set("lastNameKana", v)}
+                  errors={errors}
+                />
+                <TextInput
+                  path="firstNameKana"
+                  label={t("fields.firstNameKana")}
+                  required={Boolean(state.firstNameKanji.trim())}
+                  lang="ja"
+                  placeholder={t("placeholders.firstNameKana")}
+                  value={state.firstNameKana}
+                  onChange={(v) => set("firstNameKana", v)}
                   errors={errors}
                 />
               </div>

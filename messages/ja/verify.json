@@ -56,11 +56,13 @@
     "joinedYear": "AISに入った年",
     "leftYearStudent": "AISを離れた年",
     "joinedYearTeacher": "勤務を始めた年",
-    "leftYearTeacher": "退職した年"
+    "leftYearTeacher": "退職した年",
+    "lastNameKana": "セイ（フリガナ）",
+    "firstNameKana": "メイ（フリガナ）"
   },
   "hints": {
     "nameRomaji": "ローマ字で入力してください。例：Yamada / Taro",
-    "nameKanji": "漢字またはかなで入力してください。例：山田 / 太郎、やまだ / たろう",
+    "nameKanji": "漢字の氏名がある方は、フリガナ（カタカナ）と一緒に入力してください。漢字の氏名がない方（海外出身の方など）は空欄で構いません。",
     "nameAtAis": "現在の氏名と異なる場合（旧姓やニックネームなど）。",
     "dateOfBirth": "本人確認と年齢に応じたプライバシー保護のためにのみ使用し、他の会員には表示されません。",
     "roles": "当てはまるものをすべて選んでください。",
@@ -98,7 +100,9 @@
     "invalid": "入力内容が正しくありません。",
     "typesRequired": "1つ以上選んでください。",
     "cohortRequired": "学年を選んでください。",
-    "childNotSelected": "「探す」でお子さまを見つけて選んでください。"
+    "childNotSelected": "「探す」でお子さまを見つけて選んでください。",
+    "kanaOnly": "カタカナで入力してください（ひらがなは自動でカタカナに変わります）。",
+    "kanaRequired": "漢字の氏名を入力した場合は、フリガナも入力してください。"
   },
   "evidence": {
     "label": "確認書類（任意）",
@@ -228,5 +232,9 @@
     "joinedYear": "お子さまがAISに入った年",
     "leftYear": "お子さまがAISを離れた年",
     "leftYearHint": "卒業前にAISを離れた場合のみ入力してください。在校中・卒業した場合は空欄のままで大丈夫です。"
+  },
+  "placeholders": {
+    "lastNameKana": "例: ヤマダ",
+    "firstNameKana": "例: タロウ"
   }
 }

@@ -66,15 +66,18 @@ describe("verification schema (sign-up wizard)", () => {
     expect(r.data.nameRomaji).toBe("Taro Yamada");
   });
 
-  it("requires a type, kanji for the Japanese UI and a 学年 for students", () => {
+  it("requires a type, フリガナ with kanji, and a 学年 for students", () => {
     const s = filled();
     s.types = [];
+    // Kanji is optional (international students), but needs its フリガナ.
+    s.lastNameKanji = "山田";
     let r = verificationSchema({ requireKanji: true }).safeParse(toPayload(s));
     expect(r.success).toBe(false);
     if (r.success) return;
     let errors = issuesToErrors(r.error.issues);
     expect(errors.types).toBe("typesRequired");
-    expect(errors.lastNameKanji).toBe("required");
+    expect(errors.lastNameKanji).toBeUndefined();
+    expect(errors.lastNameKana).toBe("kanaRequired");
 
     s.types = ["STUDENT", "PARENT"];
     s.student.cohortNumber = "";
@@ -164,5 +167,27 @@ describe("parent children", () => {
       lastNameKanji: "山田次郎",
       cohortNumber: "20",
     });
+  });
+});
+
+describe("フリガナ", () => {
+  it("accepts katakana, converts hiragana and rejects romaji", () => {
+    const s = filled();
+    s.lastNameKanji = "山田";
+    s.firstNameKanji = "太郎";
+    s.lastNameKana = "やまだ";
+    s.firstNameKana = "ﾀﾛｳ";
+    const ok = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.nameKana).toBe("ヤマダ タロウ");
+    s.firstNameKana = "Taro";
+    const bad = verificationSchema({ requireKanji: false }).safeParse(
+      toPayload(s),
+    );
+    expect(bad.success).toBe(false);
+    if (!bad.success)
+      expect(issuesToErrors(bad.error.issues).firstNameKana).toBe("kanaOnly");
   });
 });

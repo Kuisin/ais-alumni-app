@@ -31,7 +31,11 @@
     "unblock": "ブロック解除",
     "blockConfirm": "{name}さんをブロックしますか？お互いにサイト上で表示されなくなり、フォロー関係も解除されます。",
     "blockYes": "ブロックする",
-    "working": "処理中…"
+    "working": "処理中…",
+    "followBack": "フォローバック",
+    "requestedHint": "（リクエストを取り消す）",
+    "unfollowConfirm": "{name}さんのフォローを外しますか？連絡先をもう一度見るには、改めてリクエストが必要です。",
+    "cancel": "キャンセル"
   },
   "status": {
     "requestSent": "フォローリクエストを送りました。",
@@ -59,5 +63,14 @@
     "label": "その他の操作"
   },
   "followHint": "フォローが承認されると連絡先が表示されます。",
-  "findInDirectory": "名簿で探す"
+  "findInDirectory": "名簿で探す",
+  "followsYou": "フォローされています",
+  "counts": {
+    "followers": "フォロワー <b>{count, number}</b>",
+    "following": "フォロー中 <b>{count, number}</b>"
+  },
+  "accepted": {
+    "title": "{name}さんのリクエストを承認しました。",
+    "followBackHint": "フォローバックしますか？"
+  }
 }

@@ -1,0 +1,170 @@
+import { ArrowRight, History, IdCard } from "lucide-react";
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { NameValues } from "@/app/actions/name-requests";
+import { NameDecisionForm } from "@/components/admin/name-decision-form";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
+import { Tabs } from "@/components/ui/tabs";
+import { ChangeRequestStatus } from "@/generated/prisma/enums";
+import { Link } from "@/i18n/navigation";
+import { db } from "@/lib/db";
+import { displayName, formatDateTime } from "@/lib/format";
+import { composeKana, composeKanji, composeRomaji } from "@/lib/names";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("adminMembers.nameRequests");
+  return { title: t("title") };
+}
+
+const lines = (v: Partial<NameValues>) => ({
+  romaji: composeRomaji({
+    lastNameRomaji: v.lastNameRomaji ?? null,
+    firstNameRomaji: v.firstNameRomaji ?? null,
+    middleNameRomaji: v.middleNameRomaji ?? null,
+  }),
+  kanji: composeKanji({
+    lastNameKanji: v.lastNameKanji ?? null,
+    firstNameKanji: v.firstNameKanji ?? null,
+  }),
+  kana: composeKana({
+    lastNameKana: v.lastNameKana ?? null,
+    firstNameKana: v.firstNameKana ?? null,
+  }),
+  nameAtAis: v.nameAtAis || null,
+});
+
+/** Admin: name change requests (names are fixed after approval). */
+export default async function NameRequestsPage({
+  searchParams,
+}: PageProps<"/[locale]/app/admin/name-requests">) {
+  const tab = (await searchParams).tab === "decided" ? "decided" : "pending";
+  const locale = (await getLocale()) === "en" ? "en" : "ja";
+  const t = await getTranslations("adminMembers.nameRequests");
+  const tp = await getTranslations("profile.nameRequest");
+  const tn = await getTranslations("common.names");
+  const [pendingCount, requests] = await Promise.all([
+    db.nameChangeRequest.count({
+      where: { status: ChangeRequestStatus.PENDING },
+    }),
+    db.nameChangeRequest.findMany({
+      where:
+        tab === "pending"
+          ? { status: ChangeRequestStatus.PENDING }
+          : {
+              status: {
+                in: [
+                  ChangeRequestStatus.APPROVED,
+                  ChangeRequestStatus.REJECTED,
+                ],
+              },
+            },
+      orderBy: { createdAt: tab === "pending" ? "asc" : "desc" },
+      take: 50,
+      include: {
+        user: { select: { id: true, nameRomaji: true, nameKanji: true } },
+        reviewer: { select: { nameRomaji: true, nameKanji: true } },
+      },
+    }),
+  ]);
+  const labels: Record<string, string> = {
+    romaji: tn("romaji"),
+    kanji: tn("kanjiShort"),
+    kana: tn("kanaShort"),
+    nameAtAis: tp("nameAtAis"),
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t("title")} description={t("description")} />
+      <Tabs
+        label={t("tabsLabel")}
+        items={(["pending", "decided"] as const).map((k) => ({
+          href: {
+            pathname: "/app/admin/name-requests",
+            query: k === "decided" ? { tab: k } : {},
+          },
+          label: t(`tabs.${k}`),
+          count: k === "pending" ? pendingCount : undefined,
+          active: tab === k,
+        }))}
+      />
+      {requests.length === 0 ? (
+        <EmptyState
+          icon={tab === "pending" ? <IdCard /> : <History />}
+          hint={tab === "pending" ? t("emptyHint") : undefined}
+        >
+          {t(tab === "pending" ? "emptyPending" : "emptyDecided")}
+        </EmptyState>
+      ) : null}
+      {requests.map((q) => {
+        const before = lines(q.current as Partial<NameValues>);
+        const after = lines(q.proposed as Partial<NameValues>);
+        return (
+          <Card key={q.id} className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Link
+                href={`/app/admin/members/${q.user.id}`}
+                className="font-semibold text-brand-700 hover:underline"
+              >
+                {displayName(q.user, locale)}
+              </Link>
+              <span className="text-sm text-slate-500">
+                {formatDateTime(q.createdAt, locale)}
+              </span>
+            </div>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              {(Object.keys(labels) as (keyof typeof before)[]).map((k) => {
+                const changed = before[k] !== after[k];
+                return (
+                  <div key={k} className="contents">
+                    <dt className="text-slate-600">{labels[k]}</dt>
+                    <dd className="flex flex-wrap items-center gap-2">
+                      {changed ? (
+                        <>
+                          <span className="text-slate-500 line-through">
+                            {before[k] ?? "—"}
+                          </span>
+                          <ArrowRight
+                            aria-hidden="true"
+                            className="size-4 text-slate-400"
+                          />
+                          <span className="sr-only">→</span>
+                          <mark className="rounded bg-amber-100 px-1 font-medium text-slate-900">
+                            {after[k] ?? "—"}
+                          </mark>
+                        </>
+                      ) : (
+                        <span>{after[k] ?? "—"}</span>
+                      )}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+            <p className="text-sm text-slate-700">
+              <span className="font-medium">{tp("reason")}: </span>
+              {q.reason}
+            </p>
+            {q.status === ChangeRequestStatus.PENDING ? (
+              <NameDecisionForm id={q.id} />
+            ) : (
+              <p className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                <Badge
+                  tone={
+                    q.status === ChangeRequestStatus.APPROVED ? "green" : "red"
+                  }
+                >
+                  {tp(`status.${q.status}`)}
+                </Badge>
+                {q.reviewer ? (
+                  <span>{displayName(q.reviewer, locale)}</span>
+                ) : null}
+                {q.reviewNote ? <span>— {q.reviewNote}</span> : null}
+              </p>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+}

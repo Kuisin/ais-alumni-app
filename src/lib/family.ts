@@ -20,6 +20,7 @@ import {
   type PublicCard,
 } from "@/lib/directory";
 import { displayName } from "@/lib/format";
+import { toKatakana } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
 import { appUrl } from "@/lib/urls";
@@ -171,6 +172,7 @@ export async function searchFamilyCandidates(
             { nameRomaji: { contains: token, mode: "insensitive" as const } },
             { nameKanji: { contains: token, mode: "insensitive" as const } },
             { nameAtAis: { contains: token, mode: "insensitive" as const } },
+            { nameKana: { contains: toKatakana(token) } },
           ],
         })),
       ],

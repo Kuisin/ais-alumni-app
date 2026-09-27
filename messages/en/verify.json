@@ -56,11 +56,13 @@
     "joinedYear": "Year you joined AIS",
     "leftYearStudent": "Year you left AIS",
     "joinedYearTeacher": "Year you started",
-    "leftYearTeacher": "Year you left"
+    "leftYearTeacher": "Year you left",
+    "lastNameKana": "Last name in katakana (フリガナ)",
+    "firstNameKana": "First name in katakana (フリガナ)"
   },
   "hints": {
     "nameRomaji": "In Latin letters, e.g. Yamada / Taro.",
-    "nameKanji": "In kanji or kana, e.g. 山田 / 太郎 or やまだ / たろう.",
+    "nameKanji": "If you have a name in kanji, enter it with its katakana reading (フリガナ). Leave it empty if you don't (e.g. international students).",
     "nameAtAis": "If different from your current name (e.g. maiden name or nickname).",
     "dateOfBirth": "Used only for verification and age-appropriate privacy. Never shown to other members.",
     "roles": "Choose all that apply.",
@@ -98,7 +100,9 @@
     "invalid": "This value is not valid.",
     "typesRequired": "Choose at least one.",
     "cohortRequired": "Choose a class.",
-    "childNotSelected": "Use “Find” to look up your child and select them."
+    "childNotSelected": "Use “Find” to look up your child and select them.",
+    "kanaOnly": "Use katakana (hiragana is converted automatically).",
+    "kanaRequired": "Please add the katakana reading (フリガナ) for your kanji name."
   },
   "evidence": {
     "label": "Supporting documents (optional)",
@@ -228,5 +232,9 @@
     "joinedYear": "Year your child joined AIS",
     "leftYear": "Year your child left AIS",
     "leftYearHint": "Only if your child left AIS before graduating. Leave empty if they’re still at AIS or graduated."
+  },
+  "placeholders": {
+    "lastNameKana": "e.g. ヤマダ",
+    "firstNameKana": "e.g. タロウ"
   }
 }

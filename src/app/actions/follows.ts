@@ -74,8 +74,17 @@ export async function acceptFollowAction(formData: FormData): Promise<void> {
     followId: field(formData, "followId"),
   });
   if (!parsed.success) return;
-  await acceptFollow(me, parsed.data.followId);
-  refresh();
+  const ok = await acceptFollow(me, parsed.data.followId);
+  if (!ok) {
+    refresh();
+    return;
+  }
+  // Offer 「フォローバック」 right away, in place of the accepted request.
+  const locale = await getLocale();
+  redirect({
+    href: `/app/follows?tab=incoming&accepted=${encodeURIComponent(parsed.data.followId)}`,
+    locale,
+  });
 }
 
 export async function declineFollowAction(formData: FormData): Promise<void> {

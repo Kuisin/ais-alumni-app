@@ -159,7 +159,8 @@
     "working": "Merging…",
     "notFound": "No account found with that ID or email.",
     "same": "That's this same account.",
-    "notSelf": "You can't merge away your own account."
+    "notSelf": "You can't merge away your own account.",
+    "keepsManaged": "Keep the account the member signs in to; a parent-managed account can't absorb it."
   },
   "audit": {
     "title": "Audit trail",

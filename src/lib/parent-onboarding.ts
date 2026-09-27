@@ -372,3 +372,43 @@ export async function settleManagedChildren(
   for (const p of pending) await syncMemberStatus(p.id, tx, now);
   await syncMemberStatus(parentId, tx, now);
 }
+
+/**
+ * Parent-managed child accounts that look like the same person as someone
+ * signing up themselves: exact name (romaji or kanji, any order) and the
+ * same birth date.
+ */
+export async function findManagedMatches(
+  q: {
+    names: (string | null | undefined)[];
+    dateOfBirth: string | Date | null;
+  },
+  excludeUserId: string,
+) {
+  const dob =
+    q.dateOfBirth instanceof Date
+      ? q.dateOfBirth
+      : q.dateOfBirth && /^\d{4}-\d{2}-\d{2}$/.test(q.dateOfBirth)
+        ? new Date(`${q.dateOfBirth}T00:00:00Z`)
+        : null;
+  const names = q.names.filter((n): n is string => Boolean(n?.trim()));
+  if (!dob || Number.isNaN(dob.getTime()) || names.length === 0) return [];
+  const candidates = await db.user.findMany({
+    where: {
+      id: { not: excludeUserId },
+      managedById: { not: null },
+      dateOfBirth: dob,
+      state: { in: [AccountState.ACTIVE, AccountState.PENDING_REVIEW] },
+    },
+    select: {
+      id: true,
+      state: true,
+      nameRomaji: true,
+      nameKanji: true,
+      nameAtAis: true,
+      managedBy: { select: { id: true, nameRomaji: true, nameKanji: true } },
+    },
+    take: 20,
+  });
+  return candidates.filter((u) => names.some((n) => exactNameMatch(n, u)));
+}

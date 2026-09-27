@@ -73,15 +73,15 @@ enum LifeStage {
 }
 
 model User {
-  id                    String        @id @default(cuid())
+  id                    String          @id @default(cuid())
   // Nullable (spec says required): a LINE-first sign-up has no verified email
   // until it passes the mandatory OTP step (§4.2). Postgres allows many NULLs
   // under a unique index.
-  primaryEmail          String?       @unique
+  primaryEmail          String?         @unique
   emailVerifiedAt       DateTime?
-  state                 AccountState  @default(UNVERIFIED_EMAIL)
-  isAdmin               Boolean       @default(false)
-  locale                Locale        @default(ja)
+  state                 AccountState    @default(UNVERIFIED_EMAIL)
+  isAdmin               Boolean         @default(false)
+  locale                Locale          @default(ja)
   // Name parts are what members enter. nameRomaji ("First Middle Last") and
   // nameKanji ("姓 名") are the combined display/search names, always
   // recomputed from the parts by src/lib/names.ts when a name is saved.
@@ -97,26 +97,28 @@ model User {
   nameRomaji            String?
   nameKanji             String?
   nameAtAis             String?
-  dateOfBirth           DateTime?     @db.Date
+  dateOfBirth           DateTime?       @db.Date
   avatarUrl             String?
   bio                   String?
   phone                 String?
   socialLinks           Json?
-  lineUserId            String?       @unique
+  lineUserId            String?         @unique
   lineDisplayName       String?
-  lineFollowing         Boolean       @default(false)
+  lineFollowing         Boolean         @default(false)
   lineBannerDismissedAt DateTime?
   lineOnboardingSeenAt  DateTime?
-  notifyVia             NotifyChannel @default(AUTO)
-  autoAcceptSameYear    Boolean       @default(false)
+  notifyVia             NotifyChannel   @default(AUTO)
+  autoAcceptSameYear    Boolean         @default(false)
   familyId              String?
-  family                Family?       @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  family                Family?         @relation(fields: [familyId], references: [id], onDelete: SetNull)
   deactivatedAt         DateTime?
   // Added: a child account created by a parent during sign-up. It has no
   // sign-in of its own; the parent manages it until the child takes it over.
   managedById           String?
-  managedBy             User?         @relation("managedChildren", fields: [managedById], references: [id], onDelete: SetNull)
-  managedChildren       User[]        @relation("managedChildren")
+  managedBy             User?           @relation("managedChildren", fields: [managedById], references: [id], onDelete: SetNull)
+  managedChildren       User[]          @relation("managedChildren")
+  handoversAsChild      ChildHandover[] @relation("handoverChild")
+  handoversSent         ChildHandover[] @relation("handoverParent")
 
   roles          UserRole[]
   accounts       Account[]
@@ -663,4 +665,22 @@ model NameChangeRequest {
 enum EvidenceKind {
   DIPLOMA
   OTHER
+}
+
+// Added: a parent hands a child account they manage over to the child. The
+// emailed link attaches the child's own email to the account (or merges it
+// into the child's own account if that email is already registered).
+model ChildHandover {
+  id        String    @id @default(cuid())
+  childId   String
+  child     User      @relation("handoverChild", fields: [childId], references: [id], onDelete: Cascade)
+  parentId  String
+  parent    User      @relation("handoverParent", fields: [parentId], references: [id], onDelete: Cascade)
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([childId])
 }

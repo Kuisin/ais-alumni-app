@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { ChildrenReview } from "@/components/admin/children-review";
+import { ManagedDuplicate } from "@/components/admin/managed-duplicate";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
@@ -227,6 +228,17 @@ export default async function VerificationDetailPage({
               ) : null}
             </dl>
           </Section>
+
+          <ManagedDuplicate
+            requestId={request.id}
+            applicant={{
+              id: user.id,
+              nameRomaji: user.nameRomaji,
+              nameKanji: user.nameKanji,
+              nameAtAis: user.nameAtAis,
+              dateOfBirth: user.dateOfBirth,
+            }}
+          />
 
           {user.roles.some(
             (r) =>

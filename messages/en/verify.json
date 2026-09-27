@@ -245,5 +245,9 @@
     "hint": "JPG, PNG or PDF (up to 10 MB). Make sure your name and graduation year are readable.",
     "unavailable": "I don't have my diploma",
     "unavailableHint": "If so, add any other document that shows you attended (report card, a yearbook photo, …) below."
+  },
+  "parentRegistered": {
+    "title": "It looks like a parent has already registered you.",
+    "body": "Ask them to send you a link with “Hand over to my child” on their Family page: you'll get the approved record with no new review. You can also continue here; the committee will then combine the two accounts."
   }
 }

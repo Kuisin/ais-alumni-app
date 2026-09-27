@@ -10,8 +10,12 @@ import {
 import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { mergeUsers } from "@/lib/merge";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
-import { settleManagedChildren } from "@/lib/parent-onboarding";
+import {
+  findManagedMatches,
+  settleManagedChildren,
+} from "@/lib/parent-onboarding";
 import { AuthError, actionAdmin, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { appUrl } from "@/lib/urls";
@@ -248,4 +252,58 @@ export async function addVoucherAction(
   await notifyVoucher(vouch.id);
   revalidate(requestId);
   return { ok: true, message: "saved" };
+}
+
+/**
+ * Admin: an applicant who signs up themselves was already registered by a
+ * parent. Merge the parent-managed record into the applicant's account
+ * (keeping the one they sign in to); then decide the application as usual.
+ */
+export async function mergeManagedIntoApplicantAction(
+  fd: FormData,
+): Promise<void> {
+  const me = await admin();
+  if (!me) return;
+  const requestId = z.string().min(1).max(64).parse(fd.get("requestId"));
+  const managedId = z.string().min(1).max(64).parse(fd.get("managedId"));
+  const request = await db.verificationRequest.findUnique({
+    where: { id: requestId },
+    select: {
+      userId: true,
+      user: {
+        select: {
+          nameRomaji: true,
+          nameKanji: true,
+          nameAtAis: true,
+          dateOfBirth: true,
+        },
+      },
+    },
+  });
+  if (!request) return;
+  // Only an actual match can be merged from here.
+  const matches = await findManagedMatches(
+    {
+      names: [
+        request.user.nameRomaji,
+        request.user.nameKanji,
+        request.user.nameAtAis,
+      ],
+      dateOfBirth: request.user.dateOfBirth,
+    },
+    request.userId,
+  );
+  if (!matches.some((m) => m.id === managedId)) return;
+  await db.user.update({
+    where: { id: managedId },
+    data: { managedById: null },
+  });
+  await mergeUsers(managedId, request.userId);
+  await audit(
+    me.id,
+    "user.merge.managed_into_applicant",
+    { type: "User", id: request.userId },
+    { fromUserId: managedId, requestId },
+  );
+  revalidatePath(`/[locale]/app/admin/verification/${requestId}`, "page");
 }

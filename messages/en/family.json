@@ -79,5 +79,46 @@
       "pending": "Being checked by the committee",
       "other": "Not approved"
     }
+  },
+  "handover": {
+    "open": "Hand over to my child",
+    "intro": "Let your child sign in themselves. We'll email a handover link to your child (valid for 7 days). Once they accept, the account is theirs and no longer managed by you. Your family link stays.",
+    "email": "Your child's email",
+    "emailHint": "Use an address your child can read.",
+    "send": "Send handover link",
+    "close": "Close",
+    "sent": "Handover link sent. Ask your child to check their email.",
+    "pending": "Handover link sent to {email} (valid until {date}).",
+    "resend": "Send to another address",
+    "cancel": "Cancel",
+    "errors": {
+      "forbidden": "You can't do that.",
+      "notFound": "We couldn't find this child's account.",
+      "invalidEmail": "Enter a valid email address.",
+      "notActive": "You can hand it over once the committee has approved it."
+    },
+    "claim": {
+      "title": "Take over your account",
+      "body": "{parent} is handing {child}'s account over to you. Once you confirm, you'll sign in with {email}.",
+      "point1": "Your class, AIS record and family links come with it.",
+      "point2": "If you've already registered with this email, the two accounts are combined into one.",
+      "point3": "Afterwards you can set your photo, LINE and more yourself.",
+      "signedIn": "You're signed in to another account. After confirming, sign out and sign in with the handed-over email.",
+      "confirm": "Take over my account",
+      "working": "Working…",
+      "invalid": "This link is invalid or has expired. Ask your parent to send it again.",
+      "done": "Handover complete.",
+      "signInWith": "Sign in with the code we'll email to {email}.",
+      "goSignIn": "Go to sign-in",
+      "signOutAndIn": "Sign out and sign in again"
+    },
+    "done": {
+      "subject": "Your child's account has been handed over",
+      "text": "{child} has taken over their account and can now sign in themselves. Your family link stays."
+    },
+    "emailMessage": {
+      "subject": "AIS Alumni: take over your account",
+      "text": "{parent} is handing over the AIS Alumni account they registered for {child} to you.\nOpen the link below and press “Take over my account” to sign in with this email (valid for 7 days).\nIf this wasn't expected, ignore this email."
+    }
   }
 }

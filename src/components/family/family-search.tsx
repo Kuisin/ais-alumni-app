@@ -1,8 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { MemberCard } from "@/components/directory/member-card";
-import { buttonClass } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton } from "@/components/ui/submit-button";
 import type { Direction, FamilyCandidate } from "@/lib/family";
 import { ClaimButton } from "./claim-button";
 
@@ -27,7 +28,8 @@ export async function FamilySearch({
   return (
     <div className="space-y-4">
       <search>
-        <form method="get" className="space-y-3" action={`#${param}`}>
+        {/* back to this form after searching */}
+        <SearchForm className="space-y-3" action={`#${param}`} scroll>
           {Object.entries(otherParams).map(([k, v]) => (
             <input key={k} type="hidden" name={k} value={v} />
           ))}
@@ -48,15 +50,15 @@ export async function FamilySearch({
               />
             )}
           </Field>
-          <button type="submit" className={buttonClass("secondary")}>
-            {t("search")}
-          </button>
-        </form>
+          <SearchButton variant="secondary">{t("search")}</SearchButton>
+        </SearchForm>
       </search>
       {results === null ? null : results.length === 0 ? (
-        <EmptyState>{t("noResults")}</EmptyState>
+        <div data-results>
+          <EmptyState>{t("noResults")}</EmptyState>
+        </div>
       ) : (
-        <ul className="space-y-3">
+        <ul data-results className="space-y-3">
           {results.map((c) => (
             <li key={c.id}>
               <MemberCard

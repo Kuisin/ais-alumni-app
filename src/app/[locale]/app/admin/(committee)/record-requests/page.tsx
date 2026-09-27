@@ -65,68 +65,71 @@ export default async function RecordRequestsPage({
           active: tab === k,
         }))}
       />
+      <div data-results className="space-y-6">
+        {requests.length === 0 ? (
+          <EmptyState
+            icon={tab === "pending" ? <ClipboardCheck /> : <History />}
+            hint={t(
+              tab === "pending" ? "emptyPendingHint" : "emptyDecidedHint",
+            )}
+          >
+            {t(tab === "pending" ? "emptyPending" : "empty")}
+          </EmptyState>
+        ) : null}
 
-      {requests.length === 0 ? (
-        <EmptyState
-          icon={tab === "pending" ? <ClipboardCheck /> : <History />}
-          hint={t(tab === "pending" ? "emptyPendingHint" : "emptyDecidedHint")}
-        >
-          {t(tab === "pending" ? "emptyPending" : "empty")}
-        </EmptyState>
-      ) : null}
-
-      {requests.map((q) => (
-        <Card key={q.id} className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <Link
-                href={`/app/admin/members/${q.user.id}`}
-                className="font-semibold text-brand-700 underline"
-              >
-                {displayName(q.user, locale)}
-              </Link>
-              <span className="ml-2 text-sm text-slate-600">
-                {tr(`role.${q.role}`)}
+        {requests.map((q) => (
+          <Card key={q.id} className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <Link
+                  href={`/app/admin/members/${q.user.id}`}
+                  className="font-semibold text-brand-700 underline"
+                >
+                  {displayName(q.user, locale)}
+                </Link>
+                <span className="ml-2 text-sm text-slate-600">
+                  {tr(`role.${q.role}`)}
+                </span>
+              </div>
+              <span className="text-sm text-slate-500">
+                {formatDateTime(q.createdAt, locale)}
               </span>
             </div>
-            <span className="text-sm text-slate-500">
-              {formatDateTime(q.createdAt, locale)}
-            </span>
-          </div>
-          <RecordDiff
-            cohortLabels={cohortLabels}
-            role={q.role}
-            current={q.current as Record<string, unknown>}
-            proposed={q.proposed as Record<string, unknown>}
-          />
-          <p className="text-sm text-slate-700">
-            <span className="font-medium">{trec("reason")}: </span>
-            {q.reason}
-          </p>
-          {q.status === ChangeRequestStatus.PENDING ? (
-            <RecordDecisionForm id={q.id} />
-          ) : (
-            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-              <Badge
-                tone={
-                  q.status === ChangeRequestStatus.APPROVED ? "green" : "red"
-                }
-              >
-                {trec(`status.${q.status}`)}
-              </Badge>
-              {q.reviewer ? (
-                <span>{displayName(q.reviewer, locale)}</span>
-              ) : null}
-              {q.decidedAt ? (
-                <span className="text-slate-500">
-                  {formatDateTime(q.decidedAt, locale)}
-                </span>
-              ) : null}
-              {q.reviewNote ? <span>— {q.reviewNote}</span> : null}
-            </div>
-          )}
-        </Card>
-      ))}
+            <RecordDiff
+              cohortLabels={cohortLabels}
+              role={q.role}
+              current={q.current as Record<string, unknown>}
+              proposed={q.proposed as Record<string, unknown>}
+            />
+            <p className="text-sm text-slate-700">
+              <span className="font-medium">{trec("reason")}: </span>
+              {q.reason}
+            </p>
+            {q.status === ChangeRequestStatus.PENDING ? (
+              <RecordDecisionForm id={q.id} />
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                <Badge
+                  tone={
+                    q.status === ChangeRequestStatus.APPROVED ? "green" : "red"
+                  }
+                >
+                  {trec(`status.${q.status}`)}
+                </Badge>
+                {q.reviewer ? (
+                  <span>{displayName(q.reviewer, locale)}</span>
+                ) : null}
+                {q.decidedAt ? (
+                  <span className="text-slate-500">
+                    {formatDateTime(q.decidedAt, locale)}
+                  </span>
+                ) : null}
+                {q.reviewNote ? <span>— {q.reviewNote}</span> : null}
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

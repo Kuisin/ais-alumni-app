@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { safeNextPath } from "./next-path";
+import { safeNextPath, stripLocale } from "./next-path";
+
+describe("stripLocale", () => {
+  it("drops the locale prefix only", () => {
+    expect(stripLocale("/ja/app/news?x=1")).toBe("/app/news?x=1");
+    expect(stripLocale("/en")).toBe("/");
+    expect(stripLocale("/english/app")).toBe("/english/app");
+  });
+});
 
 describe("safeNextPath", () => {
   it("keeps app pages, dropping the locale", () => {

@@ -7,7 +7,7 @@ import { AccountState } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
-import { NEXT_PATH_HEADER, safeNextPath } from "@/lib/next-path";
+import { NEXT_PATH_HEADER, safeNextPath, stripLocale } from "@/lib/next-path";
 import { homePathFor } from "@/lib/state-machine";
 
 export type CurrentUser = Prisma.UserGetPayload<{ include: { roles: true } }>;
@@ -35,7 +35,23 @@ export async function requireUser(): Promise<CurrentUser> {
     const next = safeNextPath((await headers()).get(NEXT_PATH_HEADER));
     return go(next ? `/app?next=${encodeURIComponent(next)}` : "/app");
   }
+  await matchMemberLocale(user);
   return user;
+}
+
+/**
+ * Members see the app in their own language (設定 → 言語), whatever the
+ * URL, cookie or device says — e.g. the installed app (PWA) starts at /app
+ * with its own cookies and would otherwise follow the phone's language.
+ * The redirect also sets the locale cookie for the next launch. Only for
+ * approved members: applicants choose their language in the application.
+ */
+async function matchMemberLocale(user: CurrentUser): Promise<void> {
+  if (user.state !== AccountState.ACTIVE) return;
+  if ((await getLocale()) === user.locale) return;
+  const path = (await headers()).get(NEXT_PATH_HEADER);
+  if (!path) return; // not a page request (e.g. a server action)
+  redirect({ href: stripLocale(path), locale: user.locale });
 }
 
 /**

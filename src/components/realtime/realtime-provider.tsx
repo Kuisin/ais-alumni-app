@@ -19,25 +19,22 @@ type Handler = (payload: Payload) => void;
 type Ctx = {
   /** connected to Supabase Realtime (false = callers should poll) */
   live: boolean;
-  userId: string | null;
   on: (topic: string, event: string, handler: Handler) => () => void;
 };
 
 const RealtimeContext = createContext<Ctx>({
   live: false,
-  userId: null,
   on: () => () => {},
 });
 
 const EVENTS = ["message", "delete", "refresh"] as const;
-const TOKEN_REFRESH_MS = 50 * 60 * 1000;
 
 /**
- * One Supabase Realtime connection per tab (private Broadcast channels).
- * `topics` are joined for the whole session: `user:<id>` (refresh signals,
- * e.g. new ニュース) and the member's `chat:<groupId>`s, so nav badges
- * update live. Pages add handlers with useRealtime(). Without Realtime
- * configured, `live` stays false.
+ * One Supabase Realtime connection per tab (signal-only Broadcast channels,
+ * see src/lib/realtime.ts). `topics` are joined for the whole session: the
+ * member's own channel (refresh signals, e.g. new ニュース) and their chat
+ * groups, so nav badges update live. Pages add handlers with useRealtime().
+ * Without Realtime configured, `live` stays false.
  */
 export function RealtimeProvider({
   topics,
@@ -48,7 +45,6 @@ export function RealtimeProvider({
 }) {
   const router = useRouter();
   const [live, setLive] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const client = useRef<SupabaseClient | null>(null);
   const channels = useRef(new Map<string, RealtimeChannel>());
   const registry = useRef(new Map<string, Map<string, Set<Handler>>>());
@@ -59,7 +55,7 @@ export function RealtimeProvider({
   const join = useCallback((topic: string) => {
     const c = client.current;
     if (!c || channels.current.has(topic)) return;
-    const ch = c.channel(topic, { config: { private: true } });
+    const ch = c.channel(topic);
     for (const event of EVENTS)
       ch.on("broadcast", { event }, (msg) => {
         const handlers = registry.current.get(topic)?.get(event);
@@ -85,10 +81,9 @@ export function RealtimeProvider({
     [join],
   );
 
-  // Connect once; refresh the token before it expires.
+  // Connect once.
   useEffect(() => {
     let stopped = false;
-    let timer: ReturnType<typeof setInterval> | undefined;
     (async () => {
       const session = await realtimeSessionAction().catch(() => null);
       if (!session || stopped) return;
@@ -97,19 +92,12 @@ export function RealtimeProvider({
       const c = createClient(session.url, session.key, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
-      await c.realtime.setAuth(session.token);
       client.current = c;
-      setUserId(session.userId);
       setLive(true);
       for (const topic of registry.current.keys()) join(topic);
-      timer = setInterval(async () => {
-        const next = await realtimeSessionAction().catch(() => null);
-        if (next) await c.realtime.setAuth(next.token);
-      }, TOKEN_REFRESH_MS);
     })();
     return () => {
       stopped = true;
-      clearInterval(timer);
       const c = client.current;
       if (c) void c.removeAllChannels();
       channels.current.clear();
@@ -129,21 +117,17 @@ export function RealtimeProvider({
       .split(",")
       .filter(Boolean)
       .flatMap((topic) =>
-        topic.startsWith("user:")
+        topic.startsWith("ais:user:")
           ? [on(topic, "refresh", refreshSoon)]
-          : [
-              on(topic, "message", (p) => {
-                if (p.userId !== userId) refreshSoon();
-              }),
-            ],
+          : [on(topic, "message", refreshSoon)],
       );
     return () => {
       for (const off of offs) off();
     };
-  }, [topicKey, on, router, userId]);
+  }, [topicKey, on, router]);
 
   return (
-    <RealtimeContext.Provider value={{ live, userId, on }}>
+    <RealtimeContext.Provider value={{ live, on }}>
       {children}
     </RealtimeContext.Provider>
   );

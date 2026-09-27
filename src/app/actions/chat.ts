@@ -4,7 +4,7 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { CHAT_PAGE_SIZE, MAX_CHAT_MESSAGE } from "@/lib/chat";
 import { db } from "@/lib/db";
-import { broadcast, realtimePublic, realtimeToken } from "@/lib/realtime";
+import { broadcast, channelTopic, realtimePublic } from "@/lib/realtime";
 import { actionActive, type CurrentUser } from "@/lib/session";
 
 export type ChatMessageView = {
@@ -60,17 +60,14 @@ async function openGroup(groupId: unknown) {
   return { user, groupId: id.data, member: Boolean(member) };
 }
 
-/** Realtime connection details for the signed-in member, or null (polling). */
+/** Realtime connection details, or null (the UI polls instead). */
 export async function realtimeSessionAction(): Promise<{
   url: string;
   key: string;
-  token: string;
-  userId: string;
 } | null> {
-  const pub = realtimePublic();
   const user: CurrentUser | null = await actionActive().catch(() => null);
-  if (!pub || !user) return null;
-  return { ...pub, token: realtimeToken(user.id), userId: user.id };
+  if (!user) return null;
+  return realtimePublic();
 }
 
 export type SendResult =
@@ -102,8 +99,13 @@ export async function sendChatMessageAction(
     data: { lastReadAt: row.createdAt },
   });
   const message = toView(row);
+  // A signal only; members load the message through chatMessagesAction.
   await broadcast([
-    { topic: `chat:${g.groupId}`, event: "message", payload: message },
+    {
+      topic: channelTopic("chat", g.groupId),
+      event: "message",
+      payload: { id: message.id },
+    },
   ]);
   return { ok: true, message };
 }
@@ -174,7 +176,7 @@ export async function deleteChatMessageAction(
     );
   await broadcast([
     {
-      topic: `chat:${m.groupId}`,
+      topic: channelTopic("chat", m.groupId),
       event: "delete",
       payload: { id: id.data },
     },

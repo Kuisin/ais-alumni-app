@@ -17,7 +17,8 @@
     "next": "Next",
     "pageOf": "Page {page} of {pages}",
     "search": "Search",
-    "searchPlaceholder": "Search by name (romaji or kanji)"
+    "searchPlaceholder": "Search by name (romaji or kanji)",
+    "children": "Children: {names}"
   },
   "badges": {
     "noRoster": "No roster data",
@@ -202,5 +203,31 @@
       "body": "The committee needs a little more information to verify you. Please update your application from the link below.",
       "bodyWithNote": "The committee needs a little more information to verify you:\n\n{note}\n\nPlease update your application from the link below."
     }
+  },
+  "children": {
+    "title": "Children's AIS records",
+    "description": "For a parent, check the children's AIS details. Approving also approves the child accounts this parent registered.",
+    "none": "No children listed.",
+    "dob": "Date of birth",
+    "cohort": "Class",
+    "status": "Status",
+    "years": "At AIS",
+    "studentId": "Student ID",
+    "roster": "Roster check",
+    "rosterNone": "No roster data to compare with",
+    "rosterMatch": "Matches the roster ({score})",
+    "rosterWeak": "Weak roster match ({score})",
+    "source": {
+      "created": "Registered by this parent",
+      "registered": "Existing member",
+      "nameOnly": "Name only (older form)",
+      "title": "Source"
+    },
+    "link": {
+      "confirmed": "Relationship confirmed",
+      "onApproval": "Confirmed on approval",
+      "childToConfirm": "Waiting for the child to confirm"
+    },
+    "nameOnlyHint": "Only a name was given (older form). Ask the parent to resubmit, or link them on the family page."
   }
 }

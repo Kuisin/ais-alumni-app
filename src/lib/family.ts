@@ -102,12 +102,20 @@ export function canConfirm(
     parentId: string;
     childId: string | null;
     confirmedAt: Date | null;
+    /** parent managing the child's account (it has no sign-in of its own) */
+    childManagedById?: string | null;
   },
 ): boolean {
   if (link.confirmedAt) return false;
   const who = confirmerFor(link);
   if (who === "parent") return link.parentId === userId;
-  if (who === "child") return link.childId === userId;
+  if (who === "child")
+    return (
+      link.childId === userId ||
+      (Boolean(link.childManagedById) &&
+        link.childManagedById === userId &&
+        link.parentId !== userId)
+    );
   return false;
 }
 
@@ -174,6 +182,7 @@ export async function searchFamilyCandidates(
       state: true,
       dateOfBirth: true,
       familyId: true,
+      managedById: true,
     },
   });
   const viewer = toViewer(me);
@@ -185,6 +194,7 @@ export async function searchFamilyCandidates(
       roles: r.roles.map((x) => x.role),
       dateOfBirth: r.dateOfBirth,
       familyId: r.familyId,
+      managed: r.managedById !== null,
     };
     const card: PublicCard = {
       id: r.id,
@@ -216,15 +226,15 @@ const LINK_SELECT = {
   confirmedBy: true,
   createdAt: true,
   parent: { select: PUBLIC_CARD_SELECT },
-  child: { select: PUBLIC_CARD_SELECT },
+  child: { select: { ...PUBLIC_CARD_SELECT, managedById: true } },
 } as const satisfies Prisma.FamilyLinkSelect;
 
 export type FamilyLinkView = Prisma.FamilyLinkGetPayload<{
   select: typeof LINK_SELECT;
-}>;
+}> & { childManagedById: string | null };
 
 export async function loadFamily(me: CurrentUser) {
-  const [members, links] = await Promise.all([
+  const [members, rawLinks, managed] = await Promise.all([
     me.familyId
       ? db.user.findMany({
           where: {
@@ -241,6 +251,8 @@ export async function loadFamily(me: CurrentUser) {
         OR: [
           { parentId: me.id },
           { childId: me.id },
+          // Requests about a child account I manage (it can't sign in).
+          { child: { managedById: me.id } },
           ...(me.familyId
             ? [{ familyId: me.familyId, confirmedAt: { not: null } }]
             : []),
@@ -249,8 +261,18 @@ export async function loadFamily(me: CurrentUser) {
       orderBy: { createdAt: "desc" },
       select: LINK_SELECT,
     }),
+    // Child accounts this parent created at sign-up.
+    db.user.findMany({
+      where: { managedById: me.id },
+      orderBy: { createdAt: "asc" },
+      select: { ...PUBLIC_CARD_SELECT, state: true },
+    }),
   ]);
-  return { members, links };
+  const links: FamilyLinkView[] = rawLinks.map((l) => ({
+    ...l,
+    childManagedById: l.child?.managedById ?? null,
+  }));
+  return { members, links, managed };
 }
 
 // ---------------------------------------------------------------- mutations
@@ -403,58 +425,84 @@ export async function confirmFamilyLink(
   now: Date = new Date(),
 ): Promise<boolean> {
   return db.$transaction(async (tx) => {
-    const link = await tx.familyLink.findUnique({ where: { id: linkId } });
-    if (!link || !link.childId || !canConfirm(me.id, link)) return false;
-    const [parent, child] = await Promise.all([
-      tx.user.findUniqueOrThrow({
-        where: { id: link.parentId },
-        select: { id: true, familyId: true },
-      }),
-      tx.user.findUniqueOrThrow({
-        where: { id: link.childId },
-        select: { id: true, familyId: true },
-      }),
-    ]);
-    const plan = planFamilyMerge(parent.familyId, child.familyId);
-    let familyId: string;
-    switch (plan.kind) {
-      case "create": {
-        familyId = (await tx.family.create({ data: {} })).id;
-        await tx.user.updateMany({
-          where: { id: { in: [parent.id, child.id] } },
-          data: { familyId },
-        });
-        break;
-      }
-      case "none":
-        familyId = plan.familyId;
-        break;
-      case "join":
-        familyId = plan.familyId;
-        await tx.user.update({
-          where: { id: plan.joiner === "parent" ? parent.id : child.id },
-          data: { familyId },
-        });
-        break;
-      case "merge":
-        familyId = plan.into;
-        await tx.user.updateMany({
-          where: { familyId: plan.from },
-          data: { familyId: plan.into },
-        });
-        // Move links before deleting: FamilyLink cascades on Family delete.
-        await tx.familyLink.updateMany({
-          where: { familyId: plan.from },
-          data: { familyId: plan.into },
-        });
-        await tx.family.delete({ where: { id: plan.from } });
-        break;
-    }
-    await tx.familyLink.update({
-      where: { id: link.id },
-      data: { confirmedAt: now, confirmedBy: me.id, familyId },
+    const link = await tx.familyLink.findUnique({
+      where: { id: linkId },
+      include: { child: { select: { managedById: true } } },
     });
+    if (
+      !link ||
+      !link.childId ||
+      !canConfirm(me.id, {
+        ...link,
+        childManagedById: link.child?.managedById ?? null,
+      })
+    )
+      return false;
+    await confirmLinkInTx(tx, link, me.id, now);
     return true;
+  });
+}
+
+/**
+ * Confirm a link inside a transaction and put parent and child in one family
+ * (creating, joining or merging families). `confirmedBy` is a user id or
+ * "ADMIN".
+ */
+export async function confirmLinkInTx(
+  tx: Prisma.TransactionClient,
+  link: { id: string; parentId: string; childId: string | null },
+  confirmedBy: string,
+  now: Date = new Date(),
+): Promise<void> {
+  if (!link.childId) return;
+  const [parent, child] = await Promise.all([
+    tx.user.findUniqueOrThrow({
+      where: { id: link.parentId },
+      select: { id: true, familyId: true },
+    }),
+    tx.user.findUniqueOrThrow({
+      where: { id: link.childId },
+      select: { id: true, familyId: true },
+    }),
+  ]);
+  const plan = planFamilyMerge(parent.familyId, child.familyId);
+  let familyId: string;
+  switch (plan.kind) {
+    case "create": {
+      familyId = (await tx.family.create({ data: {} })).id;
+      await tx.user.updateMany({
+        where: { id: { in: [parent.id, child.id] } },
+        data: { familyId },
+      });
+      break;
+    }
+    case "none":
+      familyId = plan.familyId;
+      break;
+    case "join":
+      familyId = plan.familyId;
+      await tx.user.update({
+        where: { id: plan.joiner === "parent" ? parent.id : child.id },
+        data: { familyId },
+      });
+      break;
+    case "merge":
+      familyId = plan.into;
+      await tx.user.updateMany({
+        where: { familyId: plan.from },
+        data: { familyId: plan.into },
+      });
+      // Move links before deleting: FamilyLink cascades on Family delete.
+      await tx.familyLink.updateMany({
+        where: { familyId: plan.from },
+        data: { familyId: plan.into },
+      });
+      await tx.family.delete({ where: { id: plan.from } });
+      break;
+  }
+  await tx.familyLink.update({
+    where: { id: link.id },
+    data: { confirmedAt: now, confirmedBy, familyId },
   });
 }
 

@@ -90,3 +90,29 @@ export async function createActiveMember(nameRomaji: string): Promise<string> {
     await db.end();
   }
 }
+
+/** Insert an approved graduate with a birth date and their own sign-in email. */
+export async function createActiveGraduate(
+  nameRomaji: string,
+  dateOfBirth: string,
+): Promise<{ id: string; email: string }> {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const id = `e2e${Date.now()}${Math.floor(Math.random() * 1e4)}`;
+    const email = uniqueEmail("e2e-grad");
+    const [first, last] = nameRomaji.split(" ");
+    await db.query(
+      `INSERT INTO "User" (id, "primaryEmail", "emailVerifiedAt", state, "nameRomaji", "firstNameRomaji", "lastNameRomaji", "dateOfBirth", "updatedAt")
+       VALUES ($1, $2, now(), 'ACTIVE', $3, $4, $5, $6, now())`,
+      [id, email, nameRomaji, first, last, dateOfBirth],
+    );
+    await db.query(
+      `INSERT INTO "UserRole" (id, "userId", role, "didGraduate") VALUES ($1, $2, 'FORMER_STUDENT', true)`,
+      [`${id}r`, id],
+    );
+    return { id, email };
+  } finally {
+    await db.end();
+  }
+}

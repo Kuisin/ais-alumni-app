@@ -97,7 +97,8 @@
     "evidenceInvalid": "One of the files could not be verified. Please remove it and upload it again.",
     "invalid": "This value is not valid.",
     "typesRequired": "Choose at least one.",
-    "cohortRequired": "Choose a class."
+    "cohortRequired": "Choose a class.",
+    "childNotSelected": "Use “Find” to look up your child and select them."
   },
   "evidence": {
     "label": "Supporting documents (optional)",
@@ -181,7 +182,7 @@
   "sections": {
     "student": "Tell us your class and the year you joined AIS.",
     "studentMore": "Help us confirm you faster (optional)",
-    "parent": "Add each child who attends or attended AIS.",
+    "parent": "Add each child who attends or attended AIS. Find a child who is already on AIS Alumni, or register your child if they aren’t yet.",
     "teacher": "Tell us when you worked at AIS and what you taught."
   },
   "preview": {
@@ -191,5 +192,41 @@
     "left": "You'll be registered as a former student (left in {year})",
     "teacherCurrent": "You'll be registered as current teacher / staff",
     "teacherFormer": "You'll be registered as former teacher / staff (left in {year})"
+  },
+  "child": {
+    "reviewNote": "The committee reviews your children’s details, not yours.",
+    "modeLegend": "How would you like to add this child?",
+    "modes": {
+      "existing": {
+        "title": "Already registered",
+        "description": "For example, a graduate with their own account, or a child another parent already registered."
+      },
+      "new": {
+        "title": "Register my child",
+        "description": "We’ll create your child’s record; you manage it. Our committee checks these details."
+      }
+    },
+    "searchIntro": "Your child appears only if their full name (romaji or kanji) and date of birth exactly match their registration.",
+    "searchName": "Child’s full name",
+    "searchNameHint": "In romaji or kanji, as registered. e.g. Hanako Yamada or 山田花子",
+    "dateOfBirth": "Child’s date of birth",
+    "find": "Find",
+    "searching": "Searching…",
+    "found": "{count, plural, one {# match found} other {# matches found}}. Select your child.",
+    "notFound": "No registered member matches this name and date of birth. Check the spelling, or register your child as new.",
+    "switchToNew": "Switch to “Register my child”",
+    "searchIncomplete": "Enter your child’s full name and date of birth.",
+    "searchFailed": "The search didn’t work. Please try again.",
+    "select": "Select",
+    "selected": "Selected",
+    "change": "Change",
+    "changeNamed": "Change selected child ({name})",
+    "confirmNote": "We’ll ask your child (or the parent who manages their account) to confirm that you’re their parent.",
+    "newIntro": "We’ll create your child’s record; you manage it. Our committee checks these details.",
+    "nameRomaji": "Child’s name (romaji)",
+    "nameKanji": "Child’s name (kanji / kana)",
+    "joinedYear": "Year your child joined AIS",
+    "leftYear": "Year your child left AIS",
+    "leftYearHint": "Only if your child left AIS before graduating. Leave empty if they’re still at AIS or graduated."
   }
 }

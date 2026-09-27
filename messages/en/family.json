@@ -70,5 +70,14 @@
     "asChildText": "{name} says they are your parent on AIS Alumni. Please confirm or decline on the Family page.",
     "asParentSubject": "{name} added you as their parent",
     "asParentText": "{name} says you are their parent on AIS Alumni. Please confirm or decline on the Family page."
+  },
+  "managed": {
+    "title": "Children you manage",
+    "description": "Accounts you registered for your children when you applied. Your children don't sign in; you manage them. The committee checks their AIS details and approves them.",
+    "state": {
+      "active": "Approved",
+      "pending": "Being checked by the committee",
+      "other": "Not approved"
+    }
   }
 }

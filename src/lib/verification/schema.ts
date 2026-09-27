@@ -124,11 +124,42 @@ export const studentSchema = z
   })
   .superRefine(leftAfterJoined);
 
-export const childSchema = z.object({
+/**
+ * A child is either already registered (picked by exact name + birth date,
+ * see searchRegisteredChildAction) or new: the parent enters the child's
+ * details and a child account managed by the parent is created. The admin
+ * reviews the children's details (src/app/actions/verify.ts).
+ */
+export const CHILD_MODES = ["new", "existing"] as const;
+export type ChildMode = (typeof CHILD_MODES)[number];
+
+const newChildSchema = z
+  .object({
+    mode: z.literal("new"),
+    lastNameRomaji: requiredText(50),
+    firstNameRomaji: requiredText(50),
+    lastNameKanji: optionalText(50),
+    firstNameKanji: optionalText(50),
+    dateOfBirth: isoDate,
+    cohortNumber: cohortNumber(),
+    joinedYear: year(),
+    leftYear: optionalYear(),
+    studentIdNo: optionalText(50),
+  })
+  .superRefine(leftAfterJoined);
+
+const existingChildSchema = z.object({
+  mode: z.literal("existing"),
+  existingUserId: z.string().trim().min(1, "childNotSelected").max(64),
+  /** label shown when picked, e.g. 鈴木花子 */
   name: requiredText(),
-  cohortNumber: cohortNumber(),
-  leftYear: optionalYear(),
 });
+
+export const childSchema = z.discriminatedUnion("mode", [
+  newChildSchema,
+  existingChildSchema,
+]);
+export type ChildData = z.infer<typeof childSchema>;
 
 export const parentSchema = z.object({
   children: z.array(childSchema).min(1, "childrenRequired").max(MAX_CHILDREN),
@@ -224,9 +255,20 @@ export type StoredAnswers = Omit<VerificationData, "evidence"> & { version: 2 };
 // Client form state (string-valued so inputs stay controlled)
 
 export type ChildState = {
+  mode: ChildMode;
+  /** existing: the picked member and their label */
+  existingUserId: string;
   name: string;
+  /** new: the child's details */
+  lastNameRomaji: string;
+  firstNameRomaji: string;
+  lastNameKanji: string;
+  firstNameKanji: string;
+  dateOfBirth: string;
   cohortNumber: string;
+  joinedYear: string;
   leftYear: string;
+  studentIdNo: string;
 };
 
 export type VerifyFormState = {
@@ -257,10 +299,19 @@ export type VerifyFormState = {
   evidence: EvidenceItem[];
 };
 
-export const emptyChild = (): ChildState => ({
+export const emptyChild = (mode: ChildMode = "new"): ChildState => ({
+  mode,
+  existingUserId: "",
   name: "",
+  lastNameRomaji: "",
+  firstNameRomaji: "",
+  lastNameKanji: "",
+  firstNameKanji: "",
+  dateOfBirth: "",
   cohortNumber: "",
+  joinedYear: "",
   leftYear: "",
+  studentIdNo: "",
 });
 
 export function emptyFormState(locale: "ja" | "en"): VerifyFormState {
@@ -345,9 +396,19 @@ export function answersToFormState(
     parent: {
       children: children.length
         ? children.map((c) => ({
+            ...emptyChild(c.mode === "existing" ? "existing" : "new"),
+            existingUserId: s(c.existingUserId),
             name: s(c.name),
+            // Older answers had only a name: start the new form from it.
+            lastNameKanji: s(c.lastNameKanji) || (c.mode ? "" : s(c.name)),
+            lastNameRomaji: s(c.lastNameRomaji),
+            firstNameRomaji: s(c.firstNameRomaji),
+            firstNameKanji: s(c.firstNameKanji),
+            dateOfBirth: s(c.dateOfBirth),
             cohortNumber: s(c.cohortNumber),
+            joinedYear: s(c.joinedYear),
             leftYear: s(c.leftYear),
+            studentIdNo: s(c.studentIdNo),
           }))
         : base.parent.children,
     },
@@ -386,6 +447,7 @@ const KNOWN_CODES = new Set([
   "typesRequired",
   "cohortRequired",
   "childrenRequired",
+  "childNotSelected",
   "tooManyFiles",
 ]);
 

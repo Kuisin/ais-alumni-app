@@ -14,11 +14,17 @@ import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import {
-  childIsCurrent,
   parentRole,
   studentRoleFields,
   teacherFields,
 } from "@/lib/member-status";
+import {
+  childrenCurrent,
+  findRegisteredChildren,
+  notifyChildConfirmations,
+  type RegisteredChild,
+  saveParentChildren,
+} from "@/lib/parent-onboarding";
 import { AuthError, actionUser, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { deletePrivate, putPrivate } from "@/lib/storage";
@@ -137,6 +143,7 @@ export async function submitVerificationAction(
   const schoolEmailVerified = await isSchoolEmailVerified(user, data);
 
   let requestId: string;
+  let childLinksToConfirm: string[] = [];
   try {
     assertTransition(user.state, AccountState.PENDING_REVIEW);
     requestId = await db.$transaction(async (tx) => {
@@ -200,7 +207,9 @@ export async function submitVerificationAction(
         });
       }
 
-      await saveChildren(tx, user, data);
+      childLinksToConfirm = data.parent
+        ? await saveParentChildren(tx, user, data.parent.children, data.locale)
+        : [];
       return request.id;
     });
   } catch (e) {
@@ -214,6 +223,8 @@ export async function submitVerificationAction(
     );
   }
   // Vouch requests (§6.4.2) are best-effort; a failure must not undo the submission.
+  // Registered children are asked to confirm the parent (best-effort).
+  await notifyChildConfirmations(user, childLinksToConfirm);
   await createVouchesForRequest(requestId).catch((e) =>
     console.error("[verify] vouches failed", e),
   );
@@ -310,69 +321,15 @@ async function saveRoles(
     });
   }
   if (data.parent) {
-    const current = [];
-    for (const child of data.parent.children) {
-      const c = await cohortEnd(child.cohortNumber);
-      current.push(childIsCurrent(c.end, child.leftYear, now));
-    }
-    await upsert(parentRole(current), {});
+    await upsert(
+      parentRole(await childrenCurrent(tx, data.parent.children, now)),
+      {},
+    );
   }
   // Applicants are never ACTIVE here, so dropping other roles is safe.
   await tx.userRole.deleteMany({
     where: { userId: user.id, role: { notIn: keep } },
   });
-}
-
-/**
- * Parents list their children (§6.2, §8) with each child's 学年 and leave
- * year. Each becomes an unconfirmed FamilyLink (childName only); the child's
- * account can be linked later from the family screen. Children already
- * listed (same name) are updated on resubmission.
- */
-async function saveChildren(
-  tx: Prisma.TransactionClient,
-  user: CurrentUser,
-  data: VerificationData,
-): Promise<void> {
-  const children = data.parent?.children ?? [];
-  if (!children.length) return;
-
-  let familyId = user.familyId;
-  if (!familyId) {
-    const family = await tx.family.create({ data: {} });
-    familyId = family.id;
-    await tx.user.update({ where: { id: user.id }, data: { familyId } });
-  }
-  const key = (s: string) =>
-    s.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
-  const links = await tx.familyLink.findMany({
-    where: { parentId: user.id },
-    select: { id: true, childName: true },
-  });
-  const byName = new Map(links.map((l) => [key(l.childName ?? ""), l.id]));
-  for (const child of children) {
-    const childCohortId = await ensureCohort(child.cohortNumber, tx);
-    const existing = byName.get(key(child.name));
-    if (existing) {
-      await tx.familyLink.update({
-        where: { id: existing },
-        data: { childCohortId, childLeftYear: child.leftYear },
-      });
-      continue;
-    }
-    const created = await tx.familyLink.create({
-      data: {
-        familyId,
-        parentId: user.id,
-        childName: child.name,
-        childId: null,
-        childCohortId,
-        childLeftYear: child.leftYear,
-        initiatedBy: "PARENT",
-      },
-    });
-    byName.set(key(child.name), created.id);
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -499,4 +456,19 @@ export async function verifySchoolEmailCodeAction(
     ok: false,
     error: res.error === "too_many_attempts" ? "tooManyAttempts" : res.error,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Parents: find a child who is already registered (exact name + birth date)
+
+export async function searchRegisteredChildAction(input: {
+  name: string;
+  dateOfBirth: string;
+}): Promise<RegisteredChild[]> {
+  const user = await applicant();
+  if (!user) return [];
+  const name = String(input?.name ?? "").slice(0, 100);
+  const dateOfBirth = String(input?.dateOfBirth ?? "").slice(0, 10);
+  const locale = user.locale === "en" ? "en" : "ja";
+  return findRegisteredChildren({ name, dateOfBirth }, user.id, locale);
 }

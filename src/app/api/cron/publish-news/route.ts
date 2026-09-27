@@ -1,5 +1,6 @@
 import { isAuthorizedCron } from "@/lib/cron";
 import { dueScheduledNews, sendNewsNotification } from "@/lib/news";
+import { sendDeadlineReminders } from "@/lib/news-hub-db";
 
 export const maxDuration = 300;
 
@@ -8,6 +9,7 @@ export const maxDuration = 300;
  * 10 minutes by GitHub Actions (.github/workflows/publish-news.yml; the Vercel
  * Hobby plan only allows daily crons) and daily by the reminders cron as a
  * fallback. Safe to call often: each post is claimed once (notifiedAt).
+ * Also sends the one reminder a day before a response deadline (remindedAt).
  */
 export async function GET(request: Request) {
   if (!isAuthorizedCron(request))
@@ -26,10 +28,17 @@ export async function GET(request: Request) {
       console.error(`[cron/publish-news] ${post.id} failed`, e);
     }
   }
+  let reminders = { posts: 0, recipients: 0 };
+  try {
+    reminders = await sendDeadlineReminders(now);
+  } catch (e) {
+    console.error("[cron/publish-news] reminders failed", e);
+  }
   return Response.json({
     ok: true,
     ranAt: now.toISOString(),
     posts,
     recipients,
+    reminders,
   });
 }

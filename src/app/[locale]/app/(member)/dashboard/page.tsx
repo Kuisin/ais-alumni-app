@@ -16,6 +16,7 @@ import { readNewsIds, unreadCounts } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
+import { awaitingResponse } from "@/lib/news-hub-db";
 import { filterByAudience, visibleNews } from "@/lib/news-visibility";
 import { requireActive } from "@/lib/session";
 import { setupProgress } from "@/lib/setup";
@@ -75,6 +76,8 @@ export default async function DashboardPage({
             bodyEn: true,
             pinned: true,
             publishedAt: true,
+            requireConfirm: true,
+            deadline: true,
           },
         }),
       ),
@@ -113,10 +116,13 @@ export default async function DashboardPage({
       }),
       unreadCounts(user),
     ]);
-  const readNews = await readNewsIds(
-    user.id,
-    news.map((p) => p.id),
-  );
+  const [readNews, awaiting] = await Promise.all([
+    readNewsIds(
+      user.id,
+      news.map((p) => p.id),
+    ),
+    awaitingResponse(user.id, news),
+  ]);
 
   const setup = await loadSetupChecklist(user);
   const setupDone = setupProgress(setup).complete;
@@ -226,6 +232,7 @@ export default async function DashboardPage({
                     post={p}
                     locale={locale}
                     excerpt={false}
+                    needsAnswer={awaiting.has(p.id)}
                     unread={
                       !readNews.has(p.id) &&
                       !!p.publishedAt &&

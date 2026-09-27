@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { RsvpAnswer } from "@/generated/prisma/enums";
-import { isTargeted, toViewer } from "@/lib/authz";
+import { isAudienceTargeted } from "@/lib/audience";
+import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { checkRsvp, MAX_GUESTS, type RsvpDenial } from "@/lib/events";
 import { actionActive } from "@/lib/session";
@@ -54,9 +55,10 @@ export async function rsvpAction(
           rsvpDeadline: true,
           capacity: true,
           targetRoles: true,
+          targetAudiences: true,
         },
       });
-      if (!event || !isTargeted(event.targetRoles, viewer))
+      if (!event || !isAudienceTargeted(event, viewer))
         return "notFound" as const;
 
       const others = await tx.rsvp.aggregate({

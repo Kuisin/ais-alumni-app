@@ -6,6 +6,7 @@ import { EventForm } from "@/components/events/event-form";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { effectiveAudiences } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { answerSummary, asLocale, headcount } from "@/lib/events";
 import {
@@ -170,7 +171,7 @@ export default async function AdminEventPage({
                 location: event.location ?? "",
                 mapUrl: event.mapUrl ?? "",
                 capacity: event.capacity === null ? "" : String(event.capacity),
-                targetRoles: event.targetRoles,
+                targetAudiences: effectiveAudiences(event),
               }}
               deleteAction={{
                 action: deleteEventAction,

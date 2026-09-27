@@ -8,6 +8,7 @@ import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { effectiveAudiences } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { localized, toJstLocalInput } from "@/lib/format";
@@ -108,7 +109,7 @@ export default async function AdminNewsEditPage({
                 ? toJstLocalInput(post.publishedAt)
                 : "",
               pinned: post.pinned,
-              targetRoles: post.targetRoles,
+              targetAudiences: effectiveAudiences(post),
               coverPreviewUrl: post.coverUrl
                 ? signedFileUrl(post.coverUrl)
                 : null,

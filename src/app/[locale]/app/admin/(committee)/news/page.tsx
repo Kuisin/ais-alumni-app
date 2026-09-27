@@ -48,6 +48,7 @@ export default async function AdminNewsPage({
       notifiedAt: true,
       pinned: true,
       targetRoles: true,
+      targetAudiences: true,
     },
   });
   const posts = rows.slice(0, PAGE_SIZE);
@@ -109,7 +110,7 @@ export default async function AdminNewsPage({
                       <FallbackTag fallback={title.fallback} />
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      <TargetBadges roles={p.targetRoles} />
+                      <TargetBadges target={p} />
                     </div>
                   </div>
                   <ChevronRight

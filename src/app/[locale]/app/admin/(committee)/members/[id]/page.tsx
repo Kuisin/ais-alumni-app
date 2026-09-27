@@ -29,6 +29,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { Alert, Badge, PageHeader } from "@/components/ui/card";
 import { AccountState, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { roleLabelKey } from "@/lib/audience";
 import { isCurrentTeacher } from "@/lib/authz";
 import { cohortNumbersById, loadCohortChoices } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -115,7 +116,7 @@ export default async function AdminMemberPage({
       <dt className="text-slate-600">{t("columns.state")}</dt>
       <dd>{tr(`state.${user.state}`)}</dd>
       <dt className="text-slate-600">{t("columns.roles")}</dt>
-      <dd>{roles.map((r) => tr(`role.${r.role}`)).join(", ") || "—"}</dd>
+      <dd>{roles.map((r) => tr(roleLabelKey(r))).join(", ") || "—"}</dd>
       <dt className="text-slate-600">{t("columns.email")}</dt>
       <dd className="min-w-0 break-all">
         {user.primaryEmail ?? "—"}
@@ -269,7 +270,7 @@ export default async function AdminMemberPage({
                       className="size-4 shrink-0 text-slate-400 transition-transform group-open:rotate-90"
                     />
                     <span className="min-w-0 flex-1">
-                      {tr(`role.${r.role}`)}
+                      {tr(roleLabelKey(r))}
                       {r.role === RoleKey.FORMER_STUDENT &&
                       r.graduationOrLeaveYear
                         ? ` · ${r.graduationOrLeaveYear}`

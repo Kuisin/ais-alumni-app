@@ -1,6 +1,12 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { AccountState, type RoleKey } from "@/generated/prisma/enums";
+import { AccountState } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
+import {
+  audienceWhere,
+  effectiveAudiences,
+  membersInAudiences,
+  type Targeted,
+} from "@/lib/audience";
 import { db } from "@/lib/db";
 import { localized } from "@/lib/format";
 import { markdownToPlain } from "@/lib/markdown";
@@ -15,27 +21,8 @@ export const EVENTS_PAGE_SIZE = 20;
 export const COVER_MAX_BYTES = 4 * 1024 * 1024;
 export const COVER_TYPES = { "image/jpeg": "jpg", "image/png": "png" } as const;
 
-/**
- * DB filter equivalent of `isTargeted()` for events and news: empty
- * targetRoles = everyone; admins see everything.
- */
-export function targetRolesWhere(viewer: {
-  isAdmin: boolean;
-  roles: readonly RoleKey[];
-}): {
-  OR?: (
-    | { targetRoles: { isEmpty: true } }
-    | { targetRoles: { hasSome: RoleKey[] } }
-  )[];
-} {
-  if (viewer.isAdmin) return {};
-  return {
-    OR: [
-      { targetRoles: { isEmpty: true } },
-      { targetRoles: { hasSome: [...viewer.roles] } },
-    ],
-  };
-}
+/** DB filter for events and news a viewer may see (src/lib/audience.ts). */
+export const targetRolesWhere = audienceWhere;
 
 /** Published = publishedAt set and not in the future. */
 export function publishedWhere(
@@ -60,14 +47,12 @@ export function newsStatus(
  * (they can *see* everything, but are not spammed with every announcement).
  */
 export async function targetedRecipients(
-  targetRoles: readonly RoleKey[],
+  target: Targeted,
 ): Promise<NotifyUser[]> {
   return db.user.findMany({
     where: {
       state: AccountState.ACTIVE,
-      ...(targetRoles.length
-        ? { roles: { some: { role: { in: [...targetRoles] } } } }
-        : {}),
+      ...membersInAudiences(effectiveAudiences(target)),
     },
     select: NOTIFY_USER_SELECT,
   });
@@ -90,7 +75,7 @@ export async function sendNewsNotification(
   if (claimed.count === 0) return null;
 
   const post = await db.newsPost.findUniqueOrThrow({ where: { id: postId } });
-  const users = await targetedRecipients(post.targetRoles);
+  const users = await targetedRecipients(post);
   try {
     await notifyMany(users, {
       kind: "NEWS",

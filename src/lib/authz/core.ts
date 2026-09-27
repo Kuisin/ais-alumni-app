@@ -1,4 +1,9 @@
-import { AccountState, FollowStatus, RoleKey } from "@/generated/prisma/enums";
+import {
+  AccountState,
+  type AudienceKey,
+  FollowStatus,
+  RoleKey,
+} from "@/generated/prisma/enums";
 
 /**
  * Pure authorization rules (§8, §9, §10.1). No database access here so the
@@ -13,6 +18,8 @@ export type Viewer = {
   /** TEACHER role with status 現職; former teachers get no teacher access. */
   currentTeacher: boolean;
   familyId: string | null;
+  /** roles with 卒業生 / 元在校生 split (src/lib/audience.ts) */
+  audiences?: readonly AudienceKey[];
 };
 
 export type Target = {

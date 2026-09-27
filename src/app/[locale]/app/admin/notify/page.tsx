@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { BroadcastForm } from "@/components/broadcast/broadcast-form";
 import { Card, PageHeader } from "@/components/ui/card";
+import { effectiveAudiences } from "@/lib/audience";
 import { getBroadcastRights } from "@/lib/broadcasts";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -60,8 +61,10 @@ export default async function NotifyPage() {
                   {formatDateTime(b.createdAt, locale)} ·{" "}
                   {b.scope === "COHORT"
                     ? ((b.cohortId ? cohortName.get(b.cohortId) : null) ?? "—")
-                    : b.targetRoles.length
-                      ? b.targetRoles.map((r) => tr(`role.${r}`)).join(", ")
+                    : effectiveAudiences(b).length
+                      ? effectiveAudiences(b)
+                          .map((r) => tr(`audience.${r}`))
+                          .join(", ")
                       : t("audience.ALL")}{" "}
                   ·{" "}
                   {t("historyCounts", {

@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { RoleKey } from "@/generated/prisma/enums";
+import type { AudienceKey } from "@/generated/prisma/enums";
+import { AUDIENCE_KEYS } from "@/lib/audience";
 import type { CohortOption } from "@/lib/cohorts";
 
 type AudienceKind = "ALL" | "ROLES" | "COHORT";
@@ -40,7 +41,7 @@ export function BroadcastForm({
   const [audience, setAudience] = useState<AudienceKind>(
     canAny ? "ALL" : "COHORT",
   );
-  const [roles, setRoles] = useState<RoleKey[]>([]);
+  const [roles, setRoles] = useState<AudienceKey[]>([]);
   const [cohortId, setCohortId] = useState(
     canAny ? "" : (cohorts[0]?.id ?? ""),
   );
@@ -124,7 +125,7 @@ export function BroadcastForm({
         )}
         {audience === "ROLES" ? (
           <div className="grid gap-1 pl-6 sm:grid-cols-2">
-            {Object.values(RoleKey).map((r) => (
+            {AUDIENCE_KEYS.map((r) => (
               <label
                 key={r}
                 className="flex min-h-11 items-center gap-2 text-sm"
@@ -140,7 +141,7 @@ export function BroadcastForm({
                     )
                   }
                 />
-                {tr(`role.${r}`)}
+                {tr(`audience.${r}`)}
               </label>
             ))}
             {err("audience") ? (

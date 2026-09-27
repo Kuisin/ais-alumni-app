@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { RoleKey, TeacherStatus } from "@/generated/prisma/enums";
+import { audiencesOfMember } from "@/lib/audience";
 import { db } from "@/lib/db";
 import {
   canViewPrivate as canViewPrivateCore,
@@ -21,6 +22,7 @@ export function toViewer(user: UserWithRoles): Viewer {
     roles: user.roles.map((r) => r.role),
     currentTeacher: isCurrentTeacher(user.roles),
     familyId: user.familyId,
+    audiences: audiencesOfMember(user.roles),
   };
 }
 

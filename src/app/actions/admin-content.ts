@@ -4,8 +4,9 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
-import { RoleKey } from "@/generated/prisma/enums";
+import { AudienceKey } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
+import { rolesForAudiences } from "@/lib/audience";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { parseJstLocal } from "@/lib/format";
@@ -91,7 +92,7 @@ const reqDate = z
   .refine(validDate, "invalidDate")
   .transform(parseJstLocal);
 
-const targetRoles = z.array(z.enum(RoleKey, "invalid"));
+const targetAudiences = z.array(z.enum(AudienceKey, "invalid"));
 
 const Id = z.string().min(1).max(64);
 
@@ -121,7 +122,7 @@ const EventSchema = z
         "invalidCapacity",
       )
       .transform((v) => (v ? Number(v) : null)),
-    targetRoles,
+    targetAudiences,
   })
   .superRefine((d, ctx) => {
     if (!d.titleJa && !d.titleEn) {
@@ -173,16 +174,20 @@ export async function saveEventAction(
     location: str(fd, "location"),
     mapUrl: str(fd, "mapUrl"),
     capacity: str(fd, "capacity"),
-    targetRoles: fd.getAll("targetRoles"),
+    targetAudiences: fd.getAll("targetAudiences"),
   });
   if (!parsed.success)
     return { error: "validation", fieldErrors: toFieldErrors(parsed.error) };
-  const data = parsed.data;
+  // Keep the legacy role column filled for older code (src/lib/audience.ts).
+  const data = {
+    ...parsed.data,
+    targetRoles: rolesForAudiences(parsed.data.targetAudiences),
+  };
   const summary = {
     title: data.titleJa ?? data.titleEn,
     startsAt: data.startsAt.toISOString(),
     capacity: data.capacity,
-    targetRoles: data.targetRoles,
+    targetAudiences: data.targetAudiences,
   };
 
   if (id) {
@@ -247,7 +252,7 @@ const NewsSchema = z
     bodyEn: optText(50000),
     publishedAt: optDate,
     pinned: z.boolean(),
-    targetRoles,
+    targetAudiences,
   })
   .superRefine((d, ctx) => {
     if (!d.titleJa && !d.titleEn) {
@@ -306,11 +311,15 @@ export async function saveNewsAction(
     bodyEn: str(fd, "bodyEn"),
     publishedAt: str(fd, "publishedAt"),
     pinned: fd.get("pinned") === "on",
-    targetRoles: fd.getAll("targetRoles"),
+    targetAudiences: fd.getAll("targetAudiences"),
   });
   if (!parsed.success)
     return { error: "validation", fieldErrors: toFieldErrors(parsed.error) };
-  const data = parsed.data;
+  // Keep the legacy role column filled for older code (src/lib/audience.ts).
+  const data = {
+    ...parsed.data,
+    targetRoles: rolesForAudiences(parsed.data.targetAudiences),
+  };
 
   // Cover image: validate before touching storage or the database.
   const file = fd.get("cover");
@@ -352,7 +361,7 @@ export async function saveNewsAction(
     title: data.titleJa ?? data.titleEn,
     publishedAt: data.publishedAt?.toISOString() ?? null,
     pinned: data.pinned,
-    targetRoles: data.targetRoles,
+    targetAudiences: data.targetAudiences,
     coverChanged: coverUrl !== undefined,
   };
 

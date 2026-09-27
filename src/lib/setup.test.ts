@@ -13,6 +13,7 @@ const base: SetupInput = {
   followsSomeone: false,
   isParent: false,
   hasFamilyLink: false,
+  hasKanjiName: false,
 };
 
 describe("setup checklist", () => {
@@ -23,6 +24,7 @@ describe("setup checklist", () => {
       "apply",
       "approval",
       "line",
+      "names",
       "family",
     ]);
     // Family is optional and waits for approval (no link yet).
@@ -43,6 +45,7 @@ describe("setup checklist", () => {
       "apply",
       "approval",
       "line",
+      "names",
       "photo",
       "bio",
       "history",
@@ -68,6 +71,7 @@ describe("setup checklist", () => {
       "email",
       "apply",
       "approval",
+      "names",
       "family",
     ]);
   });
@@ -98,5 +102,18 @@ describe("sso readiness", async () => {
     process.env.AUTH_GOOGLE_SECRET = "secret";
     expect(ssoReady("google")).toBe(true);
     process.env = saved;
+  });
+
+  it("recommends kanji / kana names: form, then later, then a name request", () => {
+    const at = (x: Partial<typeof base>) =>
+      setupChecklist({ ...base, ...x }).find((i) => i.key === "names");
+    expect(at({ submitted: false })).toMatchObject({
+      recommended: true,
+      optional: true,
+      href: "/app/onboarding/verify",
+    });
+    expect(at({ submitted: true })?.href).toBeNull();
+    expect(at({ active: true })?.href).toBe("/app/profile/edit#name");
+    expect(at({ hasKanjiName: true })?.done).toBe(true);
   });
 });

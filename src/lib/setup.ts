@@ -15,6 +15,8 @@ export type SetupInput = {
   followsSomeone: boolean;
   isParent: boolean;
   hasFamilyLink: boolean;
+  /** 漢字 and フリガナ names recorded */
+  hasKanjiName: boolean;
 };
 
 export type SetupKey =
@@ -26,7 +28,8 @@ export type SetupKey =
   | "bio"
   | "history"
   | "follow"
-  | "family";
+  | "family"
+  | "names";
 
 export type SetupItem = {
   key: SetupKey;
@@ -34,6 +37,8 @@ export type SetupItem = {
   href: string | null;
   /** nice to have: shown, but not needed to finish setup */
   optional?: boolean;
+  /** optional, but we suggest it (「おすすめ」 instead of 「任意」) */
+  recommended?: boolean;
 };
 
 export function setupChecklist(i: SetupInput): SetupItem[] {
@@ -49,6 +54,20 @@ export function setupChecklist(i: SetupInput): SetupItem[] {
       done: i.lineLinked && i.lineFollowing,
       href: i.active ? "/app/settings#line" : "/app/onboarding/status#line",
     });
+  // Recommended: 漢字・フリガナ make members findable by their Japanese
+  // name. In the application before sending; after approval by a name
+  // request (names are fixed); while the application is reviewed, later.
+  items.push({
+    key: "names",
+    done: i.hasKanjiName,
+    href: i.active
+      ? "/app/profile/edit#name"
+      : i.submitted
+        ? null
+        : "/app/onboarding/verify",
+    optional: true,
+    recommended: true,
+  });
   // Profile tasks need an approved account.
   if (i.active)
     items.push(

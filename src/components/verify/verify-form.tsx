@@ -365,6 +365,9 @@ export function VerifyForm({
             <fieldset className="space-y-3">
               <legend className="text-sm font-semibold text-slate-800">
                 {t("fields.nameKanji")}
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                  {t("recommended")}
+                </span>
               </legend>
               <p className="text-sm text-slate-600">{t("hints.nameKanji")}</p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -512,6 +515,22 @@ export function VerifyForm({
 
         {step === "review" ? (
           <div className="space-y-6">
+            {/* Not required, but it's how Japanese classmates search. */}
+            {!composeKanji(state) ? (
+              <Alert tone="warning">
+                <span className="block font-semibold">
+                  {t("kanjiReminder.title")}
+                </span>
+                <span className="mt-1 block">{t("kanjiReminder.body")}</span>
+                <button
+                  type="button"
+                  onClick={() => goTo(STEPS.indexOf("basics"))}
+                  className="mt-2 inline-flex min-h-11 items-center font-semibold text-amber-900 underline"
+                >
+                  {t("kanjiReminder.action")}
+                </button>
+              </Alert>
+            ) : null}
             <section
               aria-labelledby="review-heading"
               className="animate-rise space-y-3 rounded-2xl bg-slate-50 p-4 text-sm"

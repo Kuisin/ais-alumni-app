@@ -51,9 +51,15 @@
       "title": "Link your family",
       "body": "Connect parents, children, siblings and other family members. Children's status updates automatically, and you see each other on the family page.",
       "action": "Link family"
+    },
+    "names": {
+      "title": "Add your name in kanji and kana",
+      "body": "Japanese classmates and teachers can then find you by name. Skip it if you don't have a kanji name.",
+      "action": "Add name"
     }
   },
   "doneSummary": "Completed ({count})",
   "optional": "Optional",
-  "afterApproval": "Available after approval"
+  "afterApproval": "Available after approval",
+  "recommended": "Recommended"
 }

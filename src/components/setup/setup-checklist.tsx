@@ -5,6 +5,7 @@ import {
   ChevronDown,
   FileText,
   GraduationCap,
+  Languages,
   Mail,
   MessageCircle,
   PenLine,
@@ -26,6 +27,7 @@ const ICONS: Record<SetupKey, typeof Mail> = {
   history: GraduationCap,
   follow: UserPlus,
   family: UsersRound,
+  names: Languages,
 };
 
 /**
@@ -96,7 +98,11 @@ export async function SetupChecklist({
                   <div className="min-w-0">
                     <p className="font-medium">
                       {t(`items.${item.key}.title`)}
-                      {item.optional ? (
+                      {item.recommended ? (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                          {t("recommended")}
+                        </span>
+                      ) : item.optional ? (
                         <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
                           {t("optional")}
                         </span>

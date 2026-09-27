@@ -8,6 +8,7 @@ import { chatGroupName } from "@/lib/chat-labels";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
+import { channelTopic } from "@/lib/realtime";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata({
@@ -76,6 +77,7 @@ export default async function ChatRoomPage({
       </div>
       <ChatRoom
         groupId={group.id}
+        topic={channelTopic("chat", group.id)}
         me={user.id}
         isAdmin={user.isAdmin}
         member={Boolean(me)}

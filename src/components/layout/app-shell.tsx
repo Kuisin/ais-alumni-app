@@ -41,6 +41,7 @@ import { chatUnreadTotal } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { hasStaffAccess, type StaffAccess } from "@/lib/permissions";
+import { channelTopic } from "@/lib/realtime";
 import type { CurrentUser } from "@/lib/session";
 import { LocaleSwitcher } from "./locale-switcher";
 import { Dropdown, NavLink } from "./nav-link";
@@ -129,7 +130,10 @@ export async function AppShell({
       ])
     : [0, []];
   const realtimeTopics = live
-    ? [`user:${user.id}`, ...chatGroups.map((g) => `chat:${g.groupId}`)]
+    ? [
+        channelTopic("user", user.id),
+        ...chatGroups.map((g) => channelTopic("chat", g.groupId)),
+      ]
     : [];
   const withRealtime = (node: ReactNode) =>
     live ? (

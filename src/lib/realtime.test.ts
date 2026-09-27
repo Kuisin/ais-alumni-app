@@ -1,22 +1,14 @@
-import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { realtimeToken } from "./realtime";
+import { channelTopic } from "./realtime";
 
-describe("realtime token", () => {
-  it("is an HS256 JWT for the member, valid for an hour", () => {
-    const t = realtimeToken("user1", "secret", 1000);
-    const [head, body, sig] = t.split(".");
-    expect(JSON.parse(Buffer.from(body, "base64url").toString())).toEqual({
-      sub: "user1",
-      role: "authenticated",
-      aud: "authenticated",
-      iat: 1000,
-      exp: 4600,
-    });
-    expect(sig).toBe(
-      createHmac("sha256", "secret")
-        .update(`${head}.${body}`)
-        .digest("base64url"),
-    );
+describe("realtime channel names", () => {
+  it("are stable, secret-derived and differ per kind and id", () => {
+    const a = channelTopic("chat", "g1", "s");
+    expect(a).toBe(channelTopic("chat", "g1", "s"));
+    expect(a).toMatch(/^ais:chat:[\w-]{32}$/);
+    expect(a).not.toContain("g1");
+    expect(channelTopic("user", "g1", "s")).not.toBe(a.replace("chat", "user"));
+    expect(channelTopic("chat", "g2", "s")).not.toBe(a);
+    expect(channelTopic("chat", "g1", "other")).not.toBe(a);
   });
 });

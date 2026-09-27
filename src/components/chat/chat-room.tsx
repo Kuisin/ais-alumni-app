@@ -51,6 +51,7 @@ function merge(
  */
 export function ChatRoom({
   groupId,
+  topic,
   me,
   isAdmin,
   member,
@@ -59,6 +60,8 @@ export function ChatRoom({
   muted: initialMuted,
 }: {
   groupId: string;
+  /** the group's realtime channel (src/lib/realtime.ts channelTopic) */
+  topic: string;
   me: string;
   isAdmin: boolean;
   /** false = admin looking in (can moderate, can't post) */
@@ -133,27 +136,28 @@ export function ChatRoom({
     [markRead],
   );
 
-  useRealtime(`chat:${groupId}`, "message", (p) =>
-    add([p as unknown as ChatMessageView]),
-  );
-  useRealtime(`chat:${groupId}`, "delete", (p) =>
+  // Signals carry ids only: load what's new through the authorized action.
+  const latestRef = useRef<string | undefined>(undefined);
+  latestRef.current = messages.at(-1)?.createdAt;
+  const fetchNew = useCallback(async () => {
+    const rows = await chatMessagesAction(groupId, {
+      after: latestRef.current ?? new Date(0).toISOString(),
+    }).catch(() => null);
+    if (rows) add(rows);
+  }, [groupId, add]);
+  useRealtime(topic, "message", () => void fetchNew());
+  useRealtime(topic, "delete", (p) =>
     setMessages((list) =>
       list.map((m) => (m.id === p.id ? { ...m, body: "", deleted: true } : m)),
     ),
   );
 
   // Without Realtime: poll for new messages.
-  const latest = messages.at(-1)?.createdAt;
   useEffect(() => {
     if (live) return;
-    const timer = setInterval(async () => {
-      const rows = await chatMessagesAction(groupId, {
-        after: latest ?? new Date(0).toISOString(),
-      }).catch(() => null);
-      if (rows) add(rows);
-    }, POLL_MS);
+    const timer = setInterval(() => void fetchNew(), POLL_MS);
     return () => clearInterval(timer);
-  }, [live, groupId, latest, add]);
+  }, [live, fetchNew]);
 
   // Follow new messages when the reader is at the bottom.
   useEffect(() => {

@@ -39,7 +39,8 @@ export async function MemberCard({
   const nameEl = linked ? (
     <Link
       href={`/app/members/${member.id}`}
-      className="font-semibold text-slate-900 underline-offset-2 hover:underline"
+      // The whole card is the tap target (phones); actions sit above it.
+      className="font-semibold text-slate-900 underline-offset-2 after:absolute after:inset-0 after:rounded-xl hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-brand-600"
     >
       {name}
     </Link>
@@ -47,7 +48,9 @@ export async function MemberCard({
     <span className="font-semibold text-slate-900">{name}</span>
   );
   return (
-    <div className="flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div
+      className={`relative flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm ${linked ? "transition hover:border-brand-300 hover:shadow-md" : ""}`}
+    >
       <Avatar src={photo} name={name} size={48} />
       <div className="min-w-0 flex-1">
         <p className="truncate">{nameEl}</p>
@@ -62,7 +65,9 @@ export async function MemberCard({
           <div className="mt-1 text-xs text-slate-500">{meta}</div>
         ) : null}
         {actions ? (
-          <div className="mt-2 flex flex-wrap gap-2">{actions}</div>
+          <div className="relative z-10 mt-2 flex flex-wrap gap-2">
+            {actions}
+          </div>
         ) : null}
       </div>
     </div>

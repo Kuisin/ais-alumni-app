@@ -117,7 +117,7 @@ export default async function SettingsPage({
             <li key={id}>
               <a
                 href={`#${id}`}
-                className="inline-flex min-h-9 items-center rounded-full bg-slate-100 px-3 hover:bg-slate-200"
+                className="inline-flex min-h-11 items-center rounded-full bg-slate-100 px-4 hover:bg-slate-200"
               >
                 {label}
               </a>

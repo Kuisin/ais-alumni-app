@@ -79,10 +79,13 @@ export function ViewEdit({
         <div className={cn("space-y-3", className)}>
           {/* A fresh form each time it opens (no stale input). */}
           <div key={round}>{children}</div>
-          <Button variant="ghost" onClick={cancel}>
-            <X aria-hidden="true" className="size-4" />
-            {tc("cancel")}
-          </Button>
+          {/* Nothing saved yet (opened by startEditing): nothing to go back to. */}
+          {round > 0 ? (
+            <Button variant="ghost" onClick={cancel}>
+              <X aria-hidden="true" className="size-4" />
+              {tc("cancel")}
+            </Button>
+          ) : null}
         </div>
       </ViewEditContext.Provider>
     );

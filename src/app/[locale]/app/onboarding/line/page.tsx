@@ -66,7 +66,10 @@ export default async function OnboardingLinePage({
       <form action={skipLineOnboardingAction} className="mt-4 flex justify-end">
         <button
           type="submit"
-          className={buttonClass(user.lineUserId ? "primary" : "ghost")}
+          className={buttonClass(
+            user.lineUserId ? "primary" : "secondary",
+            "w-full sm:w-auto",
+          )}
         >
           {user.lineUserId ? t("line.continue") : t("line.skip")}
         </button>

@@ -668,7 +668,8 @@ export function VerifyForm({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+      {/* Stays in reach on long steps (phones: above the home indicator). */}
+      <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/95 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:static sm:bg-transparent sm:pt-4 sm:pb-0 sm:backdrop-blur-none">
         {stepIndex > 0 ? (
           <Button variant="secondary" onClick={() => goTo(stepIndex - 1)}>
             {t("back")}

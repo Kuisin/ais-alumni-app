@@ -58,51 +58,54 @@ export function RecordDiff({
 }) {
   const t = useTranslations("records");
   return (
-    <table className="w-full text-left text-sm">
-      <thead className="text-slate-600">
-        <tr>
-          <th scope="col" className="py-1 pr-3 font-medium">
-            {t("diff.field")}
-          </th>
-          <th scope="col" className="py-1 pr-3 font-medium">
-            {t("diff.current")}
-          </th>
-          <th scope="col" className="py-1 font-medium">
-            {t("diff.proposed")}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {Object.keys(proposed)
-          // Requests from older forms may carry fields that no longer exist.
-          .filter((f) => KNOWN_FIELDS.has(f))
-          .map((f) => (
-            <tr key={f} className="border-t border-slate-100">
-              <th
-                scope="row"
-                className="py-1.5 pr-3 font-normal text-slate-700"
-              >
-                {t(`fields.${f}`)}
-              </th>
-              <td className="py-1.5 pr-3 text-slate-500 line-through decoration-slate-400">
-                <RecordValue
-                  field={f as RecordField}
-                  value={current[f]}
-                  role={role}
-                  cohortLabels={cohortLabels}
-                />
-              </td>
-              <td className="py-1.5 font-semibold text-brand-800">
-                <RecordValue
-                  field={f as RecordField}
-                  value={proposed[f]}
-                  role={role}
-                  cohortLabels={cohortLabels}
-                />
-              </td>
-            </tr>
-          ))}
-      </tbody>
-    </table>
+    // Three columns inside a card: scroll sideways rather than squeeze (phones).
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[20rem] text-left text-sm">
+        <thead className="text-slate-600">
+          <tr>
+            <th scope="col" className="py-1 pr-3 font-medium">
+              {t("diff.field")}
+            </th>
+            <th scope="col" className="py-1 pr-3 font-medium">
+              {t("diff.current")}
+            </th>
+            <th scope="col" className="py-1 font-medium">
+              {t("diff.proposed")}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.keys(proposed)
+            // Requests from older forms may carry fields that no longer exist.
+            .filter((f) => KNOWN_FIELDS.has(f))
+            .map((f) => (
+              <tr key={f} className="border-t border-slate-100">
+                <th
+                  scope="row"
+                  className="py-1.5 pr-3 font-normal text-slate-700"
+                >
+                  {t(`fields.${f}`)}
+                </th>
+                <td className="py-1.5 pr-3 text-slate-500 line-through decoration-slate-400">
+                  <RecordValue
+                    field={f as RecordField}
+                    value={current[f]}
+                    role={role}
+                    cohortLabels={cohortLabels}
+                  />
+                </td>
+                <td className="py-1.5 font-semibold text-brand-800">
+                  <RecordValue
+                    field={f as RecordField}
+                    value={proposed[f]}
+                    role={role}
+                    cohortLabels={cohortLabels}
+                  />
+                </td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

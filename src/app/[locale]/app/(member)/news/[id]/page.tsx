@@ -1,4 +1,4 @@
-import { Calendar, Clock, Paperclip } from "lucide-react";
+import { ArrowDown, Calendar, Clock, Paperclip } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { cache } from "react";
@@ -71,7 +71,7 @@ export default async function NewsDetailPage({
       : `${Math.max(1, Math.round(n / 1024))} KB`;
 
   return (
-    <article className="space-y-6">
+    <article className="mx-auto max-w-3xl space-y-6">
       <div>
         <BackLink href="/app/news">{t("backToList")}</BackLink>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
@@ -83,7 +83,7 @@ export default async function NewsDetailPage({
             </time>
           </span>
         </div>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">
+        <h1 className="mt-1 text-2xl font-bold tracking-tight break-words">
           {title.text || t("untitled")}
           <FallbackTag fallback={title.fallback} />
         </h1>
@@ -98,6 +98,16 @@ export default async function NewsDetailPage({
                 ? th("closedManual")
                 : th("closed")}
           </p>
+        ) : null}
+        {/* Something to answer: jump past the body to it (phones). */}
+        {open && (post.requireConfirm || hub.polls.length) ? (
+          <a
+            href="#respond"
+            className="mt-2 ml-2 inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"
+          >
+            {t("respondJump")}
+            <ArrowDown aria-hidden="true" className="size-4" />
+          </a>
         ) : null}
       </div>
       {cover ? (
@@ -139,25 +149,27 @@ export default async function NewsDetailPage({
         </Card>
       ) : null}
 
+      <div id="respond" className="scroll-mt-20 space-y-6 empty:hidden">
+        {post.requireConfirm ? (
+          <ConfirmCard
+            postId={post.id}
+            confirmedAt={hub.confirmedAt?.toISOString() ?? null}
+            count={hub.confirmCount}
+            open={open}
+          />
+        ) : null}
+        {hub.polls.map((p) =>
+          p.kind === "SCHEDULE" ? (
+            <ScheduleCard key={p.id} postId={post.id} poll={p} open={open} />
+          ) : (
+            <PollCard key={p.id} postId={post.id} poll={p} open={open} />
+          ),
+        )}
+      </div>
+
       {post.allowComments ? (
         <Reactions postId={post.id} reactions={hub.reactions} />
       ) : null}
-
-      {post.requireConfirm ? (
-        <ConfirmCard
-          postId={post.id}
-          confirmedAt={hub.confirmedAt?.toISOString() ?? null}
-          count={hub.confirmCount}
-          open={open}
-        />
-      ) : null}
-      {hub.polls.map((p) =>
-        p.kind === "SCHEDULE" ? (
-          <ScheduleCard key={p.id} postId={post.id} poll={p} open={open} />
-        ) : (
-          <PollCard key={p.id} postId={post.id} poll={p} open={open} />
-        ),
-      )}
 
       {post.allowComments || hub.comments.length ? (
         <Comments

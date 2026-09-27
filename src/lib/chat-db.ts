@@ -6,7 +6,6 @@ import {
   PositionKey,
   RoleKey,
 } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { desiredGroups, directKey, isAdult } from "@/lib/chat";
 import { db } from "@/lib/db";
 import {
@@ -15,7 +14,6 @@ import {
   DIRECT_CHAT_ENABLED,
 } from "@/lib/features";
 import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
-import { publicUrl } from "@/lib/urls";
 
 type Client = Prisma.TransactionClient | typeof db;
 
@@ -212,14 +210,8 @@ export async function sendChatDigest(
       kind: "CHAT_DIGEST",
       refId: day,
       dedupe: true,
-      render: async (locale) => {
-        const t = await getTranslatorFor(locale, "chat");
-        return {
-          subject: t("digest.subject"),
-          text: t("digest.text", { count }),
-          url: publicUrl(`/${locale}/app/chat`),
-        };
-      },
+      path: "/app/chat",
+      params: { count },
     });
   }
   return { recipients: users.length };

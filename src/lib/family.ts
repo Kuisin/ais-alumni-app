@@ -4,8 +4,6 @@ import {
   FamilyLinkInitiator,
   RoleKey,
 } from "@/generated/prisma/enums";
-import type { AppLocale } from "@/i18n/routing";
-import { getTranslatorFor } from "@/i18n/translator";
 import {
   blockedUserIds,
   canViewProfile,
@@ -23,7 +21,6 @@ import { displayName } from "@/lib/format";
 import { toKatakana } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
-import { publicUrl } from "@/lib/urls";
 import { isCjk } from "@/lib/verification/roster";
 
 /** Families and parent/child links (§8). */
@@ -416,18 +413,13 @@ export async function createFamilyLink(
       select: NOTIFY_USER_SELECT,
     });
     await notify(to, {
-      kind: "FAMILY_LINK_REQUEST",
+      kind:
+        input.direction === "child"
+          ? "FAMILY_LINK_REQUEST_AS_CHILD"
+          : "FAMILY_LINK_REQUEST_AS_PARENT",
       refId: link.id,
-      render: async (locale) => {
-        const t = await getTranslatorFor(locale as AppLocale, "family");
-        const name = displayName(me, locale);
-        const key = input.direction === "child" ? "asChild" : "asParent";
-        return {
-          subject: t(`notify.${key}Subject`, { name }),
-          text: t(`notify.${key}Text`, { name }),
-          url: publicUrl(`/${locale}/app/family`),
-        };
-      },
+      path: "/app/family",
+      params: (locale) => ({ name: displayName(me, locale) }),
     });
   } catch (e) {
     console.error("[family] notification failed", e);

@@ -7,7 +7,6 @@ import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
-import { getTranslatorFor } from "@/i18n/translator";
 import { canRevokeAdmin } from "@/lib/account";
 import { audit } from "@/lib/audit";
 import { normalizeEmail } from "@/lib/auth/otp";
@@ -21,7 +20,6 @@ import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import { AuthError, actionAdmin } from "@/lib/session";
 import { canTransition } from "@/lib/state-machine";
 import { syncMemberStatus } from "@/lib/status-sync";
-import { publicUrl } from "@/lib/urls";
 
 export type MergeSide = {
   id: string;
@@ -399,17 +397,8 @@ export async function setMemberStateAction(
       },
     );
     await notify(updated, {
-      kind: deactivating ? "DEACTIVATED" : "REACTIVATED",
-      alwaysEmail: deactivating,
-      render: async (locale) => {
-        const tr = await getTranslatorFor(locale, "adminMembers");
-        const key = deactivating ? "deactivated" : "reactivated";
-        return {
-          subject: tr(`notify.${key}.subject`),
-          text: tr(`notify.${key}.text`),
-          url: deactivating ? undefined : publicUrl(`/${locale}/app/dashboard`),
-        };
-      },
+      kind: deactivating ? "ACCOUNT_DEACTIVATED" : "ACCOUNT_REACTIVATED",
+      path: deactivating ? null : "/app/dashboard",
     }).catch((e) => console.error("[admin-members] notify failed", e));
     refresh();
     return {

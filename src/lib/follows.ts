@@ -1,7 +1,5 @@
 import { Prisma } from "@/generated/prisma/client";
 import { FollowStatus, RoleKey } from "@/generated/prisma/enums";
-import type { AppLocale } from "@/i18n/routing";
-import { getTranslatorFor } from "@/i18n/translator";
 import {
   canRequestFollow,
   type FollowDenial,
@@ -16,7 +14,6 @@ import { PUBLIC_CARD_SELECT } from "@/lib/directory";
 import { displayName } from "@/lib/format";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 import type { CurrentUser } from "@/lib/session";
-import { publicUrl } from "@/lib/urls";
 
 /** Follow requests and blocks (§9.2). */
 
@@ -144,19 +141,8 @@ export async function requestFollow(
     await notify(to, {
       kind: auto ? "FOLLOW_AUTO_ACCEPTED" : "FOLLOW_REQUEST",
       refId: followId,
-      render: async (locale) => {
-        const t = await getTranslatorFor(locale as AppLocale, "follows");
-        const name = displayName(viewer, locale);
-        return {
-          subject: t(auto ? "notify.autoSubject" : "notify.requestSubject", {
-            name,
-          }),
-          text: t(auto ? "notify.autoText" : "notify.requestText", { name }),
-          url: publicUrl(
-            `/${locale}/app/follows?tab=${auto ? "followers" : "incoming"}`,
-          ),
-        };
-      },
+      path: `/app/follows?tab=${auto ? "followers" : "incoming"}`,
+      params: (locale) => ({ name: displayName(viewer, locale) }),
     });
   });
 
@@ -181,15 +167,8 @@ export async function acceptFollow(
     await notify(follow.follower, {
       kind: "FOLLOW_ACCEPTED",
       refId: followId,
-      render: async (locale) => {
-        const t = await getTranslatorFor(locale as AppLocale, "follows");
-        const name = displayName(me, locale);
-        return {
-          subject: t("notify.acceptedSubject", { name }),
-          text: t("notify.acceptedText", { name }),
-          url: publicUrl(`/${locale}/app/members/${me.id}`),
-        };
-      },
+      path: `/app/members/${me.id}`,
+      params: (locale) => ({ name: displayName(me, locale) }),
     });
   });
   return true;

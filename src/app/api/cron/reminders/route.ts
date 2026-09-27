@@ -1,12 +1,10 @@
 import { AccountState, RsvpAnswer } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { isAuthorizedCron } from "@/lib/cron";
 import { db } from "@/lib/db";
 import { reminderWindows, type Window } from "@/lib/events";
-import { formatDateTime, localized } from "@/lib/format";
+import { localized } from "@/lib/format";
 import { dueScheduledNews, sendNewsNotification } from "@/lib/news";
 import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
-import { publicUrl } from "@/lib/urls";
 
 /**
  * Daily at 09:00 JST (vercel.ts: "0 0 * * *" UTC).
@@ -50,24 +48,12 @@ async function remind(
         kind,
         refId: event.id,
         dedupe: true,
-        render: async (locale) => {
-          const t = await getTranslatorFor(locale, "events");
-          const title = localized(event.titleJa, event.titleEn, locale).text;
-          const when = formatDateTime(event.startsAt, locale);
-          const key =
-            kind === "EVENT_REMINDER_7D" ? "reminder.week" : "reminder.day";
-          return {
-            subject: t(`${key}.subject`, { title }),
-            text: event.location
-              ? t(`${key}.textWithLocation`, {
-                  title,
-                  when,
-                  location: event.location,
-                })
-              : t(`${key}.text`, { title, when }),
-            url: publicUrl(`/${locale}/app/events/${event.id}`),
-          };
-        },
+        path: `/app/events/${event.id}`,
+        params: (locale) => ({
+          title: localized(event.titleJa, event.titleEn, locale).text,
+          when: event.startsAt,
+          location: event.location,
+        }),
       });
       recipients += sent.size;
     } catch (e) {

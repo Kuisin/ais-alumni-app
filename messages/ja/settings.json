@@ -29,7 +29,8 @@
       "EMAIL": "メール",
       "NONE": "なし（LINE・メールとも未設定）"
     },
-    "save": "通知設定を保存"
+    "save": "通知設定を保存",
+    "categories": "受け取る通知"
   },
   "line": {
     "title": "LINE",

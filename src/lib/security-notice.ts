@@ -1,7 +1,6 @@
 import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
-import { publicUrl } from "@/lib/urls";
 
 /**
  * Security notice when Google/LINE is linked to an existing account (§11:
@@ -18,17 +17,11 @@ export async function notifySignInMethodAdded(
     });
     if (!user) return;
     await notify(user, {
-      kind: "SECURITY",
-      alwaysEmail: true,
-      render: async (locale) => {
+      kind: "SECURITY_METHOD_ADDED",
+      path: "/app/settings",
+      params: async (locale) => {
         const t = await getTranslatorFor(locale, "settings");
-        return {
-          subject: t("notify.methodAdded.subject"),
-          text: t("notify.methodAdded.text", {
-            method: t(`methods.${provider}`),
-          }),
-          url: publicUrl(`/${locale}/app/settings`),
-        };
+        return { method: t(`methods.${provider}`) };
       },
     });
   } catch (e) {

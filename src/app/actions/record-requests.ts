@@ -8,7 +8,6 @@ import {
   ChangeRequestStatus,
   RoleKey,
 } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
 import { cohortNumbersById, ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
@@ -26,7 +25,6 @@ import {
 } from "@/lib/record-requests";
 import { AuthError, actionActive, actionAdmin } from "@/lib/session";
 import { syncMemberStatus } from "@/lib/status-sync";
-import { publicUrl } from "@/lib/urls";
 
 export type RecordRequestFormState = {
   ok?: boolean;
@@ -115,14 +113,8 @@ export async function submitRecordRequestAction(
   });
   await notifyMany(admins, {
     kind: "RECORD_REQUEST_ADMIN",
-    render: async (locale) => {
-      const t = await getTranslatorFor(locale, "records");
-      return {
-        subject: t("notify.admin.subject"),
-        text: t("notify.admin.text", { name: displayName(me, locale) }),
-        url: publicUrl(`/${locale}/app/admin/record-requests`),
-      };
-    },
+    path: "/app/admin/record-requests",
+    params: (locale) => ({ name: displayName(me, locale) }),
   }).catch((e) => console.error("[record-requests] admin notify failed", e));
 
   refresh();
@@ -218,17 +210,10 @@ export async function decideRecordRequestAction(
     },
   );
   await notify(request.user, {
-    kind: "RECORD_REQUEST_RESULT",
+    kind: approved ? "RECORD_REQUEST_APPROVED" : "RECORD_REQUEST_REJECTED",
     refId: id,
-    render: async (locale) => {
-      const t = await getTranslatorFor(locale, "records");
-      const key = approved ? "approved" : "rejected";
-      return {
-        subject: t(`notify.${key}.subject`),
-        text: t(`notify.${key}.text`, { note: note || "—" }),
-        url: publicUrl(`/${locale}/app/profile/record`),
-      };
-    },
+    path: "/app/profile/record",
+    note: note || null,
   }).catch((e) => console.error("[record-requests] member notify failed", e));
 
   refresh();

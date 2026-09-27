@@ -3,14 +3,12 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { AccountState, ChangeRequestStatus } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { audit } from "@/lib/audit";
 import { syncChatMembership } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { NOTIFY_USER_SELECT, notify, notifyMany } from "@/lib/notify";
 import { AuthError, actionActive, actionAdmin } from "@/lib/session";
-import { publicUrl } from "@/lib/urls";
 
 /**
  * Birth dates are fixed once a member is approved, like names: members ask
@@ -87,16 +85,8 @@ export async function submitBirthDateRequestAction(
   });
   await notifyMany(admins, {
     kind: "BIRTH_DATE_REQUEST_ADMIN",
-    render: async (locale) => {
-      const t = await getTranslatorFor(locale, "profile");
-      return {
-        subject: t("birthDate.notify.admin.subject"),
-        text: t("birthDate.notify.admin.text", {
-          name: displayName(me, locale),
-        }),
-        url: publicUrl(`/${locale}/app/admin/name-requests`),
-      };
-    },
+    path: "/app/admin/name-requests",
+    params: (locale) => ({ name: displayName(me, locale) }),
   }).catch((e) => console.error("[birth-date] admin notify failed", e));
   refresh();
   return { ok: true, message: "birthDate.submitted" };
@@ -189,17 +179,12 @@ export async function decideBirthDateRequestAction(
     },
   );
   await notify(request.user, {
-    kind: "BIRTH_DATE_REQUEST_RESULT",
+    kind: approved
+      ? "BIRTH_DATE_REQUEST_APPROVED"
+      : "BIRTH_DATE_REQUEST_REJECTED",
     refId: id,
-    render: async (locale) => {
-      const t = await getTranslatorFor(locale, "profile");
-      const key = approved ? "approved" : "rejected";
-      return {
-        subject: t(`birthDate.notify.${key}.subject`),
-        text: t(`birthDate.notify.${key}.text`, { note: note || "—" }),
-        url: publicUrl(`/${locale}/app/profile/edit`),
-      };
-    },
+    path: "/app/profile/edit#birth-date",
+    note: note || null,
   }).catch((e) => console.error("[birth-date] member notify failed", e));
   refresh();
   return {

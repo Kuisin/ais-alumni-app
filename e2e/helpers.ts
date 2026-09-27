@@ -139,3 +139,18 @@ export async function readLink(
   }
   throw new Error(`No ${pathPart} link emailed to ${email}`);
 }
+
+/**
+ * The page a notification email leads to: finds the short /n/<token> link
+ * (always ais.kai-lab.net) and follows it here without redirecting.
+ */
+export async function notificationTarget(
+  request: import("@playwright/test").APIRequestContext,
+  mailText: string,
+): Promise<{ token: string; target: string }> {
+  const m = mailText.match(/https:\/\/ais\.kai-lab\.net\/n\/([0-9A-Za-z]{8})/);
+  if (!m) throw new Error("No notification link in the email");
+  const res = await request.get(`/n/${m[1]}`, { maxRedirects: 0 });
+  const location = res.headers().location ?? "";
+  return { token: m[1], target: new URL(location, "http://x").pathname };
+}

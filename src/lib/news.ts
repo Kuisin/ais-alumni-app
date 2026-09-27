@@ -1,12 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState } from "@/generated/prisma/enums";
-import { getTranslatorFor } from "@/i18n/translator";
 import { audienceWhere, type Targeted } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { audienceUserWhere, specFromPost } from "@/lib/news-audience";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
 import { refreshUsers } from "@/lib/realtime";
-import { publicUrl } from "@/lib/urls";
 
 export const NEWS_PAGE_SIZE = 10;
 export const EVENTS_PAGE_SIZE = 20;
@@ -84,14 +82,7 @@ export async function sendNewsNotification(
       refId: post.id,
       dedupe: true,
       // No content in the notification; the post is read in the app.
-      render: async (locale) => {
-        const t = await getTranslatorFor(locale, "news");
-        return {
-          subject: t("notify.contentlessSubject"),
-          text: t("notify.contentlessText"),
-          url: publicUrl(`/${locale}/app/news/${post.id}`),
-        };
-      },
+      path: `/app/news/${post.id}`,
     });
   } catch (e) {
     // Release the claim so it can be retried; per-user dedupe prevents

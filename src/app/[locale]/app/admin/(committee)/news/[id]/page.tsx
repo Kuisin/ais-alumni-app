@@ -2,11 +2,13 @@ import { Eye } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { deleteNewsAction } from "@/app/actions/admin-content";
+import { NewsReadsCard } from "@/components/admin/news-reads-card";
 import { NewsForm } from "@/components/news/news-form";
 import { NotifyPanel } from "@/components/news/notify-panel";
 import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, PageHeader } from "@/components/ui/card";
+import { cn } from "@/components/ui/cn";
 import { Link } from "@/i18n/navigation";
 import { effectiveAudiences } from "@/lib/audience";
 import { db } from "@/lib/db";
@@ -80,15 +82,24 @@ export default async function AdminNewsEditPage({
       ) : null}
 
       {/* Notify panel first in DOM so phones see it (and its confirm step)
-          before the long form; on xl it is a sticky right column. */}
+          before the long form; on xl it is a right column, sticky unless
+          the (possibly long) read list sits under it. */}
       <div className="space-y-8 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-6 xl:space-y-0">
-        <aside className="xl:sticky xl:top-20 xl:col-start-2 xl:row-start-1">
+        <aside
+          className={cn(
+            "space-y-6 xl:col-start-2 xl:row-start-1",
+            status !== "published" && "xl:sticky xl:top-20",
+          )}
+        >
           <NotifyPanel
             post={post}
             status={status}
             confirm={sp.notify === "1"}
             locale={locale}
           />
+          {status === "published" ? (
+            <NewsReadsCard post={post} locale={locale} />
+          ) : null}
         </aside>
 
         <section

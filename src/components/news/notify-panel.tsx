@@ -66,6 +66,9 @@ export async function NotifyPanel({
               ? t("notify.draftHint")
               : t("notify.publishedHint")}
         </p>
+        <p className="mb-3 text-xs text-slate-500">
+          {t("notify.contentlessHint")}
+        </p>
         <Link
           href={`/app/admin/news/${post.id}?notify=1`}
           className={buttonClass("secondary", "w-full sm:w-auto xl:w-full")}
@@ -112,6 +115,9 @@ export async function NotifyPanel({
           <dd className="text-xl font-semibold">{unreachable}</dd>
         </div>
       </dl>
+      <p className="mb-2 text-xs text-slate-500">
+        {t("notify.contentlessHint")}
+      </p>
       <p className="mb-4 text-xs text-slate-500">{t("notify.quotaHint")}</p>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:flex-col">
         <form action={notifyNewsAction}>

@@ -33,6 +33,7 @@ import {
   VerificationStatus,
 } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { unreadCounts } from "@/lib/announcements";
 import { getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
@@ -83,7 +84,7 @@ export async function AppShell({
   const isStaff = access ? hasStaffAccess(access) : false;
   const admin = variant === "admin";
   // Badges: work waiting for this person.
-  const [pendingVerify, pendingRecords, pendingNames, followRequests] =
+  const [pendingVerify, pendingRecords, pendingNames, followRequests, unread] =
     await Promise.all([
       admin && access?.admin
         ? db.verificationRequest.count({
@@ -105,7 +106,11 @@ export async function AppShell({
             where: { followeeId: user.id, status: FollowStatus.REQUESTED },
           })
         : 0,
+      variant === "member" && user
+        ? unreadCounts(user)
+        : { news: 0, messages: 0 },
     ]);
+  const unreadTotal = unread.news + unread.messages;
 
   const primary: NavItem[] = [
     {
@@ -126,6 +131,7 @@ export async function AppShell({
     {
       href: "/app/news",
       label: t("nav.news"),
+      count: unreadTotal,
       icon: <Newspaper className={ICON} />,
     },
     {
@@ -497,6 +503,10 @@ export async function AppShell({
                     >
                       <span aria-hidden="true">{item.icon}</span>
                       {item.label}
+                      <CountBadge
+                        n={item.count}
+                        label={t("nav.unread", { count: item.count ?? 0 })}
+                      />
                     </NavLink>
                   </li>
                 ))}
@@ -531,8 +541,23 @@ export async function AppShell({
                   className="flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-slate-600 [&_svg]:size-5"
                   activeClassName="text-brand-700"
                 >
-                  <span aria-hidden="true">{item.icon}</span>
+                  <span className="relative">
+                    <span aria-hidden="true">{item.icon}</span>
+                    {item.count ? (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-1.5 left-3.5 min-w-4 rounded-full bg-red-600 px-1 text-center text-[10px] leading-4 font-semibold text-white tabular-nums ring-2 ring-white"
+                      >
+                        {item.count > 99 ? "99+" : item.count}
+                      </span>
+                    ) : null}
+                  </span>
                   {item.label}
+                  {item.count ? (
+                    <span className="sr-only">
+                      {` (${t("nav.unread", { count: item.count })})`}
+                    </span>
+                  ) : null}
                 </NavLink>
               </li>
             ))}

@@ -8,8 +8,6 @@ import {
   type Targeted,
 } from "@/lib/audience";
 import { db } from "@/lib/db";
-import { localized } from "@/lib/format";
-import { markdownToPlain } from "@/lib/markdown";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
 import { appUrl } from "@/lib/urls";
 
@@ -81,13 +79,12 @@ export async function sendNewsNotification(
       kind: "NEWS",
       refId: post.id,
       dedupe: true,
+      // No content in the notification; the post is read in the app.
       render: async (locale) => {
         const t = await getTranslatorFor(locale, "news");
-        const title = localized(post.titleJa, post.titleEn, locale).text;
-        const body = localized(post.bodyJa, post.bodyEn, locale).text;
         return {
-          subject: t("notify.subject", { title }),
-          text: markdownToPlain(body, 200) || t("notify.fallbackText"),
+          subject: t("notify.contentlessSubject"),
+          text: t("notify.contentlessText"),
           url: appUrl(`/${locale}/app/news/${post.id}`),
         };
       },

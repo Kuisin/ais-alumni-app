@@ -66,7 +66,31 @@ test("admin appoints a class representative who notifies their class", async ({
     path.join(process.cwd(), ".data", "dev-mail", "ken@example.com.txt"),
     "utf8",
   );
-  expect(mail).toContain(title);
-  // Signed with the sender's position in the recipient's language.
+  // The notification carries no content: no title or body, only who it's
+  // from and a link to read it in the app.
+  expect(mail).not.toContain(title);
+  expect(mail).not.toContain("Let's meet in December!");
   expect(mail).toMatch(/Class representative|学年代表/);
+  const link = mail.match(/https?:\/\/\S*\/app\/news\/messages\/\S+/)?.[0];
+  expect(link).toBeTruthy();
+
+  // Ken reads it in the app.
+  const ken = await browser.newPage();
+  await signInWithEmail(ken, "ken@example.com");
+  // Listed in the app, unread until opened.
+  await ken.goto("/en/app/news?tab=messages");
+  const row = ken.getByRole("link", { name: new RegExp(title) });
+  await expect(row).toContainText("Unread");
+  await ken.goto(new URL(link as string).pathname);
+  await expect(ken.getByRole("heading", { name: title })).toBeVisible();
+  await expect(ken.getByText("Let's meet in December!")).toBeVisible();
+
+  await ken.goto("/en/app/news?tab=messages");
+  await expect(
+    ken.getByRole("link", { name: new RegExp(title) }),
+  ).not.toContainText("Unread");
+
+  // The sender sees the read receipt.
+  await member.goto("/en/app/admin/notify");
+  await expect(member.getByText(/Read 1 \/ 1/).first()).toBeVisible();
 });

@@ -59,7 +59,8 @@
     "profileShort": "Me",
     "adminModeShort": "Admin",
     "memberModeShort": "Member",
-    "pending": "{count} waiting"
+    "pending": "{count} waiting",
+    "unread": "{count} unread"
   },
   "adminNav": {
     "verification": "Verification",

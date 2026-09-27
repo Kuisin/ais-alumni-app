@@ -110,7 +110,8 @@
       "pinned": "固定"
     },
     "description": "会員向けお知らせの作成・公開・通知ができます。下書きは会員には表示されません。",
-    "emptyHint": "お知らせを作成し、公開すると会員のお知らせ一覧に表示されます。"
+    "emptyHint": "お知らせを作成し、公開すると会員のお知らせ一覧に表示されます。",
+    "readOf": "既読 {read} / 対象 {audience}"
   },
   "notify": {
     "title": "公開して通知",
@@ -130,6 +131,17 @@
     "sending": "送信中…",
     "cancel": "キャンセル",
     "sent": "お知らせを公開し、会員に通知しました。",
-    "alreadySent": "{date}に会員へ通知済みです。"
+    "alreadySent": "{date}に会員へ通知済みです。",
+    "contentlessHint": "通知にはお知らせの内容は含まれません。会員は通知を受け取り、お知らせはアプリで読みます。"
+  },
+  "reads": {
+    "title": "既読",
+    "readOf": "既読 {read} / 対象 {audience}",
+    "percent": "{percent}%",
+    "audienceHint": "対象は、このお知らせの公開範囲に含まれる現在の有効な会員数です。",
+    "readers": "読んだ会員",
+    "empty": "まだ誰も読んでいません。",
+    "showAll": "すべて表示（ほか{count}人）",
+    "truncated": "最近読んだ{count}人を表示しています。"
   }
 }

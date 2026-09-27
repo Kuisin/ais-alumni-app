@@ -1,5 +1,6 @@
 import { ChevronRight, Newspaper, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { ReadMeter, readPercent } from "@/components/admin/read-receipts";
 import { TargetBadges } from "@/components/events/target-badges";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { Pager, parsePage } from "@/components/news/pager";
@@ -7,9 +8,11 @@ import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, EmptyState, PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { newsReadStats } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
+import { newsStatus } from "@/lib/news";
 import { requireAdmin } from "@/lib/session";
 
 export async function generateMetadata({
@@ -52,6 +55,10 @@ export default async function AdminNewsPage({
     },
   });
   const posts = rows.slice(0, PAGE_SIZE);
+  // Read counts only for live posts; drafts and scheduled ones show none.
+  const stats = await newsReadStats(
+    posts.filter((p) => newsStatus(p) === "published"),
+  );
 
   return (
     <>
@@ -90,6 +97,7 @@ export default async function AdminNewsPage({
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white">
           {posts.map((p) => {
             const title = localized(p.titleJa, p.titleEn, locale);
+            const reads = stats.get(p.id);
             return (
               <li key={p.id}>
                 <Link
@@ -112,6 +120,17 @@ export default async function AdminNewsPage({
                     <div className="flex flex-wrap gap-1">
                       <TargetBadges target={p} />
                     </div>
+                    {reads ? (
+                      <ReadMeter
+                        className="max-w-60 pt-1"
+                        read={reads.read}
+                        total={reads.audience}
+                        label={t("news.readOf", reads)}
+                        percentLabel={t("reads.percent", {
+                          percent: readPercent(reads.read, reads.audience),
+                        })}
+                      />
+                    ) : null}
                   </div>
                   <ChevronRight
                     aria-hidden="true"

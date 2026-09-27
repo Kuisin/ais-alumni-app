@@ -1,10 +1,12 @@
 import { Calendar, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/card";
+import { cn } from "@/components/ui/cn";
 import { Link } from "@/i18n/navigation";
 import { formatDate, localized } from "@/lib/format";
 import { markdownToPlain } from "@/lib/markdown";
 import { FallbackTag } from "./fallback-tag";
+import { UnreadBadge } from "./unread-badge";
 
 export type NewsCardData = {
   id: string;
@@ -20,10 +22,13 @@ export function NewsCard({
   post,
   locale,
   excerpt = true,
+  unread = false,
 }: {
   post: NewsCardData;
   locale: "ja" | "en";
   excerpt?: boolean;
+  /** the member hasn't opened this post yet */
+  unread?: boolean;
 }) {
   const t = useTranslations("news");
   const title = localized(post.titleJa, post.titleEn, locale);
@@ -33,10 +38,14 @@ export function NewsCard({
   return (
     <Link
       href={`/app/news/${post.id}`}
-      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-300 hover:shadow-md focus-visible:outline-2"
+      className={cn(
+        "group flex items-center gap-3 rounded-xl border bg-white p-4 shadow-sm transition hover:border-brand-300 hover:shadow-md focus-visible:outline-2",
+        unread ? "border-brand-200 ring-1 ring-brand-100" : "border-slate-200",
+      )}
     >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+          {unread ? <UnreadBadge /> : null}
           {post.pinned ? <Badge tone="brand">{t("pinned")}</Badge> : null}
           {post.publishedAt ? (
             <span className="inline-flex items-center gap-1.5">
@@ -47,7 +56,12 @@ export function NewsCard({
             </span>
           ) : null}
         </div>
-        <h3 className="mt-1 font-semibold text-slate-900">
+        <h3
+          className={cn(
+            "mt-1 text-slate-900",
+            unread ? "font-bold" : "font-semibold",
+          )}
+        >
           {title.text || t("untitled")}
           <FallbackTag fallback={title.fallback} />
         </h3>

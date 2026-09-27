@@ -21,6 +21,7 @@ import {
   staffAccess,
 } from "@/lib/permissions";
 import type { CurrentUser } from "@/lib/session";
+import { appUrl } from "@/lib/urls";
 
 /** The member's roles and positions, loaded once per request. */
 const loadHolder = cache(async (user: CurrentUser): Promise<Holder> => {
@@ -125,6 +126,11 @@ export async function sendBroadcast(params: {
       emailCount: counts.email,
     },
   });
+  // Inbox rows: the message is read in the app (read receipts).
+  await db.broadcastRecipient.createMany({
+    data: users.map((u) => ({ broadcastId: broadcast.id, userId: u.id })),
+    skipDuplicates: true,
+  });
   await audit(
     sender.id,
     "broadcast.sent",
@@ -139,15 +145,21 @@ export async function sendBroadcast(params: {
     kind: "BROADCAST",
     refId: broadcast.id,
     dedupe: true,
+    // No content in the notification: members open it in the app, which
+    // also records that they read it.
     render: async (locale) => {
       const t = await getTranslatorFor(locale, "broadcast");
       const from = right.position
-        ? t("signature", {
+        ? t("fromPosition", {
             name: displayName(sender, locale),
             position: t(`positions.${right.position}`),
           })
-        : t("signatureCommittee");
-      return { subject: title, text: `${body}\n\n${from}` };
+        : t("fromCommittee");
+      return {
+        subject: t("notifyContentless.subject"),
+        text: t("notifyContentless.text", { from }),
+        url: appUrl(`/${locale}/app/news/messages/${broadcast.id}`),
+      };
     },
   });
   return { id: broadcast.id, recipients: users.length, ...counts };

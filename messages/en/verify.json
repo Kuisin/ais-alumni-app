@@ -199,7 +199,7 @@
     "teacherFormer": "You'll be registered as former teacher / staff (left in {year})"
   },
   "child": {
-    "reviewNote": "The committee reviews your children’s details, not yours.",
+    "reviewNote": "The committee reviews your children’s details, not yours. Your account opens once a child is approved (or, for a registered child, once they confirm you).",
     "modeLegend": "How would you like to add this child?",
     "modes": {
       "existing": {

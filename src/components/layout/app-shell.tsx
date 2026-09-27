@@ -88,7 +88,10 @@ export async function AppShell({
     await Promise.all([
       admin && access?.admin
         ? db.verificationRequest.count({
-            where: { status: VerificationStatus.PENDING },
+            where: {
+              status: VerificationStatus.PENDING,
+              followsChildren: false,
+            },
           })
         : 0,
       admin && access?.admin

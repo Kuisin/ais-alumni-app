@@ -57,8 +57,10 @@ export default async function VerificationQueuePage({
       : VerificationStatus.PENDING;
   const page = pageParam(sp.page);
   const q = (typeof sp.q === "string" ? sp.q : "").trim().slice(0, 60);
+  // Parents alone aren't reviewed: they follow their children's approval.
   const where = {
     status,
+    followsChildren: false,
     ...(q
       ? {
           user: {
@@ -88,6 +90,7 @@ export default async function VerificationQueuePage({
             nameRomaji: true,
             nameKanji: true,
             dateOfBirth: true,
+            managedBy: { select: { nameRomaji: true, nameKanji: true } },
             roles: { select: { role: true, schoolEmailVerified: true } },
             // Parents: the children whose details are being reviewed.
             parentLinks: {
@@ -122,6 +125,7 @@ export default async function VerificationQueuePage({
         status: {
           in: [VerificationStatus.PENDING, VerificationStatus.NEEDS_INFO],
         },
+        followsChildren: false,
       },
       _count: { _all: true },
     }),
@@ -226,6 +230,13 @@ export default async function VerificationQueuePage({
                         <span className="ml-2 text-sm font-normal text-slate-600">
                           {roles.map((role) => tr(`role.${role}`)).join(" · ")}
                         </span>
+                        {r.user.managedBy ? (
+                          <span className="block text-sm font-normal text-slate-600">
+                            {t("queue.registeredBy", {
+                              name: displayName(r.user.managedBy, lang),
+                            })}
+                          </span>
+                        ) : null}
                         {r.user.parentLinks.length ? (
                           <span className="block text-sm font-normal text-slate-600">
                             {t("queue.children", {

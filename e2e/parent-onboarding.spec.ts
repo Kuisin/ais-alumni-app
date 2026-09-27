@@ -21,24 +21,13 @@ async function startParentApplication(page: Page, lastName: string) {
   await page.getByRole("button", { name: "Next" }).click();
 }
 
-async function approve(admin: Page, lastName: string) {
+async function searchQueue(admin: Page, lastName: string) {
   await admin.goto("/en/app/admin/verification");
   await admin.getByRole("searchbox", { name: "Search" }).fill(lastName);
   await admin.getByRole("button", { name: "Search" }).click();
-  await admin
-    .getByRole("link", { name: new RegExp(`${lastName}, Parent`) })
-    .first()
-    .click();
 }
 
-test("parent registers a new child; the committee approves the child's details", async ({
-  browser,
-}) => {
-  const lastName = `Fam${Date.now() % 1_000_000}`;
-  const parent = await browser.newPage();
-  await startParentApplication(parent, lastName);
-
-  // The child isn't registered: the parent enters the child's details.
+async function addNewChild(parent: Page, lastName: string) {
   await expect(
     parent.getByRole("radio", { name: /Register my child/ }),
   ).toBeChecked(); // the default
@@ -53,32 +42,86 @@ test("parent registers a new child; the committee approves the child's details",
   await parent.getByRole("button", { name: "Next" }).click();
   await parent.getByRole("button", { name: "Submit application" }).click();
   await expect(parent).toHaveURL(/\/en\/app\/onboarding\/status/);
+}
 
-  // The committee reviews the child's details, not the parent's.
+test("parent registers a new child; approving the child lets the parent in", async ({
+  browser,
+}) => {
+  const lastName = `Fam${Date.now() % 1_000_000}`;
+  const parent = await browser.newPage();
+  await startParentApplication(parent, lastName);
+  await addNewChild(parent, lastName);
+  await expect(
+    parent.getByRole("heading", { name: "Waiting for your child's approval" }),
+  ).toBeVisible();
+  await expect(
+    parent.getByText("Being reviewed by the committee"),
+  ).toBeVisible();
+
+  // The committee reviews the child (a student), not the parent.
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
-  await approve(admin, lastName);
-  const children = admin.getByRole("heading", {
-    name: "Children's AIS records",
-  });
-  await expect(children).toBeVisible();
+  await searchQueue(admin, lastName);
   await expect(
-    admin.getByText("Registered by this parent").first(),
-  ).toBeVisible();
-  await expect(admin.getByText("Confirmed on approval")).toBeVisible();
+    admin.getByRole("link", { name: new RegExp(`^${lastName}, Parent`) }),
+  ).toHaveCount(0);
+  const kid = admin.getByRole("link", { name: new RegExp(`${lastName}, Kid`) });
+  await expect(kid.getByText(/^Registered by parent: /)).toBeVisible();
+  await kid.click();
   await admin.getByRole("radio", { name: "Approve" }).check();
   await admin.getByRole("button", { name: "Approve" }).click();
   await expect(
     admin.getByText("This application has been decided."),
   ).toBeVisible();
 
-  // Parent and child are both approved; the child is managed by the parent.
+  // The parent is in; the child is approved and managed by the parent.
   await parent.goto("/en/app/family");
+  await expect(parent).toHaveURL(/\/en\/app\/family/);
   await expect(
     parent.getByRole("heading", { name: "Children you manage" }),
   ).toBeVisible();
   await expect(parent.getByText("Approved", { exact: true })).toBeVisible();
   await expect(parent.getByText(`${lastName}, Kid`).first()).toBeVisible();
+});
+
+test("a question about the child goes to the parent to answer", async ({
+  browser,
+}) => {
+  const lastName = `Ask${Date.now() % 1_000_000}`;
+  const parent = await browser.newPage();
+  await startParentApplication(parent, lastName);
+  await addNewChild(parent, lastName);
+
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await searchQueue(admin, lastName);
+  await admin
+    .getByRole("link", { name: new RegExp(`${lastName}, Kid`) })
+    .click();
+  await admin.getByRole("radio", { name: "Ask for more information" }).check();
+  await admin
+    .getByRole("textbox", { name: /Message to the applicant/ })
+    .fill("Which class was your child in?");
+  await admin.getByRole("button", { name: "Send request" }).click();
+  await expect(
+    admin.getByText("This application has been decided."),
+  ).toBeVisible();
+
+  // The parent answers by resubmitting; the child is back in the queue.
+  await parent.goto("/en/app/dashboard");
+  await expect(parent).toHaveURL(/\/en\/app\/onboarding\/verify/);
+  await expect(
+    parent.getByText("Which class was your child in?"),
+  ).toBeVisible();
+  const submit = parent.getByRole("button", { name: "Submit application" });
+  for (let i = 0; i < 4 && !(await submit.isVisible()); i++)
+    await parent.getByRole("button", { name: "Next" }).click();
+  await submit.click();
+  await expect(parent).toHaveURL(/\/en\/app\/onboarding\/status/);
+  await searchQueue(admin, lastName);
+  await expect(
+    admin.getByRole("link", { name: new RegExp(`${lastName}, Kid`) }),
+  ).toBeVisible();
 });
 
 test("parent links a child who is already registered; the child confirms", async ({
@@ -109,14 +152,16 @@ test("parent links a child who is already registered; the child confirms", async
   await parent.getByRole("button", { name: "Submit application" }).click();
   await expect(parent).toHaveURL(/\/en\/app\/onboarding\/status/);
 
-  // The admin sees an existing member waiting for the child's confirmation.
+  // Nothing for the committee: the parent waits for the child to confirm.
+  await expect(
+    parent.getByText("Waiting for your child to confirm"),
+  ).toBeVisible();
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
-  await approve(admin, lastName);
-  await expect(admin.getByText("Existing member").first()).toBeVisible();
+  await searchQueue(admin, lastName);
   await expect(
-    admin.getByText("Waiting for the child to confirm"),
-  ).toBeVisible();
+    admin.getByRole("link", { name: new RegExp(`^${lastName}, Parent`) }),
+  ).toHaveCount(0);
 
   // The child confirms from their family page.
   const kid = await browser.newPage();
@@ -127,6 +172,8 @@ test("parent links a child who is already registered; the child confirms", async
     .first()
     .click();
   await expect(kid.getByRole("button", { name: /Confirm/ })).toHaveCount(0);
-  await admin.reload();
-  await expect(admin.getByText("Relationship confirmed")).toBeVisible();
+
+  // The confirmation lets the parent in.
+  await parent.goto("/en/app/dashboard");
+  await expect(parent).toHaveURL(/\/en\/app\/dashboard/);
 });

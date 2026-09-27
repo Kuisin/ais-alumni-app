@@ -290,20 +290,23 @@ enum VerificationStatus {
 }
 
 model VerificationRequest {
-  id          String                 @id @default(cuid())
-  userId      String                 @unique
-  user        User                   @relation("applicant", fields: [userId], references: [id], onDelete: Cascade)
-  answers     Json
-  rosterScore Int?
-  rosterRowId String?
-  status      VerificationStatus     @default(PENDING)
-  reviewerId  String?
-  reviewer    User?                  @relation("reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
-  reviewNote  String?
-  submittedAt DateTime               @default(now())
-  decidedAt   DateTime?
-  evidence    VerificationEvidence[]
-  vouches     Vouch[]
+  id              String                 @id @default(cuid())
+  userId          String                 @unique
+  user            User                   @relation("applicant", fields: [userId], references: [id], onDelete: Cascade)
+  answers         Json
+  rosterScore     Int?
+  rosterRowId     String?
+  status          VerificationStatus     @default(PENDING)
+  reviewerId      String?
+  reviewer        User?                  @relation("reviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewNote      String?
+  submittedAt     DateTime               @default(now())
+  decidedAt       DateTime?
+  /// Added: parent-only application. Not reviewed by admins; approved when
+  /// a linked child is approved and the link confirmed (parent-onboarding.ts).
+  followsChildren Boolean                @default(false)
+  evidence        VerificationEvidence[]
+  vouches         Vouch[]
 
   @@index([status, submittedAt])
 }

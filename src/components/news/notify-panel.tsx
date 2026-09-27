@@ -4,7 +4,7 @@ import { notifyNewsAction } from "@/app/actions/admin-content";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
-import type { RoleKey } from "@/generated/prisma/enums";
+import type { AudienceKey, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { formatDateTime } from "@/lib/format";
 import { type NewsStatus, targetedRecipients } from "@/lib/news";
@@ -24,6 +24,7 @@ export async function NotifyPanel({
   post: {
     id: string;
     targetRoles: RoleKey[];
+    targetAudiences: AudienceKey[];
     notifiedAt: Date | null;
     publishedAt: Date | null;
   };
@@ -78,7 +79,7 @@ export async function NotifyPanel({
     );
   }
 
-  const users = await targetedRecipients(post.targetRoles);
+  const users = await targetedRecipients(post);
   const est = estimateLinePushes(users);
   const unreachable = users.length - est.line - est.email;
 

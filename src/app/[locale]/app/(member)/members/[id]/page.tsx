@@ -20,6 +20,7 @@ import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, Card } from "@/components/ui/card";
 import { FollowStatus, type Locale, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { roleLabelKey } from "@/lib/audience";
 import {
   canRequestFollow,
   getProfileForViewer,
@@ -156,7 +157,7 @@ export default async function MemberProfilePage({ params }: Props) {
               {family ? <Badge tone="green">{tf("familyMember")}</Badge> : null}
               {p.roles.map((r) => (
                 <Badge key={r.role} tone="brand">
-                  {tr(`role.${r.role}`)}
+                  {tr(roleLabelKey(r))}
                 </Badge>
               ))}
             </div>

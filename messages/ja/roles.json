@@ -36,5 +36,21 @@
   "teacherStatusShort": {
     "CURRENT": "現職",
     "FORMER": "元教職員"
+  },
+  "audience": {
+    "TEACHER": "教職員",
+    "CURRENT_STUDENT": "在校生",
+    "CURRENT_PARENT": "在校生保護者",
+    "GRADUATE": "卒業生",
+    "LEFT_STUDENT": "元在校生",
+    "FORMER_PARENT": "卒業生保護者"
+  },
+  "audienceHint": {
+    "TEACHER": "現職・元教職員",
+    "CURRENT_STUDENT": "年少〜小学6年生",
+    "CURRENT_PARENT": "在校生のご家族",
+    "GRADUATE": "小学校を卒業した人",
+    "LEFT_STUDENT": "卒業前に転校・退学した人",
+    "FORMER_PARENT": "卒業生・元在校生のご家族"
   }
 }

@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
+import { membersInAudiences, rolesForAudiences } from "@/lib/audience";
 import { audit } from "@/lib/audit";
 import { blockedUserIds, isCurrentTeacher } from "@/lib/authz";
 import { db } from "@/lib/db";
@@ -63,9 +64,7 @@ export async function recipientsWhere(
     id: { notIn: [senderId, ...blocked] },
   };
   if (audience.scope === "ALL") {
-    return audience.targetRoles.length
-      ? { ...base, roles: { some: { role: { in: audience.targetRoles } } } }
-      : base;
+    return { ...base, ...membersInAudiences(audience.audiences) };
   }
   return {
     ...base,
@@ -114,7 +113,10 @@ export async function sendBroadcast(params: {
       senderId: sender.id,
       position: right.position,
       scope: audience.scope,
-      targetRoles: audience.scope === "ALL" ? audience.targetRoles : [],
+      targetAudiences: audience.scope === "ALL" ? audience.audiences : [],
+      // Legacy column for older code.
+      targetRoles:
+        audience.scope === "ALL" ? rolesForAudiences(audience.audiences) : [],
       cohortId: audience.scope === "COHORT" ? audience.cohortId : null,
       title,
       body,

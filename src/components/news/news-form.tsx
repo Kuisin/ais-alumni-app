@@ -26,7 +26,7 @@ import { useFormAction } from "@/components/events/use-form-action";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
-import type { RoleKey } from "@/generated/prisma/enums";
+import type { AudienceKey } from "@/generated/prisma/enums";
 
 export type NewsFormValues = {
   id?: string;
@@ -37,7 +37,7 @@ export type NewsFormValues = {
   /** datetime-local in JST; empty = draft */
   publishedAt: string;
   pinned: boolean;
-  targetRoles: RoleKey[];
+  targetAudiences: AudienceKey[];
   /** signed URL of the current cover, for preview */
   coverPreviewUrl: string | null;
   notified: boolean;
@@ -50,7 +50,7 @@ export const EMPTY_NEWS: NewsFormValues = {
   bodyEn: "",
   publishedAt: "",
   pinned: false,
-  targetRoles: [],
+  targetAudiences: [],
   coverPreviewUrl: null,
   notified: false,
 };
@@ -234,7 +234,7 @@ export function NewsForm({
             />
             <span className="text-sm font-medium">{t("fields.pinned")}</span>
           </label>
-          <TargetRolesField defaultValue={values.targetRoles} />
+          <TargetRolesField defaultValue={values.targetAudiences} />
         </FormSection>
 
         <StickyActions

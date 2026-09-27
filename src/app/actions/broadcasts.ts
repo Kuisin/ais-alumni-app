@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { RoleKey } from "@/generated/prisma/enums";
+import { AudienceKey } from "@/generated/prisma/enums";
 import {
   type BroadcastPreview,
   getBroadcastRights,
@@ -26,7 +26,7 @@ export type BroadcastFormState = {
 const formSchema = z
   .object({
     audience: z.enum(["ALL", "ROLES", "COHORT"]),
-    roles: z.array(z.enum(RoleKey)),
+    roles: z.array(z.enum(AudienceKey)),
     cohortId: z.string().trim(),
     title: z.string().trim().min(1, "required").max(100, "tooLong"),
     body: z.string().trim().min(1, "required").max(2000, "tooLong"),
@@ -48,7 +48,7 @@ const formSchema = z
 
 function toAudience(v: z.infer<typeof formSchema>): Audience {
   if (v.audience === "COHORT") return { scope: "COHORT", cohortId: v.cohortId };
-  return { scope: "ALL", targetRoles: v.audience === "ROLES" ? v.roles : [] };
+  return { scope: "ALL", audiences: v.audience === "ROLES" ? v.roles : [] };
 }
 
 /**

@@ -10,7 +10,7 @@ import {
 import { Button, buttonClass } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
-import type { RoleKey } from "@/generated/prisma/enums";
+import type { AudienceKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { ConfirmDeleteForm, DeleteButton } from "./confirm-delete";
 import { TargetRolesField } from "./target-roles-field";
@@ -29,7 +29,7 @@ export type EventFormValues = {
   location: string;
   mapUrl: string;
   capacity: string;
-  targetRoles: RoleKey[];
+  targetAudiences: AudienceKey[];
 };
 
 export const EMPTY_EVENT: EventFormValues = {
@@ -43,7 +43,7 @@ export const EMPTY_EVENT: EventFormValues = {
   location: "",
   mapUrl: "",
   capacity: "",
-  targetRoles: [],
+  targetAudiences: [],
 };
 
 /** One card-wrapped group of fields with an icon in its legend. */
@@ -326,7 +326,7 @@ export function EventForm({
               )}
             </Field>
           </div>
-          <TargetRolesField defaultValue={values.targetRoles} />
+          <TargetRolesField defaultValue={values.targetAudiences} />
         </FormSection>
 
         <StickyActions

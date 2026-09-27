@@ -2,8 +2,9 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { buttonClass } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
-import { LifeStage, RoleKey } from "@/generated/prisma/enums";
+import { LifeStage } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { AUDIENCE_KEYS } from "@/lib/audience";
 import type { CohortOption } from "@/lib/cohorts";
 import { type DirectoryFilters, MAX_YEAR, MIN_YEAR } from "@/lib/directory";
 import { AIS_DIVISIONS } from "@/lib/school";
@@ -68,9 +69,9 @@ export async function DirectoryFilterForm({
               {(aria) => (
                 <Select {...aria} name="role" defaultValue={filters.role ?? ""}>
                   <option value="">{t("filters.anyRole")}</option>
-                  {Object.values(RoleKey).map((r) => (
+                  {AUDIENCE_KEYS.map((r) => (
                     <option key={r} value={r}>
-                      {tr(`role.${r}`)}
+                      {tr(`audience.${r}`)}
                     </option>
                   ))}
                 </Select>

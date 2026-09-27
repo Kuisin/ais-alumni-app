@@ -88,7 +88,8 @@
     "guests": "同伴者",
     "updated": "更新日時",
     "list": "回答一覧",
-    "jumpToList": "回答一覧を見る"
+    "jumpToList": "回答一覧を見る",
+    "checkedIn": "受付済み"
   },
   "news": {
     "title": "ニュース管理",
@@ -228,5 +229,14 @@
     "summaryCohorts": "学年 {count}",
     "summaryParents": "保護者含む",
     "summaryUsers": "個別 {count}人"
+  },
+  "staff": {
+    "title": "受付スタッフ",
+    "hint": "管理者に加えて、ここで追加したメンバーが当日の受付（QR読み取り）をできます。",
+    "none": "まだスタッフはいません（管理者のみ受付できます）。",
+    "add": "スタッフを追加",
+    "remove": "{name}さんをスタッフから外す",
+    "open": "受付画面を開く",
+    "checkedIn": "受付済み"
   }
 }

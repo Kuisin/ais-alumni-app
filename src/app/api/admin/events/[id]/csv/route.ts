@@ -27,18 +27,31 @@ export async function GET(
           answer: true,
           guests: true,
           updatedAt: true,
+          userId: true,
           user: {
             select: { nameRomaji: true, nameKanji: true, primaryEmail: true },
           },
         },
       },
+      checkIns: { select: { userId: true, checkedInAt: true } },
     },
   });
   if (!event) return new Response("Not found", { status: 404 });
 
+  const checkedIn = new Map(
+    event.checkIns.map((c) => [c.userId, c.checkedInAt]),
+  );
   // Header stays in English: stable column names for spreadsheets/scripts.
   const rows: (string | number | null)[][] = [
-    ["name_romaji", "name_kanji", "email", "answer", "guests", "updated_jst"],
+    [
+      "name_romaji",
+      "name_kanji",
+      "email",
+      "answer",
+      "guests",
+      "updated_jst",
+      "checked_in_jst",
+    ],
     ...event.rsvps.map((r) => [
       r.user.nameRomaji,
       r.user.nameKanji,
@@ -46,6 +59,10 @@ export async function GET(
       r.answer,
       r.guests,
       jst(r.updatedAt),
+      (() => {
+        const at = checkedIn.get(r.userId);
+        return at ? jst(at) : null;
+      })(),
     ]),
   ];
 

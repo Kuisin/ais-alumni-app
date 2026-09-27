@@ -1,13 +1,15 @@
-import { Download, Eye, ListChecks } from "lucide-react";
+import { CircleCheck, Download, Eye, ListChecks, ScanLine } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { deleteEventAction } from "@/app/actions/admin-content";
 import { EventForm } from "@/components/events/event-form";
+import { EventStaffPanel } from "@/components/events/event-staff-panel";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { checkInPath } from "@/lib/event-tickets";
 import { answerSummary, asLocale, headcount } from "@/lib/events";
 import {
   displayName,
@@ -46,6 +48,13 @@ export default async function AdminEventPage({
           user: { select: { id: true, nameRomaji: true, nameKanji: true } },
         },
       },
+      checkIns: { select: { userId: true, checkedInAt: true } },
+      staff: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          user: { select: { id: true, nameRomaji: true, nameKanji: true } },
+        },
+      },
     },
   });
   if (!event) notFound();
@@ -63,6 +72,9 @@ export default async function AdminEventPage({
   const te = await getTranslations("events");
 
   const summary = answerSummary(event.rsvps);
+  const checkedIn = new Map(
+    event.checkIns.map((c) => [c.userId, c.checkedInAt]),
+  );
   const rsvps = [...event.rsvps].sort(
     (a, b) => ANSWER_ORDER[a.answer] - ANSWER_ORDER[b.answer],
   );
@@ -120,6 +132,12 @@ export default async function AdminEventPage({
                   ) : null}
                 </dd>
               </div>
+              <div className="rounded-lg bg-emerald-50 p-3">
+                <dt className="text-slate-600">{t("attendees.checkedIn")}</dt>
+                <dd className="text-xl font-semibold">
+                  {event.checkIns.length}
+                </dd>
+              </div>
               {(["GOING", "MAYBE", "NOT_GOING"] as const).map((a) => (
                 <div key={a} className="rounded-lg bg-slate-50 p-3">
                   <dt className="text-slate-600">{te(`answer.${a}`)}</dt>
@@ -137,6 +155,13 @@ export default async function AdminEventPage({
               ))}
             </dl>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:flex-col">
+              <Link
+                href={checkInPath(event.id)}
+                className={buttonClass("primary", "w-full sm:w-auto xl:w-full")}
+              >
+                <ScanLine aria-hidden="true" className="size-4" />
+                {t("staff.open")}
+              </Link>
               {/* API route: plain <a>, not locale-prefixed. */}
               <a
                 href={`/api/admin/events/${event.id}/csv`}
@@ -159,6 +184,17 @@ export default async function AdminEventPage({
                 </a>
               ) : null}
             </div>
+          </Card>
+          <Card className="mt-4">
+            <h2 className="mb-3 text-lg font-semibold">{t("staff.title")}</h2>
+            <EventStaffPanel
+              eventId={event.id}
+              staff={event.staff.map(({ user: u }) => ({
+                id: u.id,
+                name: u.nameRomaji ?? u.nameKanji ?? "—",
+                kanji: u.nameRomaji ? u.nameKanji : null,
+              }))}
+            />
           </Card>
         </aside>
 
@@ -218,8 +254,11 @@ export default async function AdminEventPage({
                         <th scope="col" className="py-2 pr-3 font-medium">
                           {t("attendees.guests")}
                         </th>
-                        <th scope="col" className="py-2 font-medium">
+                        <th scope="col" className="py-2 pr-3 font-medium">
                           {t("attendees.updated")}
+                        </th>
+                        <th scope="col" className="py-2 font-medium">
+                          {t("attendees.checkedIn")}
                         </th>
                       </tr>
                     </thead>
@@ -233,8 +272,24 @@ export default async function AdminEventPage({
                             {te(`answer.${r.answer}`)}
                           </td>
                           <td className="py-2 pr-3">{r.guests}</td>
-                          <td className="py-2 text-slate-600">
+                          <td className="py-2 pr-3 text-slate-600">
                             {formatDateTime(r.updatedAt, locale)}
+                          </td>
+                          <td className="py-2">
+                            {checkedIn.has(r.user.id) ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-800">
+                                <CircleCheck
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                {formatDateTime(
+                                  checkedIn.get(r.user.id) as Date,
+                                  locale,
+                                )}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
                           </td>
                         </tr>
                       ))}

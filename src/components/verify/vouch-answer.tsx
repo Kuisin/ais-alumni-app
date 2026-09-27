@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { answerVouchAction, type VouchAnswerState } from "@/app/actions/vouch";
@@ -24,6 +25,7 @@ export function VouchAnswerForm({
   closed: boolean;
 }) {
   const t = useTranslations("vouch");
+  const tc = useTranslations("common");
   const [state, action] = useActionState<VouchAnswerState, FormData>(
     answerVouchAction,
     null,
@@ -63,6 +65,16 @@ export function VouchAnswerForm({
               </SubmitButton>
             ))}
           </div>
+          {current ? (
+            <Button
+              variant="ghost"
+              className="mt-2"
+              onClick={() => setEditing(false)}
+            >
+              <X aria-hidden="true" className="size-4" />
+              {tc("cancel")}
+            </Button>
+          ) : null}
         </fieldset>
       )}
       <div aria-live="polite">

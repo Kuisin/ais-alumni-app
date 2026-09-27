@@ -109,7 +109,10 @@ export function EmptyState({
         {icon ?? <Inbox />}
       </span>
       <p className="text-slate-700">{children}</p>
-      {hint ? <p className="max-w-md text-sm text-slate-500">{hint}</p> : null}
+      {/* div: hints may hold lists (e.g. numbered steps) */}
+      {hint ? (
+        <div className="max-w-md text-sm text-slate-500">{hint}</div>
+      ) : null}
       {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );

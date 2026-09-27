@@ -8,22 +8,21 @@ import {
 } from "@/app/actions/settings";
 import { Field, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useCloseOnSave } from "@/components/ui/view-edit";
 import { FormResult } from "./form-result";
 
-export function EmailChangeForm({ current }: { current: string | null }) {
+/** New address → emailed code → changed (inside the email EditableCard). */
+export function EmailChangeForm() {
   const t = useTranslations("settings.email");
   const [state, action] = useActionState<SettingsFormState, FormData>(
     emailChangeAction,
     { step: "email" },
   );
+  useCloseOnSave(state, state.message);
   const onCode = state.step === "code";
 
   return (
     <div className="space-y-3">
-      <p className="text-sm">
-        <span className="text-slate-600">{t("current")}: </span>
-        <span className="font-medium break-all">{current ?? "—"}</span>
-      </p>
       {onCode ? (
         <form action={action} className="space-y-3">
           <FormResult state={state} />

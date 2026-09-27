@@ -92,5 +92,6 @@
     "title": "{count} entries are marked current",
     "body": "Your current status uses the newest one, “{name}”. For entries that have ended, add the end year with Edit.",
     "bodyAdmin": "The current status uses the newest one, “{name}”. Add the end year to entries that have ended."
-  }
+  },
+  "deleteConfirm": "Delete this entry?"
 }

@@ -198,7 +198,7 @@ export async function decideNameRequestAction(
   await notify(request.user, {
     kind: approved ? "NAME_REQUEST_APPROVED" : "NAME_REQUEST_REJECTED",
     refId: id,
-    path: "/app/profile/edit",
+    path: "/app/profile#name",
     note: note || null,
   }).catch((e) => console.error("[name-requests] member notify failed", e));
   refresh();

@@ -449,10 +449,10 @@ export function ChatRoom({
               </>
             )}
             {member ? (
-              <label className="flex items-start gap-2 border-t border-slate-100 pt-3">
+              <label className="flex min-h-11 items-start gap-3 border-t border-slate-100 pt-3">
                 <input
                   type="checkbox"
-                  className="mt-0.5 size-4 accent-brand-700"
+                  className="mt-0.5 size-5 shrink-0 accent-brand-700"
                   checked={!muted}
                   onChange={async (e) => {
                     const next = !e.target.checked;
@@ -482,7 +482,7 @@ export function ChatRoom({
             <button
               type="button"
               onClick={loadOlder}
-              className="rounded-full bg-white px-4 py-1.5 text-xs font-medium text-brand-700 shadow-sm hover:bg-brand-50"
+              className="min-h-11 rounded-full bg-white px-5 text-xs font-medium text-brand-700 shadow-sm hover:bg-brand-50"
             >
               {t("older")}
             </button>
@@ -626,7 +626,7 @@ export function ChatRoom({
                               void navigator.clipboard?.writeText(m.body);
                               setSelected(null);
                             }}
-                            className="inline-flex min-h-9 items-center gap-1 rounded-full bg-white px-3 text-xs font-medium shadow"
+                            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-white px-4 text-xs font-medium shadow"
                           >
                             <Copy aria-hidden="true" className="size-3.5" />
                             {t("copy")}
@@ -636,7 +636,7 @@ export function ChatRoom({
                               type="button"
                               onClick={() => remove(m)}
                               aria-label={t("deleteLabel", { name: m.name })}
-                              className="inline-flex min-h-9 items-center gap-1 rounded-full bg-white px-3 text-xs font-medium text-red-700 shadow"
+                              className="inline-flex min-h-11 items-center gap-1 rounded-full bg-white px-4 text-xs font-medium text-red-700 shadow"
                             >
                               <Trash2 aria-hidden="true" className="size-3.5" />
                               {t("delete")}

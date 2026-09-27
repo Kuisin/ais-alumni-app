@@ -108,5 +108,6 @@
       "generic": "That couldn't be sent. Please try again."
     },
     "closedManual": "Answers are closed"
-  }
+  },
+  "respondJump": "Respond"
 }

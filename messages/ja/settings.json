@@ -30,7 +30,9 @@
       "NONE": "なし（LINE・メールとも未設定）"
     },
     "save": "通知設定を保存",
-    "categories": "受け取る通知"
+    "categories": "受け取る通知",
+    "editChannel": "通知方法を変更",
+    "editCategories": "受け取る通知を選ぶ"
   },
   "line": {
     "title": "LINE",
@@ -84,7 +86,8 @@
       "invalidCode": "コードが正しくありません。",
       "expired": "コードの有効期限が切れました。もう一度送信してください。",
       "tooMany": "入力の誤りが多すぎます。新しいコードを送信してください。"
-    }
+    },
+    "change": "変更"
   },
   "export": {
     "title": "データのダウンロード",

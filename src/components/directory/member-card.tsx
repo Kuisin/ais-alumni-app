@@ -37,11 +37,10 @@ export async function MemberCard({
   const name = displayName(member, locale);
   const alt = otherNames(member);
   const nameEl = linked ? (
-    // Stretched link: the whole card opens the profile; buttons in
-    // `actions` sit above it and stay clickable on their own.
     <Link
       href={`/app/members/${member.id}`}
-      className="font-semibold text-slate-900 underline-offset-2 group-hover:underline after:absolute after:inset-0 after:rounded-xl after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-brand-600"
+      // The whole card is the tap target (phones); actions sit above it.
+      className="font-semibold text-slate-900 underline-offset-2 after:absolute after:inset-0 after:rounded-xl hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-brand-600"
     >
       {name}
     </Link>
@@ -50,7 +49,7 @@ export async function MemberCard({
   );
   return (
     <div
-      className={`relative flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm ${linked ? "group transition-colors hover:border-brand-300 hover:bg-slate-50" : ""}`}
+      className={`relative flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm ${linked ? "transition hover:border-brand-300 hover:shadow-md" : ""}`}
     >
       <Avatar src={photo} name={name} size={48} />
       <div className="min-w-0 flex-1">

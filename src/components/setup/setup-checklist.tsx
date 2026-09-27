@@ -99,11 +99,11 @@ export async function SetupChecklist({
                     <p className="font-medium">
                       {t(`items.${item.key}.title`)}
                       {item.recommended ? (
-                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                        <span className="ml-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber-900">
                           {t("recommended")}
                         </span>
                       ) : item.optional ? (
-                        <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
+                        <span className="ml-2 inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-slate-700">
                           {t("optional")}
                         </span>
                       ) : null}

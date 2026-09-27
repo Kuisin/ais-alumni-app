@@ -13,8 +13,8 @@ import { MemberCard } from "@/components/directory/member-card";
 import { FollowButton } from "@/components/follows/follow-button";
 import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
-import { cn } from "@/components/ui/cn";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Tabs } from "@/components/ui/tabs";
 import type { Locale } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import {
@@ -230,36 +230,16 @@ export default async function FollowsPage({ searchParams }: Props) {
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <nav aria-label={t("tabsLabel")} className="mb-4">
-        <ul className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          {TABS.map((key) => (
-            <li key={key}>
-              <Link
-                href={`/app/follows?tab=${key}`}
-                aria-current={key === tab ? "page" : undefined}
-                className={cn(
-                  "flex min-h-11 items-center justify-between gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-colors sm:justify-center",
-                  key === tab
-                    ? "border-brand-700 bg-brand-50 text-brand-800"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900",
-                )}
-              >
-                {t(`tabs.${key}`)}
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 text-xs",
-                    key === tab
-                      ? "bg-brand-100 text-brand-800"
-                      : "bg-slate-100 text-slate-700",
-                  )}
-                >
-                  {counts[key]}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <Tabs
+        label={t("tabsLabel")}
+        className="mb-4"
+        items={TABS.map((key) => ({
+          href: `/app/follows?tab=${key}`,
+          label: t(`tabs.${key}`),
+          count: counts[key],
+          active: key === tab,
+        }))}
+      />
       {accepted ? (
         <section
           aria-labelledby="follows-accepted-title"

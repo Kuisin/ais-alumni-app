@@ -9,11 +9,7 @@ test("members choose which notifications they get (account always on)", async ({
   await signInWithEmail(page, m.email);
   await page.goto("/en/app/settings#notifications");
   const section = page.locator("#notifications");
-  // Second view/edit block: the categories.
-  await section
-    .getByRole("button", { name: "Edit", exact: true })
-    .last()
-    .click();
+  await section.getByRole("button", { name: "Choose notifications" }).click();
   await expect(
     section.getByRole("checkbox", { name: /^Account & your requests/ }),
   ).toBeDisabled();

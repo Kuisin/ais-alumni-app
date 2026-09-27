@@ -139,6 +139,8 @@ model User {
   newsReactions     NewsReaction[]
   chatMembers       ChatMember[]
   birthDateRequests BirthDateRequest[]    @relation("birthDateRequester")
+  invitesSent       Invite[]              @relation("invitesSent")
+  inviteUsed        Invite?               @relation("inviteUsed")
   birthDateReviews  BirthDateRequest[]    @relation("birthDateReviewer")
   chatMessages      ChatMessage[]         @relation("chatMessages")
   chatDeleted       ChatMessage[]         @relation("chatDeleted")
@@ -838,6 +840,7 @@ model Cohort {
   broadcasts          Broadcast[]
   childLinks          FamilyLink[]
   chatGroups          ChatGroup[]
+  invites             Invite[]
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 }
@@ -935,6 +938,35 @@ model NameChangeRequest {
 
   @@index([status, createdAt])
   @@index([userId])
+}
+
+enum InviteType {
+  STUDENT // 卒業生・在校生
+  PARENT // 保護者
+  TEACHER // 教職員
+}
+
+/// Added: a member invites someone with a one-time link (token hashed).
+/// The inviter vouches for who they are (type, 学年); admins see it on the
+/// application to approve faster.
+model Invite {
+  id          String     @id @default(cuid())
+  tokenHash   String     @unique
+  inviterId   String
+  inviter     User       @relation("invitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  type        InviteType
+  /// the invitee's 学年 (STUDENT) or their child's (PARENT)
+  cohortId    String?
+  cohort      Cohort?    @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  inviteeName String?
+  createdAt   DateTime   @default(now())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    String?    @unique
+  usedBy      User?      @relation("inviteUsed", fields: [usedById], references: [id], onDelete: SetNull)
+  revokedAt   DateTime?
+
+  @@index([inviterId])
 }
 
 /// Added: a member asks the committee to set or correct their birth date

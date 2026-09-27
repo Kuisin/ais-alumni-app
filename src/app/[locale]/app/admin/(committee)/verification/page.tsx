@@ -3,6 +3,7 @@ import {
   FileText,
   GraduationCap,
   ListChecks,
+  MailPlus,
   Search,
   ShieldCheck,
   UserCheck,
@@ -22,6 +23,7 @@ import { isMinor } from "@/lib/authz/core";
 import { cohortShort } from "@/lib/cohorts";
 import { db } from "@/lib/db";
 import { displayName, formatDateTime } from "@/lib/format";
+import { inviteMatches } from "@/lib/invites";
 import { requireAdmin } from "@/lib/session";
 import { ROSTER_MATCH_THRESHOLD } from "@/lib/verification/roster";
 
@@ -85,8 +87,12 @@ export default async function VerificationQueuePage({
         id: true,
         submittedAt: true,
         rosterScore: true,
+        answers: true,
         user: {
           select: {
+            inviteUsed: {
+              select: { type: true, cohort: { select: { number: true } } },
+            },
             nameRomaji: true,
             nameKanji: true,
             dateOfBirth: true,
@@ -263,6 +269,25 @@ export default async function VerificationQueuePage({
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
+                      {r.user.inviteUsed ? (
+                        <Signal
+                          tone={
+                            inviteMatches(
+                              {
+                                type: r.user.inviteUsed.type,
+                                cohortNumber:
+                                  r.user.inviteUsed.cohort?.number ?? null,
+                              },
+                              r.answers,
+                            ) === "mismatch"
+                              ? "amber"
+                              : "green"
+                          }
+                          icon={<MailPlus />}
+                        >
+                          {t("badges.invited")}
+                        </Signal>
+                      ) : null}
                       <Signal
                         tone={
                           r.rosterScore === null

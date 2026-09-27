@@ -225,8 +225,8 @@
     "cohort": "学年 (class)"
   },
   "nameRequests": {
-    "title": "Name changes",
-    "description": "Members can't change their name after approval. Review requests here; approving applies the new name.",
+    "title": "Name and birth date changes",
+    "description": "Members can't change their name or date of birth after approval. Review requests here; approving applies them.",
     "tabsLabel": "Name change requests",
     "tabs": {
       "pending": "To review",
@@ -252,5 +252,12 @@
       "noteRequired": "Please give a reason when rejecting.",
       "decided": "This request has already been decided."
     }
+  },
+  "birthDateRequests": {
+    "title": "Date of birth changes",
+    "current": "Current",
+    "proposed": "Requested",
+    "notSet": "Not registered",
+    "approved": "Approved; the date of birth has been updated."
   }
 }

@@ -103,10 +103,16 @@ export async function AppShell({
             where: { status: ChangeRequestStatus.PENDING },
           })
         : 0,
+      // Name and birth date change requests share one admin page.
       admin && access?.admin
-        ? db.nameChangeRequest.count({
-            where: { status: ChangeRequestStatus.PENDING },
-          })
+        ? Promise.all([
+            db.nameChangeRequest.count({
+              where: { status: ChangeRequestStatus.PENDING },
+            }),
+            db.birthDateRequest.count({
+              where: { status: ChangeRequestStatus.PENDING },
+            }),
+          ]).then(([a, b]) => a + b)
         : 0,
       variant === "member" && user
         ? db.follow.count({

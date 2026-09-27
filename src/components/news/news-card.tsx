@@ -25,6 +25,7 @@ export function NewsCard({
   excerpt = true,
   unread = false,
   needsAnswer = false,
+  adminView = false,
 }: {
   post: NewsCardData;
   locale: "ja" | "en";
@@ -33,6 +34,8 @@ export function NewsCard({
   unread?: boolean;
   /** asks for a confirmation / answer the member hasn't given yet */
   needsAnswer?: boolean;
+  /** shown to an admin outside the audience (view only) */
+  adminView?: boolean;
 }) {
   const t = useTranslations("news");
   const title = localized(post.titleJa, post.titleEn, locale);
@@ -50,6 +53,9 @@ export function NewsCard({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           {unread ? <UnreadBadge /> : null}
+          {adminView ? (
+            <Badge tone="slate">{t("adminView.badge")}</Badge>
+          ) : null}
           {needsAnswer ? (
             <Badge tone="amber">{t("hub.needsAnswer")}</Badge>
           ) : null}

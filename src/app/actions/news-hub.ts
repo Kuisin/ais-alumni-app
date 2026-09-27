@@ -6,7 +6,11 @@ import { z } from "zod";
 import { NewsPollKind, NewsVote } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { matchesAudience, specFromPost } from "@/lib/news-audience";
+import {
+  adminOnlyView,
+  matchesAudience,
+  specFromPost,
+} from "@/lib/news-audience";
 import {
   ATTACHMENT_MAX_BYTES,
   ATTACHMENT_PREFIX,
@@ -33,7 +37,11 @@ async function openPost(postId: unknown) {
   const post = await db.newsPost.findUnique({ where: { id: id.data } });
   if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
     return null;
-  if (!matchesAudience(specFromPost(post), await newsViewer(user))) return null;
+  const viewer = await newsViewer(user);
+  const spec = specFromPost(post);
+  if (!matchesAudience(spec, viewer)) return null;
+  // Shown to an admin outside the audience: view only, no answers.
+  if (adminOnlyView(spec, viewer)) return null;
   return { user, post };
 }
 

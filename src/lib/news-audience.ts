@@ -166,6 +166,15 @@ export function matchesAudience(s: AudienceSpec, v: AudienceViewer): boolean {
   return false;
 }
 
+/**
+ * Admins see every post; this says whether they're really in its audience.
+ * Posts shown only because of admin rights are view-only: no read receipt,
+ * no answers (「管理者として表示」).
+ */
+export function adminOnlyView(s: AudienceSpec, v: AudienceViewer): boolean {
+  return v.isAdmin && !matchesAudience(s, { ...v, isAdmin: false });
+}
+
 /** DB filter for the members a post goes to (the caller adds state = ACTIVE). */
 export function audienceUserWhere(s: AudienceSpec): Prisma.UserWhereInput {
   if (isEveryone(s)) return {};

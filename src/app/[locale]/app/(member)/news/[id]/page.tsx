@@ -12,12 +12,16 @@ import {
   ScheduleCard,
 } from "@/components/news/news-hub";
 import { BackLink } from "@/components/ui/back-link";
-import { Badge, Card } from "@/components/ui/card";
+import { Alert, Badge, Card } from "@/components/ui/card";
 import { markNewsRead } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDate, formatDateTime, localized } from "@/lib/format";
-import { matchesAudience, specFromPost } from "@/lib/news-audience";
+import {
+  adminOnlyView,
+  matchesAudience,
+  specFromPost,
+} from "@/lib/news-audience";
 import { isOpen } from "@/lib/news-hub";
 import { loadHub } from "@/lib/news-hub-db";
 import { newsViewer } from "@/lib/news-visibility";
@@ -31,8 +35,10 @@ const loadPost = cache(async (id: string) => {
   const post = await db.newsPost.findUnique({ where: { id } });
   if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
     return null;
-  if (!matchesAudience(specFromPost(post), await newsViewer(user))) return null;
-  return post;
+  const viewer = await newsViewer(user);
+  const spec = specFromPost(post);
+  if (!matchesAudience(spec, viewer)) return null;
+  return { ...post, adminView: adminOnlyView(spec, viewer) };
 });
 
 export async function generateMetadata({
@@ -54,8 +60,10 @@ export default async function NewsDetailPage({
   const user = await requireActive();
   const post = await loadPost(id);
   if (!post?.publishedAt) notFound();
-  // Published and aimed at this member (checked in loadPost): record the read.
-  await markNewsRead(user.id, post.id);
+  // Published and aimed at this member (checked in loadPost): record the
+  // read — not for an admin outside the audience (view only).
+  const adminView = post.adminView;
+  if (!adminView) await markNewsRead(user.id, post.id);
 
   const t = await getTranslations("news");
   const title = localized(post.titleJa, post.titleEn, locale);
@@ -63,7 +71,8 @@ export default async function NewsDetailPage({
   // Authorized above (targeted + published) before issuing a signed URL.
   const cover = post.coverUrl ? signedFileUrl(post.coverUrl) : null;
   const hub = await loadHub(post, user);
-  const open = isOpen(post);
+  // Admins outside the audience see the forms and results, but can't answer.
+  const open = isOpen(post) && !adminView;
   const th = await getTranslations("news.hub");
   const kb = (n: number) =>
     n >= 1024 * 1024
@@ -72,6 +81,12 @@ export default async function NewsDetailPage({
 
   return (
     <article className="mx-auto max-w-3xl space-y-6">
+      {adminView ? (
+        <Alert tone="info">
+          <span className="block font-semibold">{t("adminView.title")}</span>
+          <span className="mt-1 block">{t("adminView.body")}</span>
+        </Alert>
+      ) : null}
       <div>
         <BackLink href="/app/news">{t("backToList")}</BackLink>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
@@ -156,6 +171,7 @@ export default async function NewsDetailPage({
             confirmedAt={hub.confirmedAt?.toISOString() ?? null}
             count={hub.confirmCount}
             open={open}
+            readOnly={adminView}
           />
         ) : null}
         {hub.polls.map((p) =>

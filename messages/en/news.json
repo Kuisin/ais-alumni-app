@@ -109,5 +109,10 @@
     },
     "closedManual": "Answers are closed"
   },
-  "respondJump": "Respond"
+  "respondJump": "Respond",
+  "adminView": {
+    "badge": "Admin view",
+    "title": "You're viewing this as an admin",
+    "body": "You're not in this post's audience, so no read receipt is recorded and you can't confirm, vote or answer the schedule (view only)."
+  }
 }

@@ -62,5 +62,58 @@
   "deadlineLeft": {
     "days": "あと{count}日",
     "hours": "あと{count}時間"
+  },
+  "ticket": {
+    "title": "受付用チケット",
+    "hint": "会場の受付でこのQRコードを見せてください。スクリーンショットでも使えます。",
+    "checkedIn": "受付済み（{time}）",
+    "qrAlt": "{name}さんの受付用QRコード"
+  },
+  "checkIn": {
+    "open": "受付（スタッフ）",
+    "title": "受付",
+    "staffOnly": "この画面はイベントのスタッフのみ使えます。",
+    "stats": {
+      "checkedIn": "受付済み",
+      "expected": "参加予定",
+      "maybe": "未定"
+    },
+    "scan": {
+      "title": "QRコードを読み取る",
+      "start": "カメラを起動",
+      "stop": "カメラを止める",
+      "hint": "参加者の受付用QRコードを枠に合わせてください。",
+      "noCamera": "カメラを使えません。ブラウザのカメラ許可を確認するか、下の名前検索で受付してください。",
+      "manual": "コードを入力",
+      "manualSubmit": "受付する"
+    },
+    "result": {
+      "ok": "受付しました",
+      "already": "受付済みです（{time}）",
+      "invalid": "無効なQRコードです",
+      "notInvited": "このイベントの対象者ではありません",
+      "forbidden": "受付の権限がありません",
+      "notFound": "イベントが見つかりません",
+      "walkIn": "出欠未回答",
+      "guests": "同伴 {count}名"
+    },
+    "list": {
+      "title": "参加者",
+      "filter": "名前で絞り込み",
+      "all": "すべて",
+      "waiting": "未受付",
+      "done": "受付済み",
+      "empty": "該当する参加者はいません",
+      "checkIn": "受付",
+      "undo": "取り消し",
+      "undoConfirm": "{name}さんの受付を取り消しますか？",
+      "at": "{time} 受付"
+    },
+    "search": {
+      "title": "当日参加（出欠未回答）",
+      "label": "名前で検索",
+      "hint": "出欠に回答していない対象者を検索して受付できます。",
+      "noResults": "見つかりません"
+    }
   }
 }

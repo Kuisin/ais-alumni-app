@@ -88,7 +88,8 @@
     "guests": "Guests",
     "updated": "Updated",
     "list": "Responses",
-    "jumpToList": "See all responses"
+    "jumpToList": "See all responses",
+    "checkedIn": "Checked in"
   },
   "news": {
     "title": "News",
@@ -228,5 +229,14 @@
     "summaryCohorts": "{count, plural, one {# class} other {# classes}}",
     "summaryParents": "incl. parents",
     "summaryUsers": "{count, plural, one {# member} other {# members}}"
+  },
+  "staff": {
+    "title": "Check-in staff",
+    "hint": "Besides admins, members added here can check people in (scan QR tickets) at the event.",
+    "none": "No staff yet (only admins can check people in).",
+    "add": "Add staff",
+    "remove": "Remove {name} from staff",
+    "open": "Open check-in",
+    "checkedIn": "Checked in"
   }
 }

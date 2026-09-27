@@ -131,6 +131,9 @@ model User {
   blocksOut      Block[]               @relation("blocker")
   blocksIn       Block[]               @relation("blocked")
   rsvps          Rsvp[]
+  eventStaff     EventStaff[]
+  eventCheckIns  EventCheckIn[]        @relation("CheckedIn")
+  checkInsDone   EventCheckIn[]        @relation("CheckedInBy")
   parentLinks    FamilyLink[]          @relation("parent")
   childLinks     FamilyLink[]          @relation("child")
   vouchesGiven   Vouch[]
@@ -384,7 +387,7 @@ model Block {
 }
 
 model Event {
-  id              String        @id @default(cuid())
+  id              String         @id @default(cuid())
   titleJa         String?
   titleEn         String?
   bodyJa          String?
@@ -397,14 +400,16 @@ model Event {
   rsvpDeadline    DateTime?
   targetRoles     RoleKey[] // empty = all members
   // Added: preferred over targetRoles when non-empty
-  targetAudiences AudienceKey[] @default([])
+  targetAudiences AudienceKey[]  @default([])
   // Added: who it's for, same conditions as ニュース (src/lib/news-audience.ts)
   audience        Json?
   createdById     String
-  createdBy       User          @relation(fields: [createdById], references: [id])
+  createdBy       User           @relation(fields: [createdById], references: [id])
   rsvps           Rsvp[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  staff           EventStaff[]
+  checkIns        EventCheckIn[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([startsAt])
 }
@@ -424,6 +429,32 @@ model Rsvp {
   answer    RsvpAnswer
   guests    Int        @default(0)
   updatedAt DateTime   @updatedAt
+
+  @@unique([eventId, userId])
+}
+
+/// Members who may check people in at an event (besides admins).
+model EventStaff {
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([eventId, userId])
+  @@index([userId])
+}
+
+/// Attendance: one row when a member's QR ticket is scanned (or staff tick them).
+model EventCheckIn {
+  id            String   @id @default(cuid())
+  eventId       String
+  event         Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation("CheckedIn", fields: [userId], references: [id], onDelete: Cascade)
+  checkedInById String?
+  checkedInBy   User?    @relation("CheckedInBy", fields: [checkedInById], references: [id], onDelete: SetNull)
+  checkedInAt   DateTime @default(now())
 
   @@unique([eventId, userId])
 }

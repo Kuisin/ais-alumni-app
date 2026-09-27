@@ -111,6 +111,18 @@ export default async function AdminMemberPage({
     )?.cohortId ?? null;
   const cohortChoices = await loadCohortChoices(locale === "en" ? "en" : "ja");
   const cohortNumbers = await cohortNumbersById();
+  // 学年代表 represent their own 学年: offer only the member's student 学年.
+  const ownCohorts = new Set(
+    roles
+      .filter(
+        (r) =>
+          (r.role === RoleKey.FORMER_STUDENT ||
+            r.role === RoleKey.CURRENT_STUDENT) &&
+          r.cohortId,
+      )
+      .map((r) => String(cohortNumbers.get(r.cohortId as string) ?? "")),
+  );
+  const repCohortChoices = cohortChoices.filter((c) => ownCohorts.has(c.value));
   const lineStatus = !user.lineUserId
     ? t("line.notLinked")
     : user.lineFollowing
@@ -379,9 +391,10 @@ export default async function AdminMemberPage({
           >
             <div className="grid gap-3 2xl:grid-cols-2">
               {Object.values(PositionKey)
+                // 教職員担当 only sends お知らせ; 学年代表 also joins the
+                // 学年代表 chat, so it's always offered.
                 .filter(
-                  (p) =>
-                    MESSAGES_ENABLED || p === PositionKey.TEACHER_REGISTRAR,
+                  (p) => MESSAGES_ENABLED || p !== PositionKey.TEACHER_MANAGER,
                 )
                 .map((p) => {
                   const held = positions.find((x) => x.position === p);
@@ -401,7 +414,11 @@ export default async function AdminMemberPage({
                           ? (cohortNumbers.get(defaultCohort) ?? null)
                           : null
                       }
-                      cohorts={cohortChoices}
+                      cohorts={
+                        p === PositionKey.STUDENT_LEADER
+                          ? repCohortChoices
+                          : cohortChoices
+                      }
                       eligible={positionEligible(
                         p,
                         roleKeys,

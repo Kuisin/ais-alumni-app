@@ -206,7 +206,7 @@
     },
     "descriptions": {
       "TEACHER_MANAGER": "Can send notifications to all members, selected roles or any class (up to 20 per day).",
-      "STUDENT_LEADER": "Can send notifications to members of their own 学年 (up to 5 per week).",
+      "STUDENT_LEADER": "Represents their own 学年: joins the 学年代表 chat and is the contact for their class. You can also manage class reps per 学年 on the 学年 page.",
       "TEACHER_REGISTRAR": "Can mark members as current teachers or move them to former (Admin mode → Teachers). Current teachers can see children's profiles, so grant this only to someone you trust."
     },
     "requires": {

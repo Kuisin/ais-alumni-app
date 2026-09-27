@@ -32,5 +32,14 @@
     "beforeFirst": "第1期 finished 6th grade in 2012; earlier years aren't valid.",
     "exists": "That class already exists."
   },
-  "emptyHint": "A class is created automatically the first time a member picks it when applying or in their profile."
+  "emptyHint": "A class is created automatically the first time a member picks it when applying or in their profile.",
+  "reps": {
+    "title": "Class reps",
+    "none": "None yet.",
+    "hint": "Choose from this 学年's students and graduates. Class reps can send notices to their 学年 and join the 学年代表 chat.",
+    "search": "Search this 学年's students and graduates",
+    "add": "Make {name} a class rep",
+    "remove": "Remove {name} as class rep",
+    "noResults": "No matching members in this 学年."
+  }
 }

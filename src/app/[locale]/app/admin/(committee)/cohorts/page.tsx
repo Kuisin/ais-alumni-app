@@ -3,9 +3,11 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { deleteCohortAction } from "@/app/actions/admin-cohorts";
 import { CohortEditForm } from "@/components/cohorts/cohort-forms";
+import { CohortReps } from "@/components/cohorts/cohort-reps";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ViewEdit } from "@/components/ui/view-edit";
+import { PositionKey } from "@/generated/prisma/enums";
 import { cohortLabel } from "@/lib/cohorts";
 import { db } from "@/lib/db";
 import { isClassGraduated } from "@/lib/school";
@@ -28,6 +30,14 @@ export default async function CohortsPage() {
     orderBy: { number: "desc" },
     include: {
       _count: { select: { roles: true, positions: true, broadcasts: true } },
+      // 学年代表 of each 学年.
+      positions: {
+        where: { position: PositionKey.STUDENT_LEADER },
+        orderBy: { createdAt: "asc" },
+        select: {
+          user: { select: { id: true, nameRomaji: true, nameKanji: true } },
+        },
+      },
     },
   });
   return (
@@ -74,6 +84,14 @@ export default async function CohortsPage() {
                 {c.note ? (
                   <p className="text-sm text-slate-700">{c.note}</p>
                 ) : null}
+                <CohortReps
+                  cohortId={c.id}
+                  reps={c.positions.map(({ user: u }) => ({
+                    id: u.id,
+                    name: u.nameRomaji ?? u.nameKanji ?? "—",
+                    kanji: u.nameRomaji ? u.nameKanji : null,
+                  }))}
+                />
                 <ViewEdit view={null} editLabel={t("edit")}>
                   <CohortEditForm
                     id={c.id}

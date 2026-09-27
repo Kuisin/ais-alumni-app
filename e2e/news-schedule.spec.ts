@@ -26,7 +26,7 @@ test("reserved news is sent when due, only to the chosen audience", async ({
     .check();
   await page.getByLabel(/^Send at \(JST\)/).fill(sendAt);
   await page.getByRole("radio", { name: /^Choose conditions/ }).check();
-  await page.getByRole("checkbox", { name: /^Graduate/ }).check();
+  await page.getByRole("checkbox", { name: /^Graduate(?!s)/ }).check();
   await page.getByRole("button", { name: "Schedule", exact: true }).click();
   await expect(page.getByText("The post has been saved.")).toBeVisible();
   const postId = page.url().match(/news\/([^/?]+)/)?.[1] as string;

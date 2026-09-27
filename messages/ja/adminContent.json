@@ -188,17 +188,19 @@
       "CURRENT_STUDENT": "在校生",
       "CURRENT_PARENT": "在校生保護者",
       "GRADUATE": "卒業生",
-      "LEFT_STUDENT": "元在校生",
-      "FORMER_PARENT": "卒業生保護者"
+      "LEFT_STUDENT": "元在校生（未卒業）",
+      "FORMER_PARENT": "卒業生保護者",
+      "FORMER_STUDENT": "卒業生＋元在校生"
     },
     "groupHints": {
       "TEACHER_CURRENT": "現在AISに勤務している教職員",
       "TEACHER_FORMER": "以前AISに勤務していた教職員",
       "CURRENT_STUDENT": "年少〜小学6年生",
       "CURRENT_PARENT": "在校生のご家族",
-      "GRADUATE": "小学校を卒業した人",
+      "GRADUATE": "小学校を卒業した人のみ",
       "LEFT_STUDENT": "卒業前に転校・退学した人",
-      "FORMER_PARENT": "卒業生・元在校生のご家族"
+      "FORMER_PARENT": "卒業生・元在校生のご家族",
+      "FORMER_STUDENT": "AISに通っていた人全員（卒業した人と、卒業前に離れた人）"
     },
     "cohortsLegend": "学年",
     "cohortsHint": "選んだ学年の在校生・卒業生・元在校生が受け取ります。",

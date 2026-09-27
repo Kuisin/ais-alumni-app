@@ -35,7 +35,7 @@ describe("ニュース audience", () => {
       groupsOfMember(
         viewer({ roles: [{ role: "FORMER_STUDENT", didGraduate: false }] }),
       ),
-    ).toEqual(["LEFT_STUDENT"]);
+    ).toEqual(["FORMER_STUDENT", "LEFT_STUDENT"]);
   });
 
   it("matches 学年, parents of 学年 and individual members (any condition)", () => {
@@ -90,5 +90,31 @@ describe("ニュース audience", () => {
       targetAudiences: [],
       targetRoles: [],
     });
+  });
+});
+
+describe("卒業生 / 卒業生＋元在校生", () => {
+  const left = viewer({
+    roles: [{ role: "FORMER_STUDENT", didGraduate: false }],
+  });
+  const grad = viewer({
+    roles: [{ role: "FORMER_STUDENT", didGraduate: true }],
+  });
+  it("卒業生 is graduates only; 卒業生＋元在校生 is everyone who left", () => {
+    const g = { ...EVERYONE, groups: ["GRADUATE" as const] };
+    expect(matchesAudience(g, grad)).toBe(true);
+    expect(matchesAudience(g, left)).toBe(false);
+    const all = { ...EVERYONE, groups: ["FORMER_STUDENT" as const] };
+    expect(matchesAudience(all, grad)).toBe(true);
+    expect(matchesAudience(all, left)).toBe(true);
+  });
+  it("older posts aimed at both halves read as 卒業生＋元在校生", () => {
+    expect(
+      specFromPost({
+        audience: null,
+        targetAudiences: ["GRADUATE", "LEFT_STUDENT"],
+        targetRoles: [],
+      }).groups,
+    ).toEqual(["FORMER_STUDENT"]);
   });
 });

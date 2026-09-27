@@ -13,12 +13,10 @@ import {
 } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { readNewsIds, unreadCounts } from "@/lib/announcements";
-import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
-import { targetRolesWhere } from "@/lib/news";
-import { visibleNews } from "@/lib/news-visibility";
+import { filterByAudience, visibleNews } from "@/lib/news-visibility";
 import { requireActive } from "@/lib/session";
 import { setupProgress } from "@/lib/setup";
 import { loadSetupChecklist } from "@/lib/setup-db";
@@ -41,28 +39,30 @@ export default async function DashboardPage({
   const t = await getTranslations("dashboard");
   const tn = await getTranslations("news");
   const now = new Date();
-  const target = targetRolesWhere(toViewer(user));
 
   const [events, news, followRequests, vouches, familyLinks, unread] =
     await Promise.all([
-      db.event.findMany({
-        where: {
-          AND: [
-            target,
-            { OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }] },
-          ],
-        },
-        orderBy: { startsAt: "asc" },
-        take: 3,
-        select: {
-          id: true,
-          titleJa: true,
-          titleEn: true,
-          startsAt: true,
-          location: true,
-          rsvps: { where: { userId: user.id }, select: { answer: true } },
-        },
-      }),
+      db.event
+        .findMany({
+          where: {
+            OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }],
+          },
+          orderBy: { startsAt: "asc" },
+          take: 200,
+          select: {
+            audience: true,
+            targetAudiences: true,
+            targetRoles: true,
+            id: true,
+            titleJa: true,
+            titleEn: true,
+            startsAt: true,
+            location: true,
+            rsvps: { where: { userId: user.id }, select: { answer: true } },
+          },
+        })
+        // Same audience conditions as ニュース.
+        .then(async (rows) => (await filterByAudience(user, rows)).slice(0, 3)),
       visibleNews(user, now).then((v) =>
         db.newsPost.findMany({
           where: { id: { in: v.slice(0, 3).map((p) => p.id) } },

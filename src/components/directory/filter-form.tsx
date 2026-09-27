@@ -4,7 +4,7 @@ import { buttonClass } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { LifeStage } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
-import { AUDIENCE_KEYS } from "@/lib/audience";
+import { MEMBER_FILTER_OPTIONS } from "@/lib/audience";
 import type { CohortOption } from "@/lib/cohorts";
 import { type DirectoryFilters, MAX_YEAR, MIN_YEAR } from "@/lib/directory";
 import { AIS_DIVISIONS } from "@/lib/school";
@@ -69,7 +69,7 @@ export async function DirectoryFilterForm({
               {(aria) => (
                 <Select {...aria} name="role" defaultValue={filters.role ?? ""}>
                   <option value="">{t("filters.anyRole")}</option>
-                  {AUDIENCE_KEYS.map((r) => (
+                  {MEMBER_FILTER_OPTIONS.map((r) => (
                     <option key={r} value={r}>
                       {tr(`audience.${r}`)}
                     </option>

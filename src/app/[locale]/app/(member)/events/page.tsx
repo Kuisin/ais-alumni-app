@@ -5,10 +5,10 @@ import { Pager, parsePage } from "@/components/news/pager";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { Link } from "@/i18n/navigation";
-import { toViewer } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
-import { EVENTS_PAGE_SIZE, targetRolesWhere } from "@/lib/news";
+import { EVENTS_PAGE_SIZE } from "@/lib/news";
+import { filterByAudience } from "@/lib/news-visibility";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata({
@@ -40,12 +40,16 @@ export default async function EventsPage({
         }
       : { OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }] };
 
-  const rows = await db.event.findMany({
-    where: { AND: [targetRolesWhere(toViewer(user)), timeWhere] },
+  // Audience (same conditions as ニュース) is matched in code: 学年 and
+  // individually chosen members can't be expressed in SQL.
+  const all = await db.event.findMany({
+    where: timeWhere,
     orderBy: { startsAt: tab === "past" ? "desc" : "asc" },
-    skip: (page - 1) * EVENTS_PAGE_SIZE,
-    take: EVENTS_PAGE_SIZE + 1,
+    take: 1000,
     select: {
+      audience: true,
+      targetAudiences: true,
+      targetRoles: true,
       id: true,
       titleJa: true,
       titleEn: true,
@@ -54,6 +58,10 @@ export default async function EventsPage({
       rsvps: { where: { userId: user.id }, select: { answer: true } },
     },
   });
+  const rows = (await filterByAudience(user, all)).slice(
+    (page - 1) * EVENTS_PAGE_SIZE,
+    page * EVENTS_PAGE_SIZE + 1,
+  );
   const hasNext = rows.length > EVENTS_PAGE_SIZE;
   const events = rows.slice(0, EVENTS_PAGE_SIZE);
 

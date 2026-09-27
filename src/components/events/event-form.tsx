@@ -10,10 +10,11 @@ import {
 import { Button, buttonClass } from "@/components/ui/button";
 import { Alert } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
-import type { AudienceKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import type { CohortOption } from "@/lib/cohorts";
+import { type AudienceSpec, EVERYONE } from "@/lib/news-audience";
+import { type AudienceMember, AudiencePicker } from "../news/audience-picker";
 import { ConfirmDeleteForm, DeleteButton } from "./confirm-delete";
-import { TargetRolesField } from "./target-roles-field";
 import { useFormAction } from "./use-form-action";
 
 /** Values for editing; dates are datetime-local strings in JST. */
@@ -29,7 +30,10 @@ export type EventFormValues = {
   location: string;
   mapUrl: string;
   capacity: string;
-  targetAudiences: AudienceKey[];
+  /** who it's for: same conditions as ニュース */
+  audience: AudienceSpec;
+  /** names of the individually chosen members in `audience.userIds` */
+  audienceMembers: AudienceMember[];
 };
 
 export const EMPTY_EVENT: EventFormValues = {
@@ -43,7 +47,8 @@ export const EMPTY_EVENT: EventFormValues = {
   location: "",
   mapUrl: "",
   capacity: "",
-  targetAudiences: [],
+  audience: EVERYONE,
+  audienceMembers: [],
 };
 
 /** One card-wrapped group of fields with an icon in its legend. */
@@ -116,10 +121,13 @@ export const ACTION_BUTTON = "w-full sm:w-auto";
 
 export function EventForm({
   values,
+  cohorts,
   cancelHref,
   deleteAction,
 }: {
   values: EventFormValues;
+  /** 学年 offered in the audience picker */
+  cohorts: readonly CohortOption[];
   /** shows a cancel link in the action bar (from `sm`; phones use the back link) */
   cancelHref?: string;
   /** shows a delete button in the action bar */
@@ -326,7 +334,12 @@ export function EventForm({
               )}
             </Field>
           </div>
-          <TargetRolesField defaultValue={values.targetAudiences} />
+          <AudiencePicker
+            cohorts={cohorts}
+            initialSpec={values.audience}
+            initialMembers={values.audienceMembers}
+            error={err("audience")}
+          />
         </FormSection>
 
         <StickyActions

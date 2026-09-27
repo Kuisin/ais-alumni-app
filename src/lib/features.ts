@@ -7,3 +7,10 @@
  * so it can be switched back on.
  */
 export const MESSAGES_ENABLED = false;
+
+/**
+ * ADULTS_CHAT_ENABLED: the 「18歳以上」 group chat. Off until the release that
+ * knows the ADULTS group kind is on main (dev and main share the database,
+ * and main's Prisma client can't read an enum value it doesn't know).
+ */
+export const ADULTS_CHAT_ENABLED = false;

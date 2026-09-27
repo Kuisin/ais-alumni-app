@@ -11,6 +11,8 @@ import { PageNav } from "@/components/admin/page-nav";
 import { buttonClass } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/field";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton } from "@/components/ui/submit-button";
 import type { Prisma } from "@/generated/prisma/client";
 import { Link } from "@/i18n/navigation";
 import { db } from "@/lib/db";
@@ -66,8 +68,7 @@ export default async function AdminAuditPage({
     <div>
       <PageHeader title={t("title")} description={t("description")} />
 
-      <form
-        method="get"
+      <SearchForm
         aria-label={t("filterLabel")}
         className="mb-6 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-3"
       >
@@ -102,56 +103,57 @@ export default async function AdminAuditPage({
           />
         </div>
         <div className="flex items-end gap-2">
-          <button
-            type="submit"
-            className={buttonClass("primary", "whitespace-nowrap")}
+          <SearchButton
+            className="whitespace-nowrap"
+            icon={<Filter aria-hidden="true" className="size-4" />}
           >
-            <Filter aria-hidden="true" className="size-4" />
             {tc("filter")}
-          </button>
+          </SearchButton>
           {action || target ? (
             <Link href="/app/admin/audit" className={buttonClass("ghost")}>
               {tc("clear")}
             </Link>
           ) : null}
         </div>
-      </form>
+      </SearchForm>
 
-      <AuditList rows={page} dayHeading="h2" />
+      <div data-results>
+        <AuditList rows={page} dayHeading="h2" />
 
-      <PageNav
-        label={t("pagination")}
-        prev={
-          cursor ? { pathname: "/app/admin/audit", query: baseQuery } : null
-        }
-        next={
-          hasMore
-            ? {
-                pathname: "/app/admin/audit",
-                query: { ...baseQuery, cursor: page[page.length - 1].id },
-              }
-            : null
-        }
-        prevLabel={ta("newest")}
-        nextLabel={ta("older")}
-        status={
-          page.length ? (
-            <>
-              {ta("showing", { count: page.length })}
-              <span className="hidden sm:inline">
-                {" · "}
-                {ta("range", {
-                  from: formatCompactDate(
-                    page[page.length - 1].createdAt,
-                    locale,
-                  ),
-                  to: formatCompactDate(page[0].createdAt, locale),
-                })}
-              </span>
-            </>
-          ) : null
-        }
-      />
+        <PageNav
+          label={t("pagination")}
+          prev={
+            cursor ? { pathname: "/app/admin/audit", query: baseQuery } : null
+          }
+          next={
+            hasMore
+              ? {
+                  pathname: "/app/admin/audit",
+                  query: { ...baseQuery, cursor: page[page.length - 1].id },
+                }
+              : null
+          }
+          prevLabel={ta("newest")}
+          nextLabel={ta("older")}
+          status={
+            page.length ? (
+              <>
+                {ta("showing", { count: page.length })}
+                <span className="hidden sm:inline">
+                  {" · "}
+                  {ta("range", {
+                    from: formatCompactDate(
+                      page[page.length - 1].createdAt,
+                      locale,
+                    ),
+                    to: formatCompactDate(page[0].createdAt, locale),
+                  })}
+                </span>
+              </>
+            ) : null
+          }
+        />
+      </div>
     </div>
   );
 }

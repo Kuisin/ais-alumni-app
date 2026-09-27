@@ -91,7 +91,7 @@ export default async function NotifyPage({
           {history.length === 0 ? (
             <EmptyState compact>{t("historyEmpty")}</EmptyState>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul data-results className="divide-y divide-slate-100">
               {history.map((b) => {
                 const c = counts.get(b.id);
                 return (

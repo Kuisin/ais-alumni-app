@@ -8,7 +8,8 @@ import {
 } from "@/components/history/org-admin-forms";
 import { Badge, EmptyState, PageHeader } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/field";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton, SubmitButton } from "@/components/ui/submit-button";
 import { Tabs } from "@/components/ui/tabs";
 import { db } from "@/lib/db";
 import { cleanOrgName, type OrgKind, orgNameKey } from "@/lib/organizations";
@@ -84,8 +85,7 @@ export default async function OrganizationsPage({
           active: kind === k,
         }))}
       />
-      <form
-        method="get"
+      <SearchForm
         aria-label={t("filterLabel")}
         className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-end"
       >
@@ -99,13 +99,13 @@ export default async function OrganizationsPage({
             aria-label={t("search")}
             className="min-w-0 flex-1"
           />
-          <SubmitButton
+          <SearchButton
             variant="secondary"
             className="shrink-0 whitespace-nowrap"
+            icon={<Search aria-hidden="true" className="size-4" />}
           >
-            <Search aria-hidden="true" className="size-4" />
             {t("search")}
-          </SubmitButton>
+          </SearchButton>
         </div>
         <div className="flex items-center gap-2 sm:shrink-0">
           <label
@@ -124,62 +124,64 @@ export default async function OrganizationsPage({
             <option value="count">{t("sort.count")}</option>
           </Select>
         </div>
-      </form>
+      </SearchForm>
 
-      <p className="text-sm text-slate-600" aria-live="polite">
-        {total > rows.length
-          ? t("countLimited", { total, shown: rows.length })
-          : t("count", { total })}
-      </p>
+      <div data-results className="space-y-6">
+        <p className="text-sm text-slate-600" aria-live="polite">
+          {total > rows.length
+            ? t("countLimited", { total, shown: rows.length })
+            : t("count", { total })}
+        </p>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          icon={kind === "school" ? <School /> : <Building2 />}
-          hint={q ? t("emptySearchHint") : t("emptyHint")}
-        >
-          {t("empty")}
-        </EmptyState>
-      ) : (
-        <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
-          {rows.map((r) => (
-            <li key={r.id} className="px-4 py-2">
-              <details className="group">
-                <summary className="-mx-2 flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-lg px-2 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                  <span className="min-w-0 flex-1 truncate font-medium">
-                    {r.name}
-                  </span>
-                  <span className="shrink-0 whitespace-nowrap">
-                    <Badge tone={r.count ? "brand" : "slate"}>
-                      {t("members", { count: r.count })}
-                    </Badge>
-                  </span>
-                  <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand-700">
-                    <Pencil aria-hidden="true" className="size-4" />
-                    <span className="sr-only sm:not-sr-only">
-                      {t("manage")}
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={kind === "school" ? <School /> : <Building2 />}
+            hint={q ? t("emptySearchHint") : t("emptyHint")}
+          >
+            {t("empty")}
+          </EmptyState>
+        ) : (
+          <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+            {rows.map((r) => (
+              <li key={r.id} className="px-4 py-2">
+                <details className="group">
+                  <summary className="-mx-2 flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-lg px-2 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {r.name}
                     </span>
-                  </span>
-                </summary>
-                <div className="mt-2 mb-2 grid gap-6 sm:grid-cols-2">
-                  <OrgRenameForm kind={kind} id={r.id} name={r.name} />
-                  <div className="space-y-2">
-                    <p className="text-sm text-slate-600">{t("mergeHelp")}</p>
-                    <OrgMergeForm kind={kind} id={r.id} />
+                    <span className="shrink-0 whitespace-nowrap">
+                      <Badge tone={r.count ? "brand" : "slate"}>
+                        {t("members", { count: r.count })}
+                      </Badge>
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand-700">
+                      <Pencil aria-hidden="true" className="size-4" />
+                      <span className="sr-only sm:not-sr-only">
+                        {t("manage")}
+                      </span>
+                    </span>
+                  </summary>
+                  <div className="mt-2 mb-2 grid gap-6 sm:grid-cols-2">
+                    <OrgRenameForm kind={kind} id={r.id} name={r.name} />
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-600">{t("mergeHelp")}</p>
+                      <OrgMergeForm kind={kind} id={r.id} />
+                    </div>
                   </div>
-                </div>
-                {r.count === 0 ? (
-                  <form
-                    action={deleteOrgAction.bind(null, kind, r.id)}
-                    className="mb-2"
-                  >
-                    <SubmitButton variant="ghost">{t("delete")}</SubmitButton>
-                  </form>
-                ) : null}
-              </details>
-            </li>
-          ))}
-        </ul>
-      )}
+                  {r.count === 0 ? (
+                    <form
+                      action={deleteOrgAction.bind(null, kind, r.id)}
+                      className="mb-2"
+                    >
+                      <SubmitButton variant="ghost">{t("delete")}</SubmitButton>
+                    </form>
+                  ) : null}
+                </details>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

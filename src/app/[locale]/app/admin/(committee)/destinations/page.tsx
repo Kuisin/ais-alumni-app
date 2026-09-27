@@ -13,7 +13,9 @@ import { BarTable } from "@/components/admin/bar-table";
 import { buttonClass } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/field";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { LinkPendingIcon } from "@/components/ui/link-pending";
+import { SearchForm } from "@/components/ui/search-form";
+import { SearchButton } from "@/components/ui/submit-button";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { cohortShort } from "@/lib/cohorts";
@@ -165,8 +167,7 @@ export default async function DestinationsPage({
     <div className="space-y-6">
       <PageHeader title={t("title")} description={t("description")} />
 
-      <form
-        method="get"
+      <SearchForm
         aria-label={t("filterLabel")}
         className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4"
       >
@@ -194,208 +195,225 @@ export default async function DestinationsPage({
           />
           {t("onlyHistory")}
         </label>
-        <SubmitButton variant="secondary" className="whitespace-nowrap">
-          <Filter aria-hidden="true" className="size-4" />
+        <SearchButton
+          variant="secondary"
+          className="whitespace-nowrap"
+          icon={<Filter aria-hidden="true" className="size-4" />}
+        >
           {t("apply")}
-        </SubmitButton>
-      </form>
+        </SearchButton>
+      </SearchForm>
 
-      <section aria-label={t("summary")} className="grid gap-4 sm:grid-cols-2">
-        <Card className="flex items-center gap-4">
-          <Users aria-hidden="true" className="size-8 text-brand-700" />
-          <div>
-            <p className="text-sm text-slate-600">{t("formerStudents")}</p>
-            <p className="text-3xl font-bold tabular-nums">{people.length}</p>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-4">
-          <School aria-hidden="true" className="size-8 text-brand-700" />
-          <div>
-            <p className="text-sm text-slate-600">{t("withHistory")}</p>
-            <p className="text-3xl font-bold tabular-nums">
-              {withHistory}
-              <span className="ml-2 text-base font-normal text-slate-500">
-                {people.length
-                  ? t("rate", {
-                      percent: Math.round((withHistory / people.length) * 100),
-                    })
-                  : "—"}
-              </span>
+      <div data-results className="space-y-6">
+        <section
+          aria-label={t("summary")}
+          className="grid gap-4 sm:grid-cols-2"
+        >
+          <Card className="flex items-center gap-4">
+            <Users aria-hidden="true" className="size-8 text-brand-700" />
+            <div>
+              <p className="text-sm text-slate-600">{t("formerStudents")}</p>
+              <p className="text-3xl font-bold tabular-nums">{people.length}</p>
+            </div>
+          </Card>
+          <Card className="flex items-center gap-4">
+            <School aria-hidden="true" className="size-8 text-brand-700" />
+            <div>
+              <p className="text-sm text-slate-600">{t("withHistory")}</p>
+              <p className="text-3xl font-bold tabular-nums">
+                {withHistory}
+                <span className="ml-2 text-base font-normal text-slate-500">
+                  {people.length
+                    ? t("rate", {
+                        percent: Math.round(
+                          (withHistory / people.length) * 100,
+                        ),
+                      })
+                    : "—"}
+                </span>
+              </p>
+            </div>
+          </Card>
+        </section>
+
+        {withHistory === 0 ? (
+          <EmptyState
+            icon={<GraduationCap />}
+            hint={t("noHistoryHint")}
+            action={
+              <Link
+                href="/app/admin/news/new"
+                className={buttonClass("secondary")}
+              >
+                <Megaphone aria-hidden="true" className="size-4" />
+                {t("askMembers")}
+              </Link>
+            }
+          >
+            {t("noHistory")}
+          </EmptyState>
+        ) : (
+          <section aria-label={t("chartsLabel")} className="space-y-3">
+            <p className="text-sm text-slate-600">{t("chartNote")}</p>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {charts.map((c) => (
+                <BarTable
+                  key={c.id}
+                  id={c.id}
+                  title={c.title}
+                  rows={c.rows}
+                  total={withHistory}
+                  note={undefined}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <Card>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold">{t("table.title")}</h2>
+            <p className="text-sm text-slate-600 tabular-nums">
+              {t("table.count", { shown: shown.length, total: listed.length })}
             </p>
           </div>
-        </Card>
-      </section>
-
-      {withHistory === 0 ? (
-        <EmptyState
-          icon={<GraduationCap />}
-          hint={t("noHistoryHint")}
-          action={
-            <Link
-              href="/app/admin/news/new"
-              className={buttonClass("secondary")}
-            >
-              <Megaphone aria-hidden="true" className="size-4" />
-              {t("askMembers")}
-            </Link>
-          }
-        >
-          {t("noHistory")}
-        </EmptyState>
-      ) : (
-        <section aria-label={t("chartsLabel")} className="space-y-3">
-          <p className="text-sm text-slate-600">{t("chartNote")}</p>
-          <div className="grid gap-6 lg:grid-cols-2">
-            {charts.map((c) => (
-              <BarTable
-                key={c.id}
-                id={c.id}
-                title={c.title}
-                rows={c.rows}
-                total={withHistory}
-                note={undefined}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <Card>
-        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-semibold">{t("table.title")}</h2>
-          <p className="text-sm text-slate-600 tabular-nums">
-            {t("table.count", { shown: shown.length, total: listed.length })}
-          </p>
-        </div>
-        <p className="mb-3 text-sm text-slate-600">{t("table.hint")}</p>
-        {shown.length ? (
-          <>
-            {/* Phones: one card per person */}
-            <ul className="divide-y divide-slate-100 sm:hidden">
-              {shown.map((p) => (
-                <li key={p.id} className="py-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <Link
-                      href={`/app/admin/members/${p.id}`}
-                      className="block min-w-0 truncate py-3 leading-5 font-medium text-brand-700 hover:underline"
-                    >
-                      {p.name}
-                    </Link>
-                    <span className="shrink-0 text-xs whitespace-nowrap text-slate-500">
-                      {cohortText(p)}
-                    </span>
-                  </div>
-                  {leftLine(p) ? (
-                    <p className="text-xs text-slate-500">{leftLine(p)}</p>
-                  ) : null}
-                  <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
-                    {levels.map((l) => (
-                      <div key={l} className="contents">
-                        <dt className="text-slate-500">{th(`levels.${l}`)}</dt>
-                        <dd className="min-w-0">
-                          {schoolCell(p.path.schools[l])}
-                        </dd>
-                      </div>
-                    ))}
-                    <dt className="text-slate-500">{t("table.now")}</dt>
-                    <dd className="min-w-0">{nowCell(p)}</dd>
-                  </dl>
-                </li>
-              ))}
-            </ul>
-
-            {/* sm+: table */}
-            <table className="hidden w-full table-fixed border-collapse text-sm sm:table">
-              <caption className="sr-only">{t("table.title")}</caption>
-              <colgroup>
-                <col className="w-[22%]" />
-                <col className="w-[5.5rem]" />
-                {levels.map((l) => (
-                  <col key={l} />
-                ))}
-                <col className="w-[20%]" />
-              </colgroup>
-              <thead>
-                <tr className="text-left text-xs text-slate-500">
-                  <th scope="col" className="py-2 pr-3 font-medium">
-                    {t("table.name")}
-                  </th>
-                  <th
-                    scope="col"
-                    className="py-2 pr-3 font-medium whitespace-nowrap"
-                  >
-                    {t("cohort")}
-                  </th>
-                  {levels.map((l) => (
-                    <th
-                      key={l}
-                      scope="col"
-                      className="py-2 pr-3 font-medium whitespace-nowrap"
-                    >
-                      {th(`levels.${l}`)}
-                    </th>
-                  ))}
-                  <th
-                    scope="col"
-                    className="py-2 font-medium whitespace-nowrap"
-                  >
-                    {t("table.now")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+          <p className="mb-3 text-sm text-slate-600">{t("table.hint")}</p>
+          {shown.length ? (
+            <>
+              {/* Phones: one card per person */}
+              <ul className="divide-y divide-slate-100 sm:hidden">
                 {shown.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-t border-slate-100 align-top hover:bg-slate-50"
-                  >
-                    <th scope="row" className="py-2 pr-3 text-left font-medium">
+                  <li key={p.id} className="py-3">
+                    <div className="flex items-center justify-between gap-2">
                       <Link
                         href={`/app/admin/members/${p.id}`}
-                        className="block truncate text-brand-700 hover:underline"
-                        title={p.name}
+                        className="block min-w-0 truncate py-3 leading-5 font-medium text-brand-700 hover:underline"
                       >
                         {p.name}
                       </Link>
-                      {leftLine(p) ? (
-                        <span className="block truncate text-xs font-normal text-slate-500">
-                          {leftLine(p)}
-                        </span>
-                      ) : null}
-                    </th>
-                    <td className="py-2 pr-3 whitespace-nowrap">
-                      {cohortText(p)}
-                    </td>
-                    {levels.map((l) => (
-                      <td key={l} className="py-2 pr-3">
-                        {schoolCell(p.path.schools[l])}
-                      </td>
-                    ))}
-                    <td className="py-2">{nowCell(p)}</td>
-                  </tr>
+                      <span className="shrink-0 text-xs whitespace-nowrap text-slate-500">
+                        {cohortText(p)}
+                      </span>
+                    </div>
+                    {leftLine(p) ? (
+                      <p className="text-xs text-slate-500">{leftLine(p)}</p>
+                    ) : null}
+                    <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
+                      {levels.map((l) => (
+                        <div key={l} className="contents">
+                          <dt className="text-slate-500">
+                            {th(`levels.${l}`)}
+                          </dt>
+                          <dd className="min-w-0">
+                            {schoolCell(p.path.schools[l])}
+                          </dd>
+                        </div>
+                      ))}
+                      <dt className="text-slate-500">{t("table.now")}</dt>
+                      <dd className="min-w-0">{nowCell(p)}</dd>
+                    </dl>
+                  </li>
                 ))}
-              </tbody>
-            </table>
+              </ul>
 
-            {shown.length < listed.length ? (
-              <div className="mt-4 text-center">
-                <Link
-                  href={{
-                    pathname: "/app/admin/destinations",
-                    query: { ...baseQuery, all: "1" },
-                  }}
-                  className={buttonClass("secondary")}
-                >
-                  <ChevronDown aria-hidden="true" className="size-4" />
-                  {t("table.showAll", { count: listed.length })}
-                </Link>
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <EmptyState icon={<Users />}>{t("table.empty")}</EmptyState>
-        )}
-      </Card>
+              {/* sm+: table */}
+              <table className="hidden w-full table-fixed border-collapse text-sm sm:table">
+                <caption className="sr-only">{t("table.title")}</caption>
+                <colgroup>
+                  <col className="w-[22%]" />
+                  <col className="w-[5.5rem]" />
+                  {levels.map((l) => (
+                    <col key={l} />
+                  ))}
+                  <col className="w-[20%]" />
+                </colgroup>
+                <thead>
+                  <tr className="text-left text-xs text-slate-500">
+                    <th scope="col" className="py-2 pr-3 font-medium">
+                      {t("table.name")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="py-2 pr-3 font-medium whitespace-nowrap"
+                    >
+                      {t("cohort")}
+                    </th>
+                    {levels.map((l) => (
+                      <th
+                        key={l}
+                        scope="col"
+                        className="py-2 pr-3 font-medium whitespace-nowrap"
+                      >
+                        {th(`levels.${l}`)}
+                      </th>
+                    ))}
+                    <th
+                      scope="col"
+                      className="py-2 font-medium whitespace-nowrap"
+                    >
+                      {t("table.now")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shown.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-t border-slate-100 align-top hover:bg-slate-50"
+                    >
+                      <th
+                        scope="row"
+                        className="py-2 pr-3 text-left font-medium"
+                      >
+                        <Link
+                          href={`/app/admin/members/${p.id}`}
+                          className="block truncate text-brand-700 hover:underline"
+                          title={p.name}
+                        >
+                          {p.name}
+                        </Link>
+                        {leftLine(p) ? (
+                          <span className="block truncate text-xs font-normal text-slate-500">
+                            {leftLine(p)}
+                          </span>
+                        ) : null}
+                      </th>
+                      <td className="py-2 pr-3 whitespace-nowrap">
+                        {cohortText(p)}
+                      </td>
+                      {levels.map((l) => (
+                        <td key={l} className="py-2 pr-3">
+                          {schoolCell(p.path.schools[l])}
+                        </td>
+                      ))}
+                      <td className="py-2">{nowCell(p)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {shown.length < listed.length ? (
+                <div className="mt-4 text-center">
+                  <Link
+                    href={{
+                      pathname: "/app/admin/destinations",
+                      query: { ...baseQuery, all: "1" },
+                    }}
+                    className={buttonClass("secondary")}
+                  >
+                    <LinkPendingIcon>
+                      <ChevronDown aria-hidden="true" className="size-4" />
+                    </LinkPendingIcon>
+                    {t("table.showAll", { count: listed.length })}
+                  </Link>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <EmptyState icon={<Users />}>{t("table.empty")}</EmptyState>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

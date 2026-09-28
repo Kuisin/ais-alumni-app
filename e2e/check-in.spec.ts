@@ -20,7 +20,7 @@ test("staff scan a member's QR ticket to check them in", async ({
   const title = `Check-in ${Date.now()}`;
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
-  await admin.goto("/en/app/admin/events/new");
+  await admin.goto("/en/app/events/new");
   await admin.getByLabel("Title (Japanese)").fill(title);
   await admin.getByLabel(/^Start/).fill("2030-07-01T18:00");
   await admin.getByRole("button", { name: "Create event" }).click();

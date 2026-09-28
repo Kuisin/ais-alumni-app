@@ -36,6 +36,10 @@ test("personal details: family sees all, followers only what's shared", async ({
     fanPage.getByText(/personal information are visible to their family only/),
   ).toBeVisible();
   await expect(fanPage.getByText(phone)).toHaveCount(0);
+  // …and is told what is hidden instead of it silently missing.
+  const hidden = fanPage.getByRole("listitem").filter({ hasText: "Phone" });
+  await expect(hidden).toBeVisible();
+  await expect(hidden).toContainText("hidden");
 
   // Family sees everything.
   const kinPage = await browser.newPage();
@@ -55,6 +59,28 @@ test("personal details: family sees all, followers only what's shared", async ({
   await phoneBox.check();
   await section.getByRole("button", { name: "Save", exact: true }).click();
   await expect(section.getByRole("checkbox")).toHaveCount(0);
+
+  // The phone row now says followers and family see it, members don't.
+  const phoneRow = ownerPage.locator("#about dd").filter({ hasText: phone });
+  await expect(phoneRow.getByText("All members: hidden")).toBeAttached();
+  await expect(phoneRow.getByText("Followers: shown")).toBeAttached();
+
+  // Preview as a member: no phone, listed as hidden; as a follower: phone.
+  await ownerPage.getByRole("link", { name: "View as a member" }).click();
+  await expect(
+    ownerPage.getByText("Your profile as all members see it"),
+  ).toBeVisible();
+  await expect(ownerPage.getByText(phone)).toHaveCount(0);
+  await expect(
+    ownerPage.getByRole("listitem").filter({ hasText: "Phone" }),
+  ).toBeVisible();
+  await ownerPage.getByRole("link", { name: "View as a follower" }).click();
+  await expect(ownerPage.getByRole("link", { name: phone })).toBeVisible();
+  await expect(ownerPage.getByText(owner.email)).toHaveCount(0);
+  await ownerPage.getByRole("link", { name: "View as family" }).click();
+  await expect(
+    ownerPage.getByRole("link", { name: owner.email }),
+  ).toBeVisible();
 
   // Now the follower sees the phone number, but not the email.
   await fanPage.reload();

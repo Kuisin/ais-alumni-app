@@ -4,7 +4,7 @@ import { signInWithEmail } from "./helpers";
 test("admin creates, edits and deletes an event", async ({ page }) => {
   const title = `E2E event ${Date.now()}`;
   await signInWithEmail(page, "admin@example.com");
-  await page.goto("/en/app/admin/events/new");
+  await page.goto("/en/app/events/new");
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel(/^Start/).fill("2030-05-01T18:00");
   await page.getByRole("radio", { name: /^Choose conditions/ }).check();
@@ -46,7 +46,10 @@ test("admin creates, edits and deletes an event", async ({ page }) => {
 test("admin saves and deletes a news draft", async ({ page }) => {
   const title = `E2E news ${Date.now()}`;
   await signInWithEmail(page, "admin@example.com");
-  await page.goto("/en/app/admin/news/new");
+  // Admins start a post from the member news list.
+  await page.goto("/en/app/news");
+  await page.getByRole("link", { name: "New post" }).click();
+  await expect(page).toHaveURL(/\/en\/app\/news\/new$/);
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel("Body (Japanese)").fill("Draft body");
   await page.getByRole("radio", { name: /^Save as draft/ }).check();
@@ -80,7 +83,7 @@ test("admin schedules a news post for graduates", async ({ page }) => {
     .toISOString()
     .slice(0, 16);
   await signInWithEmail(page, "admin@example.com");
-  await page.goto("/en/app/admin/news/new");
+  await page.goto("/en/app/news/new");
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel("Body (Japanese)").fill("Scheduled body");
   await page
@@ -123,7 +126,7 @@ test("events use the ニュース audience conditions", async ({ browser }) => {
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
   const create = async (title: string, audience: RegExp) => {
-    await admin.goto("/en/app/admin/events/new");
+    await admin.goto("/en/app/events/new");
     await admin.getByLabel("Title (Japanese)").fill(title);
     await admin.getByLabel(/^Start/).fill("2030-06-01T18:00");
     await admin.getByRole("radio", { name: /^Choose conditions/ }).check();

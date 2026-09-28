@@ -15,6 +15,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import type { CohortChoice } from "@/lib/cohorts";
 
 const TYPES = ["STUDENT", "PARENT", "TEACHER"] as const;
+const KINDS = ["INDIVIDUAL", "GRADE"] as const;
 
 /** Create invitations one after another (a fresh form each time). */
 export function InviteCreator({ cohorts }: { cohorts: CohortChoice[] }) {
@@ -41,15 +42,20 @@ function InviteForm({
     createInviteAction,
     null,
   );
+  const [kind, setKind] = useState<(typeof KINDS)[number]>("INDIVIDUAL");
   const [type, setType] = useState<(typeof TYPES)[number]>("STUDENT");
+  // 学年招待 is for students / parents of a 学年 (not teachers).
+  const types = kind === "GRADE" ? TYPES.filter((x) => x !== "TEACHER") : TYPES;
   const [copied, setCopied] = useState(false);
 
   if (state?.ok && state.url) {
     const url = state.url;
-    const text = `${t("shareText")}\n${url}`;
+    const text = `${state.kind === "GRADE" ? t("shareTextGrade") : t("shareText")}\n${url}`;
     return (
       <div className="space-y-3">
-        <Alert tone="success">{t("created")}</Alert>
+        <Alert tone="success">
+          {state.kind === "GRADE" ? t("createdGrade") : t("created")}
+        </Alert>
         <label htmlFor="invite-url" className="block text-sm font-medium">
           {t("link")}
         </label>
@@ -98,10 +104,40 @@ function InviteForm({
       ) : null}
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-slate-800">
+          {t("kind")}
+        </legend>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {KINDS.map((k) => (
+            <label key={k} className={CHOICE_CARD}>
+              <input
+                type="radio"
+                name="kind"
+                value={k}
+                checked={kind === k}
+                onChange={() => {
+                  setKind(k);
+                  if (k === "GRADE" && type === "TEACHER") setType("STUDENT");
+                }}
+                className="size-5 shrink-0 accent-brand-700"
+              />
+              <span className="text-sm">
+                <span className="block font-medium">
+                  {t(`kinds.${k}.title`)}
+                </span>
+                <span className="block text-slate-600">
+                  {t(`kinds.${k}.hint`)}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-slate-800">
           {t("type")}
         </legend>
         <div className="grid gap-2 sm:grid-cols-3">
-          {TYPES.map((k) => (
+          {types.map((k) => (
             <label key={k} className={CHOICE_CARD}>
               <input
                 type="radio"
@@ -135,9 +171,11 @@ function InviteForm({
           )}
         </Field>
       ) : null}
-      <Field id="invite-name" label={t("name")} hint={t("nameHint")}>
-        {(a) => <Input {...a} name="inviteeName" maxLength={100} />}
-      </Field>
+      {kind === "INDIVIDUAL" ? (
+        <Field id="invite-name" label={t("name")} hint={t("nameHint")}>
+          {(a) => <Input {...a} name="inviteeName" maxLength={100} />}
+        </Field>
+      ) : null}
       <SubmitButton className="w-full sm:w-auto">{t("create")}</SubmitButton>
     </form>
   );

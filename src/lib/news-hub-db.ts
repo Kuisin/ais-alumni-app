@@ -3,7 +3,7 @@ import { NewsPollKind } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { parseJstLocal, toJstLocalInput } from "@/lib/format";
 import { deadlineFrom, leaseUntil } from "@/lib/jobs/budget";
-import { targetedRecipients } from "@/lib/news";
+import { approvedWhere, targetedRecipients } from "@/lib/news";
 import {
   type Asks,
   type AttachmentItem,
@@ -246,6 +246,7 @@ export async function sendDeadlineReminders(
       closedAt: null,
       archivedAt: null,
       publishedAt: { lte: now },
+      AND: [approvedWhere],
       OR: [
         { remindedAt: null },
         { remindedAt: { not: null }, remindingUntil: { lt: now } },

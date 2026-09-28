@@ -1,13 +1,18 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { EventCard } from "@/components/events/event-card";
 import { Pager, parsePage } from "@/components/news/pager";
+import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
+import { Link } from "@/i18n/navigation";
+import { eventApprovedWhere } from "@/lib/approval";
+import { getNewsScope } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { EVENTS_PAGE_SIZE } from "@/lib/news";
 import { filterByAudience } from "@/lib/news-visibility";
+import { senderLabels } from "@/lib/sender";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata({
@@ -42,7 +47,8 @@ export default async function EventsPage({
   // Audience (same conditions as ニュース) is matched in code: 学年 and
   // individually chosen members can't be expressed in SQL.
   const all = await db.event.findMany({
-    where: timeWhere,
+    // A 同窓会委員's event shows once approved.
+    where: { ...timeWhere, AND: [eventApprovedWhere] },
     orderBy: { startsAt: tab === "past" ? "desc" : "asc" },
     take: 1000,
     select: {
@@ -54,6 +60,7 @@ export default async function EventsPage({
       titleEn: true,
       startsAt: true,
       location: true,
+      senderRole: true,
       rsvps: { where: { userId: user.id }, select: { answer: true } },
     },
   });
@@ -63,6 +70,10 @@ export default async function EventsPage({
   );
   const hasNext = rows.length > EVENTS_PAGE_SIZE;
   const events = rows.slice(0, EVENTS_PAGE_SIZE);
+  const [senders, scope] = await Promise.all([
+    senderLabels(events, locale),
+    getNewsScope(user),
+  ]);
 
   const tabs = [
     { key: "upcoming", label: t("tabs.upcoming"), href: "/app/events" },
@@ -71,7 +82,19 @@ export default async function EventsPage({
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          // Same authors as ニュース (admins, teachers, 同窓会委員, 学年代表).
+          scope ? (
+            <Link href="/app/events/new" className={buttonClass("primary")}>
+              <Plus aria-hidden="true" className="size-4" />
+              {t("create")}
+            </Link>
+          ) : null
+        }
+      />
       <Tabs
         label={t("tabs.label")}
         className="mb-4"
@@ -94,6 +117,7 @@ export default async function EventsPage({
                 <EventCard
                   event={{ ...e, myAnswer: e.rsvps[0]?.answer ?? null }}
                   locale={locale}
+                  sender={senders.get(e.id)}
                 />
               </li>
             ))}

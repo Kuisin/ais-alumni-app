@@ -80,7 +80,8 @@
     "destinations": "Destinations",
     "nameRequests": "Name & birth date",
     "support": "Support requests",
-    "line": "LINE menu"
+    "line": "LINE menu",
+    "chat": "Chat"
   },
   "notFoundTitle": "Page not found",
   "goHome": "Go to home",

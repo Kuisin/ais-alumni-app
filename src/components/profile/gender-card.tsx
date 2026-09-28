@@ -9,6 +9,7 @@ import { isGender } from "@/lib/gender";
 import type { CurrentUser } from "@/lib/session";
 import { GenderRequestForm } from "./gender-request-form";
 import { RequestStatus } from "./request-status";
+import { ReachTag } from "./visibility";
 
 /**
  * 性別, read-only once given (in the application), with a request to change
@@ -45,6 +46,7 @@ export async function GenderCard({ me }: { me: CurrentUser }) {
               <span className="text-slate-500">{t("notSet")}</span>
             )}
           </p>
+          <ReachTag reach="self" />
           {!current ? (
             <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
               {t("setOnceHint")}

@@ -37,5 +37,14 @@ export async function loadSetupChecklist(
     ),
     hasFamilyLink: links > 0,
     hasKanjiName: Boolean(user.nameKanji?.trim() && user.nameKana?.trim()),
+    currentTeacher: user.roles.some(
+      (r) => r.role === RoleKey.TEACHER && r.teacherStatus !== "FORMER",
+    ),
+    schoolEmailVerified: user.roles.some(
+      (r) =>
+        r.role === RoleKey.TEACHER &&
+        Boolean(r.schoolEmail) &&
+        r.schoolEmailVerified,
+    ),
   });
 }

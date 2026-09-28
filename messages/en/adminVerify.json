@@ -252,6 +252,10 @@
       "match": "Matches the application",
       "mismatch": "Differs from the application. Please check",
       "unknown": "The 学年 can't be compared"
-    }
+    },
+    "kindIndividual": "Individual invitation (strong recommendation)",
+    "kindGrade": "Year-group invitation ({count}/{max} used)",
+    "badgeIndividual": "Recommended",
+    "badgeGrade": "Year-group invite"
   }
 }

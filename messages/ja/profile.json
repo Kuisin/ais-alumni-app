@@ -257,5 +257,40 @@
   "requestCorrection": "修正を依頼",
   "changeInSettings": "設定で変更",
   "emailHint": "ログイン用コードと大切なお知らせの送り先です。",
-  "accountHint": "フォロー・家族・招待・通知などの設定"
+  "accountHint": "フォロー・家族・招待・通知などの設定",
+  "visibility": {
+    "title": "公開範囲",
+    "intro": "各項目の下に、だれに表示されるかを示しています（✓ 表示・✕ 非表示）。委員会（管理者）はすべての項目を見られます。",
+    "audiences": {
+      "members": "会員全員",
+      "followers": "フォロワー",
+      "family": "家族"
+    },
+    "shown": "表示される",
+    "hidden": "非公開",
+    "onlyYou": "自分と委員会のみ",
+    "viewAsTitle": "ほかの人からの見え方を確認",
+    "viewAs": {
+      "members": "会員として見る",
+      "followers": "フォロワーとして見る",
+      "family": "家族として見る"
+    },
+    "previewTitle": {
+      "members": "会員全員から見たあなたのプロフィール",
+      "followers": "フォロワーから見たあなたのプロフィール",
+      "family": "家族から見たあなたのプロフィール"
+    },
+    "previewHint": "プレビューです。フォローやメッセージなどのボタンは表示されません。",
+    "backToProfile": "プロフィールに戻る",
+    "hiddenTitle": "非公開の項目",
+    "photoHidden": "写真は非公開です",
+    "historyHidden": "ほかに {count, number} 件の学歴・職歴があります（フォロワーと家族だけに公開）。"
+  },
+  "directory": {
+    "title": "会員名簿への掲載",
+    "listed": "会員名簿に表示する",
+    "hint": "オフにすると、会員名簿の一覧や検索に表示されなくなります（委員会には表示されます）。家族やフォローでつながっている人は、これまでどおりプロフィールを開けます。",
+    "shown": "会員名簿に表示されています",
+    "hidden": "会員名簿に表示されていません"
+  }
 }

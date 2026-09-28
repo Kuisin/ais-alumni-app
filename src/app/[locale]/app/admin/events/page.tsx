@@ -4,13 +4,16 @@ import { AudienceSummary } from "@/components/news/audience-summary";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui/card";
+import type { Prisma } from "@/generated/prisma/client";
 import { RsvpAnswer } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { awaitingApproval } from "@/lib/approval";
+import { getNewsApprover } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
 import { specFromPost } from "@/lib/news-audience";
-import { requireAdmin } from "@/lib/session";
+import { requireNewsAuthor } from "@/lib/session";
 
 export async function generateMetadata({
   params,
@@ -28,9 +31,16 @@ export default async function AdminEventsPage({
 }: PageProps<"/[locale]/app/admin/events">) {
   const locale = asLocale((await params).locale);
   const deleted = (await searchParams).deleted === "1";
-  await requireAdmin();
+  const { user } = await requireNewsAuthor();
   const t = await getTranslations("adminContent");
   const now = new Date();
+  // Admins see every event; other authors their own, and 同窓会委員 also the
+  // 同窓会委員 events they may approve.
+  const mine: Prisma.EventWhereInput = user.isAdmin
+    ? {}
+    : (await getNewsApprover(user))
+      ? { OR: [{ createdById: user.id }, { approvalRequired: true }] }
+      : { createdById: user.id };
 
   const select = {
     id: true,
@@ -42,16 +52,18 @@ export default async function AdminEventsPage({
     targetRoles: true,
     targetAudiences: true,
     audience: true,
+    approvalRequired: true,
+    approvedAt: true,
     rsvps: { where: { answer: RsvpAnswer.GOING }, select: { guests: true } },
   } as const;
   const [upcoming, past] = await Promise.all([
     db.event.findMany({
-      where: { startsAt: { gte: now } },
+      where: { ...mine, startsAt: { gte: now } },
       orderBy: { startsAt: "asc" },
       select,
     }),
     db.event.findMany({
-      where: { startsAt: { lt: now } },
+      where: { ...mine, startsAt: { lt: now } },
       orderBy: { startsAt: "desc" },
       take: PAST_LIMIT,
       select,
@@ -74,10 +86,7 @@ export default async function AdminEventsPage({
           icon={<CalendarDays />}
           hint={t("events.emptyHint")}
           action={
-            <Link
-              href="/app/admin/events/new"
-              className={buttonClass("secondary")}
-            >
+            <Link href="/app/events/new" className={buttonClass("secondary")}>
               <Plus aria-hidden="true" className="size-4" />
               {t("events.new")}
             </Link>
@@ -101,6 +110,11 @@ export default async function AdminEventsPage({
                 <div className="min-w-0 flex-1 space-y-1">
                   <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
                     {st ? <Badge tone={st.tone}>{st.label}</Badge> : null}
+                    {awaitingApproval(e) ? (
+                      <Badge tone="amber">
+                        {t("news.status.awaitingApproval")}
+                      </Badge>
+                    ) : null}
                     <time dateTime={e.startsAt.toISOString()}>
                       {formatDateTime(e.startsAt, locale)}
                     </time>
@@ -136,9 +150,11 @@ export default async function AdminEventsPage({
     <>
       <PageHeader
         title={t("events.title")}
-        description={t("events.description")}
+        description={
+          user.isAdmin ? t("events.description") : t("events.descriptionOwn")
+        }
         actions={
-          <Link href="/app/admin/events/new" className={buttonClass("primary")}>
+          <Link href="/app/events/new" className={buttonClass("primary")}>
             <Plus aria-hidden="true" className="size-4" />
             {t("events.new")}
           </Link>

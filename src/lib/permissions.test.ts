@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   broadcastRights,
+  canApproveNews,
   type Holder,
   hasStaffAccess,
+  needsApproval,
+  newsScope,
   positionEligible,
   rightFor,
+  scopedAudience,
+  senderRoleFor,
   staffAccess,
   withinLimit,
 } from "./permissions";
@@ -121,7 +126,12 @@ describe("staff access (admin mode)", () => {
       ...member,
       positions: [{ position: "TEACHER_REGISTRAR", cohortId: null }],
     });
-    expect(a).toEqual({ admin: false, broadcast: false, teachers: true });
+    expect(a).toEqual({
+      admin: false,
+      broadcast: false,
+      teachers: true,
+      news: false,
+    });
     expect(
       positionEligible("TEACHER_REGISTRAR", ["CURRENT_PARENT"], false),
     ).toBe(true);
@@ -132,16 +142,122 @@ describe("staff access (admin mode)", () => {
         ...member,
         positions: [{ position: "STUDENT_LEADER", cohortId: "c1" }],
       }),
-    ).toEqual({ admin: false, broadcast: true, teachers: false });
+    ).toEqual({ admin: false, broadcast: true, teachers: false, news: true });
     expect(staffAccess({ ...member, isAdmin: true })).toEqual({
       admin: true,
       broadcast: true,
       teachers: true,
+      news: true,
     });
     expect(
       hasStaffAccess(
         staffAccess({ ...member, isAdmin: true, state: "PENDING_REVIEW" }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("news scope", () => {
+  const spec = {
+    groups: [],
+    cohortIds: [],
+    includeParents: false,
+    userIds: [],
+  };
+  const leader = h({
+    roles: ["FORMER_STUDENT"],
+    positions: [{ position: "STUDENT_LEADER", cohortId: "c1" }],
+  });
+  it("admins post to anyone", () => {
+    expect(newsScope(h({ isAdmin: true }))).toEqual({ kind: "ANY" });
+    expect(newsScope(h({ isAdmin: true, state: "PENDING_REVIEW" }))).toBe(null);
+  });
+  it("current teachers only; former teachers and members can't post", () => {
+    expect(newsScope(h({ roles: ["TEACHER"], currentTeacher: true }))).toEqual({
+      kind: "TEACHER",
+    });
+    expect(newsScope(h({ roles: ["TEACHER"] }))).toBe(null);
+    expect(newsScope(h({ roles: ["FORMER_STUDENT"] }))).toBe(null);
+  });
+  it("student leaders post to their own 学年", () => {
+    expect(newsScope(leader)).toEqual({ kind: "COHORT", cohortIds: ["c1"] });
+    // not eligible without a student role
+    expect(
+      newsScope(
+        h({
+          roles: ["CURRENT_PARENT"],
+          positions: [{ position: "STUDENT_LEADER", cohortId: "c1" }],
+        }),
+      ),
+    ).toBe(null);
+  });
+  it("teachers' posts always include current teachers", () => {
+    const t = { kind: "TEACHER" } as const;
+    expect(scopedAudience(t, spec)).toEqual(spec);
+    expect(scopedAudience(t, { ...spec, cohortIds: ["c9"] })).toEqual({
+      ...spec,
+      cohortIds: ["c9"],
+      groups: ["TEACHER_CURRENT"],
+    });
+    expect(
+      scopedAudience(t, { ...spec, groups: ["TEACHER_CURRENT", "GRADUATE"] })
+        ?.groups,
+    ).toEqual(["TEACHER_CURRENT", "GRADUATE"]);
+  });
+  it("student leaders may choose only their own 学年", () => {
+    const c = { kind: "COHORT", cohortIds: ["c1"] } as const;
+    const own = { ...spec, cohortIds: ["c1"] };
+    expect(scopedAudience(c, own)).toEqual(own);
+    expect(scopedAudience(c, spec)).toBe(null); // everyone
+    expect(scopedAudience(c, { ...spec, cohortIds: ["c2"] })).toBe(null);
+    expect(scopedAudience(c, { ...own, groups: ["GRADUATE"] })).toBe(null);
+    expect(scopedAudience(c, { ...own, userIds: ["u"] })).toBe(null);
+    expect(scopedAudience(c, { ...own, includeParents: true })).toBe(null);
+  });
+});
+
+describe("同窓会委員 (ALUMNI_COMMITTEE)", () => {
+  const committee = (roles: Holder["roles"]) =>
+    h({ roles, positions: [{ position: "ALUMNI_COMMITTEE", cohortId: null }] });
+  it("is for students and parents", () => {
+    for (const r of [
+      "CURRENT_STUDENT",
+      "FORMER_STUDENT",
+      "CURRENT_PARENT",
+      "FORMER_PARENT",
+    ] as const)
+      expect(positionEligible("ALUMNI_COMMITTEE", [r], false)).toBe(true);
+    expect(positionEligible("ALUMNI_COMMITTEE", ["TEACHER"], true)).toBe(false);
+  });
+  it("posts to anyone, after approval; no notification right", () => {
+    const scope = newsScope(committee(["CURRENT_PARENT"]));
+    expect(scope).toEqual({ kind: "COMMITTEE" });
+    expect(needsApproval(scope ?? { kind: "ANY" })).toBe(true);
+    expect(needsApproval({ kind: "ANY" })).toBe(false);
+    expect(broadcastRights(committee(["CURRENT_PARENT"]))).toEqual([]);
+    // an ineligible holder gets nothing
+    expect(newsScope(committee(["TEACHER"]))).toBe(null);
+  });
+  it("other 同窓会委員 and admins approve", () => {
+    expect(canApproveNews(committee(["FORMER_STUDENT"]))).toBe(true);
+    expect(canApproveNews(h({ isAdmin: true }))).toBe(true);
+    expect(canApproveNews(h({ roles: ["FORMER_STUDENT"] }))).toBe(false);
+    expect(
+      canApproveNews({
+        ...committee(["FORMER_STUDENT"]),
+        state: "DEACTIVATED",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("sender role", () => {
+  it("shows the role the post was made as", () => {
+    expect(senderRoleFor({ kind: "ANY" })).toBe("ADMIN");
+    expect(senderRoleFor({ kind: "TEACHER" })).toBe("TEACHER");
+    expect(senderRoleFor({ kind: "COMMITTEE" })).toBe("ALUMNI_COMMITTEE");
+    expect(senderRoleFor({ kind: "COHORT", cohortIds: ["c"] })).toBe(
+      "STUDENT_LEADER",
+    );
   });
 });

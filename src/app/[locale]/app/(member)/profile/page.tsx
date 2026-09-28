@@ -15,6 +15,7 @@ import { AvatarForm } from "@/components/profile/avatar-form";
 import { AvatarSettingsForm } from "@/components/profile/avatar-settings-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { BirthDateCard } from "@/components/profile/birth-date-card";
+import { DirectorySettingsForm } from "@/components/profile/directory-settings-form";
 import { FollowerFieldsForm } from "@/components/profile/follower-fields-form";
 import { GenderCard } from "@/components/profile/gender-card";
 import { NameCard } from "@/components/profile/name-card";
@@ -24,6 +25,7 @@ import {
   parseSocialLinks,
   SOCIAL_KEYS,
 } from "@/components/profile/social-links";
+import { ReachTag, ViewAsLinks } from "@/components/profile/visibility";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, Card } from "@/components/ui/card";
 import { LinkPendingIcon } from "@/components/ui/link-pending";
@@ -33,6 +35,7 @@ import { Link } from "@/i18n/navigation";
 import { roleLabelKey } from "@/lib/audience";
 import { defaultAvatar } from "@/lib/avatar";
 import { db } from "@/lib/db";
+import { PARENT_ROLES } from "@/lib/directory";
 import { loadFollowCounts } from "@/lib/follows";
 import { displayName, otherNames } from "@/lib/format";
 import {
@@ -40,6 +43,11 @@ import {
   PERSONAL_FIELDS,
   type PersonalField,
 } from "@/lib/personal-fields";
+import {
+  personalReach,
+  photoReach,
+  type Reach,
+} from "@/lib/profile-visibility";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -55,11 +63,23 @@ function Rows({ children }: { children: ReactNode }) {
     </dl>
   );
 }
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({
+  label,
+  reach,
+  children,
+}: {
+  label: string;
+  /** who sees it (「公開範囲」 chips under the value) */
+  reach?: Reach;
+  children: ReactNode;
+}) {
   return (
     <div className="sm:contents">
       <dt className="text-sm text-slate-600">{label}</dt>
-      <dd className="min-w-0 break-words">{children}</dd>
+      <dd className="min-w-0 break-words">
+        {children}
+        {reach ? <ReachTag reach={reach} /> : null}
+      </dd>
     </div>
   );
 }
@@ -75,12 +95,16 @@ export default async function MyProfilePage() {
   const t = await getTranslations("profile");
   const tr = await getTranslations("roles");
   const tc = await getTranslations("common");
+  const tv = await getTranslations("profile.visibility");
   const locale = (await getLocale()) as Locale;
   const name = displayName(me, locale);
   const altName = otherNames(me);
   const former = me.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
+  const parent = me.roles.some((r) => PARENT_ROLES.includes(r.role));
   const social = parseSocialLinks(me.socialLinks);
-  const shared = [...followerFieldSet(me.followerFields)];
+  const sharedSet = followerFieldSet(me.followerFields);
+  const shared = [...sharedSet];
+  const reachOf = (f: PersonalField) => personalReach(f, sharedSet);
   const personal: Record<PersonalField, string | null> = {
     email: me.primaryEmail,
     phone: me.phone,
@@ -178,26 +202,35 @@ export default async function MyProfilePage() {
         </div>
       </Card>
 
+      <Card>
+        <h2 className="text-lg font-semibold">{tv("title")}</h2>
+        <p className="mt-1 text-sm text-slate-600">{tv("intro")}</p>
+        <p className="mt-3 mb-2 text-sm font-medium">{tv("viewAsTitle")}</p>
+        <ViewAsLinks memberId={me.id} />
+      </Card>
+
       <EditableCard
         id="about"
         title={t("sections.about")}
         view={
           <Rows>
-            <Row label={t("fields.bio")}>
+            <Row label={t("fields.bio")} reach="members">
               {me.bio ? (
                 <span className="whitespace-pre-line">{me.bio}</span>
               ) : (
                 <span className="text-slate-500">{t("emptyPrompt.bio")}</span>
               )}
             </Row>
-            <Row label={t("fields.phone")}>{me.phone || notSet}</Row>
+            <Row label={t("fields.phone")} reach={reachOf("phone")}>
+              {me.phone || notSet}
+            </Row>
             {SOCIAL_KEYS.filter((k) => social[k]).map((k) => (
-              <Row key={k} label={t(`fields.${k}`)}>
+              <Row key={k} label={t(`fields.${k}`)} reach={reachOf(k)}>
                 <span className="break-all">{social[k]}</span>
               </Row>
             ))}
             {former ? (
-              <Row label={t("sections.follows")}>
+              <Row label={t("sections.follows")} reach="self">
                 {t("autoAccept.label")}:{" "}
                 <strong>{me.autoAcceptSameYear ? tc("on") : tc("off")}</strong>
               </Row>
@@ -216,12 +249,31 @@ export default async function MyProfilePage() {
         />
       </EditableCard>
 
+      {parent ? (
+        <EditableCard
+          id="directory"
+          title={t("directory.title")}
+          view={
+            <p>
+              {me.hideFromDirectory
+                ? t("directory.hidden")
+                : t("directory.shown")}
+            </p>
+          }
+        >
+          <DirectorySettingsForm listed={!me.hideFromDirectory} />
+        </EditableCard>
+      ) : null}
+
       <EditableCard
         id="photo"
         title={t("sections.photo")}
         view={
           <Rows>
-            <Row label={t("photo.visibility")}>
+            <Row
+              label={t("photo.visibility")}
+              reach={photoReach(me.avatarPublic)}
+            >
               {me.avatarPublic ? t("photo.everyone") : t("photo.onlyConnected")}
             </Row>
           </Rows>
@@ -269,7 +321,7 @@ export default async function MyProfilePage() {
         action={<CardLink href="/app/profile/history">{tc("edit")}</CardLink>}
         view={
           education.length || work.length ? (
-            <HistoryList education={education} work={work} />
+            <HistoryList education={education} work={work} showReach />
           ) : (
             <p className="text-sm text-slate-500">{t("historyIntro")}</p>
           )
@@ -288,10 +340,11 @@ export default async function MyProfilePage() {
                   <span className="font-medium">
                     {tr(`stage.${former.currentStage}`)}
                   </span>
+                  <ReachTag reach="members" />
                   {former.currentStageDetail ? (
-                    <span className="text-slate-600">
-                      {" "}
-                      — {former.currentStageDetail}
+                    <span className="mt-2 block text-slate-600">
+                      {former.currentStageDetail}
+                      <ReachTag reach={reachOf("currentStageDetail")} />
                     </span>
                   ) : null}
                 </>
@@ -312,7 +365,12 @@ export default async function MyProfilePage() {
             {t("requestCorrection")}
           </CardLink>
         }
-        view={<AisRecord roles={me.roles} />}
+        view={
+          <>
+            <AisRecord roles={me.roles} />
+            <ReachTag reach="members" />
+          </>
+        }
       />
 
       <NameCard me={me} />
@@ -330,12 +388,20 @@ export default async function MyProfilePage() {
         view={
           <>
             <Rows>
-              <Row label={t("fields.email")}>
+              <Row label={t("fields.email")} reach={reachOf("email")}>
                 <span className="break-all">{me.primaryEmail || "—"}</span>
                 <span className="mt-0.5 block text-sm text-slate-500">
                   {t("emailHint")}
                 </span>
               </Row>
+              {me.lineDisplayName ? (
+                <Row
+                  label={t("fields.lineDisplayName")}
+                  reach={reachOf("lineDisplayName")}
+                >
+                  {me.lineDisplayName}
+                </Row>
+              ) : null}
             </Rows>
             <ul className="-mx-2 divide-y divide-slate-100 border-t border-slate-100 pt-1">
               {accountLinks.map((l) => (

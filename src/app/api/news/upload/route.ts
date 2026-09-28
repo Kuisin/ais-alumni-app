@@ -1,15 +1,14 @@
 import { type HandleUploadBody, handleUpload } from "@vercel/blob/client";
-import { AccountState } from "@/generated/prisma/enums";
 import {
   ATTACHMENT_MAX_BYTES,
   ATTACHMENT_TYPES,
   isAttachmentKey,
 } from "@/lib/news-hub";
-import { getCurrentUser } from "@/lib/session";
+import { actionNewsAuthor } from "@/lib/session";
 import { isBlobConfigured } from "@/lib/storage";
 
 /**
- * Token endpoint for admin → Vercel Blob uploads of ニュース attachments
+ * Token endpoint for ニュース authors → Vercel Blob uploads of ニュース attachments
  * (≤10 MB; function bodies are capped at 4.5 MB). Rows are created when the
  * post is saved, which re-checks each key.
  */
@@ -29,8 +28,7 @@ export async function POST(request: Request): Promise<Response> {
       body,
       request,
       onBeforeGenerateToken: async (pathname) => {
-        const user = await getCurrentUser();
-        if (!user || user.state !== AccountState.ACTIVE || !user.isAdmin)
+        if (!(await actionNewsAuthor().catch(() => null)))
           throw new Error("forbidden");
         if (!isAttachmentKey(pathname)) throw new Error("forbidden");
         return {

@@ -9,6 +9,7 @@ import { namePartsOf } from "@/lib/names";
 import type { CurrentUser } from "@/lib/session";
 import { NameRequestForm } from "./name-request-form";
 import { RequestStatus } from "./request-status";
+import { ReachTag } from "./visibility";
 
 /**
  * The member's name, read-only after approval, with a request to change it
@@ -50,6 +51,7 @@ export async function NameCard({ me }: { me: CurrentUser }) {
               </div>
             ))}
           </dl>
+          <ReachTag reach="members" />
           <RequestStatus
             latest={latest}
             pendingText={

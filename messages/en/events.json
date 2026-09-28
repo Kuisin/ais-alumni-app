@@ -118,5 +118,7 @@
       "hint": "Find invited members who didn't RSVP and check them in.",
       "noResults": "No one found"
     }
-  }
+  },
+  "create": "New event",
+  "organizer": "Organized by"
 }

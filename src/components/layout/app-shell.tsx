@@ -102,6 +102,7 @@ export async function AppShell({
     followRequests,
     unread,
     openSupport,
+    openChatReports,
   ] = await Promise.all([
     admin && access?.admin
       ? db.verificationRequest.count({
@@ -140,6 +141,9 @@ export async function AppShell({
       : { news: 0, messages: 0 },
     admin && access?.admin
       ? db.supportRequest.count({ where: { closedAt: null } })
+      : 0,
+    admin && access?.admin
+      ? db.chatReport.count({ where: { closedAt: null } })
       : 0,
   ]);
   const unreadTotal = unread.news + unread.messages;
@@ -236,7 +240,12 @@ export async function AppShell({
     },
   ];
 
-  const a = access ?? { admin: false, broadcast: false, teachers: false };
+  const a = access ?? {
+    admin: false,
+    broadcast: false,
+    teachers: false,
+    news: false,
+  };
   const adminGroups: NavGroup[] = [
     {
       label: t("adminGroups.review"),
@@ -265,6 +274,12 @@ export async function AppShell({
               label: t("adminNav.support"),
               count: openSupport,
               icon: <LifeBuoy className={ICON} />,
+            },
+            {
+              href: "/app/admin/chat",
+              label: t("adminNav.chat"),
+              count: openChatReports,
+              icon: <MessagesSquare className={ICON} />,
             },
           ]
         : [],
@@ -313,7 +328,8 @@ export async function AppShell({
               },
             ]
           : []),
-        ...(a.admin
+        // News and events: admins, teachers, 同窓会委員 and 学年代表.
+        ...(a.news
           ? [
               {
                 href: "/app/admin/events",
@@ -325,6 +341,10 @@ export async function AppShell({
                 label: t("adminNav.news"),
                 icon: <Newspaper className={ICON} />,
               },
+            ]
+          : []),
+        ...(a.admin
+          ? [
               {
                 href: "/app/admin/line",
                 label: t("adminNav.line"),

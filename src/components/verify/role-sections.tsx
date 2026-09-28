@@ -261,6 +261,8 @@ export function TeacherSection({
         verifiedEmail={verifiedEmail}
         onVerified={onVerified}
         error={errors["teacher.schoolEmail"]}
+        // Required (and confirmed) while they still work at AIS.
+        optional={!isCurrentTeacher(left)}
       />
     </Section>
   );

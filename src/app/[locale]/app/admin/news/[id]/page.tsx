@@ -2,6 +2,7 @@ import { Archive, ArchiveRestore, Eye } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
+  approveNewsAction,
   deleteNewsAction,
   setNewsArchivedAction,
   setNewsClosedAction,
@@ -10,6 +11,7 @@ import { CloseControl, NewsView } from "@/components/admin/content-views";
 import { NewsReadsCard } from "@/components/admin/news-reads-card";
 import { NewsResponsesCard } from "@/components/admin/news-responses-card";
 import { NotificationOpensCard } from "@/components/admin/notification-opens-card";
+import { ApprovalPanel } from "@/components/news/approval-panel";
 import { NewsForm } from "@/components/news/news-form";
 import { NotifyPanel } from "@/components/news/notify-panel";
 import { NewsStatusBadges } from "@/components/news/status-badges";
@@ -20,14 +22,15 @@ import { cn } from "@/components/ui/cn";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ViewEdit } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
+import { getNewsApprover } from "@/lib/broadcasts";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { localized, toJstLocalInput } from "@/lib/format";
-import { newsStatus } from "@/lib/news";
+import { awaitingApproval, newsStatus } from "@/lib/news";
 import { specFromPost } from "@/lib/news-audience";
 import { hubFormValues } from "@/lib/news-hub-db";
-import { requireAdmin } from "@/lib/session";
+import { requireNewsAuthor } from "@/lib/session";
 import { isBlobConfigured, signedFileUrl } from "@/lib/storage";
 
 export async function generateMetadata({
@@ -45,10 +48,16 @@ export default async function AdminNewsEditPage({
   const { id, locale: rawLocale } = await params;
   const locale = asLocale(rawLocale);
   const sp = await searchParams;
-  await requireAdmin();
+  const { user, scope } = await requireNewsAuthor();
   if (id.length > 64) notFound();
   const post = await db.newsPost.findUnique({ where: { id } });
   if (!post) notFound();
+  // Teachers, 同窓会委員 and 学年代表 manage only their own posts; other
+  // 同窓会委員 may open a 同窓会委員's post to approve it (view only).
+  const canEdit = user.isAdmin || post.createdById === user.id;
+  const approver = await getNewsApprover(user);
+  if (!canEdit && !(approver && post.approvalRequired)) notFound();
+  const pending = awaitingApproval(post);
   const t = await getTranslations("adminContent");
   const status = newsStatus(post);
   const audience = specFromPost(post);
@@ -78,44 +87,49 @@ export default async function AdminNewsEditPage({
             </span>
           }
           actions={
-            <>
-              {status === "published" && !post.archivedAt ? (
-                <Link
-                  href={`/app/news/${post.id}`}
-                  className={buttonClass("secondary")}
-                >
-                  <Eye aria-hidden="true" className="size-4" />
-                  {t("news.viewAsMember")}
-                </Link>
-              ) : null}
-              <form action={setNewsArchivedAction}>
-                <input type="hidden" name="id" value={post.id} />
-                <input
-                  type="hidden"
-                  name="archive"
-                  value={post.archivedAt ? "0" : "1"}
-                />
-                <SubmitButton variant="secondary">
-                  {post.archivedAt ? (
-                    <ArchiveRestore aria-hidden="true" className="size-4" />
-                  ) : (
-                    <Archive aria-hidden="true" className="size-4" />
-                  )}
-                  {post.archivedAt ? t("news.restore") : t("news.archive")}
-                </SubmitButton>
-              </form>
-            </>
+            canEdit ? (
+              <>
+                {status === "published" && !post.archivedAt ? (
+                  <Link
+                    href={`/app/news/${post.id}`}
+                    className={buttonClass("secondary")}
+                  >
+                    <Eye aria-hidden="true" className="size-4" />
+                    {t("news.viewAsMember")}
+                  </Link>
+                ) : null}
+                <form action={setNewsArchivedAction}>
+                  <input type="hidden" name="id" value={post.id} />
+                  <input
+                    type="hidden"
+                    name="archive"
+                    value={post.archivedAt ? "0" : "1"}
+                  />
+                  <SubmitButton variant="secondary">
+                    {post.archivedAt ? (
+                      <ArchiveRestore aria-hidden="true" className="size-4" />
+                    ) : (
+                      <Archive aria-hidden="true" className="size-4" />
+                    )}
+                    {post.archivedAt ? t("news.restore") : t("news.archive")}
+                  </SubmitButton>
+                </form>
+              </>
+            ) : null
           }
         />
       </div>
 
-      {sp.created === "1" || sp.notified === "1" ? (
+      {sp.created === "1" || sp.notified === "1" || sp.approved === "1" ? (
         <div className="mb-6 space-y-3">
           {sp.created === "1" ? (
             <Alert tone="success">{t("news.created")}</Alert>
           ) : null}
           {sp.notified === "1" ? (
             <Alert tone="success">{t("notify.sent")}</Alert>
+          ) : null}
+          {sp.approved === "1" ? (
+            <Alert tone="success">{t("approval.done")}</Alert>
           ) : null}
         </div>
       ) : null}
@@ -130,9 +144,17 @@ export default async function AdminNewsEditPage({
             status !== "published" && "xl:sticky xl:top-20",
           )}
         >
-          {post.archivedAt ? (
+          {post.approvalRequired ? (
+            <ApprovalPanel
+              post={post}
+              canApprove={approver && post.createdById !== user.id}
+              action={approveNewsAction}
+              locale={locale}
+            />
+          ) : null}
+          {!canEdit ? null : post.archivedAt ? (
             <Alert tone="warning">{t("news.archivedHint")}</Alert>
-          ) : (
+          ) : pending ? null : (
             <NotifyPanel
               post={post}
               status={status}
@@ -169,6 +191,7 @@ export default async function AdminNewsEditPage({
           className="min-w-0 xl:col-start-1 xl:row-start-1"
         >
           <ViewEdit
+            canEdit={canEdit}
             title={t("news.details")}
             titleId="edit"
             view={
@@ -208,6 +231,7 @@ export default async function AdminNewsEditPage({
               }}
               useBlob={isBlobConfigured()}
               cohorts={cohorts}
+              scope={scope}
               deleteAction={{
                 action: deleteNewsAction,
                 message: t("news.deleteConfirm"),

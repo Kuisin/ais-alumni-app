@@ -95,7 +95,8 @@
       "reopen": "受付を再開する",
       "hint": "締め切ると、会員は回答を変更できなくなります。再開すると期限まで受け付けます。",
       "closeConfirm": "出欠の受付を締め切りますか？会員は回答を変更できなくなります（あとで再開できます）。"
-    }
+    },
+    "descriptionOwn": "自分が作成したイベントです。管理者はすべてのイベントを見られます。"
   },
   "attendees": {
     "title": "参加者",
@@ -127,7 +128,8 @@
       "scheduled": "予約済み",
       "published": "公開中",
       "notified": "通知済み",
-      "pinned": "固定"
+      "pinned": "固定",
+      "awaitingApproval": "承認待ち"
     },
     "description": "会員向けニュースの作成・公開・通知ができます。下書きは会員には表示されません。",
     "emptyHint": "ニュースを作成し、公開すると会員のニュース一覧に表示されます。",
@@ -148,7 +150,8 @@
     "notifyOn": "LINE・メールで通知",
     "notifyOff": "アプリ内のみ",
     "pinned": "固定表示",
-    "files": "添付ファイル {count}件"
+    "files": "添付ファイル {count}件",
+    "descriptionOwn": "自分が作成したニュースです。管理者はすべてのニュースを見られます。"
   },
   "notify": {
     "title": "公開して通知",
@@ -256,7 +259,10 @@
     "membersSelected": "{count}人を選択中",
     "summaryCohorts": "学年 {count}",
     "summaryParents": "保護者含む",
-    "summaryUsers": "個別 {count}人"
+    "summaryUsers": "個別 {count}人",
+    "ownCohortLegend": "自分の学年",
+    "ownCohortHint": "学年代表として、自分の学年の在校生・卒業生にニュースを送れます。",
+    "teachersAlways": "送ったニュースは、現職の教職員にも必ず届きます。"
   },
   "staff": {
     "title": "受付スタッフ",
@@ -369,5 +375,15 @@
       "email": "メールアドレス",
       "phone": "電話番号"
     }
+  },
+  "approval": {
+    "title": "承認",
+    "ask": "同窓会委員が作成したため、会員に表示するには承認が必要です。内容を確認して承認してください。",
+    "approve": "承認する",
+    "waiting": "ほかの同窓会委員の承認を待っています。承認されるまで会員には表示されず、通知も送られません。",
+    "approved": "{name}さんが{date}に承認しました。",
+    "done": "承認しました。",
+    "formHint": "同窓会委員が作成したものは、ほかの同窓会委員が承認してから会員に表示・通知されます。あとで編集した場合も、もう一度承認が必要です。",
+    "submit": "保存して承認を依頼"
   }
 }

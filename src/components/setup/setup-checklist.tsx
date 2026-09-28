@@ -28,6 +28,7 @@ const ICONS: Record<SetupKey, typeof Mail> = {
   follow: UserPlus,
   family: UsersRound,
   names: Languages,
+  schoolEmail: Mail,
 };
 
 /**

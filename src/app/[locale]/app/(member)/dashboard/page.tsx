@@ -13,11 +13,13 @@ import {
 } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { readNewsIds, unreadCounts } from "@/lib/announcements";
+import { eventApprovedWhere } from "@/lib/approval";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
 import { awaitingResponse } from "@/lib/news-hub-db";
 import { filterByAudience, visibleNews } from "@/lib/news-visibility";
+import { senderLabels } from "@/lib/sender";
 import { requireActive } from "@/lib/session";
 import { setupProgress } from "@/lib/setup";
 import { loadSetupChecklist } from "@/lib/setup-db";
@@ -47,6 +49,7 @@ export default async function DashboardPage({
         .findMany({
           where: {
             OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }],
+            AND: [eventApprovedWhere],
           },
           orderBy: { startsAt: "asc" },
           take: 200,
@@ -59,6 +62,7 @@ export default async function DashboardPage({
             titleEn: true,
             startsAt: true,
             location: true,
+            senderRole: true,
             rsvps: { where: { userId: user.id }, select: { answer: true } },
           },
         })
@@ -87,6 +91,10 @@ export default async function DashboardPage({
             requireConfirm: true,
             deadline: true,
             closedAt: true,
+            senderRole: true,
+            audience: true,
+            targetAudiences: true,
+            targetRoles: true,
           },
         }),
       ),
@@ -125,12 +133,13 @@ export default async function DashboardPage({
       }),
       unreadCounts(user),
     ]);
-  const [readNews, awaiting] = await Promise.all([
+  const [readNews, awaiting, senders] = await Promise.all([
     readNewsIds(
       user.id,
       news.map((p) => p.id),
     ),
     awaitingResponse(user.id, news),
+    senderLabels([...news, ...events], locale),
   ]);
 
   const setup = await loadSetupChecklist(user);
@@ -219,6 +228,7 @@ export default async function DashboardPage({
                   <EventCard
                     event={{ ...e, myAnswer: e.rsvps[0]?.answer ?? null }}
                     locale={locale}
+                    sender={senders.get(e.id)}
                   />
                 </li>
               ))}
@@ -242,6 +252,7 @@ export default async function DashboardPage({
                     post={p}
                     locale={locale}
                     excerpt={false}
+                    sender={senders.get(p.id)}
                     needsAnswer={awaiting.has(p.id)}
                     unread={
                       !readNews.has(p.id) &&

@@ -67,7 +67,8 @@ describe("parseDirectoryFilters", () => {
     });
     expect(f).toEqual({
       q: null,
-      role: null,
+      // an unknown 区分 falls back to the default (former students)
+      role: RoleKey.FORMER_STUDENT,
       yearFrom: null,
       yearTo: null,
       division: null,
@@ -86,6 +87,15 @@ describe("parseDirectoryFilters", () => {
     });
     expect([f.yearFrom, f.yearTo]).toEqual([2010, 2020]);
     expect(f.q).toBe("a");
+  });
+
+  it("defaults to former students; ?role=all shows everyone", () => {
+    expect(parseDirectoryFilters({}).role).toBe(RoleKey.FORMER_STUDENT);
+    expect(hasActiveFilters(parseDirectoryFilters({}))).toBe(false);
+    const all = parseDirectoryFilters({ role: "all" });
+    expect(all.role).toBeNull();
+    expect(hasActiveFilters(all)).toBe(true);
+    expect(directoryQuery(all)).toBe("?role=all");
   });
 
   it("caps the name query length", () => {
@@ -188,6 +198,15 @@ describe("buildDirectoryWhere", () => {
       now: NOW,
     });
     expect(JSON.stringify(where)).toContain('"familyId":"fam"');
+  });
+
+  it("hides parents who opted out, except from admins", () => {
+    const hidden = (v: ReturnType<typeof viewer>) =>
+      JSON.stringify(
+        buildDirectoryWhere(f, { viewer: v, blockedIds: [], now: NOW }),
+      ).includes('"hideFromDirectory":true');
+    expect(hidden(viewer())).toBe(true);
+    expect(hidden(viewer({ isAdmin: true }))).toBe(false);
   });
 
   it("does not filter minors for teachers and admins", () => {

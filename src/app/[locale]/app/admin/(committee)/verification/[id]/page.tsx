@@ -22,6 +22,7 @@ import { Link } from "@/i18n/navigation";
 import { isMinor } from "@/lib/authz/core";
 import { db } from "@/lib/db";
 import { displayName, formatDate, formatDateTime } from "@/lib/format";
+import { INVITE_OF_USER_SELECT, inviteOfUser } from "@/lib/invites";
 import { requireAdmin } from "@/lib/session";
 import { signedFileUrl } from "@/lib/storage";
 import { ROSTER_MATCH_THRESHOLD } from "@/lib/verification/roster";
@@ -85,17 +86,7 @@ export default async function VerificationDetailPage({
               confirmedAt: true,
             },
           },
-          inviteUsed: {
-            select: {
-              type: true,
-              inviteeName: true,
-              createdAt: true,
-              cohort: { select: { number: true } },
-              inviter: {
-                select: { id: true, nameRomaji: true, nameKanji: true },
-              },
-            },
-          },
+          ...INVITE_OF_USER_SELECT,
         },
       },
       reviewer: { select: { nameRomaji: true, nameKanji: true } },
@@ -110,6 +101,8 @@ export default async function VerificationDetailPage({
   });
   if (!request) notFound();
   const { user } = request;
+  // The invitation they signed up through (個別 or 学年).
+  const invite = inviteOfUser(user);
 
   const rosterRow = request.rosterRowId
     ? await db.rosterEntry.findUnique({ where: { id: request.rosterRowId } })
@@ -269,9 +262,9 @@ export default async function VerificationDetailPage({
             </dl>
           </Section>
 
-          {user.inviteUsed ? (
+          {invite ? (
             <InvitePanel
-              invite={user.inviteUsed}
+              invite={invite}
               answers={request.answers}
               locale={lang}
             />

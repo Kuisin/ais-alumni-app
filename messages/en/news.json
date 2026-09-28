@@ -4,6 +4,7 @@
   "empty": "No news yet.",
   "pinned": "Pinned",
   "untitled": "(Untitled)",
+  "create": "New post",
   "backToList": "All news",
   "pager": {
     "label": "Pages",
@@ -114,5 +115,14 @@
     "badge": "Admin view",
     "title": "You're viewing this as an admin",
     "body": "You're not in this post's audience, so no read receipt is recorded and you can't confirm, vote or answer the schedule (view only)."
+  },
+  "sender": {
+    "from": "From: {role}",
+    "postingAs": "You're posting as {role}. Members see this role, not your name.",
+    "ADMIN": "AIS Alumni Committee",
+    "TEACHER": "Teachers & staff",
+    "ALUMNI_COMMITTEE": "Alumni committee member",
+    "STUDENT_LEADER": "Class rep",
+    "STUDENT_LEADER_COHORT": "Class rep ({cohort})"
   }
 }

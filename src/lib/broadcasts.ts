@@ -17,7 +17,10 @@ import {
   type Audience,
   type BroadcastRight,
   broadcastRights,
+  canApproveNews,
   type Holder,
+  type NewsScope,
+  newsScope,
   type StaffAccess,
   staffAccess,
 } from "@/lib/permissions";
@@ -43,6 +46,18 @@ export async function getBroadcastRights(
   user: CurrentUser,
 ): Promise<BroadcastRight[]> {
   return broadcastRights(await loadHolder(user));
+}
+
+/** Who the member may send ニュース posts to (null = may not post). */
+export async function getNewsScope(
+  user: CurrentUser,
+): Promise<NewsScope | null> {
+  return newsScope(await loadHolder(user));
+}
+
+/** Whether the member may approve 同窓会委員 ニュース posts (not their own). */
+export async function getNewsApprover(user: CurrentUser): Promise<boolean> {
+  return canApproveNews(await loadHolder(user));
 }
 
 /** Which admin-mode pages the member may open. */

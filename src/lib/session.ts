@@ -5,9 +5,10 @@ import { auth } from "@/auth";
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
-import { getStaffAccess } from "@/lib/broadcasts";
+import { getNewsScope, getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { NEXT_PATH_HEADER, safeNextPath, stripLocale } from "@/lib/next-path";
+import type { NewsScope } from "@/lib/permissions";
 import { homePathFor } from "@/lib/state-machine";
 
 export type CurrentUser = Prisma.UserGetPayload<{ include: { roles: true } }>;
@@ -82,7 +83,8 @@ export async function requireAdmin(): Promise<CurrentUser> {
 export async function requireStaff(): Promise<CurrentUser> {
   const user = await requireActive();
   const a = await getStaffAccess(user);
-  if (!(a.admin || a.broadcast || a.teachers)) return go("/app/dashboard");
+  if (!(a.admin || a.broadcast || a.teachers || a.news))
+    return go("/app/dashboard");
   return user;
 }
 
@@ -91,6 +93,17 @@ export async function requireTeacherRegistrar(): Promise<CurrentUser> {
   const user = await requireActive();
   if (!(await getStaffAccess(user)).teachers) return go("/app/admin");
   return user;
+}
+
+/** Members who may post ニュース: admins, current teachers and 学年代表. */
+export async function requireNewsAuthor(): Promise<{
+  user: CurrentUser;
+  scope: NewsScope;
+}> {
+  const user = await requireActive();
+  const scope = await getNewsScope(user);
+  if (!scope) return go("/app/news");
+  return { user, scope };
 }
 
 /**
@@ -123,4 +136,14 @@ export async function actionTeacherRegistrar(): Promise<CurrentUser> {
   const user = await actionActive();
   if (!(await getStaffAccess(user)).teachers) throw new AuthError("forbidden");
   return user;
+}
+
+export async function actionNewsAuthor(): Promise<{
+  user: CurrentUser;
+  scope: NewsScope;
+}> {
+  const user = await actionActive();
+  const scope = await getNewsScope(user);
+  if (!scope) throw new AuthError("forbidden");
+  return { user, scope };
 }

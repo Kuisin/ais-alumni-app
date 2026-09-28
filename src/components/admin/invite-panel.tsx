@@ -1,6 +1,6 @@
 import { CircleAlert, CircleCheck, MailPlus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import type { InviteType } from "@/generated/prisma/enums";
+import type { InviteKind, InviteType } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { cohortShort } from "@/lib/cohorts";
 import { displayName, formatDate } from "@/lib/format";
@@ -16,6 +16,9 @@ export async function InvitePanel({
   locale,
 }: {
   invite: {
+    kind: InviteKind;
+    maxUses: number;
+    _count: { uses: number };
     type: InviteType;
     inviteeName: string | null;
     createdAt: Date;
@@ -62,6 +65,14 @@ export async function InvitePanel({
           ),
           date: formatDate(invite.createdAt, locale),
         })}
+      </p>
+      <p className="text-sm font-semibold">
+        {invite.kind === "GRADE"
+          ? t("kindGrade", {
+              count: invite._count.uses,
+              max: invite.maxUses,
+            })
+          : t("kindIndividual")}
       </p>
       <p className="text-sm">
         {t("said", {

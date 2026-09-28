@@ -156,6 +156,7 @@ model User {
   birthDateRequests    BirthDateRequest[]    @relation("birthDateRequester")
   invitesSent          Invite[]              @relation("invitesSent")
   inviteUsed           Invite?               @relation("inviteUsed")
+  inviteUse            InviteUse?
   birthDateReviews     BirthDateRequest[]    @relation("birthDateReviewer")
   genderRequests       GenderRequest[]       @relation("genderRequester")
   genderReviews        GenderRequest[]       @relation("genderReviewer")
@@ -255,7 +256,8 @@ model UserRole {
   // TEACHER: 現職 (CURRENT) or 元教職員 (FORMER). Access tied to being a teacher
   // (minors, TEACHER_MANAGER) applies to current teachers only.
   teacherStatus         TeacherStatus?
-  schoolEmail           String?
+  /// teachers' @aisnagoya.net work address — one member per address
+  schoolEmail           String?        @unique
   schoolEmailVerified   Boolean        @default(false)
   // CURRENT_STUDENT
   currentGrade          Int? // 0 = K
@@ -1078,6 +1080,13 @@ model NameChangeRequest {
   @@index([userId])
 }
 
+/// 個別招待: one person, one use — a strong recommendation.
+/// 学年招待: one link for a 学年, shared with up to `maxUses` people.
+enum InviteKind {
+  INDIVIDUAL
+  GRADE
+}
+
 enum InviteType {
   STUDENT // 卒業生・在校生
   PARENT // 保護者
@@ -1088,23 +1097,39 @@ enum InviteType {
 /// The inviter vouches for who they are (type, 学年); admins see it on the
 /// application to approve faster.
 model Invite {
-  id          String     @id @default(cuid())
-  tokenHash   String     @unique
+  id          String      @id @default(cuid())
+  tokenHash   String      @unique
   inviterId   String
-  inviter     User       @relation("invitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  inviter     User        @relation("invitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
   type        InviteType
   /// the invitee's 学年 (STUDENT) or their child's (PARENT)
   cohortId    String?
-  cohort      Cohort?    @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  cohort      Cohort?     @relation(fields: [cohortId], references: [id], onDelete: SetNull)
   inviteeName String?
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime    @default(now())
   expiresAt   DateTime
   usedAt      DateTime?
-  usedById    String?    @unique
-  usedBy      User?      @relation("inviteUsed", fields: [usedById], references: [id], onDelete: SetNull)
+  usedById    String?     @unique
+  usedBy      User?       @relation("inviteUsed", fields: [usedById], references: [id], onDelete: SetNull)
   revokedAt   DateTime?
+  kind        InviteKind  @default(INDIVIDUAL)
+  /// how many people may use it (学年招待); usedAt is set when it's full
+  maxUses     Int         @default(1)
+  uses        InviteUse[]
 
   @@index([inviterId])
+}
+
+/// Who signed up through a 学年招待 link (individual links use usedById).
+model InviteUse {
+  id        String   @id @default(cuid())
+  inviteId  String
+  invite    Invite   @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([inviteId])
 }
 
 /// Added: a member asks the committee to set or correct their birth date

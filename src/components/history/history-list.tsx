@@ -4,6 +4,8 @@ import type {
   HistoryVisibility,
 } from "@/generated/prisma/enums";
 import { isOngoing, sortHistory } from "@/lib/history";
+import { historyReach } from "@/lib/profile-visibility";
+import { ReachTag } from "../profile/visibility";
 import { WorkTags } from "./work-tags";
 
 type Edu = {
@@ -26,13 +28,18 @@ type Job = {
   visibility: HistoryVisibility;
 };
 
-/** Read-only timeline for a profile (entries already filtered for the viewer). */
+/**
+ * Read-only timeline for a profile (entries already filtered for the
+ * viewer). showReach: who sees each entry (the member's own profile).
+ */
 export async function HistoryList({
   education,
   work,
+  showReach = false,
 }: {
   education: Edu[];
   work: Job[];
+  showReach?: boolean;
 }) {
   const t = await getTranslations("history");
   const locale = (await getLocale()) === "en" ? "en" : "ja";
@@ -52,6 +59,9 @@ export async function HistoryList({
                   {t(`levels.${e.level}`)}
                   {e.field ? ` · ${e.field}` : ""} · {years(e)}
                 </p>
+                {showReach ? (
+                  <ReachTag reach={historyReach(e.visibility)} />
+                ) : null}
               </li>
             ))}
           </ol>
@@ -73,6 +83,9 @@ export async function HistoryList({
                   {e.title ? `${e.title} · ` : ""}
                   {years(e)}
                 </p>
+                {showReach ? (
+                  <ReachTag reach={historyReach(e.visibility)} />
+                ) : null}
               </li>
             ))}
           </ol>

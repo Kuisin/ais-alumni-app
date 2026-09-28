@@ -178,7 +178,11 @@ export default async function TeachersPage({
                       <span className="truncate">{displayName(u, locale)}</span>
                       {role?.schoolEmail && role.schoolEmailVerified ? (
                         <Badge tone="green">{t("current.schoolEmail")}</Badge>
-                      ) : null}
+                      ) : (
+                        <Badge tone="amber">
+                          {t("current.schoolEmailMissing")}
+                        </Badge>
+                      )}
                     </p>
                     {role?.schoolEmail ? (
                       <p className="truncate text-xs text-slate-600">

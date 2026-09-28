@@ -145,6 +145,14 @@ export async function mergeUsers(
       where: { userId: fromId },
       data: { userId: toId },
     });
+    // A 学年招待 use moves over unless the target already used an invitation.
+    const toUse = await tx.inviteUse.count({ where: { userId: toId } });
+    if (toUse) await tx.inviteUse.deleteMany({ where: { userId: fromId } });
+    else
+      await tx.inviteUse.updateMany({
+        where: { userId: fromId },
+        data: { userId: toId },
+      });
     // 学歴・職歴 move with the account.
     await tx.educationEntry.updateMany({
       where: { userId: fromId },

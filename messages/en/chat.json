@@ -66,7 +66,8 @@
     "mentionList": "Mention someone",
     "mentionAll": "all",
     "mentionAllHint": "Everyone in this group",
-    "infoOpen": "Chat details & members"
+    "infoOpen": "Chat details & members",
+    "restrictedNotice": "One-to-one chats between your member types aren't available."
   },
   "digest": {
     "subject": "[AIS Alumni] You have unread chat messages",
@@ -94,8 +95,10 @@
       "notFound": "You can't chat with this member.",
       "notFriends": "You can only chat with members who follow you back.",
       "blocked": "You can't chat with this member.",
-      "forbidden": "The chat couldn't be opened."
-    }
+      "forbidden": "The chat couldn't be opened.",
+      "restricted": "One-to-one chats between your member types aren't available."
+    },
+    "restricted": "One-to-one chats aren't available for your member type."
   },
   "mentionedYou": "[Mentioned you]",
   "mention": {
@@ -109,5 +112,65 @@
     "search": "Search members by name",
     "noMatch": "No one found.",
     "open": "Chat details"
+  },
+  "report": {
+    "open": "Report a problem",
+    "intro": "Tell the committee about harassment, spam or other problems in this chat. The member you report isn't told who reported them. Their recent messages here are attached so the committee can check.",
+    "who": "Who",
+    "wholeChat": "The chat as a whole",
+    "reason": "Reason",
+    "choose": "Choose a reason",
+    "detail": "What happened",
+    "detailHint": "Up to 2000 characters.",
+    "send": "Send report",
+    "sending": "Sending…",
+    "sent": "Thank you. Your report (#{ref}) was sent to the committee.",
+    "reasons": {
+      "HARASSMENT": "Harassment or bullying",
+      "SPAM": "Spam or advertising",
+      "INAPPROPRIATE": "Inappropriate content",
+      "IMPERSONATION": "Pretending to be someone else",
+      "PRIVACY": "Sharing personal information",
+      "OTHER": "Other"
+    },
+    "errors": {
+      "forbidden": "You can't report this chat.",
+      "reason": "Please choose a reason.",
+      "detail": "Please describe what happened (5–2000 characters).",
+      "rateLimited": "You've sent several reports recently. Please try again later."
+    },
+    "email": {
+      "subject": "[AIS Alumni] Chat report #{ref}: {reason}",
+      "text": "A member reported a chat. Please review it in the admin pages."
+    }
+  },
+  "admin": {
+    "title": "Chat",
+    "intro": "Who can chat one-to-one, and reports sent from chats.",
+    "rulesTitle": "One-to-one chats by member type",
+    "rulesIntro": "Members also need to follow each other. A member with several types gets the strictest setting. Changes apply to existing chats too.",
+    "rules": {
+      "ANYONE": "Allowed",
+      "SAME_ROLE": "Only with the same member type",
+      "NOBODY": "Not allowed"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "saveError": "Couldn't save. Please try again.",
+    "reportsTitle": "Reports",
+    "open": "Open",
+    "closed": "Done",
+    "emptyOpen": "No open reports.",
+    "emptyClosed": "No finished reports.",
+    "chat": "Chat",
+    "chatGone": "Deleted chat",
+    "reporter": "Reported by",
+    "reported": "Reported member",
+    "wholeChat": "The chat as a whole",
+    "closedAt": "Done at",
+    "messages": "{count, plural, one {# attached message} other {# attached messages}}",
+    "close": "Mark done",
+    "reopen": "Reopen"
   }
 }

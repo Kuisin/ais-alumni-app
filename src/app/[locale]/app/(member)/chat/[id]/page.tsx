@@ -3,9 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { chatMessagesAction, chatReadStateAction } from "@/app/actions/chat";
 import { ChatRoom } from "@/components/chat/chat-room";
 import { loadConnections, photoFor } from "@/lib/avatar";
+import { directStopReason } from "@/lib/chat-db";
 import { chatGroupName } from "@/lib/chat-labels";
 import { loadChatGroup } from "@/lib/chat-room";
-import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { channelTopic } from "@/lib/realtime";
 import { getCurrentUser, requireActive } from "@/lib/session";
@@ -49,18 +49,13 @@ export default async function ChatRoomPage({
     rep: u.positions.length > 0,
   }));
   const other = members.find((m) => m.id !== user.id);
-  // A 1:1 talk stops when either side has blocked the other.
-  const blocked =
-    direct && other
-      ? (await db.block.count({
-          where: {
-            OR: [
-              { blockerId: user.id, blockedId: other.id },
-              { blockerId: other.id, blockedId: user.id },
-            ],
-          },
-        })) > 0
-      : direct;
+  // A 1:1 talk stops when either side has blocked the other or their
+  // member types no longer allow it.
+  const stopped = direct
+    ? other
+      ? await directStopReason(user.id, other.id)
+      : "blocked"
+    : null;
 
   return (
     <ChatRoom
@@ -77,7 +72,7 @@ export default async function ChatRoomPage({
       initialReads={reads ?? []}
       lastReadAt={me?.lastReadAt.toISOString() ?? null}
       muted={me?.muted ?? false}
-      blocked={blocked}
+      stopped={stopped}
     />
   );
 }

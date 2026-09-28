@@ -6,6 +6,7 @@ import {
   ChatMemberList,
   type ChatMemberRow,
 } from "@/components/chat/chat-member-list";
+import { ChatReportForm } from "@/components/chat/chat-report-form";
 import { Avatar } from "@/components/ui/avatar";
 import { BackLink } from "@/components/ui/back-link";
 import { Card } from "@/components/ui/card";
@@ -29,7 +30,8 @@ export async function generateMetadata({
 /**
  * A talk's details (like LINE's room info): name, what the group is and
  * its members. Members link to their profiles where the viewer may see
- * them (hidden minors are listed without a link).
+ * them (hidden minors are listed without a link). Members of the talk can
+ * report it, or someone in it, to the admins.
  */
 export default async function ChatInfoPage({
   params,
@@ -115,7 +117,7 @@ export default async function ChatInfoPage({
           <h1 className="text-xl font-bold">{title}</h1>
           <p className="mt-1 text-sm text-slate-600">
             {direct
-              ? t("direct")
+              ? t("room.direct")
               : t.has(`groupHints.${group.kind}`)
                 ? t(`groupHints.${group.kind}`)
                 : null}
@@ -128,6 +130,15 @@ export default async function ChatInfoPage({
         </h2>
         <ChatMemberList members={members} />
       </section>
+      {found.me ? (
+        <ChatReportForm
+          groupId={group.id}
+          direct={direct}
+          members={members
+            .filter((m) => !m.self)
+            .map((m) => ({ id: m.id, name: m.name }))}
+        />
+      ) : null}
     </div>
   );
 }

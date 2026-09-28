@@ -80,7 +80,8 @@
     "destinations": "進路",
     "nameRequests": "氏名・生年月日",
     "support": "お問い合わせ",
-    "line": "LINEメニュー"
+    "line": "LINEメニュー",
+    "chat": "チャット"
   },
   "notFoundTitle": "ページが見つかりません",
   "goHome": "ホームへ",

@@ -33,14 +33,12 @@ export async function supportRateLimited(
 }
 
 /**
- * Save a support request and email it: every admin gets the full request
- * (Reply-To the sender, so answering is one click); the sender gets a copy
- * with the reference number. SUPPORT_EMAIL (comma-separated) adds inboxes.
+ * Where admin mail goes: every active admin with an email, plus
+ * SUPPORT_EMAIL (comma-separated), without duplicates.
  */
-export async function createSupportRequest(input: SupportInput) {
-  const req = await db.supportRequest.create({ data: input });
-  const ref = supportRef(req.id);
-
+export async function adminInboxes(): Promise<
+  { primaryEmail: string; locale: Locale }[]
+> {
   const admins = await db.user.findMany({
     where: {
       isAdmin: true,
@@ -55,19 +53,31 @@ export async function createSupportRequest(input: SupportInput) {
     .filter(Boolean)
     .map((e) => ({ primaryEmail: e, locale: "ja" as Locale }));
   const seen = new Set<string>();
-  const inboxes = [...admins, ...extra].filter((a) => {
+  const out: { primaryEmail: string; locale: Locale }[] = [];
+  for (const a of [...admins, ...extra]) {
     const e = a.primaryEmail?.toLowerCase();
-    if (!e || seen.has(e)) return false;
+    if (!e || seen.has(e)) continue;
     seen.add(e);
-    return true;
-  });
+    out.push({ primaryEmail: a.primaryEmail as string, locale: a.locale });
+  }
+  return out;
+}
 
-  const sends = inboxes.map(async (a) => {
+/**
+ * Save a support request and email it: every admin gets the full request
+ * (Reply-To the sender, so answering is one click); the sender gets a copy
+ * with the reference number. SUPPORT_EMAIL (comma-separated) adds inboxes.
+ */
+export async function createSupportRequest(input: SupportInput) {
+  const req = await db.supportRequest.create({ data: input });
+  const ref = supportRef(req.id);
+
+  const sends = (await adminInboxes()).map(async (a) => {
     const t = await getTranslatorFor(a.locale, "support");
     const type = t(`types.${input.type}.label`);
     const topic = t(`types.${input.type}.topics.${input.topic}`);
     await sendEmail({
-      to: a.primaryEmail as string,
+      to: a.primaryEmail,
       replyTo: input.email,
       subject: t("email.admin.subject", { ref, type, subject: input.subject }),
       text: [

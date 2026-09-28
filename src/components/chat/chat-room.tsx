@@ -99,7 +99,7 @@ export function ChatRoom({
   initialReads,
   lastReadAt,
   muted: initialMuted,
-  blocked,
+  stopped,
 }: {
   groupId: string;
   /** the group's realtime channel (src/lib/realtime.ts channelTopic) */
@@ -118,8 +118,8 @@ export function ChatRoom({
   initialReads: string[];
   lastReadAt: string | null;
   muted: boolean;
-  /** 1:1 talk where either side blocked the other */
-  blocked: boolean;
+  /** 1:1 talk that can't go on: a block, or the member types' rules */
+  stopped: "blocked" | "restricted" | null;
 }) {
   const t = useTranslations("chat.room");
   const tc = useTranslations("chat");
@@ -136,7 +136,7 @@ export function ChatRoom({
   const [selected, setSelected] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
-  const canPost = member && !blocked;
+  const canPost = member && !stopped;
   const input = useRef<HTMLTextAreaElement>(null);
   const [caret, setCaret] = useState(-1);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
@@ -797,7 +797,11 @@ export function ChatRoom({
         </form>
       ) : (
         <p className="bg-white px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] text-center text-sm text-slate-600">
-          {blocked ? t("blockedNotice") : t("adminView")}
+          {stopped === "restricted"
+            ? t("restrictedNotice")
+            : stopped
+              ? t("blockedNotice")
+              : t("adminView")}
         </p>
       )}
     </div>

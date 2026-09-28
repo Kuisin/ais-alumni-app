@@ -6,13 +6,13 @@ import { KIND_ORDER } from "@/lib/chat";
 import {
   chatMentionedGroups,
   chatUnreadByGroup,
+  directChatAvailable,
   GROUP_SELECT,
   syncChatMembership,
 } from "@/lib/chat-db";
 import { chatGroupName } from "@/lib/chat-labels";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
-import { DIRECT_CHAT_ENABLED } from "@/lib/features";
 import { requireActive } from "@/lib/session";
 
 export async function generateMetadata({
@@ -111,5 +111,7 @@ export default async function ChatListPage({
         : a.order - b.order,
     );
 
-  return <ChatList rows={rows} canStartDirect={DIRECT_CHAT_ENABLED} />;
+  return (
+    <ChatList rows={rows} canStartDirect={await directChatAvailable(user.id)} />
+  );
 }

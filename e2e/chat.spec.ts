@@ -233,6 +233,138 @@ test("学年代表 get their group, and tags show 期 and 学年代表", async (
   await expect(page.getByRole("link", { name: /^Class reps/ })).toHaveCount(0);
 });
 
+test("1:1 talks follow the member-type rules; admins can change them", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const p1 = await createActiveGraduate(`Fp One${stamp}`, "1970-01-01");
+  const p2 = await createActiveGraduate(`Fp Two${stamp}`, "1970-02-02");
+  const grad = await createActiveGraduate(`Fp Grad${stamp}`, "1990-03-03");
+  const cur = await createActiveGraduate(`Fp Cur${stamp}`, "1975-04-04");
+  // p1, p2: 卒業生保護者; cur: 在校生保護者; grad stays a graduate.
+  await sql(
+    `UPDATE "UserRole" SET role = 'FORMER_PARENT', "didGraduate" = NULL
+     WHERE "userId" = ANY($1)`,
+    [[p1.id, p2.id]],
+  );
+  await sql(
+    `UPDATE "UserRole" SET role = 'CURRENT_PARENT', "didGraduate" = NULL
+     WHERE "userId" = $1`,
+    [cur.id],
+  );
+  // p1 and each of the others follow each other.
+  let n = 0;
+  for (const other of [p2, grad, cur])
+    await sql(
+      `INSERT INTO "Follow" (id, "followerId", "followeeId", status) VALUES
+       ($1, $3, $4, 'ACCEPTED'), ($2, $4, $3, 'ACCEPTED')`,
+      [`rf${stamp}${n++}`, `rf${stamp}${n++}`, p1.id, other.id],
+    );
+
+  // Former parents: only with former parents.
+  const page = await browser.newPage();
+  await signInWithEmail(page, p1.email);
+  await page.goto(`/en/app/members/${grad.id}`);
+  await expect(page.getByRole("button", { name: "Message" })).toHaveCount(0);
+  await page.goto(`/en/app/members/${cur.id}`);
+  await expect(page.getByRole("button", { name: "Message" })).toHaveCount(0);
+  await page.goto("/en/app/chat/new");
+  await expect(page.getByText(`Two${stamp}, Fp`)).toBeVisible();
+  await expect(page.getByText(`Grad${stamp}, Fp`)).toHaveCount(0);
+  await page.goto(`/en/app/members/${p2.id}`);
+  await page.getByRole("button", { name: "Message" }).click();
+  await expect(page).toHaveURL(/\/en\/app\/chat\/[^/]+$/);
+  const hi = `Hello parent ${stamp}`;
+  await page.getByLabel("Message", { exact: true }).fill(hi);
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText(hi)).toBeVisible();
+  const talkUrl = page.url();
+
+  // Current parents: no 1:1 talks at all.
+  const pc = await browser.newPage();
+  await signInWithEmail(pc, cur.email);
+  await pc.goto("/en/app/chat");
+  await expect(pc.getByRole("link", { name: "New chat" })).toHaveCount(0);
+
+  // An admin turns 1:1 talks off for former parents: the talk stops.
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto("/en/app/admin/chat");
+  const rule = admin.getByLabel("Parent of former student");
+  await expect(rule).toHaveValue("SAME_ROLE");
+  try {
+    await rule.selectOption("NOBODY");
+    await admin.getByRole("button", { name: "Save" }).click();
+    await expect(admin.getByText("Saved.")).toBeVisible();
+    await page.goto(talkUrl);
+    await expect(
+      page.getByText(
+        "One-to-one chats between your member types aren't available.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByLabel("Message", { exact: true })).toHaveCount(0);
+  } finally {
+    await sql(
+      `DELETE FROM "DirectChatPolicy" WHERE role = 'FORMER_PARENT'`,
+      [],
+    );
+  }
+  await page.reload();
+  await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
+});
+
+test("members report someone from the chat details; admins review it", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const a = await createActiveGraduate(`Rp A${stamp}`, "1991-01-01");
+  const b = await createActiveGraduate(`Rp B${stamp}`, "1991-02-02");
+  await sql(
+    `INSERT INTO "Follow" (id, "followerId", "followeeId", status) VALUES
+     ($1, $3, $4, 'ACCEPTED'), ($2, $4, $3, 'ACCEPTED')`,
+    [`rp1${stamp}`, `rp2${stamp}`, a.id, b.id],
+  );
+  // B writes something rude in their 1:1 talk.
+  const pb = await browser.newPage();
+  await signInWithEmail(pb, b.email);
+  await pb.goto(`/en/app/members/${a.id}`);
+  await pb.getByRole("button", { name: "Message" }).click();
+  await expect(pb).toHaveURL(/\/en\/app\/chat\/[^/]+$/);
+  const rude = `Rude words ${stamp}`;
+  await pb.getByLabel("Message", { exact: true }).fill(rude);
+  await pb.getByRole("button", { name: "Send" }).click();
+  await expect(pb.getByText(rude)).toBeVisible();
+  const talkUrl = pb.url();
+
+  // A opens the talk's details: members, and the report form.
+  const pa = await browser.newPage();
+  await signInWithEmail(pa, a.email);
+  await pa.goto(`${talkUrl}/info`);
+  await expect(pa.getByText(`B${stamp}, Rp`).first()).toBeVisible();
+  await pa.getByText("Report a problem").click();
+  await expect(pa.getByLabel("Who")).toHaveValue(b.id);
+  await pa.getByLabel("Reason").selectOption("HARASSMENT");
+  await pa.getByLabel("What happened").fill("They keep insulting me.");
+  await pa.getByRole("button", { name: "Send report" }).click();
+  await expect(pa.getByText(/Your report \(#\w+\) was sent/)).toBeVisible();
+
+  // The admin sees it with the attached message (they can't open the talk).
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto("/en/app/admin/chat");
+  const card = admin
+    .getByRole("listitem")
+    .filter({ hasText: "They keep insulting me." });
+  await expect(card.getByText("Harassment or bullying")).toBeVisible();
+  await expect(card.getByRole("link", { name: `B${stamp}, Rp` })).toBeVisible();
+  await card.getByText("1 attached message").click();
+  await expect(card.getByText(rude)).toBeVisible();
+  await card.getByRole("button", { name: "Mark done" }).click();
+  await expect(
+    admin.getByRole("listitem").filter({ hasText: "They keep insulting me." }),
+  ).toHaveCount(0);
+});
+
 async function sql(text: string, values: unknown[]) {
   const db = new Client({ connectionString: process.env.DATABASE_URL });
   await db.connect();

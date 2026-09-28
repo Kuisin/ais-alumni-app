@@ -29,10 +29,19 @@ export const CLASS_REPS_CHAT_ENABLED =
 
 /**
  * The 「卒業生」 and 「卒業生（成人）」 group chats (ChatGroupKind.GRADUATES,
- * GRADUATES_ADULTS). Off until those enum values reach main (dev and main
- * share the database; main's Prisma client can't read unknown kinds). Turn
- * on after the release (CHAT_V4=1 turns it on for tests).
+ * GRADUATES_ADULTS). On since those enum values reached main (release with
+ * #133); dev and main share the database, and main's Prisma client can't
+ * read unknown kinds, so new kinds must reach main before being used.
  */
-const GRADUATE_CHATS_RELEASED = false;
+const GRADUATE_CHATS_RELEASED = true;
 export const GRADUATE_CHATS_ENABLED =
   GRADUATE_CHATS_RELEASED || process.env.CHAT_V4 === "1";
+
+/**
+ * The 「同窓会委員」 group chat (ChatGroupKind.ALUMNI_COMMITTEE): members with
+ * the 同窓会委員 position, and admins. Off until the enum value reaches main
+ * (CHAT_V5=1 turns it on for tests); turn on after that release.
+ */
+const COMMITTEE_CHAT_RELEASED = false;
+export const COMMITTEE_CHAT_ENABLED =
+  COMMITTEE_CHAT_RELEASED || process.env.CHAT_V5 === "1";

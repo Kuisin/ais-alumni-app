@@ -465,3 +465,37 @@ test("元在校生（成人） takes everyone who left; 卒業生（成人） on
   ])
     await expect(gp.getByRole("link", { name }).first()).toBeVisible();
 });
+
+test("同窓会委員 group: committee members and admins", async ({ browser }) => {
+  const stamp = Date.now();
+  const member = await createActiveGraduate(`Cmte C${stamp}`, "1990-03-03");
+  await sql(
+    `INSERT INTO "UserPosition" (id, "userId", position) VALUES ($1, $2, 'ALUMNI_COMMITTEE')`,
+    [`p${stamp}`, member.id],
+  );
+  const page = await browser.newPage();
+  await signInWithEmail(page, member.email);
+  await page.goto("/en/app/chat");
+  await expect(
+    page.getByRole("link", { name: /^Alumni committee/ }),
+  ).toBeVisible();
+
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto("/en/app/chat");
+  await expect(
+    admin.getByRole("link", { name: /^Alumni committee/ }),
+  ).toBeVisible();
+
+  // A member without the position doesn't get it.
+  const other = await createActiveGraduate(`NoCm N${stamp}`, "1990-03-03");
+  const op = await browser.newPage();
+  await signInWithEmail(op, other.email);
+  await op.goto("/en/app/chat");
+  await expect(
+    op.getByRole("link", { name: /^Former students/ }).first(),
+  ).toBeVisible();
+  await expect(op.getByRole("link", { name: /^Alumni committee/ })).toHaveCount(
+    0,
+  );
+});

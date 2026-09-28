@@ -19,7 +19,8 @@
     "ADULTS": "Former students (18+)",
     "CLASS_REPS": "Class reps",
     "GRADUATES": "Graduates",
-    "GRADUATES_ADULTS": "Graduates (18+)"
+    "GRADUATES_ADULTS": "Graduates (18+)",
+    "ALUMNI_COMMITTEE": "Alumni committee"
   },
   "groupHints": {
     "TEACHERS": "Everyone who teaches or taught at AIS",
@@ -32,7 +33,8 @@
     "ADULTS": "Former students (graduates included), from the April 1 after they turn 18",
     "CLASS_REPS": "Class representatives of every year",
     "GRADUATES": "Everyone who graduated from AIS",
-    "GRADUATES_ADULTS": "Graduates, from the April 1 after they turn 18"
+    "GRADUATES_ADULTS": "Graduates, from the April 1 after they turn 18",
+    "ALUMNI_COMMITTEE": "Alumni committee members (position) and admins"
   },
   "room": {
     "back": "All chats",

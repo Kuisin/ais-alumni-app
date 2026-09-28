@@ -18,6 +18,7 @@ import {
 import {
   ADULTS_CHAT_ENABLED,
   CLASS_REPS_CHAT_ENABLED,
+  COMMITTEE_CHAT_ENABLED,
   DIRECT_CHAT_ENABLED,
   GRADUATE_CHATS_ENABLED,
 } from "@/lib/features";
@@ -41,11 +42,16 @@ export async function syncChatMembership(
     where: { id: userId },
     select: {
       state: true,
+      isAdmin: true,
       dateOfBirth: true,
       managedById: true,
       positions: {
-        where: { position: PositionKey.STUDENT_LEADER },
-        select: { id: true },
+        where: {
+          position: {
+            in: [PositionKey.STUDENT_LEADER, PositionKey.ALUMNI_COMMITTEE],
+          },
+        },
+        select: { position: true },
       },
       roles: { select: { role: true, cohortId: true, didGraduate: true } },
       parentLinks: {
@@ -88,8 +94,15 @@ export async function syncChatMembership(
     // 学年代表 need a (former) student role, like the position itself.
     rep:
       CLASS_REPS_CHAT_ENABLED &&
-      user.positions.length > 0 &&
+      user.positions.some((p) => p.position === PositionKey.STUDENT_LEADER) &&
       user.roles.some((r) => STUDENT.includes(r.role)),
+    // 同窓会委員: the position, or an admin (the committee running the app).
+    committee:
+      COMMITTEE_CHAT_ENABLED &&
+      (user.isAdmin ||
+        user.positions.some(
+          (p) => p.position === PositionKey.ALUMNI_COMMITTEE,
+        )),
   });
   const have = new Map(current.map((m) => [m.group.key, m.groupId]));
   let changed = false;

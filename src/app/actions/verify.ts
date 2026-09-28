@@ -30,6 +30,7 @@ import {
   saveParentChildren,
   settleParentFromChildren,
 } from "@/lib/parent-onboarding";
+import { isSchoolEmail } from "@/lib/school-email";
 import { AuthError, actionUser, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { deletePrivate, putPrivate } from "@/lib/storage";
@@ -281,7 +282,7 @@ async function isSchoolEmailVerified(
   data: VerificationData,
 ): Promise<boolean> {
   const email = data.teacher?.schoolEmail;
-  if (!email) return false;
+  if (!email || !isSchoolEmail(email)) return false;
   const role = user.roles.find((r) => r.role === RoleKey.TEACHER);
   if (role?.schoolEmailVerified && role.schoolEmail === email) return true;
   // A consumed SCHOOL_EMAIL code for this user + address proves ownership.
@@ -423,14 +424,15 @@ export async function discardEvidenceAction(key: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Teacher school email (§6.2). Assumption: any address is accepted; admins see
-// the address and a "verified" badge and judge the domain themselves.
+// Teacher school email (§6.2): @aisnagoya.net only, confirmed with a code;
+// admins see the address and a "verified" badge.
 
 export type SchoolEmailResult = {
   ok: boolean;
   error?:
     | "forbidden"
     | "invalidEmail"
+    | "wrongDomain"
     | "rateLimited"
     | "sendFailed"
     | "invalid"
@@ -449,6 +451,7 @@ export async function sendSchoolEmailCodeAction(
     typeof email === "string" ? email.trim() : "",
   );
   if (!parsed.success) return { ok: false, error: "invalidEmail" };
+  if (!isSchoolEmail(parsed.data)) return { ok: false, error: "wrongDomain" };
   const res = await issueOtp({
     email: parsed.data,
     purpose: OtpPurpose.SCHOOL_EMAIL,

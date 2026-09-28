@@ -10,6 +10,7 @@ import { EmailChangeForm } from "@/components/settings/email-change-form";
 import { LanguageForm } from "@/components/settings/language-form";
 import { NotifyCategoriesForm } from "@/components/settings/notify-categories-form";
 import { NotifyForm } from "@/components/settings/notify-form";
+import { SchoolEmailSettings } from "@/components/settings/school-email-settings";
 import { SettingsSection } from "@/components/settings/section";
 import {
   type MethodRow,
@@ -50,6 +51,9 @@ export default async function SettingsPage({
   const user = await requireActive();
   const sp = await searchParams;
   const t = await getTranslations("settings");
+  const tv = await getTranslations("verify");
+  // Teachers: their school (work) email, separate from the main email.
+  const teacherRole = user.roles.find((r) => r.role === "TEACHER") ?? null;
   const tn = await getTranslations("notifications");
 
   const accounts = await db.account.findMany({
@@ -273,6 +277,34 @@ export default async function SettingsPage({
         >
           <EmailChangeForm />
         </EditableCard>
+
+        {teacherRole ? (
+          <EditableCard
+            id="school-email"
+            title={t("schoolEmail.title")}
+            description={t("schoolEmail.description")}
+            editLabel={t("schoolEmail.change")}
+            view={
+              <p className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-slate-600">
+                  {t("schoolEmail.current")}:
+                </span>
+                <span className="font-medium break-all">
+                  {teacherRole.schoolEmail ?? t("schoolEmail.none")}
+                </span>
+                {teacherRole.schoolEmail && teacherRole.schoolEmailVerified ? (
+                  <Badge tone="green">{tv("schoolEmail.verifiedBadge")}</Badge>
+                ) : null}
+              </p>
+            }
+          >
+            <SchoolEmailSettings
+              current={
+                teacherRole.schoolEmailVerified ? teacherRole.schoolEmail : null
+              }
+            />
+          </EditableCard>
+        ) : null}
 
         <SettingsSection
           id="data"

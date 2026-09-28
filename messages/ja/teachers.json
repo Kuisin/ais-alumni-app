@@ -15,6 +15,7 @@
     "since": "{year}年から",
     "remove": "元教職員にする",
     "none": "現職の教職員はまだいません。",
-    "removeConfirm": "この教職員の登録を解除しますか？"
+    "removeConfirm": "この教職員の登録を解除しますか？",
+    "schoolEmail": "学校メール確認済み"
   }
 }

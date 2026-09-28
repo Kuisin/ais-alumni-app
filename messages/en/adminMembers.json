@@ -118,7 +118,10 @@
       "TEACHER": "Teacher / Staff"
     },
     "schoolEmailVerified": "Verified",
-    "stageFromHistory": "Worked out from the member's schools & work."
+    "stageFromHistory": "Worked out from the member's schools & work.",
+    "schoolEmailHint": "@aisnagoya.net only. The member confirms it with a code to mark it verified.",
+    "schoolEmailDomain": "Enter an @aisnagoya.net address.",
+    "schoolEmailInvalid": "Enter a valid email address."
   },
   "status": {
     "title": "Account status",

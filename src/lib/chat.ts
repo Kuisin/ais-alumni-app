@@ -80,7 +80,8 @@ export function desiredGroups(
   }
   if (roles.some((r) => PARENT.includes(r.role)))
     for (const c of childCohortIds) add(ChatGroupKind.COHORT_PARENTS, c);
-  // 18歳以上 is for (former) students only, not parents or teachers.
+  // 18歳以上 is for students — 卒業生 and 元在校生 alike (both FORMER_STUDENT),
+  // and current students — once 18; not parents or teachers.
   if (opts.adult && roles.some((r) => STUDENT.includes(r.role)))
     add(ChatGroupKind.ADULTS);
   if (opts.rep) add(ChatGroupKind.CLASS_REPS);

@@ -69,7 +69,7 @@
     "roles": "Choose all that apply.",
     "locale": "Used for emails and LINE messages.",
     "subjects": "e.g. Math, G9–12",
-    "schoolEmail": "If you have an AIS email address, we can send it a code to confirm your role faster.",
+    "schoolEmail": "Required if you currently work at AIS: confirm your @aisnagoya.net address with a code (it's not used for sign-in or notices). Optional for former staff.",
     "parentConfirmation": "Student accounts must also be confirmed by a parent or guardian with an AIS Alumni account, or by the committee.",
     "classmates": "If you add them, we can ask classmates or teachers to confirm you, which can speed up approval.",
     "cohort": "Classes are numbered by the year they finish 6th grade (2016 = 第5期). If you joined or left partway, choose the class you were in.",
@@ -106,7 +106,11 @@
     "kanaOnly": "Use katakana (hiragana is converted automatically).",
     "kanaRequired": "Please add the katakana reading (フリガナ) for your kanji name.",
     "diplomaRequired": "Upload your diploma, or tick “I don't have my diploma”.",
-    "genderRequired": "Choose your gender."
+    "genderRequired": "Choose your gender.",
+    "schoolEmailDomain": "Enter your school address (@aisnagoya.net).",
+    "schoolEmailRequired": "Current AIS staff need to give their school address (@aisnagoya.net).",
+    "schoolEmailUnverified": "Please confirm your school address (Send code → enter the 6-digit code).",
+    "schoolEmailTaken": "This school address is already registered to another member."
   },
   "evidence": {
     "label": "Supporting documents (optional)",
@@ -139,7 +143,9 @@
       "invalid": "That code is not correct.",
       "expired": "That code has expired. Please request a new one.",
       "tooManyAttempts": "Too many attempts. Please request a new code.",
-      "sendFailed": "We couldn't send the email right now. Please try again in a few minutes."
+      "sendFailed": "We couldn't send the email right now. Please try again in a few minutes.",
+      "wrongDomain": "Only @aisnagoya.net addresses can be confirmed.",
+      "taken": "This school address is already registered to another member."
     }
   },
   "review": {

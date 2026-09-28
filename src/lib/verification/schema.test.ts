@@ -28,7 +28,8 @@ function filled() {
     joinedYear: "2020",
     leftYear: "",
     subjects: "Math",
-    schoolEmail: "",
+    // Still working at AIS (no leave year): the school address is required.
+    schoolEmail: "t.yamada@aisnagoya.net",
   };
   // 第5期 graduated: a diploma (or saying it's unavailable) is required.
   s.diplomaUnavailable = true;
@@ -63,10 +64,48 @@ describe("verification schema (sign-up wizard)", () => {
     expect(r.data.teacher).toMatchObject({
       joinedYear: 2020,
       leftYear: null,
-      schoolEmail: null,
+      schoolEmail: "t.yamada@aisnagoya.net",
     });
     expect(r.data.parent).toBeUndefined();
     expect(r.data.nameRomaji).toBe("Yamada, Taro");
+  });
+
+  it("requires the school email from current teachers only", () => {
+    const parse = (leftYear: string) => {
+      const s = filled();
+      s.teacher.schoolEmail = "";
+      s.teacher.leftYear = leftYear;
+      return verificationSchema({ requireKanji: false }).safeParse(
+        toPayload(s),
+      );
+    };
+    const current = parse("");
+    expect(current.success).toBe(false);
+    if (!current.success)
+      expect(current.error.issues.map((i) => i.message)).toContain(
+        "schoolEmailRequired",
+      );
+    expect(parse("2022").success).toBe(true);
+  });
+
+  it("accepts only an @aisnagoya.net school email for teachers", () => {
+    const parse = (email: string) => {
+      const s = filled();
+      s.teacher.schoolEmail = email;
+      return verificationSchema({ requireKanji: false }).safeParse(
+        toPayload(s),
+      );
+    };
+    const ok = parse("T.Sato@aisnagoya.net");
+    expect(ok.success && ok.data.teacher?.schoolEmail).toBe(
+      "t.sato@aisnagoya.net",
+    );
+    const bad = parse("t.sato@gmail.com");
+    expect(bad.success).toBe(false);
+    if (!bad.success)
+      expect(bad.error.issues.map((i) => i.message)).toContain(
+        "schoolEmailDomain",
+      );
   });
 
   it("requires a type, フリガナ with kanji, and a 学年 for students", () => {

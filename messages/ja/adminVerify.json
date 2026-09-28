@@ -252,6 +252,10 @@
       "match": "申請内容と一致しています",
       "mismatch": "申請内容と異なります。確認してください",
       "unknown": "学年を比較できません"
-    }
+    },
+    "kindIndividual": "個別招待（強い推薦）",
+    "kindGrade": "学年招待（{count}/{max}人が使用）",
+    "badgeIndividual": "推薦",
+    "badgeGrade": "学年招待"
   }
 }

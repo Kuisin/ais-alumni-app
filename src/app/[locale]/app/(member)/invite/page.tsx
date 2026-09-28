@@ -34,6 +34,10 @@ export default async function InvitePage({
       include: {
         cohort: { select: { number: true } },
         usedBy: { select: { nameRomaji: true, nameKanji: true } },
+        uses: {
+          orderBy: { createdAt: "asc" },
+          select: { user: { select: { nameRomaji: true, nameKanji: true } } },
+        },
       },
     }),
   ]);
@@ -50,8 +54,11 @@ export default async function InvitePage({
           <h2 className="mb-3 text-lg font-semibold">{t("sent")}</h2>
           <ul className="divide-y divide-slate-100">
             {invites.map((i) => {
+              const grade = i.kind === "GRADE";
               const status = i.usedAt
-                ? "used"
+                ? grade
+                  ? "full"
+                  : "used"
                 : i.revokedAt
                   ? "revoked"
                   : i.expiresAt <= now
@@ -63,6 +70,11 @@ export default async function InvitePage({
                   className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm"
                 >
                   <span className="min-w-0">
+                    <span className="mr-2 inline-block align-middle">
+                      <Badge tone={grade ? "slate" : "brand"}>
+                        {t(`kinds.${i.kind}.badge`)}
+                      </Badge>
+                    </span>
                     <span className="font-medium">
                       {i.inviteeName || t(`types.${i.type}`)}
                     </span>
@@ -77,11 +89,23 @@ export default async function InvitePage({
                         {t("usedBy", { name: displayName(i.usedBy, locale) })}
                       </span>
                     ) : null}
+                    {grade ? (
+                      <span className="block text-slate-600">
+                        {t("uses", { count: i.uses.length, max: i.maxUses })}
+                        {i.uses.length
+                          ? ` · ${t("usedByList", {
+                              names: i.uses
+                                .map((u) => displayName(u.user, locale))
+                                .join("、"),
+                            })}`
+                          : ""}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="flex items-center gap-2">
                     <Badge
                       tone={
-                        status === "used"
+                        status === "used" || status === "full"
                           ? "green"
                           : status === "open"
                             ? "brand"

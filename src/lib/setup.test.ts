@@ -116,4 +116,20 @@ describe("sso readiness", async () => {
     expect(at({ active: true })?.href).toBe("/app/profile#edit-name");
     expect(at({ hasKanjiName: true })?.done).toBe(true);
   });
+
+  it("current teachers must confirm their school email", () => {
+    const at = (x: Partial<typeof base>) =>
+      setupChecklist({ ...base, active: true, ...x }).find(
+        (i) => i.key === "schoolEmail",
+      );
+    expect(at({})).toBeUndefined();
+    expect(at({ currentTeacher: true })).toMatchObject({
+      done: false,
+      href: "/app/settings#school-email",
+    });
+    expect(at({ currentTeacher: true })?.optional).toBeUndefined();
+    expect(at({ currentTeacher: true, schoolEmailVerified: true })?.done).toBe(
+      true,
+    );
+  });
 });

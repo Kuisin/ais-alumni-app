@@ -30,6 +30,9 @@ import {
   saveParentChildren,
   settleParentFromChildren,
 } from "@/lib/parent-onboarding";
+import { isCurrentTeacher } from "@/lib/school";
+import { isSchoolEmail } from "@/lib/school-email";
+import { schoolEmailTaken } from "@/lib/school-email-db";
 import { AuthError, actionUser, type CurrentUser } from "@/lib/session";
 import { assertTransition } from "@/lib/state-machine";
 import { deletePrivate, putPrivate } from "@/lib/storage";
@@ -151,6 +154,25 @@ export async function submitVerificationAction(
 
   const roster = await computeRosterMatch(data);
   const schoolEmailVerified = await isSchoolEmailVerified(user, data);
+  // Teachers' school address: one member each; current teachers must have
+  // confirmed it (the schema already requires it for them).
+  const schoolEmail = data.teacher?.schoolEmail ?? null;
+  if (schoolEmail && (await schoolEmailTaken(schoolEmail, user.id)))
+    return {
+      ok: false,
+      message: "validation",
+      errors: { "teacher.schoolEmail": "schoolEmailTaken" },
+    };
+  if (
+    data.teacher &&
+    isCurrentTeacher(data.teacher.leftYear) &&
+    !schoolEmailVerified
+  )
+    return {
+      ok: false,
+      message: "validation",
+      errors: { "teacher.schoolEmail": "schoolEmailUnverified" },
+    };
 
   let requestId: string;
   let childLinksToConfirm: string[] = [];
@@ -281,7 +303,7 @@ async function isSchoolEmailVerified(
   data: VerificationData,
 ): Promise<boolean> {
   const email = data.teacher?.schoolEmail;
-  if (!email) return false;
+  if (!email || !isSchoolEmail(email)) return false;
   const role = user.roles.find((r) => r.role === RoleKey.TEACHER);
   if (role?.schoolEmailVerified && role.schoolEmail === email) return true;
   // A consumed SCHOOL_EMAIL code for this user + address proves ownership.
@@ -423,14 +445,16 @@ export async function discardEvidenceAction(key: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Teacher school email (§6.2). Assumption: any address is accepted; admins see
-// the address and a "verified" badge and judge the domain themselves.
+// Teacher school email (§6.2): @aisnagoya.net only, confirmed with a code;
+// admins see the address and a "verified" badge.
 
 export type SchoolEmailResult = {
   ok: boolean;
   error?:
     | "forbidden"
     | "invalidEmail"
+    | "wrongDomain"
+    | "taken"
     | "rateLimited"
     | "sendFailed"
     | "invalid"
@@ -449,6 +473,9 @@ export async function sendSchoolEmailCodeAction(
     typeof email === "string" ? email.trim() : "",
   );
   if (!parsed.success) return { ok: false, error: "invalidEmail" };
+  if (!isSchoolEmail(parsed.data)) return { ok: false, error: "wrongDomain" };
+  if (await schoolEmailTaken(parsed.data, user.id))
+    return { ok: false, error: "taken" };
   const res = await issueOtp({
     email: parsed.data,
     purpose: OtpPurpose.SCHOOL_EMAIL,

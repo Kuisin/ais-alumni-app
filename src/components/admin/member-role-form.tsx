@@ -57,11 +57,13 @@ function RoleFields({
   values,
   idPrefix,
   cohorts,
+  fieldErrors,
 }: {
   role: RoleKey;
   values?: RoleValues;
   idPrefix: string;
   cohorts: CohortChoice[];
+  fieldErrors?: Record<string, string>;
 }) {
   const t = useTranslations("adminMembers.roles");
   const tr = useTranslations("roles");
@@ -118,7 +120,22 @@ function RoleFields({
             id={id("schoolEmail")}
             label={t("schoolEmail")}
             hint={
-              values?.schoolEmailVerified ? t("schoolEmailVerified") : undefined
+              values?.schoolEmailVerified
+                ? t("schoolEmailVerified")
+                : t("schoolEmailHint")
+            }
+            error={
+              fieldErrors?.schoolEmail
+                ? t(
+                    [
+                      "schoolEmailDomain",
+                      "schoolEmailRequired",
+                      "schoolEmailTaken",
+                    ].includes(fieldErrors.schoolEmail)
+                      ? fieldErrors.schoolEmail
+                      : "schoolEmailInvalid",
+                  )
+                : null
             }
           >
             {(a) => (
@@ -126,6 +143,7 @@ function RoleFields({
                 {...a}
                 type="email"
                 name="schoolEmail"
+                placeholder="name@aisnagoya.net"
                 defaultValue={s(values?.schoolEmail)}
               />
             )}
@@ -232,6 +250,7 @@ export function MemberRoleForm({
           values={values}
           idPrefix={`r-${values.role}`}
           cohorts={cohorts}
+          fieldErrors={state.fieldErrors}
         />
         <AdminFormResult state={state} />
         <SubmitButton variant="secondary" pendingText={tc("saving")}>
@@ -306,7 +325,13 @@ export function AddRoleForm({
         )}
       </Field>
       {role ? (
-        <RoleFields key={role} role={role} idPrefix="add" cohorts={cohorts} />
+        <RoleFields
+          key={role}
+          role={role}
+          idPrefix="add"
+          cohorts={cohorts}
+          fieldErrors={state.fieldErrors}
+        />
       ) : null}
       <AdminFormResult state={state} />
       {role ? (

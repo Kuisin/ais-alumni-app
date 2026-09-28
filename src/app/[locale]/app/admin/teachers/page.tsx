@@ -52,7 +52,12 @@ export default async function TeachersPage({
         ...PERSON,
         roles: {
           where: { role: RoleKey.TEACHER },
-          select: { yearsFrom: true, subjects: true },
+          select: {
+            yearsFrom: true,
+            subjects: true,
+            schoolEmail: true,
+            schoolEmailVerified: true,
+          },
         },
       },
       orderBy: { nameRomaji: "asc" },
@@ -169,9 +174,21 @@ export default async function TeachersPage({
                 <li key={u.id} className="flex items-center gap-3 py-3">
                   <Avatar name={displayName(u, locale)} size={36} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">
-                      {displayName(u, locale)}
+                    <p className="flex flex-wrap items-center gap-2 font-medium">
+                      <span className="truncate">{displayName(u, locale)}</span>
+                      {role?.schoolEmail && role.schoolEmailVerified ? (
+                        <Badge tone="green">{t("current.schoolEmail")}</Badge>
+                      ) : (
+                        <Badge tone="amber">
+                          {t("current.schoolEmailMissing")}
+                        </Badge>
+                      )}
                     </p>
+                    {role?.schoolEmail ? (
+                      <p className="truncate text-xs text-slate-600">
+                        {role.schoolEmail}
+                      </p>
+                    ) : null}
                     <p className="text-xs text-slate-500">
                       {[
                         role?.yearsFrom

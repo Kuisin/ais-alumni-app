@@ -2,7 +2,8 @@ import { z } from "zod";
 import { elementaryEndFor, parseCohortNumber } from "@/lib/cohorts";
 import { GENDERS } from "@/lib/gender";
 import { kanaPart, nameColumns, requireKanaForKanji } from "@/lib/names";
-import { studentStatus } from "@/lib/school";
+import { isCurrentTeacher, studentStatus } from "@/lib/school";
+import { isSchoolEmail } from "@/lib/school-email";
 
 /**
  * Sign-up (verification) form, version 2. Shared by the client wizard
@@ -184,9 +185,21 @@ export const teacherSchema = z
       .max(254)
       .optional()
       .transform((v) => (v ? v.toLowerCase() : null))
-      .pipe(z.email("invalidEmail").nullable()),
+      .pipe(z.email("invalidEmail").nullable())
+      // AIS addresses only (the extra check that they work at AIS).
+      .refine((v) => v === null || isSchoolEmail(v), "schoolEmailDomain"),
   })
-  .superRefine(leftAfterJoined);
+  .superRefine(leftAfterJoined)
+  // Current teachers (no leave year, or a future one) must give their
+  // school address; it's confirmed with a code before sending.
+  .superRefine((v, ctx) => {
+    if (isCurrentTeacher(v.leftYear) && !v.schoolEmail)
+      ctx.addIssue({
+        code: "custom",
+        path: ["schoolEmail"],
+        message: "schoolEmailRequired",
+      });
+  });
 
 /** 卒業証書 (one file) or other supporting documents (up to 3). */
 export const EVIDENCE_KINDS = ["DIPLOMA", "OTHER"] as const;
@@ -522,6 +535,10 @@ const KNOWN_CODES = new Set([
   "diplomaRequired",
   "tooManyFiles",
   "genderRequired",
+  "schoolEmailDomain",
+  "schoolEmailRequired",
+  "schoolEmailUnverified",
+  "schoolEmailTaken",
 ]);
 
 function normalizeMessage(message: string): string {

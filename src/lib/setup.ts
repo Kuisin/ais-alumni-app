@@ -17,6 +17,9 @@ export type SetupInput = {
   hasFamilyLink: boolean;
   /** 漢字 and フリガナ names recorded */
   hasKanjiName: boolean;
+  /** a current teacher (現職) — they must confirm their school address */
+  currentTeacher?: boolean;
+  schoolEmailVerified?: boolean;
 };
 
 export type SetupKey =
@@ -29,7 +32,8 @@ export type SetupKey =
   | "history"
   | "follow"
   | "family"
-  | "names";
+  | "names"
+  | "schoolEmail";
 
 export type SetupItem = {
   key: SetupKey;
@@ -68,6 +72,14 @@ export function setupChecklist(i: SetupInput): SetupItem[] {
     optional: true,
     recommended: true,
   });
+  // Current teachers must confirm their @aisnagoya.net work address
+  // (required; e.g. after being made 現職 by the registrar).
+  if (i.active && i.currentTeacher)
+    items.push({
+      key: "schoolEmail",
+      done: Boolean(i.schoolEmailVerified),
+      href: "/app/settings#school-email",
+    });
   // Profile tasks need an approved account.
   if (i.active)
     items.push(

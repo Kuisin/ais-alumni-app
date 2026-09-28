@@ -257,5 +257,33 @@
   "requestCorrection": "Request a correction",
   "changeInSettings": "Change in settings",
   "emailHint": "Where sign-in codes and important notices are sent.",
-  "accountHint": "Follows, family, invitations and notification settings"
+  "accountHint": "Follows, family, invitations and notification settings",
+  "visibility": {
+    "title": "Who can see what",
+    "intro": "Under each item you can see who it is shown to (✓ shown, ✕ hidden). The committee (admins) can see everything.",
+    "audiences": {
+      "members": "All members",
+      "followers": "Followers",
+      "family": "Family"
+    },
+    "shown": "shown",
+    "hidden": "hidden",
+    "onlyYou": "Only you and the committee",
+    "viewAsTitle": "Check how others see your profile",
+    "viewAs": {
+      "members": "View as a member",
+      "followers": "View as a follower",
+      "family": "View as family"
+    },
+    "previewTitle": {
+      "members": "Your profile as all members see it",
+      "followers": "Your profile as your followers see it",
+      "family": "Your profile as your family see it"
+    },
+    "previewHint": "This is a preview. Buttons such as follow and message are not shown.",
+    "backToProfile": "Back to my profile",
+    "hiddenTitle": "Hidden items",
+    "photoHidden": "Photo is hidden",
+    "historyHidden": "{count, plural, one {# more education / work entry is} other {# more education / work entries are}} visible only to followers and family."
+  }
 }

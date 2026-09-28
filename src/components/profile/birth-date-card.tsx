@@ -8,6 +8,7 @@ import { formatDate } from "@/lib/format";
 import type { CurrentUser } from "@/lib/session";
 import { BirthDateRequestForm } from "./birth-date-request-form";
 import { RequestStatus } from "./request-status";
+import { ReachTag } from "./visibility";
 
 /** The member's birth date (UTC midnight → that calendar day). */
 export function formatBirthDate(d: Date, locale: "ja" | "en"): string {
@@ -52,6 +53,7 @@ export async function BirthDateCard({ me }: { me: CurrentUser }) {
               <span className="text-slate-500">{t("notSet")}</span>
             )}
           </p>
+          <ReachTag reach="self" />
           {!me.dateOfBirth && !pending ? (
             <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
               {t("notSetHint")}

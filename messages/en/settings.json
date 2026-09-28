@@ -161,5 +161,13 @@
   "danger": {
     "title": "Danger zone",
     "description": "Deactivate or delete your account. Please read each option carefully first."
+  },
+  "schoolEmail": {
+    "title": "School email (work)",
+    "description": "Teachers and staff: confirming your @aisnagoya.net address shows you work at AIS. It's separate from your sign-in / notification email and isn't used for either.",
+    "current": "Current",
+    "none": "Not added",
+    "change": "Change",
+    "requiredNote": "Required for current staff. It's separate from your sign-in / notification email and isn't used for either."
   }
 }

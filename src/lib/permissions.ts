@@ -4,6 +4,7 @@ import {
   PositionKey,
   RoleKey,
 } from "@/generated/prisma/enums";
+import { type AudienceSpec, isEveryone } from "@/lib/news-audience";
 
 /**
  * Positions and the permissions they grant (pure; unit-tested).
@@ -15,6 +16,10 @@ import {
  *   (`cohortId`), i.e. students who selected that class.
  * - TEACHER_REGISTRAR (any member the admins choose): may mark members as
  *   current teachers (現職) or move them to former.
+ *
+ * ニュース posts (newsScope): admins may post to anyone; current teachers to
+ * any audience, which always includes current teachers; STUDENT_LEADER to
+ * their own 学年 only.
  */
 
 export type Holder = {
@@ -111,6 +116,57 @@ export function withinLimit(
   );
 }
 
+/** Who a member may send ニュース posts to (null = may not post). */
+export type NewsScope =
+  | { kind: "ANY" }
+  | { kind: "TEACHER" }
+  | { kind: "COHORT"; cohortIds: readonly string[] };
+
+export function newsScope(h: Holder): NewsScope | null {
+  if (h.state !== AccountState.ACTIVE) return null;
+  if (h.isAdmin) return { kind: "ANY" };
+  if (h.currentTeacher && h.roles.includes(RoleKey.TEACHER))
+    return { kind: "TEACHER" };
+  const cohortIds = [
+    ...new Set(
+      h.positions
+        .filter(
+          (p) =>
+            p.position === PositionKey.STUDENT_LEADER &&
+            p.cohortId !== null &&
+            positionEligible(p.position, h.roles, h.currentTeacher),
+        )
+        .map((p) => p.cohortId as string),
+    ),
+  ];
+  return cohortIds.length ? { kind: "COHORT", cohortIds } : null;
+}
+
+/**
+ * The audience a post is saved with under the author's scope, or null if the
+ * scope doesn't allow it. Teachers' posts always reach current teachers
+ * (「全員」 already does); 学年代表 may pick only their own 学年.
+ */
+export function scopedAudience(
+  scope: NewsScope,
+  spec: AudienceSpec,
+): AudienceSpec | null {
+  if (scope.kind === "ANY") return spec;
+  if (scope.kind === "TEACHER")
+    return isEveryone(spec) || spec.groups.includes("TEACHER_CURRENT")
+      ? spec
+      : { ...spec, groups: [...spec.groups, "TEACHER_CURRENT"] };
+  if (
+    spec.groups.length ||
+    spec.userIds.length ||
+    spec.includeParents ||
+    !spec.cohortIds.length ||
+    spec.cohortIds.some((c) => !scope.cohortIds.includes(c))
+  )
+    return null;
+  return spec;
+}
+
 /** What a member may open in admin mode. */
 export type StaffAccess = {
   /** the full committee admin area */
@@ -119,6 +175,8 @@ export type StaffAccess = {
   broadcast: boolean;
   /** the current-teachers page */
   teachers: boolean;
+  /** ニュース: all posts (admins) or the member's own */
+  news: boolean;
 };
 
 export function staffAccess(h: Holder): StaffAccess {
@@ -130,10 +188,11 @@ export function staffAccess(h: Holder): StaffAccess {
       active &&
       (h.isAdmin ||
         h.positions.some((p) => p.position === PositionKey.TEACHER_REGISTRAR)),
+    news: newsScope(h) !== null,
   };
 }
 
 /** Whether the member sees the admin-mode switch at all. */
 export function hasStaffAccess(a: StaffAccess): boolean {
-  return a.admin || a.broadcast || a.teachers;
+  return a.admin || a.broadcast || a.teachers || a.news;
 }

@@ -27,7 +27,7 @@ import { localized, toJstLocalInput } from "@/lib/format";
 import { newsStatus } from "@/lib/news";
 import { specFromPost } from "@/lib/news-audience";
 import { hubFormValues } from "@/lib/news-hub-db";
-import { requireAdmin } from "@/lib/session";
+import { requireNewsAuthor } from "@/lib/session";
 import { isBlobConfigured, signedFileUrl } from "@/lib/storage";
 
 export async function generateMetadata({
@@ -45,10 +45,11 @@ export default async function AdminNewsEditPage({
   const { id, locale: rawLocale } = await params;
   const locale = asLocale(rawLocale);
   const sp = await searchParams;
-  await requireAdmin();
+  const { user, scope } = await requireNewsAuthor();
   if (id.length > 64) notFound();
   const post = await db.newsPost.findUnique({ where: { id } });
-  if (!post) notFound();
+  // Teachers and 学年代表 manage only their own posts.
+  if (!post || (!user.isAdmin && post.createdById !== user.id)) notFound();
   const t = await getTranslations("adminContent");
   const status = newsStatus(post);
   const audience = specFromPost(post);
@@ -208,6 +209,7 @@ export default async function AdminNewsEditPage({
               }}
               useBlob={isBlobConfigured()}
               cohorts={cohorts}
+              scope={scope}
               deleteAction={{
                 action: deleteNewsAction,
                 message: t("news.deleteConfirm"),

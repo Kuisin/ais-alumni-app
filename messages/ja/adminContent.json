@@ -148,7 +148,8 @@
     "notifyOn": "LINE・メールで通知",
     "notifyOff": "アプリ内のみ",
     "pinned": "固定表示",
-    "files": "添付ファイル {count}件"
+    "files": "添付ファイル {count}件",
+    "descriptionOwn": "自分が作成したニュースです。管理者はすべてのニュースを見られます。"
   },
   "notify": {
     "title": "公開して通知",
@@ -256,7 +257,10 @@
     "membersSelected": "{count}人を選択中",
     "summaryCohorts": "学年 {count}",
     "summaryParents": "保護者含む",
-    "summaryUsers": "個別 {count}人"
+    "summaryUsers": "個別 {count}人",
+    "ownCohortLegend": "自分の学年",
+    "ownCohortHint": "学年代表として、自分の学年の在校生・卒業生にニュースを送れます。",
+    "teachersAlways": "送ったニュースは、現職の教職員にも必ず届きます。"
   },
   "staff": {
     "title": "受付スタッフ",

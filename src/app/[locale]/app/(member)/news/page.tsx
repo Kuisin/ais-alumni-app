@@ -8,6 +8,7 @@ import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
 import { Link } from "@/i18n/navigation";
 import { listMessages, readNewsIds, unreadCounts } from "@/lib/announcements";
+import { getNewsScope } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { MESSAGES_ENABLED } from "@/lib/features";
@@ -34,7 +35,10 @@ export default async function NewsPage({
   const tab = MESSAGES_ENABLED && sp.tab === "messages" ? "messages" : "news";
   const user = await requireActive();
   const t = await getTranslations("news");
-  const unread = await unreadCounts(user);
+  const [unread, newsScope] = await Promise.all([
+    unreadCounts(user),
+    getNewsScope(user),
+  ]);
 
   return (
     <>
@@ -42,7 +46,7 @@ export default async function NewsPage({
         title={t("title")}
         description={t("description")}
         actions={
-          user.isAdmin ? (
+          newsScope ? (
             <Link href="/app/news/new" className={buttonClass("primary")}>
               <Plus aria-hidden="true" className="size-4" />
               {t("create")}

@@ -15,7 +15,7 @@ import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
 import { newsStatus } from "@/lib/news";
 import { specFromPost } from "@/lib/news-audience";
-import { requireAdmin } from "@/lib/session";
+import { requireNewsAuthor } from "@/lib/session";
 
 export async function generateMetadata({
   params,
@@ -34,16 +34,18 @@ export default async function AdminNewsPage({
   const locale = asLocale((await params).locale);
   const sp = await searchParams;
   const page = parsePage(sp.page);
-  await requireAdmin();
+  const { user } = await requireNewsAuthor();
   const t = await getTranslations("adminContent");
 
+  // Admins see every post; teachers and 学年代表 only their own.
+  const mine = user.isAdmin ? {} : { createdById: user.id };
   const archived = sp.archived === "1";
   const archivedCount = await db.newsPost.count({
-    where: { archivedAt: { not: null } },
+    where: { ...mine, archivedAt: { not: null } },
   });
   // Drafts (publishedAt null) first, then newest publish date.
   const rows = await db.newsPost.findMany({
-    where: { archivedAt: archived ? { not: null } : null },
+    where: { ...mine, archivedAt: archived ? { not: null } : null },
     orderBy: [
       { publishedAt: { sort: "desc", nulls: "first" } },
       { createdAt: "desc" },
@@ -73,7 +75,9 @@ export default async function AdminNewsPage({
     <>
       <PageHeader
         title={t("news.title")}
-        description={t("news.description")}
+        description={
+          user.isAdmin ? t("news.description") : t("news.descriptionOwn")
+        }
         actions={
           <Link href="/app/news/new" className={buttonClass("primary")}>
             <Plus aria-hidden="true" className="size-4" />

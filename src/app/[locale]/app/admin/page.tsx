@@ -12,6 +12,8 @@ export default async function AdminIndexPage({
     ? "/app/admin/verification"
     : a.teachers
       ? "/app/admin/teachers"
-      : "/app/admin/notify";
+      : a.broadcast
+        ? "/app/admin/notify"
+        : "/app/admin/news";
   redirect({ href, locale });
 }

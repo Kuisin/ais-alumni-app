@@ -24,12 +24,14 @@ import {
   scheduleInputSchema,
 } from "@/lib/news-hub";
 import { checkNewAttachments, type HubInput, saveHub } from "@/lib/news-hub-db";
-import { actionAdmin } from "@/lib/session";
+import { scopedAudience } from "@/lib/permissions";
+import { AuthError, actionAdmin, actionNewsAuthor } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
 /**
  * Admin editors for events and news (§10.3, §10.4). Every action re-checks
- * admin rights with actionAdmin() and every mutation is audited.
+ * rights (actionAdmin(), or newsEditor() for ニュース, which current
+ * teachers and 学年代表 may also post) and every mutation is audited.
  */
 
 export type AdminFormState = {
@@ -74,6 +76,26 @@ async function adminOrNull() {
   } catch {
     return null;
   }
+}
+
+/**
+ * A ニュース author allowed to change post `id` (or create one without an
+ * id): admins may change any post, other authors only their own.
+ */
+async function newsEditorOrNull(id?: string) {
+  const a = await actionNewsAuthor().catch(() => null);
+  if (!a || !id || a.user.isAdmin) return a;
+  const post = await db.newsPost.findUnique({
+    where: { id },
+    select: { createdById: true },
+  });
+  return post?.createdById === a.user.id ? a : null;
+}
+
+async function newsEditor(id: string) {
+  const a = await newsEditorOrNull(id);
+  if (!a) throw new AuthError("forbidden");
+  return a;
 }
 
 async function go(href: string): Promise<never> {
@@ -348,10 +370,12 @@ export async function saveNewsAction(
   _prev: AdminFormState,
   fd: FormData,
 ): Promise<AdminFormState> {
-  const admin = await adminOrNull();
-  if (!admin) return { error: "forbidden" };
-
   const id = str(fd, "id") || null;
+  if (id && !Id.safeParse(id).success) return { error: "notFound" };
+  const editor = await newsEditorOrNull(id ?? undefined);
+  if (!editor) return { error: "forbidden" };
+  const admin = editor.user;
+
   const parsed = NewsSchema.safeParse({
     titleJa: str(fd, "titleJa"),
     titleEn: str(fd, "titleEn"),
@@ -389,7 +413,13 @@ export async function saveNewsAction(
   };
   if (!(await checkNewAttachments(hub.attachments)))
     return { error: "validation", fieldErrors: { attachments: "invalid" } };
-  const { delivery, sendAt, audience, ...rest } = parsed.data;
+  const { delivery, sendAt, ...rest } = parsed.data;
+  const audience = scopedAudience(editor.scope, parsed.data.audience);
+  if (!audience)
+    return {
+      error: "validation",
+      fieldErrors: { audience: "invalidAudience" },
+    };
   const publishedAt =
     delivery === "NOW"
       ? new Date()
@@ -423,7 +453,6 @@ export async function saveNewsAction(
 
   let existing: { coverUrl: string | null } | null = null;
   if (id) {
-    if (!Id.safeParse(id).success) return { error: "notFound" };
     existing = await db.newsPost.findUnique({
       where: { id },
       select: { coverUrl: true },
@@ -489,8 +518,8 @@ export async function saveNewsAction(
 }
 
 export async function deleteNewsAction(fd: FormData): Promise<void> {
-  const admin = await actionAdmin();
   const id = Id.parse(str(fd, "id"));
+  const { user: admin } = await newsEditor(id);
   const post = await db.newsPost.findUnique({
     where: { id },
     select: {
@@ -519,8 +548,8 @@ export async function deleteNewsAction(fd: FormData): Promise<void> {
 
 /** Archive a news post (hidden from members, never notified) or restore it. */
 export async function setNewsArchivedAction(fd: FormData): Promise<void> {
-  const admin = await actionAdmin();
   const id = Id.parse(str(fd, "id"));
+  const { user: admin } = await newsEditor(id);
   const archive = str(fd, "archive") === "1";
   await db.newsPost.update({
     where: { id },
@@ -538,8 +567,8 @@ export async function setNewsArchivedAction(fd: FormData): Promise<void> {
  * draft or scheduled, then notifies targeted ACTIVE members once.
  */
 export async function notifyNewsAction(fd: FormData): Promise<void> {
-  const admin = await actionAdmin();
   const id = Id.parse(str(fd, "id"));
+  const { user: admin } = await newsEditor(id);
   const post = await db.newsPost.findUnique({
     where: { id },
     select: { publishedAt: true, notifiedAt: true },
@@ -573,12 +602,15 @@ export async function notifyNewsAction(fd: FormData): Promise<void> {
 export async function previewNewsAudienceAction(
   spec: unknown,
 ): Promise<{ count: number } | null> {
-  const admin = await adminOrNull();
-  if (!admin) return null;
+  const editor = await newsEditorOrNull();
+  if (!editor) return null;
   const parsed = audienceSpecSchema.safeParse(spec);
   if (!parsed.success) return null;
+  // Counted as saved (a teacher's post also reaches current teachers).
+  const audience = scopedAudience(editor.scope, parsed.data);
+  if (!audience) return null;
   const count = await db.user.count({
-    where: { state: "ACTIVE", ...audienceUserWhere(parsed.data) },
+    where: { state: "ACTIVE", ...audienceUserWhere(audience) },
   });
   return { count };
 }
@@ -587,8 +619,9 @@ export async function previewNewsAudienceAction(
 export async function searchAudienceMembersAction(
   q: string,
 ): Promise<{ id: string; name: string; kanji: string | null }[]> {
-  const admin = await adminOrNull();
-  if (!admin) return [];
+  // 学年代表 can't choose individual members.
+  const editor = await newsEditorOrNull();
+  if (!editor || editor.scope.kind === "COHORT") return [];
   const term = String(q ?? "")
     .trim()
     .slice(0, 60);
@@ -631,8 +664,8 @@ export async function setEventRsvpClosedAction(fd: FormData): Promise<void> {
 
 /** Close answers to a ニュース post early (or reopen them). */
 export async function setNewsClosedAction(fd: FormData): Promise<void> {
-  const admin = await actionAdmin();
   const id = Id.parse(str(fd, "id"));
+  const { user: admin } = await newsEditor(id);
   const close = str(fd, "close") === "1";
   await db.newsPost.update({
     where: { id },

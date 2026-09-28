@@ -148,7 +148,8 @@
     "notifyOn": "Notified by LINE and email",
     "notifyOff": "In the app only",
     "pinned": "Pinned",
-    "files": "{count, plural, one {# attachment} other {# attachments}}"
+    "files": "{count, plural, one {# attachment} other {# attachments}}",
+    "descriptionOwn": "News posts you have written. Admins can see every post."
   },
   "notify": {
     "title": "Publish & notify",
@@ -256,7 +257,10 @@
     "membersSelected": "{count, plural, one {# member} other {# members}} selected",
     "summaryCohorts": "{count, plural, one {# class} other {# classes}}",
     "summaryParents": "incl. parents",
-    "summaryUsers": "{count, plural, one {# member} other {# members}}"
+    "summaryUsers": "{count, plural, one {# member} other {# members}}",
+    "ownCohortLegend": "Your 学年",
+    "ownCohortHint": "As 学年代表 you can send news to the students and former students of your own 学年.",
+    "teachersAlways": "Current teachers always receive the news you send."
   },
   "staff": {
     "title": "Check-in staff",

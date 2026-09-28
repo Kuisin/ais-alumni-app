@@ -4,7 +4,7 @@ import { BackLink } from "@/components/ui/back-link";
 import { PageHeader } from "@/components/ui/card";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { asLocale } from "@/lib/events";
-import { requireAdmin } from "@/lib/session";
+import { requireNewsAuthor } from "@/lib/session";
 import { isBlobConfigured } from "@/lib/storage";
 
 export async function generateMetadata({
@@ -19,8 +19,8 @@ export default async function NewNewsPage({
   params,
 }: PageProps<"/[locale]/app/news/new">) {
   const locale = asLocale((await params).locale);
-  // Posting news is an admin right; the page lives in the main app.
-  await requireAdmin();
+  // Admins, current teachers and 学年代表 (own 学年 only) may post.
+  const { scope } = await requireNewsAuthor();
   const t = await getTranslations("news");
   const cohorts = await loadCohortOptions(locale);
   return (
@@ -32,6 +32,7 @@ export default async function NewNewsPage({
       <NewsForm
         values={EMPTY_NEWS}
         cohorts={cohorts}
+        scope={scope}
         cancelHref="/app/news"
         useBlob={isBlobConfigured()}
       />

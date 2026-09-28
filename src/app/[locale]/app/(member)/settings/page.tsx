@@ -94,9 +94,10 @@ export default async function SettingsPage({
   if (one(sp.saved) === "language") banners.push(t("banner.languageSaved"));
 
   const access = await getStaffAccess(user);
-  const staffKeys = (["admin", "broadcast", "teachers"] as const).filter(
-    (k) => access[k],
-  );
+  // Committee admins' access already covers news.
+  const staffKeys = (
+    ["admin", "broadcast", "teachers", "news"] as const
+  ).filter((k) => access[k] && !(k === "news" && access.admin));
 
   const nav = [
     ["language", t("language.title")],

@@ -236,7 +236,12 @@ export async function AppShell({
     },
   ];
 
-  const a = access ?? { admin: false, broadcast: false, teachers: false };
+  const a = access ?? {
+    admin: false,
+    broadcast: false,
+    teachers: false,
+    news: false,
+  };
   const adminGroups: NavGroup[] = [
     {
       label: t("adminGroups.review"),
@@ -313,17 +318,21 @@ export async function AppShell({
               },
             ]
           : []),
+        ...(a.news
+          ? [
+              {
+                href: "/app/admin/news",
+                label: t("adminNav.news"),
+                icon: <Newspaper className={ICON} />,
+              },
+            ]
+          : []),
         ...(a.admin
           ? [
               {
                 href: "/app/admin/events",
                 label: t("adminNav.events"),
                 icon: <CalendarDays className={ICON} />,
-              },
-              {
-                href: "/app/admin/news",
-                label: t("adminNav.news"),
-                icon: <Newspaper className={ICON} />,
               },
               {
                 href: "/app/admin/line",

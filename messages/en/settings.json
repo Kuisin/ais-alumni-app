@@ -154,7 +154,8 @@
     "access": {
       "admin": "Committee admin (verification, members, events, news, stats and more)",
       "broadcast": "Send notifications",
-      "teachers": "Add or remove current teachers"
+      "teachers": "Add or remove current teachers",
+      "news": "Post news"
     },
     "button": "Switch to admin mode"
   },

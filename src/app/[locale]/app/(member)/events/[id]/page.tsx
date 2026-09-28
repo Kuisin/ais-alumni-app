@@ -12,6 +12,7 @@ import { Alert, Card } from "@/components/ui/card";
 import { ViewEdit } from "@/components/ui/view-edit";
 import { RsvpAnswer } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
+import { awaitingApproval } from "@/lib/approval";
 import { db } from "@/lib/db";
 import { canCheckIn } from "@/lib/event-staff";
 import { checkInPath } from "@/lib/event-tickets";
@@ -24,6 +25,7 @@ import {
 } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
 import { inAudience } from "@/lib/news-visibility";
+import { senderLabel } from "@/lib/sender";
 import { getCurrentUser, requireActive } from "@/lib/session";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -34,7 +36,8 @@ const loadEvent = cache(async (id: string) => {
   const user = await getCurrentUser();
   if (!user || id.length > 64) return null;
   const event = await db.event.findUnique({ where: { id } });
-  if (!event || !(await inAudience(user, event))) return null;
+  if (!event || awaitingApproval(event) || !(await inAudience(user, event)))
+    return null;
   return event;
 });
 
@@ -141,6 +144,10 @@ export default async function EventDetailPage({
               ) : null}
               <span className="ml-1 text-slate-500">{t("jst")}</span>
             </dd>
+          </div>
+          <div className="sm:contents">
+            <dt className="font-medium text-slate-600">{t("organizer")}</dt>
+            <dd>{await senderLabel(event, locale)}</dd>
           </div>
           {event.location || map ? (
             <div className="sm:contents">

@@ -14,6 +14,7 @@ import { useCloseOnSave } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
 import type { CohortOption } from "@/lib/cohorts";
 import { type AudienceSpec, EVERYONE } from "@/lib/news-audience";
+import type { NewsScope } from "@/lib/permissions";
 import { type AudienceMember, AudiencePicker } from "../news/audience-picker";
 import { ConfirmDeleteForm, DeleteButton } from "./confirm-delete";
 import { useFormAction } from "./use-form-action";
@@ -125,8 +126,11 @@ export function EventForm({
   cohorts,
   cancelHref,
   deleteAction,
+  scope = { kind: "ANY" },
 }: {
   values: EventFormValues;
+  /** who the author may invite (same rules as ニュース; admins: anyone) */
+  scope?: NewsScope;
   /** 学年 offered in the audience picker */
   cohorts: readonly CohortOption[];
   /** shows a cancel link in the action bar (from `sm`; phones use the back link) */
@@ -163,6 +167,9 @@ export function EventForm({
           </Alert>
         ) : null}
         {state.ok ? <Alert tone="success">{tc("saved")}</Alert> : null}
+        {scope.kind === "COMMITTEE" ? (
+          <Alert tone="info">{t("approval.formHint")}</Alert>
+        ) : null}
 
         <FormSection
           icon={<Type />}
@@ -338,6 +345,7 @@ export function EventForm({
           </div>
           <AudiencePicker
             cohorts={cohorts}
+            scope={scope}
             initialSpec={values.audience}
             initialMembers={values.audienceMembers}
             error={err("audience")}
@@ -359,9 +367,11 @@ export function EventForm({
           >
             {pending
               ? tc("saving")
-              : values.id
-                ? tc("save")
-                : t("events.create")}
+              : scope.kind === "COMMITTEE"
+                ? t("approval.submit")
+                : values.id
+                  ? tc("save")
+                  : t("events.create")}
           </Button>
           {cancelHref ? <CancelLink href={cancelHref} /> : null}
         </StickyActions>

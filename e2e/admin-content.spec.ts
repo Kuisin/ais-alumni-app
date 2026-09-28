@@ -4,7 +4,7 @@ import { signInWithEmail } from "./helpers";
 test("admin creates, edits and deletes an event", async ({ page }) => {
   const title = `E2E event ${Date.now()}`;
   await signInWithEmail(page, "admin@example.com");
-  await page.goto("/en/app/admin/events/new");
+  await page.goto("/en/app/events/new");
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel(/^Start/).fill("2030-05-01T18:00");
   await page.getByRole("radio", { name: /^Choose conditions/ }).check();
@@ -126,7 +126,7 @@ test("events use the ニュース audience conditions", async ({ browser }) => {
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
   const create = async (title: string, audience: RegExp) => {
-    await admin.goto("/en/app/admin/events/new");
+    await admin.goto("/en/app/events/new");
     await admin.getByLabel("Title (Japanese)").fill(title);
     await admin.getByLabel(/^Start/).fill("2030-06-01T18:00");
     await admin.getByRole("radio", { name: /^Choose conditions/ }).check();

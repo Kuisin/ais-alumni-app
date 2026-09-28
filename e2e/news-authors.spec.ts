@@ -116,7 +116,9 @@ test("members without a posting right see no New post button", async ({
   );
   await signInWithEmail(page, member.email);
   await page.goto("/en/app/news");
-  await expect(page.getByRole("heading", { name: "News" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "News", exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole("link", { name: "New post" })).toHaveCount(0);
   await page.goto("/en/app/news/new");
   await expect(page).toHaveURL(/\/en\/app\/news$/);
@@ -156,7 +158,9 @@ test("同窓会委員 post to anyone once another 同窓会委員 approves", asy
   const r = await browser.newPage();
   await signInWithEmail(r, reader.email);
   await r.goto("/en/app/news");
-  await expect(r.getByRole("heading", { name: "News" })).toBeVisible();
+  await expect(
+    r.getByRole("heading", { name: "News", exact: true }),
+  ).toBeVisible();
   await expect(r.getByText(title)).toHaveCount(0);
 
   // Another 同窓会委員 finds it in admin mode and approves it.
@@ -172,7 +176,7 @@ test("同窓会委員 post to anyone once another 同窓会委員 approves", asy
     p.getByRole("button", { name: "Edit", exact: true }),
   ).toHaveCount(0);
   await p.getByRole("button", { name: "Approve" }).click();
-  await expect(p.getByText("Post approved.")).toBeVisible();
+  await expect(p.getByText("Approved.", { exact: true })).toBeVisible();
   await expect(p.getByText(/^Approved by /)).toBeVisible();
 
   await r.reload();
@@ -180,7 +184,10 @@ test("同窓会委員 post to anyone once another 同窓会委員 approves", asy
   await expect(card).toBeVisible();
   await expect(card.getByText("From: Alumni committee member")).toBeVisible();
   await card.click();
-  await expect(r.getByText("From: Alumni committee member")).toBeVisible();
+  await expect(r).toHaveURL(/\/en\/app\/news\/[^/?]+$/);
+  await expect(
+    r.getByRole("article").getByText("From: Alumni committee member"),
+  ).toBeVisible();
   await expect(r.getByText(/Author A\d+|A\d+, Author/)).toHaveCount(0);
   await r.goto("/en/app/news");
 
@@ -191,6 +198,8 @@ test("同窓会委員 post to anyone once another 同窓会委員 approves", asy
   await a.getByRole("button", { name: "Save and request approval" }).click();
   await expect(a.getByText(/Waiting for another 同窓会委員/)).toBeVisible();
   await r.reload();
-  await expect(r.getByRole("heading", { name: "News" })).toBeVisible();
+  await expect(
+    r.getByRole("heading", { name: "News", exact: true }),
+  ).toBeVisible();
   await expect(r.getByText(title)).toHaveCount(0);
 });

@@ -13,6 +13,7 @@ import {
 } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { readNewsIds, unreadCounts } from "@/lib/announcements";
+import { eventApprovedWhere } from "@/lib/approval";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
@@ -48,6 +49,7 @@ export default async function DashboardPage({
         .findMany({
           where: {
             OR: [{ startsAt: { gte: now } }, { endsAt: { gte: now } }],
+            AND: [eventApprovedWhere],
           },
           orderBy: { startsAt: "asc" },
           take: 200,
@@ -60,6 +62,7 @@ export default async function DashboardPage({
             titleEn: true,
             startsAt: true,
             location: true,
+            senderRole: true,
             rsvps: { where: { userId: user.id }, select: { answer: true } },
           },
         })
@@ -136,7 +139,7 @@ export default async function DashboardPage({
       news.map((p) => p.id),
     ),
     awaitingResponse(user.id, news),
-    senderLabels(news, locale),
+    senderLabels([...news, ...events], locale),
   ]);
 
   const setup = await loadSetupChecklist(user);
@@ -225,6 +228,7 @@ export default async function DashboardPage({
                   <EventCard
                     event={{ ...e, myAnswer: e.rsvps[0]?.answer ?? null }}
                     locale={locale}
+                    sender={senders.get(e.id)}
                   />
                 </li>
               ))}

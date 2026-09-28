@@ -8,7 +8,7 @@ import { canCheckIn } from "@/lib/event-staff";
 import { tokenFromScan, verifyTicket } from "@/lib/event-tickets";
 import { toKatakana } from "@/lib/names";
 import { inAudience } from "@/lib/news-visibility";
-import { actionActive, actionAdmin } from "@/lib/session";
+import { actionActive } from "@/lib/session";
 
 export type CheckInResult =
   | {
@@ -188,15 +188,25 @@ export async function searchCheckInAction(
   return out;
 }
 
-/** Admins assign (or remove) members who may run check-in at an event. */
+/**
+ * Admins and the event's author assign (or remove) members who may run
+ * check-in at an event.
+ */
 export async function setEventStaffAction(
   eventId: string,
   userId: string,
   on: boolean,
 ): Promise<{ ok: boolean }> {
-  const admin = await actionAdmin().catch(() => null);
+  const admin = await actionActive().catch(() => null);
   if (!admin || typeof eventId !== "string" || typeof userId !== "string")
     return { ok: false };
+  if (!admin.isAdmin) {
+    const event = await db.event.findUnique({
+      where: { id: eventId },
+      select: { createdById: true },
+    });
+    if (event?.createdById !== admin.id) return { ok: false };
+  }
   if (on) {
     const member = await db.user.findUnique({
       where: { id: userId },

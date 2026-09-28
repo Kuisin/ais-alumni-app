@@ -4,13 +4,13 @@ import { db } from "@/lib/db";
 import { toCsv } from "@/lib/events";
 import { getCurrentUser } from "@/lib/session";
 
-/** Attendee list as CSV for Excel (UTF-8 with BOM), admin only (§10.3). */
+/** Attendee list as CSV for Excel (UTF-8 with BOM), admins and the author (§10.3). */
 export async function GET(
   _request: Request,
   ctx: RouteContext<"/api/admin/events/[id]/csv">,
 ) {
   const user = await getCurrentUser();
-  if (!user || user.state !== AccountState.ACTIVE || !user.isAdmin) {
+  if (!user || user.state !== AccountState.ACTIVE) {
     return new Response("Forbidden", { status: 403 });
   }
   const { id } = await ctx.params;
@@ -20,6 +20,7 @@ export async function GET(
     where: { id },
     select: {
       id: true,
+      createdById: true,
       startsAt: true,
       rsvps: {
         orderBy: [{ answer: "asc" }, { updatedAt: "asc" }],
@@ -37,6 +38,9 @@ export async function GET(
     },
   });
   if (!event) return new Response("Not found", { status: 404 });
+  // Admins, or the author of the event (teacher / 同窓会委員 / 学年代表).
+  if (!user.isAdmin && event.createdById !== user.id)
+    return new Response("Forbidden", { status: 403 });
 
   const checkedIn = new Map(
     event.checkIns.map((c) => [c.userId, c.checkedInAt]),

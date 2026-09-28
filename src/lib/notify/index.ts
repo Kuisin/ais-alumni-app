@@ -17,7 +17,12 @@ import {
   type RenderedNotification,
   renderNotification,
 } from "./render";
-import { type Channel, channelsFor, type RoutableUser } from "./route";
+import {
+  type Channel,
+  channelsFor,
+  deliverWithFallback,
+  type RoutableUser,
+} from "./route";
 
 const LOCALES: Locale[] = ["ja", "en"];
 
@@ -158,9 +163,12 @@ export async function notifyMany(
         url = linkUrl(link.token);
       }
     }
-    const sent: Channel[] = [];
-    for (const ch of channels) {
-      try {
+    // A failed LINE push (e.g. the month's allowance is used up) falls
+    // back to email.
+    const sent = await deliverWithFallback(
+      channels,
+      Boolean(u.primaryEmail),
+      async (ch) => {
         if (ch === "LINE" && u.lineUserId) {
           await linePush(u.lineUserId, [
             { type: "text", text: lineText(rendered, url) },
@@ -175,11 +183,9 @@ export async function notifyMany(
           });
           await sendEmail({ to: u.primaryEmail, ...mail });
         }
-        sent.push(ch);
-      } catch (e) {
-        console.error(`[notify] ${ch} to ${u.id} failed`, e);
-      }
-    }
+      },
+      (ch, e) => console.error(`[notify] ${ch} to ${u.id} failed`, e),
+    );
     for (const ch of sent) logs.push({ userId: u.id, channel: ch });
     if (link && sent.length)
       receipts.push({ linkId: link.id, userId: u.id, channels: sent });

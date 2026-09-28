@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { LineUsageCard } from "@/components/admin/line-usage-card";
 import { RichMenuInstall } from "@/components/admin/rich-menu-install";
 import { Alert, Badge, Card, PageHeader } from "@/components/ui/card";
 import { RICH_MENU_ITEMS, richMenuStatus } from "@/lib/line-richmenu";
@@ -30,6 +31,7 @@ export default async function AdminLinePage() {
       {!status.configured ? (
         <Alert tone="warning">{t("errors.notConfigured")}</Alert>
       ) : null}
+      <LineUsageCard />
       <Card className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold">{t("status")}</h2>

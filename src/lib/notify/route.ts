@@ -39,3 +39,31 @@ export function channelsFor(
   if (opts.alwaysEmail && user.primaryEmail) out.add("EMAIL");
   return [...out];
 }
+
+/**
+ * Send on each channel in turn. When LINE fails — for example once the
+ * month's LINE message allowance is used up — and email wasn't already
+ * routed, fall back to email so the member still gets the notification.
+ * Returns the channels that were sent.
+ */
+export async function deliverWithFallback(
+  channels: readonly Channel[],
+  canEmail: boolean,
+  send: (channel: Channel) => Promise<void>,
+  onError: (channel: Channel, error: unknown) => void,
+): Promise<Channel[]> {
+  const queue = [...channels];
+  const sent: Channel[] = [];
+  for (let i = 0; i < queue.length; i++) {
+    const channel = queue[i];
+    try {
+      await send(channel);
+      sent.push(channel);
+    } catch (e) {
+      onError(channel, e);
+      if (channel === "LINE" && canEmail && !queue.includes("EMAIL"))
+        queue.push("EMAIL");
+    }
+  }
+  return sent;
+}

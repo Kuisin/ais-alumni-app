@@ -17,6 +17,7 @@ const SECTIONS = [
   "purpose",
   "visibility",
   "line",
+  "analytics",
   "evidence",
   "retention",
   "rights",

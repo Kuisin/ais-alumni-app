@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { VercelInsights } from "@/components/layout/vercel-insights";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
@@ -57,6 +58,8 @@ export default async function LocaleLayout({
           {t("skipToContent")}
         </a>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        {/* Production only: dev (ais-dev) shares the free event allowance. */}
+        {process.env.VERCEL_ENV === "production" ? <VercelInsights /> : null}
       </body>
     </html>
   );

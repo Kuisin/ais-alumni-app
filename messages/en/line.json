@@ -105,5 +105,17 @@
       },
       "installConfirm": "This changes the menu for every LINE friend. Continue?"
     }
+  },
+  "usage": {
+    "title": "LINE messages this month",
+    "ofLimit": "of {limit} (this month's limit)",
+    "noLimit": "(no limit set)",
+    "remaining": "{count} left",
+    "nearLimit": "This month's limit is close. Anything over it can't go by LINE and is sent by email instead.",
+    "unavailable": "Couldn't get the count from LINE (the Messaging API isn't set up, or a temporary error).",
+    "byCategory": "Sent by this app, by kind ({count})",
+    "other": "Other",
+    "none": "Nothing sent by LINE yet this month.",
+    "hint": "LINE counts each message once per person who receives it. Replies aren't counted. The count resets on the 1st of each month (Japan time)."
   }
 }

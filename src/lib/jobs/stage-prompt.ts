@@ -2,25 +2,19 @@ import type { LifeStage } from "@/generated/prisma/enums";
 import { AccountState, RoleKey } from "@/generated/prisma/enums";
 import { getTranslatorFor } from "@/i18n/translator";
 import { jstYear } from "@/lib/account";
-import { isAuthorizedCron } from "@/lib/cron";
 import { db } from "@/lib/db";
 import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
-
-export const maxDuration = 300;
 
 const BATCH = 500;
 
 /**
- * Yearly "are your schools & work up to date?" prompt (§7), April 1 09:00 JST.
- * Every ACTIVE user with a FORMER_STUDENT role gets one notification per
- * year (kind STAGE_PROMPT, refId = year, deduped so reruns are safe).
- * Recipients are grouped by current stage because the text names the stage.
+ * Yearly "are your schools & work up to date?" prompt (§7). Every ACTIVE
+ * user with a FORMER_STUDENT role gets one notification per year (kind
+ * STAGE_PROMPT, refId = year, deduped so reruns are safe). Recipients are
+ * grouped by current stage because the text names the stage.
  */
-export async function GET(request: Request) {
-  if (!isAuthorizedCron(request))
-    return new Response("Unauthorized", { status: 401 });
-
-  const year = String(jstYear(new Date()));
+export async function sendStagePrompt(now: Date) {
+  const year = String(jstYear(now));
   let cursor: string | undefined;
   let recipients = 0;
   let sent = 0;
@@ -71,11 +65,10 @@ export async function GET(request: Request) {
       } catch (e) {
         // Keep going: other groups/batches should still be prompted; dedupe
         // makes a manual rerun safe.
-        console.error(`[cron:stage-prompt] batch failed (stage=${stage})`, e);
+        console.error(`[jobs/stage-prompt] batch failed (stage=${stage})`, e);
       }
     }
     if (users.length < BATCH) break;
   }
-
-  return Response.json({ ok: true, year, recipients, sent });
+  return { year, recipients, sent };
 }

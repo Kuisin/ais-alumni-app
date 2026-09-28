@@ -1,18 +1,14 @@
-import { isAuthorizedCron } from "@/lib/cron";
 import { db } from "@/lib/db";
 import { deletePrivate } from "@/lib/storage";
 
 /**
- * Daily: delete verification evidence 30 days after the decision (§6.3).
- * A row is removed only after its storage object is deleted, so a failed
- * delete is retried on the next run.
+ * Delete verification evidence 30 days after the decision (§6.3). A row is
+ * removed only after its storage object is deleted, so a failed delete is
+ * retried on the next run.
  */
-export async function GET(request: Request): Promise<Response> {
-  if (!isAuthorizedCron(request))
-    return new Response("Unauthorized", { status: 401 });
-
+export async function cleanupEvidence(now: Date) {
   const due = await db.verificationEvidence.findMany({
-    where: { deleteAfter: { lt: new Date() } },
+    where: { deleteAfter: { lt: now } },
     select: { id: true, storageKey: true },
     take: 1000,
   });
@@ -25,7 +21,7 @@ export async function GET(request: Request): Promise<Response> {
       deletedIds.push(row.id);
     } catch (e) {
       failed++;
-      console.error(`[cron:cleanup-evidence] ${row.storageKey}`, e);
+      console.error(`[jobs/cleanup-evidence] ${row.storageKey}`, e);
     }
   }
   const { count } = deletedIds.length
@@ -34,10 +30,10 @@ export async function GET(request: Request): Promise<Response> {
       })
     : { count: 0 };
 
-  return Response.json({
+  return {
     due: due.length,
     objectsDeleted: deletedIds.length,
     rowsDeleted: count,
     failed,
-  });
+  };
 }

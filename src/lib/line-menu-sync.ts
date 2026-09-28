@@ -22,7 +22,7 @@ import type { CurrentUser } from "@/lib/session";
 /**
  * Keeps each LINE friend's rich menu in step with what they have unread: a
  * red dot on the chat and news buttons (line-richmenu.ts variants). Run every
- * minute by Supabase pg_cron (/api/cron/line-menus) and right away when a
+ * minute (src/lib/jobs, "line-menus") and right away when a
  * member links LINE, follows the account or changes language. The variant
  * last linked is stored (User.lineMenu), so LINE is only called when it
  * changes. Linking menus is free (not a message).

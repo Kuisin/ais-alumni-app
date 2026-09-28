@@ -42,6 +42,7 @@ import { unreadCounts } from "@/lib/announcements";
 import { getStaffAccess } from "@/lib/broadcasts";
 import { chatUnreadTotal } from "@/lib/chat-db";
 import { db } from "@/lib/db";
+import { isEmbedded } from "@/lib/embed";
 import { displayName } from "@/lib/format";
 import { hasStaffAccess, type StaffAccess } from "@/lib/permissions";
 import { channelTopic } from "@/lib/realtime";
@@ -94,6 +95,8 @@ export async function AppShell({
     user && variant !== "onboarding" ? await getStaffAccess(user) : null;
   const isStaff = access ? hasStaffAccess(access) : false;
   const admin = variant === "admin";
+  // Opened inside the native app (src/lib/embed.ts).
+  const embedded = await isEmbedded();
   // Badges: work waiting for this person.
   const [
     pendingVerify,
@@ -519,7 +522,9 @@ export async function AppShell({
   if (admin) {
     return withRealtime(
       <>
-        <header className="sticky top-0 z-40 bg-slate-900 pt-[env(safe-area-inset-top)] text-white">
+        <header
+          className={`sticky top-0 z-40 bg-slate-900 text-white ${embedded ? "" : "pt-[env(safe-area-inset-top)]"}`}
+        >
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2">
             <Link
               href="/app/admin"
@@ -535,10 +540,13 @@ export async function AppShell({
                 {t("nav.adminMode")}
               </span>
             </Link>
-            <div className="flex items-center gap-1">
-              {switchLink}
-              {accountMenu}
-            </div>
+            {/* In the app, its own header closes admin mode. */}
+            {embedded ? null : (
+              <div className="flex items-center gap-1">
+                {switchLink}
+                {accountMenu}
+              </div>
+            )}
           </div>
         </header>
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:flex-row">
@@ -576,8 +584,17 @@ export async function AppShell({
             {children}
           </main>
         </div>
-        {footer}
+        {embedded ? null : footer}
       </>,
+    );
+  }
+
+  // Member pages in the app: the app draws the tab bar, header and menu.
+  if (embedded && variant === "member") {
+    return withRealtime(
+      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+        {children}
+      </main>,
     );
   }
 
@@ -627,7 +644,8 @@ export async function AppShell({
           <div className="flex items-center gap-1">
             {help}
             {switchLink}
-            {accountMenu}
+            {/* In the app, signing out is in the app's own menu. */}
+            {embedded ? null : accountMenu}
           </div>
         </div>
       </header>

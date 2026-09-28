@@ -3,9 +3,8 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Line from "next-auth/providers/line";
 import { z } from "zod";
-import { AccountState, OtpPurpose } from "@/generated/prisma/enums";
 import { appAdapter, resolveUserId } from "@/lib/auth/adapter";
-import { normalizeEmail, verifyOtp } from "@/lib/auth/otp";
+import { userForSignInCode } from "@/lib/auth/email-sign-in";
 import { db } from "@/lib/db";
 import { fetchLineFriendship } from "@/lib/line";
 import { notifySignInMethodAdded } from "@/lib/security-notice";
@@ -35,27 +34,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(raw) {
         const parsed = otpCredentials.safeParse(raw);
         if (!parsed.success) return null;
-        const email = normalizeEmail(parsed.data.email);
-        const result = await verifyOtp({
-          email,
-          purpose: OtpPurpose.SIGN_IN,
-          code: parsed.data.code,
-        });
-        if (!result.ok) return null;
-        const existing = await db.user.findUnique({
-          where: { primaryEmail: email },
-        });
-        const user =
-          existing ??
-          (await db.user.create({
-            data: {
-              primaryEmail: email,
-              emailVerifiedAt: new Date(),
-              state: AccountState.EMAIL_VERIFIED,
-              locale: parsed.data.locale ?? "ja",
-            },
-          }));
-        return { id: user.id, email: user.primaryEmail };
+        const user = await userForSignInCode(parsed.data);
+        return user ? { id: user.id, email: user.primaryEmail } : null;
       },
     }),
     // 2. Google — its verified email is trusted and links by email (§4.3).

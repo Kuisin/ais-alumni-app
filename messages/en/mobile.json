@@ -1,0 +1,36 @@
+{
+  "errors": {
+    "network": "Can't reach the server. Check your connection.",
+    "generic": "Something went wrong. Please try again.",
+    "retry": "Try again",
+    "unreachable": {
+      "title": "Can't connect",
+      "body": "We couldn't reach the server. Check your connection and try again."
+    }
+  },
+  "signIn": {
+    "providerFailed": "We couldn't finish signing you in. Please try again, or sign in with an email code."
+  },
+  "onboarding": {
+    "signedInAs": "Signed in as {name}",
+    "continueTitle": "Finish your registration",
+    "continueBody": "Registration happens on website screens inside the app. When you're done, this screen updates by itself.",
+    "continue": "Continue registration",
+    "viewStatus": "View application details",
+    "refresh": "Check again",
+    "contact": "Contact us"
+  },
+  "web": {
+    "title": "AIS Alumni",
+    "close": "Close",
+    "openInBrowser": "Open in browser",
+    "loadFailed": "The page couldn't be loaded.",
+    "reload": "Reload"
+  },
+  "home": {},
+  "news": {},
+  "events": {},
+  "chat": {},
+  "people": {},
+  "me": {}
+}

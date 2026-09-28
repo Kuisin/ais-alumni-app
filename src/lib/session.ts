@@ -7,16 +7,28 @@ import { AccountState } from "@/generated/prisma/enums";
 import { redirect } from "@/i18n/navigation";
 import { getNewsScope, getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
+import { bearerToken, mobileSessionUserId } from "@/lib/mobile/tokens";
 import { NEXT_PATH_HEADER, safeNextPath, stripLocale } from "@/lib/next-path";
 import type { NewsScope } from "@/lib/permissions";
 import { homePathFor } from "@/lib/state-machine";
 
 export type CurrentUser = Prisma.UserGetPayload<{ include: { roles: true } }>;
 
-/** The signed-in user, loaded fresh from the database once per request. */
+/**
+ * The signed-in user, loaded fresh from the database once per request.
+ * Requests from the native app carry a bearer token instead of the Auth.js
+ * cookie (src/lib/mobile/tokens.ts); a bearer header is never combined with
+ * the cookie, and an invalid one means "signed out".
+ */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const session = await auth();
-  const id = session?.user?.id;
+  const header = (await headers()).get("authorization");
+  let id: string | null | undefined;
+  if (header && /^Bearer\s/i.test(header)) {
+    const token = bearerToken(header);
+    id = token ? await mobileSessionUserId(token) : null;
+  } else {
+    id = (await auth())?.user?.id;
+  }
   if (!id) return null;
   return db.user.findUnique({ where: { id }, include: { roles: true } });
 });

@@ -187,6 +187,7 @@ model User {
   broadcasts           Broadcast[]
   education            EducationEntry[]
   work                 WorkEntry[]
+  mobileSessions       MobileSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1250,4 +1251,24 @@ model CronRun {
   lastResult  Json?
   lastError   String?
   updatedAt   DateTime  @updatedAt
+}
+
+// Added: sign-ins from the native app (mobile/). The app keeps a random
+// bearer token in the device keychain; only its SHA-256 is stored here
+// (src/lib/mobile/tokens.ts). Deleted when the member signs out on the device.
+model MobileSession {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  /// "ios" | "android" | "web"
+  platform   String?
+  /// e.g. "iPhone 16" — for the member's list of signed-in devices
+  deviceName String?
+  createdAt  DateTime @default(now())
+  /// refreshed at most once a day; each refresh also extends expiresAt
+  lastUsedAt DateTime @default(now())
+  expiresAt  DateTime
+
+  @@index([userId])
 }

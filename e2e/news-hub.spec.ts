@@ -19,7 +19,7 @@ test("ニュース hub: confirm, poll, 日程調整, files, comments and a remin
   const title = `Hub ${Date.now()}`;
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
-  await admin.goto("/en/app/admin/news/new");
+  await admin.goto("/en/app/news/new");
   await admin.getByLabel("Title (Japanese)").fill(title);
   await admin.getByLabel("Body (Japanese)").fill("Please answer.");
   await admin.getByRole("radio", { name: /^Send now/ }).check();
@@ -56,6 +56,7 @@ test("ニュース hub: confirm, poll, 日程調整, files, comments and a remin
   const hanako = await browser.newPage();
   await signInWithEmail(hanako, "hanako@example.com");
   await hanako.goto("/en/app/news");
+  await expect(hanako.getByRole("link", { name: "New post" })).toHaveCount(0);
   await expect(
     hanako
       .getByRole("listitem")

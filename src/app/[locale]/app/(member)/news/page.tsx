@@ -1,10 +1,12 @@
-import { Mail, Newspaper } from "lucide-react";
+import { Mail, Newspaper, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { MessageRow } from "@/components/news/message-row";
 import { NewsCard } from "@/components/news/news-card";
 import { Pager, parsePage } from "@/components/news/pager";
+import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
+import { Link } from "@/i18n/navigation";
 import { listMessages, readNewsIds, unreadCounts } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
@@ -36,7 +38,18 @@ export default async function NewsPage({
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          user.isAdmin ? (
+            <Link href="/app/news/new" className={buttonClass("primary")}>
+              <Plus aria-hidden="true" className="size-4" />
+              {t("create")}
+            </Link>
+          ) : null
+        }
+      />
       {MESSAGES_ENABLED ? (
         <Tabs
           label={t("tabs.label")}

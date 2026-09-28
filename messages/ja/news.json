@@ -4,6 +4,7 @@
   "empty": "ニュースはまだありません。",
   "pinned": "固定",
   "untitled": "（タイトルなし）",
+  "create": "ニュースを作成",
   "backToList": "ニュース一覧へ",
   "pager": {
     "label": "ページ",

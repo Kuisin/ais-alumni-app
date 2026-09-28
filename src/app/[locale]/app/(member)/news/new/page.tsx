@@ -9,29 +9,30 @@ import { isBlobConfigured } from "@/lib/storage";
 
 export async function generateMetadata({
   params,
-}: PageProps<"/[locale]/app/admin/news/new">) {
+}: PageProps<"/[locale]/app/news/new">) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "adminContent" });
-  return { title: t("news.new") };
+  const t = await getTranslations({ locale, namespace: "news" });
+  return { title: t("create") };
 }
 
 export default async function NewNewsPage({
   params,
-}: PageProps<"/[locale]/app/admin/news/new">) {
+}: PageProps<"/[locale]/app/news/new">) {
   const locale = asLocale((await params).locale);
+  // Posting news is an admin right; the page lives in the main app.
   await requireAdmin();
-  const t = await getTranslations("adminContent");
+  const t = await getTranslations("news");
   const cohorts = await loadCohortOptions(locale);
   return (
     <>
-      <BackLink href="/app/admin/news">{t("news.backToList")}</BackLink>
+      <BackLink href="/app/news">{t("backToList")}</BackLink>
       <div className="mt-1">
-        <PageHeader title={t("news.new")} />
+        <PageHeader title={t("create")} />
       </div>
       <NewsForm
         values={EMPTY_NEWS}
         cohorts={cohorts}
-        cancelHref="/app/admin/news"
+        cancelHref="/app/news"
         useBlob={isBlobConfigured()}
       />
     </>

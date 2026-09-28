@@ -75,7 +75,7 @@ export default async function AdminNewsPage({
         title={t("news.title")}
         description={t("news.description")}
         actions={
-          <Link href="/app/admin/news/new" className={buttonClass("primary")}>
+          <Link href="/app/news/new" className={buttonClass("primary")}>
             <Plus aria-hidden="true" className="size-4" />
             {t("news.new")}
           </Link>
@@ -109,10 +109,7 @@ export default async function AdminNewsPage({
             icon={<Newspaper />}
             hint={t("news.emptyHint")}
             action={
-              <Link
-                href="/app/admin/news/new"
-                className={buttonClass("secondary")}
-              >
+              <Link href="/app/news/new" className={buttonClass("secondary")}>
                 <Plus aria-hidden="true" className="size-4" />
                 {t("news.new")}
               </Link>

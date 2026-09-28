@@ -18,7 +18,7 @@ test("reserved news is sent when due, only to the chosen audience", async ({
     .toISOString()
     .slice(0, 16);
   await signInWithEmail(page, "admin@example.com");
-  await page.goto("/en/app/admin/news/new");
+  await page.goto("/en/app/news/new");
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel("Body (Japanese)").fill("Secret body text");
   await page

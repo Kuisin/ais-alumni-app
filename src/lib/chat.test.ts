@@ -111,6 +111,20 @@ describe("元在校生 / 卒業生 and their 成人 groups", () => {
   });
 });
 
+describe("同窓会委員 group", () => {
+  it("is added for committee members (any type) when enabled", () => {
+    const teacher = [{ role: RoleKey.TEACHER, cohortId: null }];
+    expect(
+      desiredGroups(teacher, [], { committee: true }).map((g) => g.key),
+    ).toEqual(["TEACHERS", "ALUMNI_COMMITTEE"]);
+    // Also for someone with no role at all (e.g. an admin).
+    expect(
+      desiredGroups([], [], { committee: true }).map((g) => g.key),
+    ).toEqual(["ALUMNI_COMMITTEE"]);
+    expect(desiredGroups(teacher, []).map((g) => g.key)).toEqual(["TEACHERS"]);
+  });
+});
+
 describe("1:1 talks", () => {
   it("have one key per pair, whoever starts", () => {
     expect(directKey("b", "a")).toBe("DIRECT:a:b");

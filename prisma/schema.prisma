@@ -899,6 +899,7 @@ enum ChatGroupKind {
   CLASS_REPS // 学年代表（STUDENT_LEADER の役職を持つ会員）
   GRADUATES // 卒業生 (graduated from AIS)
   GRADUATES_ADULTS // 卒業生（成人）
+  ALUMNI_COMMITTEE // 同窓会委員（ALUMNI_COMMITTEE の役職を持つ会員と管理者）
 }
 
 /// Group chats by member type and 学年. Members are added automatically

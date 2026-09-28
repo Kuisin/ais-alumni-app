@@ -11,24 +11,28 @@
   "groups": {
     "TEACHERS": "Teachers & staff",
     "CURRENT_STUDENTS": "Current students",
-    "FORMER_STUDENTS": "Graduates + former students",
+    "FORMER_STUDENTS": "Former students",
     "CURRENT_PARENTS": "Parents of current students",
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "{cohort}",
     "COHORT_PARENTS": "{cohort} parents",
-    "ADULTS": "18 and over",
-    "CLASS_REPS": "Class reps"
+    "ADULTS": "Former students (18+)",
+    "CLASS_REPS": "Class reps",
+    "GRADUATES": "Graduates",
+    "GRADUATES_ADULTS": "Graduates (18+)"
   },
   "groupHints": {
     "TEACHERS": "Everyone who teaches or taught at AIS",
     "CURRENT_STUDENTS": "Current students",
-    "FORMER_STUDENTS": "Graduates and former students",
+    "FORMER_STUDENTS": "Everyone who attended AIS (graduates included)",
     "CURRENT_PARENTS": "Parents of current students",
     "FORMER_PARENTS": "Parents of graduates",
     "COHORT": "Students and graduates of this class",
     "COHORT_PARENTS": "Parents of children in this class",
-    "ADULTS": "Graduates and former students, from the April 1 after they turn 18",
-    "CLASS_REPS": "Class representatives of every year"
+    "ADULTS": "Former students (graduates included), from the April 1 after they turn 18",
+    "CLASS_REPS": "Class representatives of every year",
+    "GRADUATES": "Everyone who graduated from AIS",
+    "GRADUATES_ADULTS": "Graduates, from the April 1 after they turn 18"
   },
   "room": {
     "back": "All chats",

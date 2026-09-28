@@ -196,7 +196,7 @@ test("chat details list the members; rows and member cards open profiles", async
   await signInWithEmail(page, a.email);
   await page.goto("/en/app/chat");
   await page
-    .getByRole("link", { name: /Graduates \+ former students/ })
+    .getByRole("link", { name: /^Former students(?! \(18\+\))/ })
     .first()
     .click();
   // The talk's name opens its details.

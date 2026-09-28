@@ -3,11 +3,11 @@ import { ChatGroupKind, RoleKey } from "@/generated/prisma/enums";
 /**
  * Group chats (pure rules, unit-tested). Every member is in the groups for
  * their type and 学年, added and removed automatically as their roles change:
- *  - 教職員, 在校生, 卒業生＋元在校生, 在校生保護者, 卒業生保護者
+ *  - 教職員, 在校生, 元在校生 (graduates included), 在校生保護者, 卒業生保護者
  *  - 第N期 (students and graduates of that class)
  *  - 第N期 保護者 (parents of a child in that class)
  *  - 学年代表: members holding the 学年代表 (STUDENT_LEADER) position
- *  - 18歳以上: students and graduates (not parents or teachers) from the
+ *  - 元在校生（成人） / 卒業生 / 卒業生（成人） (see desiredGroups); 成人 from the
  *    April 1 on or after their 18th birthday
  */
 
@@ -61,9 +61,13 @@ export function isAdult(dateOfBirth: Date | null, now: Date): boolean {
 
 /** The groups a member belongs to. */
 export function desiredGroups(
-  roles: readonly { role: RoleKey; cohortId: string | null }[],
+  roles: readonly {
+    role: RoleKey;
+    cohortId: string | null;
+    didGraduate?: boolean | null;
+  }[],
   childCohortIds: readonly string[],
-  opts: { adult?: boolean; rep?: boolean } = {},
+  opts: { adult?: boolean; rep?: boolean; graduates?: boolean } = {},
 ): GroupSpec[] {
   const out = new Map<string, GroupSpec>();
   const add = (kind: ChatGroupKind, cohortId: string | null = null) =>
@@ -80,10 +84,16 @@ export function desiredGroups(
   }
   if (roles.some((r) => PARENT.includes(r.role)))
     for (const c of childCohortIds) add(ChatGroupKind.COHORT_PARENTS, c);
-  // 18歳以上 is for students — 卒業生 and 元在校生 alike (both FORMER_STUDENT),
-  // and current students — once 18; not parents or teachers.
-  if (opts.adult && roles.some((r) => STUDENT.includes(r.role)))
-    add(ChatGroupKind.ADULTS);
+  // 元在校生 (FORMER_STUDENTS, via the role above) is everyone who left AIS,
+  // graduates included; 元在校生（成人） the same from the April 1 after they
+  // turn 18. 卒業生 / 卒業生（成人）: those who graduated. Not parents or
+  // teachers (or current students: AIS ends at elementary).
+  const former = roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
+  if (former && opts.adult) add(ChatGroupKind.ADULTS);
+  if (former?.didGraduate && opts.graduates) {
+    add(ChatGroupKind.GRADUATES);
+    if (opts.adult) add(ChatGroupKind.GRADUATES_ADULTS);
+  }
   if (opts.rep) add(ChatGroupKind.CLASS_REPS);
   return [...out.values()];
 }
@@ -92,10 +102,12 @@ export function desiredGroups(
 export const KIND_ORDER: ChatGroupKind[] = [
   ChatGroupKind.TEACHERS,
   ChatGroupKind.CURRENT_STUDENTS,
+  ChatGroupKind.GRADUATES_ADULTS,
+  ChatGroupKind.GRADUATES,
+  ChatGroupKind.ADULTS,
   ChatGroupKind.FORMER_STUDENTS,
   ChatGroupKind.CURRENT_PARENTS,
   ChatGroupKind.FORMER_PARENTS,
-  ChatGroupKind.ADULTS,
   ChatGroupKind.CLASS_REPS,
   ChatGroupKind.COHORT,
   ChatGroupKind.COHORT_PARENTS,

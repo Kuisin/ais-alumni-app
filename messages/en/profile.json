@@ -147,7 +147,7 @@
     "title": "Date of birth",
     "lockedNote": "Your date of birth can't be changed by you after approval. To add or correct it, ask the committee.",
     "notSet": "Not registered",
-    "notSetHint": "Your date of birth isn't registered. It's needed for groups such as 18 and over.",
+    "notSetHint": "Your date of birth isn't registered. It's needed for the 18+ groups.",
     "open": "Request a correction",
     "openAdd": "Request to add it",
     "intro": "Enter your correct date of birth. The committee checks and applies it.",

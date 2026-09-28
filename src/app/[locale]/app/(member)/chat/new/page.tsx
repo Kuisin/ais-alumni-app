@@ -6,7 +6,7 @@ import { buttonClass } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { loadConnections, photoFor } from "@/lib/avatar";
-import { directChatCandidates } from "@/lib/chat-db";
+import { directChatAvailable, directChatCandidates } from "@/lib/chat-db";
 import { DIRECT_CHAT_ENABLED } from "@/lib/features";
 import { requireActive } from "@/lib/session";
 
@@ -18,12 +18,16 @@ export async function generateMetadata({
   return { title: t("new.title") };
 }
 
-/** Start a 1:1 talk with a mutual follower (like LINE friends). */
+/**
+ * Start a 1:1 talk with a mutual follower (like LINE friends), as the
+ * member types allow (admin → チャット).
+ */
 export default async function NewTalkPage() {
   if (!DIRECT_CHAT_ENABLED) notFound();
   const user = await requireActive();
   const t = await getTranslations("chat");
-  const [people, conn] = await Promise.all([
+  const [available, people, conn] = await Promise.all([
+    directChatAvailable(user.id),
     directChatCandidates(user.id),
     loadConnections(user.id),
   ]);
@@ -33,7 +37,11 @@ export default async function NewTalkPage() {
         <BackLink href="/app/chat">{t("room.back")}</BackLink>
         <PageHeader title={t("new.title")} description={t("new.hint")} />
       </div>
-      {people.length ? (
+      {!available ? (
+        <div className="rounded-xl bg-white p-6 text-center text-sm text-slate-600 shadow-sm">
+          <p className="font-medium">{t("new.restricted")}</p>
+        </div>
+      ) : people.length ? (
         <StartTalkList
           people={people.map((p) => ({
             id: p.id,

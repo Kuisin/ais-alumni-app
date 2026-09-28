@@ -17,7 +17,9 @@ import {
 } from "@/lib/chat";
 import {
   type DirectDenial,
+  type DirectStop,
   directChatDenial,
+  directStopReason,
   openDirectChat,
 } from "@/lib/chat-db";
 import { db } from "@/lib/db";
@@ -167,7 +169,7 @@ export async function sendChatMessageAction(
 ): Promise<SendResult> {
   const g = await openGroup(groupId);
   if (!g?.member) return { ok: false, error: "forbidden" };
-  if (g.direct && (await directBlocked(g.groupId, g.user.id)))
+  if (g.direct && (await directStopped(g.groupId, g.user.id)))
     return { ok: false, error: "forbidden" };
   const text = String(body ?? "").trim();
   if (!text || text.length > MAX_CHAT_MESSAGE)
@@ -308,23 +310,17 @@ export async function chatReadStateAction(
   return rows.map((r) => r.lastReadAt.toISOString());
 }
 
-/** Either side of a 1:1 talk has blocked the other. */
-async function directBlocked(groupId: string, meId: string): Promise<boolean> {
+/** Why the 1:1 talk can't go on (see directStopReason); null = it can. */
+async function directStopped(
+  groupId: string,
+  meId: string,
+): Promise<DirectStop | null> {
   const other = await db.chatMember.findFirst({
     where: { groupId, userId: { not: meId } },
     select: { userId: true },
   });
-  if (!other) return true;
-  const block = await db.block.findFirst({
-    where: {
-      OR: [
-        { blockerId: meId, blockedId: other.userId },
-        { blockerId: other.userId, blockedId: meId },
-      ],
-    },
-    select: { id: true },
-  });
-  return Boolean(block);
+  if (!other) return "blocked";
+  return directStopReason(meId, other.userId);
 }
 
 export type StartDirectResult =
@@ -342,10 +338,11 @@ export async function startDirectChatAction(
     where: { key: directKey(user.id, id.data) },
     select: { id: true },
   });
-  // An existing talk reopens unless someone blocked the other.
+  // An existing talk reopens unless someone blocked the other or their
+  // member types no longer allow it.
   if (existing) {
-    if (await directBlocked(existing.id, user.id))
-      return { ok: false, error: "blocked" };
+    const stopped = await directStopped(existing.id, user.id);
+    if (stopped) return { ok: false, error: stopped };
     return { ok: true, groupId: await openDirectChat(user.id, id.data) };
   }
   const denial = await directChatDenial(user.id, id.data);

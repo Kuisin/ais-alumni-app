@@ -102,6 +102,7 @@ export async function AppShell({
     followRequests,
     unread,
     openSupport,
+    openChatReports,
   ] = await Promise.all([
     admin && access?.admin
       ? db.verificationRequest.count({
@@ -140,6 +141,9 @@ export async function AppShell({
       : { news: 0, messages: 0 },
     admin && access?.admin
       ? db.supportRequest.count({ where: { closedAt: null } })
+      : 0,
+    admin && access?.admin
+      ? db.chatReport.count({ where: { closedAt: null } })
       : 0,
   ]);
   const unreadTotal = unread.news + unread.messages;
@@ -265,6 +269,12 @@ export async function AppShell({
               label: t("adminNav.support"),
               count: openSupport,
               icon: <LifeBuoy className={ICON} />,
+            },
+            {
+              href: "/app/admin/chat",
+              label: t("adminNav.chat"),
+              count: openChatReports,
+              icon: <MessagesSquare className={ICON} />,
             },
           ]
         : [],

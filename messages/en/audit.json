@@ -30,7 +30,8 @@
     "Broadcast": "Notification",
     "Cohort": "Class",
     "school": "School",
-    "company": "Company"
+    "company": "Company",
+    "ChatReport": "Chat report"
   },
   "actions": {
     "member": {
@@ -125,6 +126,12 @@
     "support": {
       "close": "Marked a support request done",
       "reopen": "Reopened a support request"
+    },
+    "chat": {
+      "message_delete": "Deleted a chat message",
+      "report_close": "Marked a chat report done",
+      "report_reopen": "Reopened a chat report",
+      "direct_rules": "Changed one-to-one chat rules"
     }
   }
 }

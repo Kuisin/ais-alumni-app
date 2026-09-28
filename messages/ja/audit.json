@@ -30,7 +30,8 @@
     "Broadcast": "送信",
     "Cohort": "学年",
     "school": "学校",
-    "company": "会社"
+    "company": "会社",
+    "ChatReport": "トークの報告"
   },
   "actions": {
     "member": {
@@ -125,6 +126,12 @@
     "support": {
       "close": "お問い合わせを対応済みに",
       "reopen": "お問い合わせを未対応に戻す"
+    },
+    "chat": {
+      "message_delete": "チャットのメッセージを削除",
+      "report_close": "トークの報告を対応済みに",
+      "report_reopen": "トークの報告を未対応に戻す",
+      "direct_rules": "1対1のトークの設定を変更"
     }
   }
 }

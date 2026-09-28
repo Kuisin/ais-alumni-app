@@ -86,11 +86,11 @@ describe("link texts", () => {
   });
 });
 
-describe("LINE is only for chat mentions and ニュース", () => {
+describe("LINE is only for ニュース", () => {
   it("no other kind may use LINE", () => {
     const lineKinds = (Object.keys(NOTIFY_KINDS) as NotifyKind[]).filter(
       (k) => "line" in NOTIFY_KINDS[k],
     );
-    expect(lineKinds.sort()).toEqual(["CHAT_MENTION", "NEWS"]);
+    expect(lineKinds.sort()).toEqual(["NEWS"]);
   });
 });

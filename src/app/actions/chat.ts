@@ -23,7 +23,6 @@ import {
   openDirectChat,
 } from "@/lib/chat-db";
 import { db } from "@/lib/db";
-import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
 import { broadcast, channelTopic, realtimePublic } from "@/lib/realtime";
 import { actionActive, type CurrentUser } from "@/lib/session";
 
@@ -219,36 +218,9 @@ export async function sendChatMessageAction(
       payload: { id: message.id },
     },
   ]);
-  if (mentioned.length)
-    await notifyMentions(g.groupId, g.user, mentioned).catch((e) =>
-      console.error("[chat] mention notify failed", e),
-    );
+  // Mentions and 1:1 messages are notified if still unread after 5
+  // minutes (the chat-unread job), not right away.
   return { ok: true, message };
-}
-
-/**
- * Tell mentioned members right away (LINE / email, no content). At most one
- * per member per chat every 10 minutes. @全員 isn't pushed (the daily
- * summary covers it) so large groups aren't flooded.
- */
-async function notifyMentions(
-  groupId: string,
-  sender: CurrentUser,
-  userIds: string[],
-) {
-  const users = await db.user.findMany({
-    where: { id: { in: userIds }, state: "ACTIVE" },
-    select: NOTIFY_USER_SELECT,
-  });
-  const bucket = Math.floor(Date.now() / (10 * 60 * 1000));
-  const name = sender.nameRomaji ?? sender.nameKanji ?? "";
-  await notifyMany(users, {
-    kind: "CHAT_MENTION",
-    refId: `${groupId}:${bucket}`,
-    dedupe: true,
-    path: `/app/chat/${groupId}`,
-    params: { name },
-  });
 }
 
 /** Older messages (before) or new ones (after; the polling fallback). */

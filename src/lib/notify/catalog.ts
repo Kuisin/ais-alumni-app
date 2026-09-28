@@ -39,8 +39,8 @@ type KindSpec = {
   category: NotifyCategory;
   emoji: string;
   /**
-   * May go by LINE (for members who get notifications there). Only chat
-   * mentions and ニュース do, in real time; everything else is email, so
+   * May go by LINE (for members who get notifications there). Only ニュース
+   * does; everything else — including unread chat notices — is email, so
    * LINE's monthly message allowance (free plan: 200) lasts.
    */
   line?: true;
@@ -90,7 +90,9 @@ export const NOTIFY_KINDS = {
   EVENT_REMINDER_7D: { category: "events", emoji: "📅" },
   EVENT_REMINDER_1D: { category: "events", emoji: "📅" },
   // Chat
-  CHAT_MENTION: { category: "chat", emoji: "💬", line: true },
+  // Email only (LINE's quota): 1:1 messages / mentions unread for 5 min.
+  CHAT_DIRECT: { category: "chat", emoji: "💬" },
+  CHAT_MENTION: { category: "chat", emoji: "💬" },
   CHAT_DIGEST: { category: "chat", emoji: "💬" },
   // Follows & vouching
   FOLLOW_REQUEST: { category: "social", emoji: "👤" },

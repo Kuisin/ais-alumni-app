@@ -17,6 +17,36 @@ const mail = (email: string) =>
 
 const GROUP = /^Graduates \+ former students/;
 
+/** Pretend `body` was sent 6 minutes ago and `readerId` hasn't read since. */
+async function ageMessage(body: string, readerId: string) {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const { rows } = await db.query(
+      `UPDATE "ChatMessage" SET "createdAt" = now() - interval '6 minutes'
+       WHERE body = $1 RETURNING "groupId"`,
+      [body],
+    );
+    await db.query(
+      `UPDATE "ChatMember" SET "lastReadAt" = now() - interval '10 minutes'
+       WHERE "groupId" = $1 AND "userId" = $2`,
+      [rows[0].groupId, readerId],
+    );
+  } finally {
+    await db.end();
+  }
+}
+
+/** Run the "unread for 5 minutes" notice job now. */
+async function runUnreadJob(
+  request: import("@playwright/test").APIRequestContext,
+) {
+  const res = await request.get("/api/cron?task=chat-unread", {
+    headers: { Authorization: "Bearer e2e-cron-secret" },
+  });
+  expect(res.ok()).toBe(true);
+}
+
 test("graduates are put in their group chat and can talk", async ({
   browser,
 }) => {
@@ -118,8 +148,21 @@ test("1:1 talk between mutual followers, with 既読", async ({ browser }) => {
   ).toBeVisible();
   const hi = `Hi B ${stamp}`;
   await pa.getByLabel("Message", { exact: true }).fill(hi);
+  await clearMailbox(b.email);
   await pa.getByRole("button", { name: "Send" }).click();
   await expect(pa.getByText(hi)).toBeVisible();
+
+  // Unread for 5 minutes → B is told once (no content), not again.
+  await runUnreadJob(pa.request);
+  expect(await mail(b.email)).toBe("");
+  await ageMessage(hi, b.id);
+  await runUnreadJob(pa.request);
+  const dm = await mail(b.email);
+  expect(dm).toMatch(/direct message|1対1のメッセージ/);
+  expect(dm).not.toContain(hi);
+  await clearMailbox(b.email);
+  await runUnreadJob(pa.request);
+  expect(await mail(b.email)).toBe("");
 
   // B finds it under Friends, unread, and reads it; A then sees 既読.
   const pb = await browser.newPage();
@@ -188,17 +231,25 @@ test("mention a member with @ (and they're told)", async ({ browser }) => {
     hanako.getByText(`@M${stamp}, Men`, { exact: true }),
   ).toBeVisible();
 
-  // The mentioned member sees it flagged in the list, and gets a notice.
+  // The mentioned member sees it flagged in the list right away…
   await other.goto("/en/app/chat");
   await expect(
     other.getByRole("link", { name: GROUP }).getByText("[Mentioned you]"),
   ).toBeVisible();
+  // …and is told only if it's still unread after 5 minutes, once.
+  await runUnreadJob(hanako.request);
+  expect(await mail(grad.email)).toBe("");
+  await ageMessage(`Hello @M${stamp}, Men see you!`, grad.id);
+  await runUnreadJob(hanako.request);
   const notice = await mail(grad.email);
   expect(notice).toMatch(/mentioned you|メンションしました/);
   expect((await notificationTarget(other.request, notice)).target).toMatch(
     /^\/(ja|en)\/app\/chat\/.+/,
   );
   expect(notice).not.toContain("see you!");
+  await clearMailbox(grad.email);
+  await runUnreadJob(hanako.request);
+  expect(await mail(grad.email)).toBe("");
 });
 
 test("学年代表 get their group, and tags show 期 and 学年代表", async ({

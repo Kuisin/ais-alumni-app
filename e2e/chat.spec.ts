@@ -425,3 +425,25 @@ async function sql(text: string, values: unknown[]) {
     await db.end();
   }
 }
+
+test("18 and over: 元在校生 join as well as 卒業生", async ({ page }) => {
+  const stamp = Date.now();
+  // Left AIS early (didn't graduate), born long enough ago to be 18+.
+  const left = await createActiveGraduate(`Left L${stamp}`, "1995-06-06");
+  await sql(
+    `UPDATE "UserRole" SET "didGraduate" = false WHERE "userId" = $1 AND role = 'FORMER_STUDENT'`,
+    [left.id],
+  );
+  await signInWithEmail(page, left.email);
+  await page.goto("/en/app/chat");
+  await expect(page.getByRole("link", { name: /^18 and over/ })).toBeVisible();
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  const { rowCount } = await db.query(
+    `SELECT 1 FROM "ChatMember" m JOIN "ChatGroup" g ON g.id = m."groupId"
+     WHERE g.kind = 'ADULTS' AND m."userId" = $1`,
+    [left.id],
+  );
+  await db.end();
+  expect(rowCount).toBe(1);
+});

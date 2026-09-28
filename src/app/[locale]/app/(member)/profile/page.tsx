@@ -15,6 +15,7 @@ import { AvatarForm } from "@/components/profile/avatar-form";
 import { AvatarSettingsForm } from "@/components/profile/avatar-settings-form";
 import { avatarSrc } from "@/components/profile/avatar-src";
 import { BirthDateCard } from "@/components/profile/birth-date-card";
+import { DirectorySettingsForm } from "@/components/profile/directory-settings-form";
 import { FollowerFieldsForm } from "@/components/profile/follower-fields-form";
 import { GenderCard } from "@/components/profile/gender-card";
 import { NameCard } from "@/components/profile/name-card";
@@ -34,6 +35,7 @@ import { Link } from "@/i18n/navigation";
 import { roleLabelKey } from "@/lib/audience";
 import { defaultAvatar } from "@/lib/avatar";
 import { db } from "@/lib/db";
+import { PARENT_ROLES } from "@/lib/directory";
 import { loadFollowCounts } from "@/lib/follows";
 import { displayName, otherNames } from "@/lib/format";
 import {
@@ -98,6 +100,7 @@ export default async function MyProfilePage() {
   const name = displayName(me, locale);
   const altName = otherNames(me);
   const former = me.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
+  const parent = me.roles.some((r) => PARENT_ROLES.includes(r.role));
   const social = parseSocialLinks(me.socialLinks);
   const sharedSet = followerFieldSet(me.followerFields);
   const shared = [...sharedSet];
@@ -245,6 +248,22 @@ export default async function MyProfilePage() {
           }}
         />
       </EditableCard>
+
+      {parent ? (
+        <EditableCard
+          id="directory"
+          title={t("directory.title")}
+          view={
+            <p>
+              {me.hideFromDirectory
+                ? t("directory.hidden")
+                : t("directory.shown")}
+            </p>
+          }
+        >
+          <DirectorySettingsForm listed={!me.hideFromDirectory} />
+        </EditableCard>
+      ) : null}
 
       <EditableCard
         id="photo"

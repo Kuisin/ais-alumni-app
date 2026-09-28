@@ -285,5 +285,12 @@
     "hiddenTitle": "Hidden items",
     "photoHidden": "Photo is hidden",
     "historyHidden": "{count, plural, one {# more education / work entry is} other {# more education / work entries are}} visible only to followers and family."
+  },
+  "directory": {
+    "title": "Member directory",
+    "listed": "Show me in the member directory",
+    "hint": "When off, you do not appear in the directory list or search (the committee can still see you). Family and people you are connected with can still open your profile.",
+    "shown": "You are listed in the member directory",
+    "hidden": "You are not listed in the member directory"
   }
 }

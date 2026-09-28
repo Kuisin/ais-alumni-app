@@ -59,6 +59,10 @@
       "title": "LINE",
       "body": "If you link LINE, we store your LINE user ID and display name so the AIS Alumni Committee Official Account can send you notifications. We do not use the email address registered with LINE. You can unlink LINE or block the Official Account at any time."
     },
+    "analytics": {
+      "title": "Site analytics",
+      "body": "To improve the site, we count page views and loading speed with Vercel Web Analytics and Speed Insights. No cookies are used and nothing that identifies you is sent: search words, IDs and tokens are removed from web addresses first, so only the kind of page is recorded."
+    },
     "evidence": {
       "title": "Verification documents",
       "body": "Documents you upload for verification are only visible to committee admins and are deleted automatically 30 days after your application is decided."

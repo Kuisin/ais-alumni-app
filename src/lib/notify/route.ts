@@ -26,7 +26,7 @@ export function chooseChannel(user: RoutableUser): Channel | null {
 }
 
 /**
- * Channels to use (§11). Only LINE-enabled kinds (chat mentions, ニュース)
+ * Channels to use (§11). Only LINE-enabled kinds (ニュース)
  * follow the member's LINE / email choice; every other kind goes by email.
  */
 export function channelsFor(

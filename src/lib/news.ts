@@ -2,8 +2,9 @@ import type { Prisma } from "@/generated/prisma/client";
 import { AccountState } from "@/generated/prisma/enums";
 import { audienceWhere, type Targeted } from "@/lib/audience";
 import { db } from "@/lib/db";
+import { deadlineFrom, leaseUntil } from "@/lib/jobs/budget";
 import { audienceUserWhere, specFromPost } from "@/lib/news-audience";
-import { NOTIFY_USER_SELECT, type NotifyUser, notifyMany } from "@/lib/notify";
+import { NOTIFY_USER_SELECT, type NotifyUser, notifyBatch } from "@/lib/notify";
 import { refreshUsers } from "@/lib/realtime";
 
 export const NEWS_PAGE_SIZE = 10;
@@ -55,54 +56,67 @@ export async function targetedRecipients(
 
 /**
  * Send the "new post" notification (kind NEWS, refId post id) once. The post
- * is claimed atomically by setting notifiedAt, so the admin button and the
- * reminders cron can never both send it. Returns null if it was not
- * published, or already notified/claimed.
+ * is claimed atomically: notifiedAt marks it notified (the admin button and
+ * the cron can never both start it) and notifyingUntil is a lease while it is
+ * sent. The send stops starting new batches at `deadline`; if it stops early,
+ * fails or the call is killed, the lease is (or runs) out and the cron picks
+ * the post up again (dueScheduledNews) — per-member dedupe sends only to
+ * those not reached yet. Returns null if it was not published, or already
+ * notified / being sent.
  */
 export async function sendNewsNotification(
   postId: string,
   now: Date = new Date(),
-): Promise<{ recipients: number } | null> {
-  const claimed = await db.newsPost.updateMany({
-    where: {
-      id: postId,
-      notifiedAt: null,
-      archivedAt: null,
-      publishedAt: { lte: now },
-    },
-    data: { notifiedAt: now },
-  });
-  if (claimed.count === 0) return null;
+  opts: { deadline?: number } = {},
+): Promise<{ recipients: number; done: boolean; failed: number } | null> {
+  const deadline = opts.deadline ?? deadlineFrom();
+  // Raw SQL: keeps the first notifiedAt and doesn't touch updatedAt (which
+  // tells reserved posts apart, see dueScheduledNews).
+  const claimed = await db.$executeRaw`
+    UPDATE "NewsPost"
+    SET "notifiedAt" = COALESCE("notifiedAt", ${now}),
+        "notifyingUntil" = ${leaseUntil()}
+    WHERE id = ${postId}
+      AND "archivedAt" IS NULL
+      AND "publishedAt" <= ${now}
+      AND ("notifiedAt" IS NULL OR "notifyingUntil" < ${new Date()})`;
+  if (claimed === 0) return null;
 
-  const post = await db.newsPost.findUniqueOrThrow({ where: { id: postId } });
-  const users = await targetedRecipients(post);
+  // Finished → no lease; otherwise expire it now so the next cron call
+  // retries right away.
+  const release = (done: boolean) =>
+    db.$executeRaw`
+      UPDATE "NewsPost"
+      SET "notifyingUntil" = ${done ? null : new Date()}
+      WHERE id = ${postId}`;
   try {
-    await notifyMany(users, {
-      kind: "NEWS",
-      refId: post.id,
-      dedupe: true,
-      // No content in the notification; the post is read in the app.
-      path: `/app/news/${post.id}`,
-    });
+    const post = await db.newsPost.findUniqueOrThrow({ where: { id: postId } });
+    const users = await targetedRecipients(post);
+    const res = await notifyBatch(
+      users,
+      {
+        kind: "NEWS",
+        refId: post.id,
+        dedupe: true,
+        // No content in the notification; the post is read in the app.
+        path: `/app/news/${post.id}`,
+      },
+      { deadline },
+    );
+    const done = res.failed.length === 0 && res.remaining.length === 0;
+    await release(done);
+    // Open pages update their unread badges right away.
+    await refreshUsers([...res.sent.keys()], "news");
+    return { recipients: res.sent.size, done, failed: res.failed.length };
   } catch (e) {
-    // Release the claim so it can be retried; per-user dedupe prevents
-    // re-sending to recipients that were already logged.
-    await db.newsPost.update({
-      where: { id: post.id },
-      data: { notifiedAt: null },
-    });
+    await release(false);
     throw e;
   }
-  // Open pages update their unread badges right away.
-  await refreshUsers(
-    users.map((u) => u.id),
-    "news",
-  );
-  return { recipients: users.length };
 }
 
 /**
- * Scheduled posts that have now been published but not announced (§10.4).
+ * Scheduled posts that have now been published but not announced (§10.4),
+ * and sends that didn't finish.
  * "Scheduled" = publishedAt was in the future when the post was last saved,
  * i.e. publishedAt > updatedAt (a Prisma field reference). Posts published
  * immediately are announced only through the admin "Publish & notify" step.
@@ -112,17 +126,22 @@ export async function sendNewsNotification(
 export async function dueScheduledNews(
   now: Date = new Date(),
 ): Promise<{ id: string }[]> {
+  const week = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   return db.newsPost.findMany({
     where: {
-      notifiedAt: null,
       archivedAt: null,
-      // Reserved with "notify" on (off = publish in the app only).
-      notifyOnPublish: true,
-      publishedAt: {
-        lte: now,
-        gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-        gt: db.newsPost.fields.updatedAt,
-      },
+      publishedAt: { lte: now, gte: week },
+      OR: [
+        {
+          notifiedAt: null,
+          // Reserved with "notify" on (off = publish in the app only).
+          notifyOnPublish: true,
+          publishedAt: { gt: db.newsPost.fields.updatedAt },
+        },
+        // Started (cron or the admin button) but not finished: failed,
+        // stopped at the time limit, or the call was killed.
+        { notifiedAt: { not: null }, notifyingUntil: { lt: now } },
+      ],
     },
     select: { id: true },
   });

@@ -2,14 +2,27 @@ import { AccountState, RsvpAnswer } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { reminderWindows, type Window } from "@/lib/events";
 import { localized } from "@/lib/format";
-import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
+import {
+  type JobContext,
+  type JobStep,
+  PartialFailure,
+  pastDeadline,
+} from "@/lib/jobs/context";
+import { NOTIFY_USER_SELECT, notifyBatch } from "@/lib/notify";
 
 type Kind = "EVENT_REMINDER_7D" | "EVENT_REMINDER_1D";
+type Tally = {
+  events: number;
+  recipients: number;
+  failed: number;
+  remaining: number;
+};
 
 async function remind(
   kind: Kind,
   window: Window,
-): Promise<{ events: number; recipients: number }> {
+  ctx: JobContext,
+): Promise<Tally> {
   const events = await db.event.findMany({
     where: { startsAt: { gte: window.from, lt: window.to } },
     select: {
@@ -28,40 +41,65 @@ async function remind(
     },
   });
 
-  let recipients = 0;
+  const tally: Tally = {
+    events: events.length,
+    recipients: 0,
+    failed: 0,
+    remaining: 0,
+  };
   for (const event of events) {
     const users = event.rsvps.map((r) => r.user);
     if (!users.length) continue;
+    if (pastDeadline(ctx)) {
+      tally.remaining += users.length;
+      continue;
+    }
     try {
-      const sent = await notifyMany(users, {
-        kind,
-        refId: event.id,
-        dedupe: true,
-        path: `/app/events/${event.id}`,
-        params: (locale) => ({
-          title: localized(event.titleJa, event.titleEn, locale).text,
-          when: event.startsAt,
-          location: event.location,
-        }),
-      });
-      recipients += sent.size;
+      const res = await notifyBatch(
+        users,
+        {
+          kind,
+          refId: event.id,
+          dedupe: true,
+          path: `/app/events/${event.id}`,
+          params: (locale) => ({
+            title: localized(event.titleJa, event.titleEn, locale).text,
+            when: event.startsAt,
+            location: event.location,
+          }),
+        },
+        { deadline: ctx.deadline },
+      );
+      tally.recipients += res.sent.size;
+      tally.failed += res.failed.length;
+      tally.remaining += res.remaining.length;
     } catch (e) {
-      // One failing event must not block the others.
+      // One failing event must not block the others; retried next call.
+      tally.failed += users.length;
       console.error(`[jobs/event-reminders] ${kind} ${event.id} failed`, e);
     }
   }
-  return { events: events.length, recipients };
+  return tally;
 }
 
 /**
  * Event reminders to GOING/MAYBE RSVPs of ACTIVE members (§10.3). Windows
- * are whole JST days (see reminderWindows): 7D = the date one week ahead,
- * 1D = tomorrow. De-duplicated per (kind, event id) so reruns are safe.
+ * are whole JST days from the slot (see reminderWindows): 7D = the date one
+ * week ahead, 1D = tomorrow. De-duplicated per (kind, event id), so a
+ * retry or continuation reaches only those not reached yet.
  */
-export async function sendEventReminders(now: Date) {
-  const windows = reminderWindows(now);
+export async function sendEventReminders(ctx: JobContext): Promise<JobStep> {
+  const windows = reminderWindows(ctx.at);
+  const reminder7d = await remind("EVENT_REMINDER_7D", windows.d7, ctx);
+  const reminder1d = await remind("EVENT_REMINDER_1D", windows.d1, ctx);
+  const result = { reminder7d, reminder1d };
+  if (reminder7d.failed || reminder1d.failed)
+    throw new PartialFailure(
+      `${reminder7d.failed + reminder1d.failed} reminder(s) failed`,
+      result,
+    );
   return {
-    reminder7d: await remind("EVENT_REMINDER_7D", windows.d7),
-    reminder1d: await remind("EVENT_REMINDER_1D", windows.d1),
+    done: reminder7d.remaining + reminder1d.remaining === 0,
+    result,
   };
 }

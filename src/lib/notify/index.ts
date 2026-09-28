@@ -8,6 +8,7 @@ import { renderEmail } from "./email-template";
 import {
   createNotificationLink,
   ensureLinkCode,
+  findOrCreateNotificationLink,
   linkUrl,
   recipientUrl,
 } from "./links";
@@ -92,17 +93,49 @@ async function inBatches<T>(
  * per language with one short link for everyone, and every recipient gets
  * their own URL (/n/<their code>/<token>) so their open is recorded as a
  * read receipt. LINE pushes go one per member (the push quota counts
- * recipients either way).
+ * recipients either way). Failures are logged, not thrown; recurring tasks
+ * use notifyBatch to retry them.
  */
 export async function notifyMany(
   users: NotifyUser[],
   n: Notification,
 ): Promise<Map<string, Channel[]>> {
+  return (await notifyBatch(users, n)).sent;
+}
+
+export type NotifyBatchResult = {
+  /** channels each user was reached on ([] = nothing to send them) */
+  sent: Map<string, Channel[]>;
+  /** users no channel could reach (every attempt failed) */
+  failed: string[];
+  /** users not tried because the deadline passed */
+  remaining: string[];
+};
+
+/** Deliveries sent together; each chunk is logged as soon as it's done. */
+const CHUNK = 16;
+
+/**
+ * notifyMany for recurring tasks: stops starting new chunks after `deadline`
+ * (ms timestamp) and reports who failed or is left. With dedupe, calling
+ * again with the same users sends only to those not yet logged, so a failed,
+ * paused or killed send can simply be run again: every delivery is logged
+ * right after its chunk, and the short link is shared across calls.
+ */
+export async function notifyBatch(
+  users: NotifyUser[],
+  n: Notification,
+  opts: { deadline?: number } = {},
+): Promise<NotifyBatchResult> {
   const skip = await alreadySent(
     users.map((u) => u.id),
     n,
   );
-  const result = new Map<string, Channel[]>();
+  const result: NotifyBatchResult = {
+    sent: new Map(),
+    failed: [],
+    remaining: [],
+  };
   const spec = NOTIFY_KINDS[n.kind];
   const recipients: { user: NotifyUser; channels: Channel[] }[] = [];
   for (const u of users) {
@@ -111,7 +144,7 @@ export async function notifyMany(
       ch === "LINE" ? Boolean(u.lineUserId) : Boolean(u.primaryEmail),
     );
     if (channels.length) recipients.push({ user: u, channels });
-    else result.set(u.id, []);
+    else result.sent.set(u.id, []);
   }
   if (!recipients.length) return result;
 
@@ -124,7 +157,7 @@ export async function notifyMany(
     rendered[locale] = await renderNotification(n.kind, locale, params);
   }
   const link = n.path
-    ? await createNotificationLink({
+    ? await (n.dedupe ? findOrCreateNotificationLink : createNotificationLink)({
         kind: n.kind,
         category: spec.category,
         texts: {
@@ -135,76 +168,76 @@ export async function notifyMany(
         path: n.path,
       })
     : null;
-  type Job = {
-    user: NotifyUser;
-    channels: Channel[];
-    rendered: RenderedNotification;
-    link: { id: string; token: string } | null;
-  };
-  const jobs: Job[] = recipients.map((r) => ({
-    ...r,
-    rendered: rendered[r.user.locale],
-    link,
-  }));
 
-  const logs: { userId: string; channel: Channel }[] = [];
-  const receipts: { linkId: string; userId: string; channels: Channel[] }[] =
-    [];
-  await inBatches(jobs, 8, async ({ user: u, channels, rendered, link }) => {
-    let url: string | null = null;
-    if (link) {
-      try {
-        url = recipientUrl(link.token, await ensureLinkCode(u));
-      } catch (e) {
-        // Still deliver, without a read receipt.
-        console.error(`[notify] link code for ${u.id} failed`, e);
-        url = linkUrl(link.token);
-      }
+  for (let i = 0; i < recipients.length; i += CHUNK) {
+    if (opts.deadline !== undefined && Date.now() > opts.deadline) {
+      result.remaining = recipients.slice(i).map((r) => r.user.id);
+      break;
     }
-    // A failed LINE push (e.g. the month's allowance is used up) falls
-    // back to email.
-    const sent = await deliverWithFallback(
-      channels,
-      Boolean(u.primaryEmail),
-      async (ch) => {
-        if (ch === "LINE" && u.lineUserId) {
-          await linePush(u.lineUserId, [
-            { type: "text", text: lineText(rendered, url) },
-          ]);
-        } else if (ch === "EMAIL" && u.primaryEmail) {
-          const mail = await renderEmail({
-            rendered,
-            locale: u.locale,
-            recipientName: u.nameRomaji ?? u.nameKanji ?? null,
-            url,
-            note: n.note,
-          });
-          await sendEmail({ to: u.primaryEmail, ...mail });
+    const logs: { userId: string; channel: Channel }[] = [];
+    const receipts: { linkId: string; userId: string; channels: Channel[] }[] =
+      [];
+    await inBatches(
+      recipients.slice(i, i + CHUNK),
+      8,
+      async ({ user: u, channels }) => {
+        const text = rendered[u.locale];
+        let url: string | null = null;
+        if (link) {
+          try {
+            url = recipientUrl(link.token, await ensureLinkCode(u));
+          } catch (e) {
+            // Still deliver, without a read receipt.
+            console.error(`[notify] link code for ${u.id} failed`, e);
+            url = linkUrl(link.token);
+          }
         }
+        // A failed LINE push (e.g. the month's allowance is used up) falls
+        // back to email.
+        const sent = await deliverWithFallback(
+          channels,
+          Boolean(u.primaryEmail),
+          async (ch) => {
+            if (ch === "LINE" && u.lineUserId) {
+              await linePush(u.lineUserId, [
+                { type: "text", text: lineText(text, url) },
+              ]);
+            } else if (ch === "EMAIL" && u.primaryEmail) {
+              const mail = await renderEmail({
+                rendered: text,
+                locale: u.locale,
+                recipientName: u.nameRomaji ?? u.nameKanji ?? null,
+                url,
+                note: n.note,
+              });
+              await sendEmail({ to: u.primaryEmail, ...mail });
+            }
+          },
+          (ch, e) => console.error(`[notify] ${ch} to ${u.id} failed`, e),
+        );
+        for (const ch of sent) logs.push({ userId: u.id, channel: ch });
+        if (link && sent.length)
+          receipts.push({ linkId: link.id, userId: u.id, channels: sent });
+        if (sent.length) result.sent.set(u.id, sent);
+        else result.failed.push(u.id);
       },
-      (ch, e) => console.error(`[notify] ${ch} to ${u.id} failed`, e),
     );
-    for (const ch of sent) logs.push({ userId: u.id, channel: ch });
-    if (link && sent.length)
-      receipts.push({ linkId: link.id, userId: u.id, channels: sent });
-    result.set(u.id, sent);
-  });
-
-  if (receipts.length) {
-    await db.notificationReceipt.createMany({
-      data: receipts,
-      skipDuplicates: true,
-    });
-  }
-  if (logs.length) {
-    await db.notificationLog.createMany({
-      data: logs.map((l) => ({
-        userId: l.userId,
-        channel: l.channel,
-        kind: n.kind,
-        refId: n.refId ?? null,
-      })),
-    });
+    if (receipts.length) {
+      await db.notificationReceipt.createMany({
+        data: receipts,
+        skipDuplicates: true,
+      });
+    }
+    if (logs.length) {
+      await db.notificationLog.createMany({
+        data: logs.map((l) => ({
+          userId: l.userId,
+          channel: l.channel,
+          kind: n.kind,
+          refId: n.refId ?? null,
+        })),
+      });
+    }
   }
   return result;
 }

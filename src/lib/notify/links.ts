@@ -105,6 +105,28 @@ export async function createNotificationLink(input: {
   throw new Error("unreachable");
 }
 
+/**
+ * The link an earlier call made for the same notification (kind, refId,
+ * path and texts), so a send split over several calls or retried after a
+ * failure shares one link and one set of read receipts; else a new one.
+ */
+export async function findOrCreateNotificationLink(
+  input: Parameters<typeof createNotificationLink>[0],
+): Promise<{ id: string; token: string }> {
+  const existing = await db.notificationLink.findFirst({
+    where: {
+      kind: input.kind,
+      refId: input.refId ?? null,
+      path: input.path,
+      texts: { equals: input.texts },
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, token: true },
+  });
+  return existing ?? createNotificationLink(input);
+}
+
 /** A link's title and body in this language (older links: their one language). */
 export function linkText(
   link: {

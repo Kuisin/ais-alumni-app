@@ -508,6 +508,9 @@ model NewsPost {
   pinned          Boolean          @default(false)
   publishedAt     DateTime?
   notifiedAt      DateTime? // added: set once the publish notification batch has gone out
+  /// lease while the publish notification is being sent; an expired lease
+  /// with notifiedAt set = unfinished (failed / paused / killed) → retried
+  notifyingUntil  DateTime?
   // Added: hidden from members and never notified; admins can restore it
   archivedAt      DateTime?
   // Added: who receives it (src/lib/news-audience.ts AudienceSpec: groups,
@@ -524,6 +527,9 @@ model NewsPost {
   // those who haven't, a day before (remindedAt)
   deadline        DateTime?
   remindedAt      DateTime?
+  /// lease while a cron call sends the reminder; an expired lease with
+  /// remindedAt set = unfinished (failed / paused / killed) → retried
+  remindingUntil  DateTime?
   // Added (hub): answers closed early by the sender (null = open until deadline)
   closedAt        DateTime?
   createdById     String
@@ -1121,14 +1127,23 @@ model GenderRequest {
   @@index([userId])
 }
 
-/// Scheduled tasks run by GET /api/cron (src/lib/jobs): when each daily /
-/// yearly task last ran, so it runs once per slot even though the single
-/// Supabase pg_cron job calls every minute.
+/// Recurring tasks run by GET /api/cron (src/lib/jobs), one row per task.
+/// A call claims the task's latest slot with a lease (lockedUntil), works
+/// until its time budget, and either finishes it (doneAt) or leaves it
+/// pending with its progress (cursor) — the next call (a minute later)
+/// continues or retries. A call killed mid-run frees it when the lease ends.
 model CronRun {
-  task       String   @id
-  lastRunAt  DateTime
-  /// the last run's result (counts) or error
-  lastResult Json?
-  lastError  String?
-  updatedAt  DateTime @updatedAt
+  task        String    @id
+  /// the latest slot claimed (daily / yearly time, or the minute)
+  slot        DateTime
+  /// when that slot finished; null = pending (in progress, paused or failed)
+  doneAt      DateTime?
+  lockedUntil DateTime?
+  /// progress within the slot (e.g. the last member id done)
+  cursor      Json?
+  /// calls that worked on this slot
+  attempts    Int       @default(0)
+  lastResult  Json?
+  lastError   String?
+  updatedAt   DateTime  @updatedAt
 }

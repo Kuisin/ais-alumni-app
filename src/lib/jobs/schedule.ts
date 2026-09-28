@@ -23,9 +23,10 @@ function hm(at: string): [number, number] {
   return [Number(m[1]), Number(m[2])];
 }
 
-/** The latest slot at or before `now` (null: every minute, always due). */
-export function lastSlot(schedule: Schedule, now: Date): Date | null {
-  if ("every" in schedule) return null;
+/** The latest slot at or before `now` (every minute: the current minute). */
+export function lastSlot(schedule: Schedule, now: Date): Date {
+  if ("every" in schedule)
+    return new Date(Math.floor(now.getTime() / 60_000) * 60_000);
   // JST wall-clock fields, read with the UTC getters.
   const j = new Date(now.getTime() + JST);
   const y = j.getUTCFullYear();

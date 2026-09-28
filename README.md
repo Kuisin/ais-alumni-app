@@ -64,13 +64,22 @@ Feature branches are not deployed. `dev` currently shares the production databas
 9. After the first deploy, bootstrap an admin:
    `DATABASE_URL=<prod pooled url> SEED_ADMIN_EMAIL=you@example.com pnpm db:seed`.
 
-### Crons (UTC schedules in `vercel.ts`)
+### Recurring tasks (`src/lib/jobs`)
 
-| Path | When (JST) | Purpose |
+One Supabase pg_cron job (`app-cron`, set up with `pnpm cron:setup`) calls
+`GET /api/cron` every minute; it runs what is due. `GET /api/cron?task=<name>`
+runs one task now (every task is safe to rerun). Both need
+`Authorization: Bearer $CRON_SECRET`.
+
+| Task | When (JST) | Purpose |
 |---|---|---|
-| `/api/cron/reminders` | daily 09:00 | 7-day / 1-day event reminders; scheduled news notifications |
-| `/api/cron/stage-prompt` | April 1, 09:00 | yearly "is your status still …?" prompt |
-| `/api/cron/cleanup-evidence` | daily 03:00 | delete proof uploads 30 days after decision |
+| `publish-news` | every minute | reserved news; response-deadline reminders |
+| `line-menus` | every minute | LINE rich menu unread dots |
+| `event-reminders` | daily 09:00 | 7-day / 1-day event reminders |
+| `chat-digest` | daily 20:00 | unread group-chat digest |
+| `sync-status` | daily 00:05 | current/former, grades, group chats |
+| `cleanup-evidence` | daily 03:00 | delete proof uploads 30 days after decision |
+| `stage-prompt` | April 1, 09:00 | yearly "is your status still …?" prompt |
 
 ## Assumptions for the spec's open questions
 

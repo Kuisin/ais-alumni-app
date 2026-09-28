@@ -1120,3 +1120,15 @@ model GenderRequest {
   @@index([status, createdAt])
   @@index([userId])
 }
+
+/// Scheduled tasks run by GET /api/cron (src/lib/jobs): when each daily /
+/// yearly task last ran, so it runs once per slot even though the single
+/// Supabase pg_cron job calls every minute.
+model CronRun {
+  task       String   @id
+  lastRunAt  DateTime
+  /// the last run's result (counts) or error
+  lastResult Json?
+  lastError  String?
+  updatedAt  DateTime @updatedAt
+}

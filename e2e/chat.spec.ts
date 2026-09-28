@@ -82,7 +82,7 @@ test("graduates are put in their group chat and can talk", async ({
   await hanako.getByRole("button", { name: "Send" }).click();
   await expect(hanako.getByText(late)).toBeVisible();
   await clearMailbox(grad.email);
-  const res = await hanako.request.get("/api/cron/chat-digest", {
+  const res = await hanako.request.get("/api/cron?task=chat-digest", {
     headers: { Authorization: "Bearer e2e-cron-secret" },
   });
   expect(res.ok()).toBe(true);

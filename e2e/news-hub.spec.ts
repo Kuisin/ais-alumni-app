@@ -110,7 +110,7 @@ test("ニュース hub: confirm, poll, 日程調整, files, comments and a remin
   // One reminder, only to those who haven't answered.
   for (const e of ["hanako@example.com", "admin@example.com"])
     await clearMailbox(e);
-  const res = await admin.request.get("/api/cron/publish-news", {
+  const res = await admin.request.get("/api/cron?task=publish-news", {
     headers: { Authorization: "Bearer e2e-cron-secret" },
   });
   expect((await res.json()).reminders.posts).toBeGreaterThanOrEqual(1);

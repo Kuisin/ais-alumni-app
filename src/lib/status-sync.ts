@@ -17,7 +17,7 @@ type Client = Prisma.TransactionClient | typeof db;
 /**
  * Recompute a member's automatic statuses (§ current/former, grade,
  * graduation) from their 学年 and leave years, and their children's for
- * parents, then their group chats. Called after any save and daily by /api/cron/sync-status, so
+ * parents, then their group chats. Called after any save and daily by the "sync-status" job (src/lib/jobs), so
  * people move from current to former (and up a grade) on their own.
  * Returns true if anything changed.
  */

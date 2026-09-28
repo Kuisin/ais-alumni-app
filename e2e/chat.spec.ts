@@ -15,7 +15,8 @@ const mail = (email: string) =>
     "utf8",
   ).catch(() => "");
 
-const GROUP = /^Graduates \+ former students/;
+// 元在校生 (everyone who left AIS, graduates included) — not its 18+ version.
+const GROUP = /^Former students(?! \(18\+\))/;
 
 /** Pretend `body` was sent 6 minutes ago and `readerId` hasn't read since. */
 async function ageMessage(body: string, readerId: string) {
@@ -64,9 +65,7 @@ test("graduates are put in their group chat and can talk", async ({
   await signInWithEmail(hanako, "hanako@example.com");
   await hanako.goto("/en/app/chat");
   await hanako.getByRole("link", { name: GROUP }).click();
-  await expect(
-    hanako.getByRole("heading", { name: "Graduates + former students" }),
-  ).toBeVisible();
+  await expect(hanako.getByRole("heading", { name: GROUP })).toBeVisible();
   const hello = `Hello from Hanako ${stamp}`;
   // Enter only starts a new line; the Send button sends.
   const box = hanako.getByLabel("Message", { exact: true });
@@ -425,3 +424,44 @@ async function sql(text: string, values: unknown[]) {
     await db.end();
   }
 }
+
+test("元在校生（成人） takes everyone who left; 卒業生（成人） only graduates", async ({
+  page,
+  browser,
+}) => {
+  const stamp = Date.now();
+  // Left AIS early (didn't graduate), born long enough ago to be 18+.
+  const left = await createActiveGraduate(`Left L${stamp}`, "1995-06-06");
+  await sql(
+    `UPDATE "UserRole" SET "didGraduate" = false WHERE "userId" = $1 AND role = 'FORMER_STUDENT'`,
+    [left.id],
+  );
+  await signInWithEmail(page, left.email);
+  await page.goto("/en/app/chat");
+  await expect(
+    page.getByRole("link", { name: /^Former students \(18\+\)/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Graduates/ })).toHaveCount(0);
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  const { rowCount } = await db.query(
+    `SELECT 1 FROM "ChatMember" m JOIN "ChatGroup" g ON g.id = m."groupId"
+     WHERE g.kind = 'ADULTS' AND m."userId" = $1`,
+    [left.id],
+  );
+  await db.end();
+  expect(rowCount).toBe(1);
+
+  // A graduate of the same age is in all four.
+  const grad = await createActiveGraduate(`Grad G${stamp}`, "1995-07-07");
+  const gp = await browser.newPage();
+  await signInWithEmail(gp, grad.email);
+  await gp.goto("/en/app/chat");
+  for (const name of [
+    /^Graduates \(18\+\)/,
+    /^Graduates(?! \(18\+\))/,
+    /^Former students \(18\+\)/,
+    GROUP,
+  ])
+    await expect(gp.getByRole("link", { name }).first()).toBeVisible();
+});

@@ -12,7 +12,7 @@ import {
 } from "./chat";
 
 describe("chat groups", () => {
-  it("puts a graduate in 卒業生＋元在校生 and their class", () => {
+  it("puts a former student in 元在校生 and their class", () => {
     expect(
       desiredGroups([{ role: RoleKey.FORMER_STUDENT, cohortId: "c5" }], []).map(
         (g) => g.key,
@@ -45,7 +45,7 @@ describe("chat groups", () => {
   });
 });
 
-describe("18歳以上 group", () => {
+describe("元在校生 / 卒業生 and their 成人 groups", () => {
   const at = (iso: string) => new Date(`${iso}T00:00:00+09:00`);
   const dob = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
@@ -64,22 +64,50 @@ describe("18歳以上 group", () => {
     expect(isAdult(null, at("2030-04-01"))).toBe(false);
   });
 
-  it("is only for students and graduates who are 18", () => {
-    const grad = [{ role: RoleKey.FORMER_STUDENT, cohortId: null }];
-    expect(desiredGroups(grad, []).map((g) => g.key)).toEqual([
+  const keys = (
+    roles: Parameters<typeof desiredGroups>[0],
+    opts: Parameters<typeof desiredGroups>[2],
+  ) => desiredGroups(roles, [], opts).map((g) => g.key);
+  const graduated = [
+    { role: RoleKey.FORMER_STUDENT, cohortId: null, didGraduate: true },
+  ];
+  const left = [
+    { role: RoleKey.FORMER_STUDENT, cohortId: null, didGraduate: false },
+  ];
+
+  it("元在校生 includes graduates; 卒業生 only those who graduated", () => {
+    const on = { graduates: true };
+    expect(keys(graduated, on)).toEqual(["FORMER_STUDENTS", "GRADUATES"]);
+    expect(keys(left, on)).toEqual(["FORMER_STUDENTS"]);
+  });
+
+  it("成人 versions from the April 1 after turning 18", () => {
+    const adult = { graduates: true, adult: true };
+    expect(keys(graduated, adult)).toEqual([
       "FORMER_STUDENTS",
+      "ADULTS",
+      "GRADUATES",
+      "GRADUATES_ADULTS",
     ]);
-    expect(desiredGroups(grad, [], { adult: true }).map((g) => g.key)).toEqual([
+    expect(keys(left, adult)).toEqual(["FORMER_STUDENTS", "ADULTS"]);
+  });
+
+  it("卒業生 groups wait for the flag (new enum values reach main first)", () => {
+    expect(keys(graduated, { adult: true })).toEqual([
       "FORMER_STUDENTS",
       "ADULTS",
     ]);
-    // Parents and teachers aren't added, however old.
-    for (const role of [RoleKey.CURRENT_PARENT, RoleKey.TEACHER])
+  });
+
+  it("isn't for current students, parents or teachers", () => {
+    for (const role of [
+      RoleKey.CURRENT_STUDENT,
+      RoleKey.CURRENT_PARENT,
+      RoleKey.TEACHER,
+    ])
       expect(
-        desiredGroups([{ role, cohortId: null }], [], { adult: true }).map(
-          (g) => g.key,
-        ),
-      ).not.toContain("ADULTS");
+        keys([{ role, cohortId: null }], { adult: true, graduates: true }),
+      ).not.toEqual(expect.arrayContaining(["ADULTS"]));
   });
 });
 

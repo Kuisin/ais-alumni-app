@@ -36,6 +36,7 @@ export default defineConfig({
       // Chat v2 (18歳以上, DMs) is off on dev/main until released.
       CHAT_V2: "1",
       CHAT_V3: "1",
+      CHAT_V4: "1",
       APP_URL: `http://localhost:${PORT}`,
       AUTH_URL: `http://localhost:${PORT}`,
     },

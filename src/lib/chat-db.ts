@@ -19,6 +19,7 @@ import {
   ADULTS_CHAT_ENABLED,
   CLASS_REPS_CHAT_ENABLED,
   DIRECT_CHAT_ENABLED,
+  GRADUATE_CHATS_ENABLED,
 } from "@/lib/features";
 import { NOTIFY_USER_SELECT, notifyBatch } from "@/lib/notify";
 
@@ -46,7 +47,7 @@ export async function syncChatMembership(
         where: { position: PositionKey.STUDENT_LEADER },
         select: { id: true },
       },
-      roles: { select: { role: true, cohortId: true } },
+      roles: { select: { role: true, cohortId: true, didGraduate: true } },
       parentLinks: {
         select: {
           childCohortId: true,
@@ -83,6 +84,7 @@ export async function syncChatMembership(
   }
   const want = desiredGroups(user.roles, [...childCohorts], {
     adult: ADULTS_CHAT_ENABLED && isAdult(user.dateOfBirth, now),
+    graduates: GRADUATE_CHATS_ENABLED,
     // 学年代表 need a (former) student role, like the position itself.
     rep:
       CLASS_REPS_CHAT_ENABLED &&

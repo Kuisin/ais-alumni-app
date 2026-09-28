@@ -15,6 +15,7 @@
     "since": "since {year}",
     "remove": "Move to former",
     "none": "No current teachers yet.",
-    "removeConfirm": "Remove this teacher's registration?"
+    "removeConfirm": "Remove this teacher's registration?",
+    "schoolEmail": "School email verified"
   }
 }

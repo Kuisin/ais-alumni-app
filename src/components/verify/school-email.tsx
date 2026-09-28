@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
+  type SchoolEmailResult,
   sendSchoolEmailCodeAction,
   verifySchoolEmailCodeAction,
 } from "@/app/actions/verify";
@@ -11,8 +12,9 @@ import { Badge } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
 
 /**
- * Optional teacher school email with OTP confirmation (§6.2). A confirmed
- * code is recorded server-side; the submit action reads it.
+ * Teacher school email (@aisnagoya.net) with code confirmation (§6.2). In
+ * the application a confirmed code is recorded server-side and the submit
+ * action reads it; in 設定 the `send` / `verify` actions save it directly.
  */
 export function SchoolEmail({
   value,
@@ -20,12 +22,19 @@ export function SchoolEmail({
   verifiedEmail,
   onVerified,
   error,
+  send: sendAction = sendSchoolEmailCodeAction,
+  verify: verifyAction = verifySchoolEmailCodeAction,
+  optional = true,
 }: {
   value: string;
   onChange: (v: string) => void;
   verifiedEmail: string | null;
   onVerified: (email: string) => void;
   error?: string;
+  send?: (email: string) => Promise<SchoolEmailResult>;
+  verify?: (email: string, code: string) => Promise<SchoolEmailResult>;
+  /** show 「任意」 after the label (the application) */
+  optional?: boolean;
 }) {
   const t = useTranslations("verify");
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -42,7 +51,7 @@ export function SchoolEmail({
   async function send() {
     setBusy(true);
     setMessage(null);
-    const res = await sendSchoolEmailCodeAction(email);
+    const res = await sendAction(email);
     setBusy(false);
     if (res.ok) {
       setSentTo(email);
@@ -58,7 +67,7 @@ export function SchoolEmail({
   async function confirm() {
     setBusy(true);
     setMessage(null);
-    const res = await verifySchoolEmailCodeAction(email, code);
+    const res = await verifyAction(email, code);
     setBusy(false);
     if (res.ok) {
       onVerified(email);
@@ -79,10 +88,13 @@ export function SchoolEmail({
         id="f-teacher-schoolEmail"
         label={
           <>
-            {t("fields.schoolEmail")}{" "}
-            <span className="font-normal text-slate-500">
-              ({t("optional")})
-            </span>
+            {t("fields.schoolEmail")}
+            {optional ? (
+              <span className="font-normal text-slate-500">
+                {" "}
+                ({t("optional")})
+              </span>
+            ) : null}
           </>
         }
         hint={t("hints.schoolEmail")}
@@ -95,6 +107,7 @@ export function SchoolEmail({
               type="email"
               autoComplete="email"
               inputMode="email"
+              placeholder="name@aisnagoya.net"
               value={value}
               onChange={(e) => onChange(e.target.value)}
               className="min-w-0 flex-1"

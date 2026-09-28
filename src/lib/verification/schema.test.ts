@@ -69,6 +69,26 @@ describe("verification schema (sign-up wizard)", () => {
     expect(r.data.nameRomaji).toBe("Yamada, Taro");
   });
 
+  it("accepts only an @aisnagoya.net school email for teachers", () => {
+    const parse = (email: string) => {
+      const s = filled();
+      s.teacher.schoolEmail = email;
+      return verificationSchema({ requireKanji: false }).safeParse(
+        toPayload(s),
+      );
+    };
+    const ok = parse("T.Sato@aisnagoya.net");
+    expect(ok.success && ok.data.teacher?.schoolEmail).toBe(
+      "t.sato@aisnagoya.net",
+    );
+    const bad = parse("t.sato@gmail.com");
+    expect(bad.success).toBe(false);
+    if (!bad.success)
+      expect(bad.error.issues.map((i) => i.message)).toContain(
+        "schoolEmailDomain",
+      );
+  });
+
   it("requires a type, フリガナ with kanji, and a 学年 for students", () => {
     const s = filled();
     s.types = [];

@@ -18,6 +18,7 @@ import { isGender } from "@/lib/gender";
 import { MergeKeepsManagedError, mergeUsers } from "@/lib/merge";
 import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
+import { isSchoolEmail } from "@/lib/school-email";
 import { AuthError, actionAdmin } from "@/lib/session";
 import { canTransition } from "@/lib/state-machine";
 import { syncMemberStatus } from "@/lib/status-sync";
@@ -211,6 +212,8 @@ const roleSchema = z.object({
     .trim()
     .transform((v) => (v === "" ? null : normalizeEmail(v)))
     .pipe(z.email().nullable())
+    // @aisnagoya.net only.
+    .refine((v) => v === null || isSchoolEmail(v), "schoolEmailDomain")
     .nullable(),
   studentIdNo: optText(40),
 });

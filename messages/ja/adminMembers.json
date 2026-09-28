@@ -118,7 +118,10 @@
       "TEACHER": "教職員"
     },
     "schoolEmailVerified": "確認済み",
-    "stageFromHistory": "学歴・職歴から自動で計算されます（編集は会員の学歴・職歴で）。"
+    "stageFromHistory": "学歴・職歴から自動で計算されます（編集は会員の学歴・職歴で）。",
+    "schoolEmailHint": "@aisnagoya.net のアドレスのみ。確認済みにするには本人がコードで確認します。",
+    "schoolEmailDomain": "@aisnagoya.net のアドレスを入力してください。",
+    "schoolEmailInvalid": "正しいメールアドレスを入力してください。"
   },
   "status": {
     "title": "アカウントの状態",

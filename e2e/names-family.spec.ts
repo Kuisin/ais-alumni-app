@@ -4,6 +4,7 @@ import {
   asListed,
   createActiveGraduate,
   createActiveMember,
+  readCode,
   signInWithEmail,
 } from "./helpers";
 
@@ -253,4 +254,59 @@ test("admins see news outside their audience as view only", async ({
   );
   expect(r.n).toBe(0);
   await sql(`DELETE FROM "NewsPost" WHERE id = $1`, [postId]);
+});
+
+test("teachers confirm an @aisnagoya.net school email in settings", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const teacherEmail = `t${stamp}@aisnagoya.net`;
+  const teacherId = await createActiveMember(`School Mail${stamp}`);
+  const [u] = await sql<{ email: string }>(
+    `SELECT "primaryEmail" AS email FROM "User" WHERE id = $1`,
+    [teacherId],
+  );
+  await sql(
+    `INSERT INTO "UserRole" (id, "userId", role, "teacherStatus") VALUES ($1, $2, 'TEACHER', 'CURRENT')`,
+    [`${teacherId}t`, teacherId],
+  );
+  const page = await browser.newPage();
+  await signInWithEmail(page, u.email);
+  await page.goto("/en/app/settings#school-email");
+  const section = page.locator("#school-email");
+  await section.getByRole("button", { name: "Change", exact: true }).click();
+  const field = section.getByLabel(/^School email/);
+  // Other domains are refused.
+  await field.fill(`t${stamp}@gmail.com`);
+  await section.getByRole("button", { name: "Send code" }).click();
+  await expect(
+    section.getByText("Only @aisnagoya.net addresses can be confirmed."),
+  ).toBeVisible();
+  await field.fill(teacherEmail);
+  await section.getByRole("button", { name: "Send code" }).click();
+  const code = await readCode(teacherEmail);
+  await section.getByLabel("6-digit code").fill(code);
+  await section.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const [r] = await sql<{ email: string | null; ok: boolean }>(
+        `SELECT "schoolEmail" AS email, "schoolEmailVerified" AS ok FROM "UserRole" WHERE "userId" = $1 AND role = 'TEACHER'`,
+        [teacherId],
+      );
+      return r;
+    })
+    .toEqual({ email: teacherEmail, ok: true });
+  // The main (sign-in / notification) email is unchanged.
+  const [after] = await sql<{ email: string }>(
+    `SELECT "primaryEmail" AS email FROM "User" WHERE id = $1`,
+    [teacherId],
+  );
+  expect(after.email).toBe(u.email);
+
+  // Admins see it verified on the teachers page.
+  const admin = await browser.newPage();
+  await signInWithEmail(admin, "admin@example.com");
+  await admin.goto("/en/app/admin/teachers");
+  const row = admin.locator("li", { hasText: teacherEmail });
+  await expect(row.getByText("School email verified")).toBeVisible();
 });

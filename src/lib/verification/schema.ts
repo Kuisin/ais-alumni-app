@@ -3,6 +3,7 @@ import { elementaryEndFor, parseCohortNumber } from "@/lib/cohorts";
 import { GENDERS } from "@/lib/gender";
 import { kanaPart, nameColumns, requireKanaForKanji } from "@/lib/names";
 import { studentStatus } from "@/lib/school";
+import { isSchoolEmail } from "@/lib/school-email";
 
 /**
  * Sign-up (verification) form, version 2. Shared by the client wizard
@@ -184,7 +185,9 @@ export const teacherSchema = z
       .max(254)
       .optional()
       .transform((v) => (v ? v.toLowerCase() : null))
-      .pipe(z.email("invalidEmail").nullable()),
+      .pipe(z.email("invalidEmail").nullable())
+      // AIS addresses only (the extra check that they work at AIS).
+      .refine((v) => v === null || isSchoolEmail(v), "schoolEmailDomain"),
   })
   .superRefine(leftAfterJoined);
 
@@ -522,6 +525,7 @@ const KNOWN_CODES = new Set([
   "diplomaRequired",
   "tooManyFiles",
   "genderRequired",
+  "schoolEmailDomain",
 ]);
 
 function normalizeMessage(message: string): string {

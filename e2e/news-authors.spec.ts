@@ -54,7 +54,9 @@ test("学年代表 post ニュース to their own 学年 only", async ({ page })
   await draftFromNewsList(page, title);
   // Only their 学年 is offered: no 「全員」, groups or individual members.
   await expect(page.getByText("Your 学年", { exact: true })).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /^Class 5\b/ })).toBeChecked();
+  await expect(
+    page.getByRole("checkbox", { name: /^Class 5\b/ }),
+  ).toBeChecked();
   await expect(page.getByRole("radio", { name: /^Everyone/ })).toHaveCount(0);
   await saveDraft(page);
 
@@ -114,4 +116,71 @@ test("members without a posting right see no New post button", async ({
   await expect(page.getByRole("link", { name: "New post" })).toHaveCount(0);
   await page.goto("/en/app/news/new");
   await expect(page).toHaveURL(/\/en\/app\/news$/);
+});
+
+test("同窓会委員 post to anyone once another 同窓会委員 approves", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const author = await createActiveGraduate(`Author A${stamp}`, "1990-01-01");
+  const peer = await createActiveGraduate(`Peer P${stamp}`, "1990-02-02");
+  const reader = await createActiveGraduate(`Reader R${stamp}`, "1990-03-03");
+  for (const u of [author, peer])
+    await sql(
+      `INSERT INTO "UserPosition" (id, "userId", position) VALUES ($1, $2, 'ALUMNI_COMMITTEE')`,
+      [`pos${u.id}`, u.id],
+    );
+  const title = `E2E committee news ${stamp}`;
+
+  // The author sends to everyone: saved, but waiting for approval.
+  const a = await browser.newPage();
+  await signInWithEmail(a, author.email);
+  await draftFromNewsList(a, title);
+  await expect(
+    a.getByText(/only after another 同窓会委員 approves it/),
+  ).toBeVisible();
+  await a.getByRole("radio", { name: /^Send now/ }).check();
+  await a
+    .getByRole("button", { name: "Save and request approval", exact: true })
+    .click();
+  await expect(a).toHaveURL(/\/en\/app\/admin\/news\/[^/?]+\?created=1/);
+  await expect(a.getByText(/Waiting for another 同窓会委員/)).toBeVisible();
+  await expect(a.getByRole("button", { name: "Approve" })).toHaveCount(0);
+  const postUrl = a.url().replace(/\?.*$/, "");
+
+  // Members can't see it yet.
+  const r = await browser.newPage();
+  await signInWithEmail(r, reader.email);
+  await r.goto("/en/app/news");
+  await expect(r.getByRole("heading", { name: "News" })).toBeVisible();
+  await expect(r.getByText(title)).toHaveCount(0);
+
+  // Another 同窓会委員 finds it in admin mode and approves it.
+  const p = await browser.newPage();
+  await signInWithEmail(p, peer.email);
+  await p.goto("/en/app/admin/news");
+  const row = p.getByRole("link", { name: new RegExp(title) });
+  await expect(row.getByText("Awaiting approval")).toBeVisible();
+  await row.click();
+  await expect(p).toHaveURL(postUrl);
+  // View only: not theirs to edit.
+  await expect(
+    p.getByRole("button", { name: "Edit", exact: true }),
+  ).toHaveCount(0);
+  await p.getByRole("button", { name: "Approve" }).click();
+  await expect(p.getByText("Post approved.")).toBeVisible();
+  await expect(p.getByText(/^Approved by /)).toBeVisible();
+
+  await r.reload();
+  await expect(r.getByText(title)).toBeVisible();
+
+  // Editing it again needs a new approval.
+  await a.goto(postUrl);
+  await a.getByRole("button", { name: "Edit", exact: true }).click();
+  await a.getByLabel("Body (Japanese)").fill("Edited body");
+  await a.getByRole("button", { name: "Save and request approval" }).click();
+  await expect(a.getByText(/Waiting for another 同窓会委員/)).toBeVisible();
+  await r.reload();
+  await expect(r.getByRole("heading", { name: "News" })).toBeVisible();
+  await expect(r.getByText(title)).toHaveCount(0);
 });

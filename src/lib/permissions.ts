@@ -17,9 +17,12 @@ import { type AudienceSpec, isEveryone } from "@/lib/news-audience";
  * - TEACHER_REGISTRAR (any member the admins choose): may mark members as
  *   current teachers (現職) or move them to former.
  *
+ * - ALUMNI_COMMITTEE 同窓会委員 (a student or parent role): may post ニュース
+ *   to anyone; the post goes out once another 同窓会委員 approves it.
+ *
  * ニュース posts (newsScope): admins may post to anyone; current teachers to
- * any audience, which always includes current teachers; STUDENT_LEADER to
- * their own 学年 only.
+ * any audience, which always includes current teachers; 同窓会委員 to anyone
+ * after approval; STUDENT_LEADER to their own 学年 only.
  */
 
 export type Holder = {
@@ -39,6 +42,10 @@ const STUDENT_ROLES: readonly RoleKey[] = [
   RoleKey.FORMER_STUDENT,
   RoleKey.CURRENT_STUDENT,
 ];
+const PARENT_ROLES: readonly RoleKey[] = [
+  RoleKey.CURRENT_PARENT,
+  RoleKey.FORMER_PARENT,
+];
 
 /** Whether a member's roles allow holding the position. */
 export function positionEligible(
@@ -49,6 +56,10 @@ export function positionEligible(
   if (position === PositionKey.TEACHER_MANAGER)
     return roles.includes(RoleKey.TEACHER) && currentTeacher;
   if (position === PositionKey.TEACHER_REGISTRAR) return true;
+  if (position === PositionKey.ALUMNI_COMMITTEE)
+    return roles.some(
+      (r) => STUDENT_ROLES.includes(r) || PARENT_ROLES.includes(r),
+    );
   return roles.some((r) => STUDENT_ROLES.includes(r));
 }
 
@@ -58,7 +69,11 @@ export function broadcastRights(h: Holder): BroadcastRight[] {
   if (h.isAdmin) rights.push({ kind: "ANY", position: null });
   for (const p of h.positions) {
     if (!positionEligible(p.position, h.roles, h.currentTeacher)) continue;
-    if (p.position === PositionKey.TEACHER_REGISTRAR) continue;
+    if (
+      p.position === PositionKey.TEACHER_REGISTRAR ||
+      p.position === PositionKey.ALUMNI_COMMITTEE
+    )
+      continue;
     if (p.position === PositionKey.TEACHER_MANAGER) {
       rights.push({ kind: "ANY", position: PositionKey.TEACHER_MANAGER });
     } else if (p.cohortId !== null) {
@@ -120,6 +135,8 @@ export function withinLimit(
 export type NewsScope =
   | { kind: "ANY" }
   | { kind: "TEACHER" }
+  /** 同窓会委員: anyone, once another 同窓会委員 approves */
+  | { kind: "COMMITTEE" }
   | { kind: "COHORT"; cohortIds: readonly string[] };
 
 export function newsScope(h: Holder): NewsScope | null {
@@ -127,6 +144,7 @@ export function newsScope(h: Holder): NewsScope | null {
   if (h.isAdmin) return { kind: "ANY" };
   if (h.currentTeacher && h.roles.includes(RoleKey.TEACHER))
     return { kind: "TEACHER" };
+  if (holdsCommittee(h)) return { kind: "COMMITTEE" };
   const cohortIds = [
     ...new Set(
       h.positions
@@ -151,7 +169,7 @@ export function scopedAudience(
   scope: NewsScope,
   spec: AudienceSpec,
 ): AudienceSpec | null {
-  if (scope.kind === "ANY") return spec;
+  if (scope.kind === "ANY" || scope.kind === "COMMITTEE") return spec;
   if (scope.kind === "TEACHER")
     return isEveryone(spec) || spec.groups.includes("TEACHER_CURRENT")
       ? spec
@@ -165,6 +183,28 @@ export function scopedAudience(
   )
     return null;
   return spec;
+}
+
+function holdsCommittee(h: Holder): boolean {
+  return h.positions.some(
+    (p) =>
+      p.position === PositionKey.ALUMNI_COMMITTEE &&
+      positionEligible(p.position, h.roles, h.currentTeacher),
+  );
+}
+
+/** Whether posts saved under this scope wait for a 同窓会委員's approval. */
+export function needsApproval(scope: NewsScope): boolean {
+  return scope.kind === "COMMITTEE";
+}
+
+/**
+ * Who may approve a 同窓会委員's post: another 同窓会委員, or an admin
+ * (so a post isn't stuck while there is only one 同窓会委員). The caller
+ * checks that the approver isn't the author.
+ */
+export function canApproveNews(h: Holder): boolean {
+  return h.state === AccountState.ACTIVE && (h.isAdmin || holdsCommittee(h));
 }
 
 /** What a member may open in admin mode. */

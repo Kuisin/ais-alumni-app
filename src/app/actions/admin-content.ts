@@ -7,10 +7,15 @@ import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { redirect } from "@/i18n/navigation";
 import { audit } from "@/lib/audit";
+import { getNewsApprover } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { parseJstLocal } from "@/lib/format";
 import { toKatakana } from "@/lib/names";
-import { COVER_MAX_BYTES, sendNewsNotification } from "@/lib/news";
+import {
+  awaitingApproval,
+  COVER_MAX_BYTES,
+  sendNewsNotification,
+} from "@/lib/news";
 import {
   audienceSpecSchema,
   audienceUserWhere,
@@ -24,8 +29,13 @@ import {
   scheduleInputSchema,
 } from "@/lib/news-hub";
 import { checkNewAttachments, type HubInput, saveHub } from "@/lib/news-hub-db";
-import { scopedAudience } from "@/lib/permissions";
-import { AuthError, actionAdmin, actionNewsAuthor } from "@/lib/session";
+import { needsApproval, scopedAudience } from "@/lib/permissions";
+import {
+  AuthError,
+  actionActive,
+  actionAdmin,
+  actionNewsAuthor,
+} from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
 /**
@@ -428,8 +438,14 @@ export async function saveNewsAction(
         : delivery === "DRAFT"
           ? null
           : undefined; // KEEP
+  // A 同窓会委員's post (new or edited) waits for another 同窓会委員's
+  // approval; admins' edits leave the approval as it is.
+  const approval = needsApproval(editor.scope)
+    ? { approvalRequired: true, approvedAt: null, approvedById: null }
+    : {};
   const data = {
     ...rest,
+    ...approval,
     ...(publishedAt !== undefined ? { publishedAt } : {}),
     // Who receives it, plus the older columns for code that reads them.
     audience: audience as Prisma.InputJsonValue,
@@ -510,8 +526,13 @@ export async function saveNewsAction(
   for (const key of removedFiles) await removeFile(key);
   revalidateNews();
 
-  // Send now: continue to the confirm step (recipient count) before sending.
-  if (delivery === "NOW" && data.notifyOnPublish)
+  // Send now: continue to the confirm step (recipient count) before sending
+  // (after approval, for a 同窓会委員's post).
+  if (
+    delivery === "NOW" &&
+    data.notifyOnPublish &&
+    !needsApproval(editor.scope)
+  )
     return go(`/app/admin/news/${postId}?notify=1`);
   if (!id) return go(`/app/admin/news/${postId}?created=1`);
   return { ok: true };
@@ -571,10 +592,16 @@ export async function notifyNewsAction(fd: FormData): Promise<void> {
   const { user: admin } = await newsEditor(id);
   const post = await db.newsPost.findUnique({
     where: { id },
-    select: { publishedAt: true, notifiedAt: true },
+    select: {
+      publishedAt: true,
+      notifiedAt: true,
+      approvalRequired: true,
+      approvedAt: true,
+    },
   });
   if (!post) return go("/app/admin/news");
-  if (post.notifiedAt) return go(`/app/admin/news/${id}`);
+  if (post.notifiedAt || awaitingApproval(post))
+    return go(`/app/admin/news/${id}`);
 
   const now = new Date();
   const publishNow = !post.publishedAt || post.publishedAt > now;
@@ -594,6 +621,30 @@ export async function notifyNewsAction(fd: FormData): Promise<void> {
   );
   revalidateNews();
   return go(`/app/admin/news/${id}?notified=1`);
+}
+
+/**
+ * Approve a 同窓会委員's post (another 同窓会委員 or an admin, never the
+ * author). Raw SQL so updatedAt stays: a reserved post whose time has passed
+ * is then announced by the next cron call (dueScheduledNews).
+ */
+export async function approveNewsAction(fd: FormData): Promise<void> {
+  const user = await actionActive();
+  if (!(await getNewsApprover(user))) throw new AuthError("forbidden");
+  const id = Id.parse(str(fd, "id"));
+  const now = new Date();
+  const approved = await db.$executeRaw`
+    UPDATE "NewsPost"
+    SET "approvedAt" = ${now}, "approvedById" = ${user.id}
+    WHERE id = ${id}
+      AND "approvalRequired" = true
+      AND "approvedAt" IS NULL
+      AND "createdById" <> ${user.id}`;
+  if (approved > 0) {
+    await audit(user.id, "news.approve", { type: "NewsPost", id });
+    revalidateNews();
+  }
+  return go(`/app/admin/news/${id}${approved > 0 ? "?approved=1" : ""}`);
 }
 
 // ─── ニュース audience helpers (editor) ─────────────────────────────────────

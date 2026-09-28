@@ -135,15 +135,18 @@ export function NewsForm({
   }
   const [notify, setNotify] = useState(values.notifyOnPublish);
   const submitLabel =
-    delivery === "NOW"
-      ? notify
-        ? t("delivery.submitConfirm")
-        : t("delivery.submitPublish")
-      : delivery === "SCHEDULE"
-        ? t("delivery.submitSchedule")
-        : delivery === "DRAFT"
-          ? t("delivery.submitDraft")
-          : tc("save");
+    // 同窓会委員: nothing goes out until another 同窓会委員 approves.
+    scope.kind === "COMMITTEE" && delivery !== "DRAFT"
+      ? t("approval.submit")
+      : delivery === "NOW"
+        ? notify
+          ? t("delivery.submitConfirm")
+          : t("delivery.submitPublish")
+        : delivery === "SCHEDULE"
+          ? t("delivery.submitSchedule")
+          : delivery === "DRAFT"
+            ? t("delivery.submitDraft")
+            : tc("save");
 
   return (
     <>
@@ -158,6 +161,9 @@ export function NewsForm({
           </Alert>
         ) : null}
         {state.ok ? <Alert tone="success">{tc("saved")}</Alert> : null}
+        {scope.kind === "COMMITTEE" ? (
+          <Alert tone="info">{t("approval.formHint")}</Alert>
+        ) : null}
 
         <FormSection
           icon={<Type />}

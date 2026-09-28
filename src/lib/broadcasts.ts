@@ -17,6 +17,7 @@ import {
   type Audience,
   type BroadcastRight,
   broadcastRights,
+  canApproveNews,
   type Holder,
   type NewsScope,
   newsScope,
@@ -52,6 +53,11 @@ export async function getNewsScope(
   user: CurrentUser,
 ): Promise<NewsScope | null> {
   return newsScope(await loadHolder(user));
+}
+
+/** Whether the member may approve 同窓会委員 ニュース posts (not their own). */
+export async function getNewsApprover(user: CurrentUser): Promise<boolean> {
+  return canApproveNews(await loadHolder(user));
 }
 
 /** Which admin-mode pages the member may open. */

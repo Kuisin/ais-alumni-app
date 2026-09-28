@@ -6,6 +6,7 @@ import { z } from "zod";
 import { NewsPollKind, NewsVote } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { isLive } from "@/lib/news";
 import {
   adminOnlyView,
   matchesAudience,
@@ -40,8 +41,7 @@ async function openPost(postId: unknown) {
   const id = Id.safeParse(postId);
   if (!user || !id.success) return null;
   const post = await db.newsPost.findUnique({ where: { id: id.data } });
-  if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
-    return null;
+  if (!post || !isLive(post)) return null;
   const viewer = await newsViewer(user);
   const spec = specFromPost(post);
   if (!matchesAudience(spec, viewer)) return null;

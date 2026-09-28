@@ -17,6 +17,7 @@ import { markNewsRead } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDate, formatDateTime, localized } from "@/lib/format";
+import { isLive } from "@/lib/news";
 import {
   adminOnlyView,
   matchesAudience,
@@ -33,8 +34,7 @@ const loadPost = cache(async (id: string) => {
   const user = await getCurrentUser();
   if (!user || id.length > 64) return null;
   const post = await db.newsPost.findUnique({ where: { id } });
-  if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
-    return null;
+  if (!post || !isLive(post)) return null;
   const viewer = await newsViewer(user);
   const spec = specFromPost(post);
   if (!matchesAudience(spec, viewer)) return null;

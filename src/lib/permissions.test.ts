@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   broadcastRights,
+  canApproveNews,
   type Holder,
   hasStaffAccess,
+  needsApproval,
   newsScope,
   positionEligible,
   rightFor,
@@ -210,5 +212,40 @@ describe("news scope", () => {
     expect(scopedAudience(c, { ...own, groups: ["GRADUATE"] })).toBe(null);
     expect(scopedAudience(c, { ...own, userIds: ["u"] })).toBe(null);
     expect(scopedAudience(c, { ...own, includeParents: true })).toBe(null);
+  });
+});
+
+describe("同窓会委員 (ALUMNI_COMMITTEE)", () => {
+  const committee = (roles: Holder["roles"]) =>
+    h({ roles, positions: [{ position: "ALUMNI_COMMITTEE", cohortId: null }] });
+  it("is for students and parents", () => {
+    for (const r of [
+      "CURRENT_STUDENT",
+      "FORMER_STUDENT",
+      "CURRENT_PARENT",
+      "FORMER_PARENT",
+    ] as const)
+      expect(positionEligible("ALUMNI_COMMITTEE", [r], false)).toBe(true);
+    expect(positionEligible("ALUMNI_COMMITTEE", ["TEACHER"], true)).toBe(false);
+  });
+  it("posts to anyone, after approval; no notification right", () => {
+    const scope = newsScope(committee(["CURRENT_PARENT"]));
+    expect(scope).toEqual({ kind: "COMMITTEE" });
+    expect(needsApproval(scope ?? { kind: "ANY" })).toBe(true);
+    expect(needsApproval({ kind: "ANY" })).toBe(false);
+    expect(broadcastRights(committee(["CURRENT_PARENT"]))).toEqual([]);
+    // an ineligible holder gets nothing
+    expect(newsScope(committee(["TEACHER"]))).toBe(null);
+  });
+  it("other 同窓会委員 and admins approve", () => {
+    expect(canApproveNews(committee(["FORMER_STUDENT"]))).toBe(true);
+    expect(canApproveNews(h({ isAdmin: true }))).toBe(true);
+    expect(canApproveNews(h({ roles: ["FORMER_STUDENT"] }))).toBe(false);
+    expect(
+      canApproveNews({
+        ...committee(["FORMER_STUDENT"]),
+        state: "DEACTIVATED",
+      }),
+    ).toBe(false);
   });
 });

@@ -18,11 +18,49 @@ export const COVER_TYPES = { "image/jpeg": "jpg", "image/png": "png" } as const;
 /** DB filter for events and news a viewer may see (src/lib/audience.ts). */
 export const targetRolesWhere = audienceWhere;
 
-/** Published = publishedAt set, not in the future, and not archived. */
+/** Not waiting for a 同窓会委員's approval (see NewsPost.approvalRequired). */
+export const approvedWhere: Prisma.NewsPostWhereInput = {
+  OR: [{ approvalRequired: false }, { approvedAt: { not: null } }],
+};
+
+/** A 同窓会委員's post nobody has approved yet: hidden, never notified. */
+export function awaitingApproval(post: {
+  approvalRequired: boolean;
+  approvedAt: Date | null;
+}): boolean {
+  return post.approvalRequired && !post.approvedAt;
+}
+
+/**
+ * Published = publishedAt set, not in the future, not archived, and (for a
+ * 同窓会委員's post) approved.
+ */
 export function publishedWhere(
   now: Date = new Date(),
 ): Prisma.NewsPostWhereInput {
-  return { publishedAt: { lte: now }, archivedAt: null };
+  return {
+    publishedAt: { lte: now },
+    archivedAt: null,
+    AND: [approvedWhere],
+  };
+}
+
+/** The same check for one loaded post. */
+export function isLive(
+  post: {
+    publishedAt: Date | null;
+    archivedAt: Date | null;
+    approvalRequired: boolean;
+    approvedAt: Date | null;
+  },
+  now: Date = new Date(),
+): boolean {
+  return (
+    !!post.publishedAt &&
+    post.publishedAt <= now &&
+    !post.archivedAt &&
+    !awaitingApproval(post)
+  );
 }
 
 export type NewsStatus = "draft" | "scheduled" | "published";
@@ -79,6 +117,7 @@ export async function sendNewsNotification(
     WHERE id = ${postId}
       AND "archivedAt" IS NULL
       AND "publishedAt" <= ${now}
+      AND ("approvalRequired" = false OR "approvedAt" IS NOT NULL)
       AND ("notifiedAt" IS NULL OR "notifyingUntil" < ${new Date()})`;
   if (claimed === 0) return null;
 
@@ -121,7 +160,8 @@ export async function sendNewsNotification(
  * i.e. publishedAt > updatedAt (a Prisma field reference). Posts published
  * immediately are announced only through the admin "Publish & notify" step.
  * Posts older than 7 days are ignored so a misconfigured cron can't blast
- * stale news.
+ * stale news. A 同窓会委員's reserved post waits for approval; approving
+ * doesn't touch updatedAt, so it's announced on the next call.
  */
 export async function dueScheduledNews(
   now: Date = new Date(),
@@ -131,6 +171,7 @@ export async function dueScheduledNews(
     where: {
       archivedAt: null,
       publishedAt: { lte: now, gte: week },
+      AND: [approvedWhere],
       OR: [
         {
           notifiedAt: null,

@@ -35,7 +35,8 @@
   "positions": {
     "TEACHER_MANAGER": "教職員・管理者",
     "STUDENT_LEADER": "学年代表",
-    "TEACHER_REGISTRAR": "教職員登録担当"
+    "TEACHER_REGISTRAR": "教職員登録担当",
+    "ALUMNI_COMMITTEE": "同窓会委員"
   },
   "fieldErrors": {
     "required": "この項目は必須です。",

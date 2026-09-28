@@ -498,52 +498,57 @@ model EventCheckIn {
 }
 
 model NewsPost {
-  id              String           @id @default(cuid())
-  titleJa         String?
-  titleEn         String?
-  bodyJa          String?
-  bodyEn          String?
-  coverUrl        String?
-  targetRoles     RoleKey[]
+  id               String           @id @default(cuid())
+  titleJa          String?
+  titleEn          String?
+  bodyJa           String?
+  bodyEn           String?
+  coverUrl         String?
+  targetRoles      RoleKey[]
   // Added: preferred over targetRoles when non-empty
-  targetAudiences AudienceKey[]    @default([])
-  pinned          Boolean          @default(false)
-  publishedAt     DateTime?
-  notifiedAt      DateTime? // added: set once the publish notification batch has gone out
+  targetAudiences  AudienceKey[]    @default([])
+  pinned           Boolean          @default(false)
+  publishedAt      DateTime?
+  notifiedAt       DateTime? // added: set once the publish notification batch has gone out
   /// lease while the publish notification is being sent; an expired lease
   /// with notifiedAt set = unfinished (failed / paused / killed) → retried
-  notifyingUntil  DateTime?
+  notifyingUntil   DateTime?
   // Added: hidden from members and never notified; admins can restore it
-  archivedAt      DateTime?
+  archivedAt       DateTime?
   // Added: who receives it (src/lib/news-audience.ts AudienceSpec: groups,
   // 学年, individual members). null = derive from targetAudiences/targetRoles.
-  audience        Json?
+  audience         Json?
   // Added: send a LINE/email notification when it goes live (now or at the
   // reserved publishedAt); false = publish in the app only
-  notifyOnPublish Boolean          @default(true)
+  notifyOnPublish  Boolean          @default(true)
   // Added (hub): members press 「確認しました」
-  requireConfirm  Boolean          @default(false)
+  requireConfirm   Boolean          @default(false)
   // Added (hub): members may comment / react
-  allowComments   Boolean          @default(true)
+  allowComments    Boolean          @default(true)
   // Added (hub): answer (confirm / poll / 日程調整) by; one reminder to
   // those who haven't, a day before (remindedAt)
-  deadline        DateTime?
-  remindedAt      DateTime?
+  deadline         DateTime?
+  remindedAt       DateTime?
   /// lease while a cron call sends the reminder; an expired lease with
   /// remindedAt set = unfinished (failed / paused / killed) → retried
-  remindingUntil  DateTime?
+  remindingUntil   DateTime?
   // Added (hub): answers closed early by the sender (null = open until deadline)
-  closedAt        DateTime?
-  createdById     String
-  createdBy       User             @relation(fields: [createdById], references: [id])
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  reads           NewsRead[]
-  confirms        NewsConfirm[]
-  polls           NewsPoll[]
-  comments        NewsComment[]
-  reactions       NewsReaction[]
-  attachments     NewsAttachment[]
+  closedAt         DateTime?
+  // Added: posted by a 同窓会委員 — hidden and not notified until another
+  // 同窓会委員 (or an admin) approves it; the author's edits reset approval
+  approvalRequired Boolean          @default(false)
+  approvedAt       DateTime?
+  approvedById     String?
+  createdById      String
+  createdBy        User             @relation(fields: [createdById], references: [id])
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  reads            NewsRead[]
+  confirms         NewsConfirm[]
+  polls            NewsPoll[]
+  comments         NewsComment[]
+  reactions        NewsReaction[]
+  attachments      NewsAttachment[]
 
   @@index([publishedAt])
 }
@@ -681,6 +686,9 @@ enum PositionKey {
   STUDENT_LEADER
   /// may mark members as current teachers (現職) or remove them
   TEACHER_REGISTRAR
+  /// 同窓会委員 (students / parents): may post ニュース to anyone, published
+  /// once another 同窓会委員 approves
+  ALUMNI_COMMITTEE
 }
 
 model UserPosition {

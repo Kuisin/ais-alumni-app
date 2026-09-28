@@ -8,8 +8,10 @@ import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
+import type { Prisma } from "@/generated/prisma/client";
 import { Link } from "@/i18n/navigation";
 import { newsReadStats } from "@/lib/announcements";
+import { getNewsApprover } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
@@ -37,8 +39,13 @@ export default async function AdminNewsPage({
   const { user } = await requireNewsAuthor();
   const t = await getTranslations("adminContent");
 
-  // Admins see every post; teachers and 学年代表 only their own.
-  const mine = user.isAdmin ? {} : { createdById: user.id };
+  // Admins see every post; other authors their own, and 同窓会委員 also the
+  // 同窓会委員 posts they may approve.
+  const mine: Prisma.NewsPostWhereInput = user.isAdmin
+    ? {}
+    : (await getNewsApprover(user))
+      ? { OR: [{ createdById: user.id }, { approvalRequired: true }] }
+      : { createdById: user.id };
   const archived = sp.archived === "1";
   const archivedCount = await db.newsPost.count({
     where: { ...mine, archivedAt: { not: null } },
@@ -63,6 +70,8 @@ export default async function AdminNewsPage({
       targetRoles: true,
       targetAudiences: true,
       audience: true,
+      approvalRequired: true,
+      approvedAt: true,
     },
   });
   const posts = rows.slice(0, PAGE_SIZE);

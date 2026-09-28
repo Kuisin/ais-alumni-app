@@ -82,7 +82,7 @@
     "chatBar": "Menu",
     "admin": {
       "title": "LINE menu",
-      "intro": "Shows buttons to the app's pages (a rich menu) under the LINE Official Account chat, instead of the keyboard.",
+      "intro": "Shows buttons (a rich menu) under the Official Account's chat instead of the keyboard. The top two, “Unread news” and “News list”, get a reply in the chat (not counted toward LINE's message allowance); the rest open pages of the app.",
       "status": "Status",
       "installed": "Installed",
       "notDefault": "Installed (not the default)",
@@ -99,7 +99,12 @@
         "notConfigured": "LINE Messaging API credentials are not set.",
         "failed": "Couldn't install the menu on LINE."
       },
-      "installConfirm": "This changes the menu for every LINE friend. Continue?"
+      "installConfirm": "This changes the menu for every LINE friend. Continue?",
+      "replyNote": "(reply in the chat, free)"
+    },
+    "replies": {
+      "unread": "Unread news",
+      "newsList": "News list"
     }
   },
   "usage": {
@@ -113,5 +118,21 @@
     "other": "Other",
     "none": "Nothing sent by LINE yet this month.",
     "hint": "LINE counts each message once per person who receives it. Replies aren't counted. The count resets on the 1st of each month (Japan time)."
+  },
+  "reply": {
+    "notLinked": "This LINE account isn't linked to a member account. Link LINE from Settings in the app.",
+    "notActive": "You can read the news once your membership is approved.",
+    "untitled": "(Untitled)",
+    "all": "All news",
+    "more": "{count} more in the app",
+    "unread": {
+      "head": "📰 {count, plural, one {# unread post} other {# unread posts}}",
+      "none": "No unread news."
+    },
+    "list": {
+      "head": "📰 Latest news ({count})",
+      "none": "No news yet.",
+      "new": "🔴New"
+    }
   }
 }

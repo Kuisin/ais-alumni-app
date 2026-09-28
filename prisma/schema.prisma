@@ -110,6 +110,9 @@ model User {
   lineUserId            String?              @unique
   lineDisplayName       String?
   lineFollowing         Boolean              @default(false)
+  /// LINE rich menu variant linked to the member ("ja", "en-chat-news" …;
+  /// src/lib/line-menu-sync.ts); null = unknown, relinked on the next sync
+  lineMenu              String?
   lineBannerDismissedAt DateTime?
   lineOnboardingSeenAt  DateTime?
   notifyVia             NotifyChannel        @default(AUTO)

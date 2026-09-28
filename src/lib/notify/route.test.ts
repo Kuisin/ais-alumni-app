@@ -32,12 +32,11 @@ describe("notification routing (§11)", () => {
       chooseChannel(u({ lineUserId: null, primaryEmail: null })),
     ).toBeNull();
   });
-  it("always adds email for alwaysEmail kinds", () => {
-    expect(channelsFor(u(), { alwaysEmail: true })).toEqual(["LINE", "EMAIL"]);
+  it("LINE-enabled kinds follow the member's choice", () => {
+    expect(channelsFor(u(), { line: true })).toEqual(["LINE"]);
     expect(
-      channelsFor(u({ lineFollowing: false }), { alwaysEmail: true }),
+      channelsFor(u({ notifyVia: NotifyChannel.EMAIL_ONLY }), { line: true }),
     ).toEqual(["EMAIL"]);
-    expect(channelsFor(u())).toEqual(["LINE"]);
   });
 });
 
@@ -91,5 +90,15 @@ describe("deliverWithFallback", () => {
   it("has nothing to fall back to without an email address", async () => {
     const out = await deliverWithFallback(["LINE"], false, fail, () => {});
     expect(out).toEqual([]);
+  });
+});
+
+describe("every other kind goes by email", () => {
+  it("even when LINE is linked and followed", () => {
+    expect(channelsFor(u())).toEqual(["EMAIL"]);
+  });
+
+  it("is skipped, not sent by LINE, without an email address", () => {
+    expect(channelsFor(u({ primaryEmail: null }))).toEqual([]);
   });
 });

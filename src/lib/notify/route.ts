@@ -26,18 +26,19 @@ export function chooseChannel(user: RoutableUser): Channel | null {
 }
 
 /**
- * Channels to use. `alwaysEmail` kinds (verification result, security changes,
- * deactivation) go by email in addition to the routed channel (§11).
+ * Channels to use (§11). Only LINE-enabled kinds (chat mentions, ニュース)
+ * follow the member's LINE / email choice; every other kind goes by email.
  */
 export function channelsFor(
   user: RoutableUser,
-  opts: { alwaysEmail?: boolean } = {},
+  opts: { line?: boolean } = {},
 ): Channel[] {
-  const primary = chooseChannel(user);
-  const out = new Set<Channel>();
-  if (primary) out.add(primary);
-  if (opts.alwaysEmail && user.primaryEmail) out.add("EMAIL");
-  return [...out];
+  const channel = opts.line
+    ? chooseChannel(user)
+    : user.primaryEmail
+      ? "EMAIL"
+      : null;
+  return channel ? [channel] : [];
 }
 
 /**

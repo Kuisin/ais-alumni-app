@@ -84,7 +84,7 @@ export async function NotifyPanel({
   }
 
   const users = await targetedRecipients(post);
-  const est = estimateLinePushes(users);
+  const est = estimateLinePushes(users, "NEWS");
   const unreachable = users.length - est.line - est.email;
 
   return (

@@ -38,8 +38,12 @@ export const OPTIONAL_CATEGORIES: readonly NotifyCategory[] =
 type KindSpec = {
   category: NotifyCategory;
   emoji: string;
-  /** Also email when LINE is the routed channel (important / security). */
-  alwaysEmail?: boolean;
+  /**
+   * May go by LINE (for members who get notifications there). Only chat
+   * mentions and ニュース do, in real time; everything else is email, so
+   * LINE's monthly message allowance (free plan: 200) lasts.
+   */
+  line?: true;
 };
 
 export const NOTIFY_KINDS = {
@@ -47,34 +51,28 @@ export const NOTIFY_KINDS = {
   VERIFICATION_APPROVED: {
     category: "account",
     emoji: "🎉",
-    alwaysEmail: true,
   },
   VERIFICATION_REJECTED: {
     category: "account",
     emoji: "📋",
-    alwaysEmail: true,
   },
   VERIFICATION_NEEDS_INFO: {
     category: "account",
     emoji: "📝",
-    alwaysEmail: true,
   },
   SECURITY_METHOD_ADDED: {
     category: "account",
     emoji: "🔐",
-    alwaysEmail: true,
   },
   SECURITY_METHOD_REMOVED: {
     category: "account",
     emoji: "🔐",
-    alwaysEmail: true,
   },
   ACCOUNT_DEACTIVATED_SELF: {
     category: "account",
     emoji: "👋",
-    alwaysEmail: true,
   },
-  ACCOUNT_DEACTIVATED: { category: "account", emoji: "⏸️", alwaysEmail: true },
+  ACCOUNT_DEACTIVATED: { category: "account", emoji: "⏸️" },
   ACCOUNT_REACTIVATED: { category: "account", emoji: "▶️" },
   NAME_REQUEST_APPROVED: { category: "account", emoji: "✅" },
   NAME_REQUEST_REJECTED: { category: "account", emoji: "📋" },
@@ -85,14 +83,14 @@ export const NOTIFY_KINDS = {
   RECORD_REQUEST_APPROVED: { category: "account", emoji: "✅" },
   RECORD_REQUEST_REJECTED: { category: "account", emoji: "📋" },
   // News
-  NEWS: { category: "news", emoji: "📰" },
+  NEWS: { category: "news", emoji: "📰", line: true },
   NEWS_REMINDER: { category: "news", emoji: "⏰" },
   BROADCAST: { category: "news", emoji: "✉️" },
   // Events
   EVENT_REMINDER_7D: { category: "events", emoji: "📅" },
   EVENT_REMINDER_1D: { category: "events", emoji: "📅" },
   // Chat
-  CHAT_MENTION: { category: "chat", emoji: "💬" },
+  CHAT_MENTION: { category: "chat", emoji: "💬", line: true },
   CHAT_DIGEST: { category: "chat", emoji: "💬" },
   // Follows & vouching
   FOLLOW_REQUEST: { category: "social", emoji: "👤" },

@@ -95,7 +95,10 @@ export async function previewBroadcast(
     where: await recipientsWhere(senderId, audience),
     select: NOTIFY_USER_SELECT,
   });
-  return { recipients: users.length, ...estimateLinePushes(users) };
+  return {
+    recipients: users.length,
+    ...estimateLinePushes(users, "BROADCAST"),
+  };
 }
 
 /** Record the broadcast and deliver it (LINE multicast or email per member). */
@@ -111,7 +114,7 @@ export async function sendBroadcast(params: {
     where: await recipientsWhere(sender.id, audience),
     select: NOTIFY_USER_SELECT,
   });
-  const counts = estimateLinePushes(users);
+  const counts = estimateLinePushes(users, "BROADCAST");
   const broadcast = await db.broadcast.create({
     data: {
       senderId: sender.id,

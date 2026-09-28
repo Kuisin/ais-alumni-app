@@ -1,11 +1,14 @@
 import type { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { lineConfigured, lineRequest } from "@/lib/line";
+import { LINE_POSTBACK } from "@/lib/line-reply";
 import { publicUrl } from "@/lib/urls";
 
 /**
- * The Official Account's rich menu: a tile menu of app pages shown under
- * the chat instead of the keyboard (selected: true). One menu per language
+ * The Official Account's rich menu, shown under the chat instead of the
+ * keyboard (selected: true): two buttons on top that ask for unread chats /
+ * the news list — answered by a free reply (line-reply.ts), not a push — and a
+ * 3 × 2 grid of app pages below. One menu per language
  * (aliases ais-menu-ja / ais-menu-en); Japanese is the default, members
  * who use English get theirs linked. Installed from 管理 → LINEメニュー
  * (installRichMenus); kept in step with the member's language
@@ -21,21 +24,45 @@ export const RICH_MENU_ITEMS = [
   { key: "settings", path: "/app/settings" },
 ] as const;
 
-export type RichMenuKey = (typeof RICH_MENU_ITEMS)[number]["key"];
+/** Top row: buttons that post back and get a reply in the chat. */
+export const RICH_MENU_REPLIES = [
+  { key: "chats", data: LINE_POSTBACK.chats },
+  { key: "newsList", data: LINE_POSTBACK.news },
+] as const;
+
+export type RichMenuPageKey = (typeof RICH_MENU_ITEMS)[number]["key"];
+export type RichMenuReplyKey = (typeof RICH_MENU_REPLIES)[number]["key"];
+export type RichMenuKey = RichMenuPageKey | RichMenuReplyKey;
 
 export const RICH_MENU_SIZE = { width: 2500, height: 1686 } as const;
 const COLS = 3;
-const ROWS = 2;
+/** One row of reply buttons, then two rows of pages. */
+const ROWS = 3;
 
 export const RICH_MENU_ALIAS: Record<Locale, string> = {
   ja: "ais-menu-ja",
   en: "ais-menu-en",
 };
 
-/** Tile bounds (3 × 2), covering the whole image with whole pixels. */
+function rowBounds(row: number) {
+  const y0 = Math.round((RICH_MENU_SIZE.height * row) / ROWS);
+  const y1 = Math.round((RICH_MENU_SIZE.height * (row + 1)) / ROWS);
+  return { y: y0, height: y1 - y0 };
+}
+
+/** Reply button bounds: the top row, split in two. */
+export function replyBounds(i: number) {
+  const x0 = Math.round((RICH_MENU_SIZE.width * i) / RICH_MENU_REPLIES.length);
+  const x1 = Math.round(
+    (RICH_MENU_SIZE.width * (i + 1)) / RICH_MENU_REPLIES.length,
+  );
+  return { x: x0, ...rowBounds(0), width: x1 - x0 };
+}
+
+/** Page tile bounds (3 × 2 under the reply row), whole pixels, no gaps. */
 export function tileBounds(i: number) {
   const col = i % COLS;
-  const row = Math.floor(i / COLS);
+  const row = Math.floor(i / COLS) + 1;
   const x0 = Math.round((RICH_MENU_SIZE.width * col) / COLS);
   const x1 = Math.round((RICH_MENU_SIZE.width * (col + 1)) / COLS);
   const y0 = Math.round((RICH_MENU_SIZE.height * row) / ROWS);
@@ -54,14 +81,26 @@ export function richMenuBody(
     selected: true,
     name: `AIS Alumni menu (${locale})`,
     chatBarText,
-    areas: RICH_MENU_ITEMS.map((item, i) => ({
-      bounds: tileBounds(i),
-      action: {
-        type: "uri",
-        label: labels[item.key].slice(0, 20),
-        uri: publicUrl(`/${locale}${item.path}`),
-      },
-    })),
+    areas: [
+      // The label also shows in the chat as the member's message.
+      ...RICH_MENU_REPLIES.map((item, i) => ({
+        bounds: replyBounds(i),
+        action: {
+          type: "postback" as const,
+          label: labels[item.key].slice(0, 20),
+          data: item.data,
+          displayText: labels[item.key],
+        },
+      })),
+      ...RICH_MENU_ITEMS.map((item, i) => ({
+        bounds: tileBounds(i),
+        action: {
+          type: "uri" as const,
+          label: labels[item.key].slice(0, 20),
+          uri: publicUrl(`/${locale}${item.path}`),
+        },
+      })),
+    ],
   };
 }
 

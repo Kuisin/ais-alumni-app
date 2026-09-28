@@ -19,9 +19,10 @@ export function VercelInsights() {
         })}
       />
       <SpeedInsights
-        // Hobby: 10,000 events per 30 days, shared by the team; half is
-        // plenty for the score and keeps collection from pausing.
-        sampleRate={0.5}
+        // Every page load while traffic is small (Hobby allows 10,000
+        // events per 30 days, shared by the team). Lower this, e.g. to 0.5,
+        // if Vercel warns the allowance is close.
+        sampleRate={1}
         beforeSend={(event) => ({
           ...event,
           url: redactAnalyticsUrl(event.url),

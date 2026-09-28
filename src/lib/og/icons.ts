@@ -171,6 +171,24 @@ export const OG_ICONS = {
       },
     ],
   ],
+  "bell-dot": [
+    ["path", { d: "M10.268 21a2 2 0 0 0 3.464 0" }],
+    [
+      "path",
+      {
+        d: "M11.68 2.009A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673c-.824-.85-1.678-1.731-2.21-3.348",
+      },
+    ],
+    ["circle", { cx: "18", cy: "5", r: "3" }],
+  ],
+  list: [
+    ["path", { d: "M3 5h.01" }],
+    ["path", { d: "M3 12h.01" }],
+    ["path", { d: "M3 19h.01" }],
+    ["path", { d: "M8 5h13" }],
+    ["path", { d: "M8 12h13" }],
+    ["path", { d: "M8 19h13" }],
+  ],
 } as const satisfies Record<
   string,
   readonly (readonly [string, Record<string, string>])[]

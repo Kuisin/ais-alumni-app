@@ -7,11 +7,10 @@
   },
   "line": {
     "title": "Get updates on LINE",
-    "description": "Link LINE and add the AIS Alumni Committee Official Account to get messages there instead of by email.",
+    "description": "Link LINE and add the AIS Alumni Committee Official Account to get news and chat mentions there.",
     "benefits": {
-      "reminders": "Event reminders a week and a day before",
-      "news": "News from the committee",
-      "result": "The result of your membership check"
+      "mentions": "Mentions of you in chats",
+      "news": "News from the committee"
     },
     "emailFallback": "You can change this anytime in Settings. If you skip, we'll email you instead.",
     "skip": "Skip for now",
@@ -24,8 +23,8 @@
     "deactivatedAt": "Deactivated on",
     "reviewNote": "Message from the committee",
     "contact": "If you think this is a mistake, please contact the AIS Alumni Committee.",
-    "lineTitle": "Get the result on LINE",
-    "lineBody": "Link LINE to hear back as soon as your application is reviewed. Otherwise we'll email you.",
+    "lineTitle": "Link LINE",
+    "lineBody": "Once approved, get news and chat mentions on LINE. We'll email you the result of your application.",
     "PENDING_REVIEW": {
       "title": "Thanks — we're checking your application",
       "body": "The AIS Alumni Committee is reviewing your details. This usually takes a few days. We'll let you know as soon as it's done."

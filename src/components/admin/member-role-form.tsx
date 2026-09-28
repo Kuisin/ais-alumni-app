@@ -127,8 +127,12 @@ function RoleFields({
             error={
               fieldErrors?.schoolEmail
                 ? t(
-                    fieldErrors.schoolEmail === "schoolEmailDomain"
-                      ? "schoolEmailDomain"
+                    [
+                      "schoolEmailDomain",
+                      "schoolEmailRequired",
+                      "schoolEmailTaken",
+                    ].includes(fieldErrors.schoolEmail)
+                      ? fieldErrors.schoolEmail
                       : "schoolEmailInvalid",
                   )
                 : null

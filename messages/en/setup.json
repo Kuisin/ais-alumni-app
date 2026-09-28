@@ -56,6 +56,11 @@
       "title": "Add your name in kanji and kana",
       "body": "Japanese classmates and teachers can then find you by name. Skip it if you don't have a kanji name.",
       "action": "Add name"
+    },
+    "schoolEmail": {
+      "title": "Confirm your school email",
+      "body": "Current staff need to confirm their @aisnagoya.net address. Send yourself a code from Settings.",
+      "action": "Confirm"
     }
   },
   "doneSummary": "Completed ({count})",

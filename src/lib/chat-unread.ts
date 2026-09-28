@@ -1,6 +1,7 @@
 /**
  * Unread 1:1 messages and personal @mentions: once one has sat unread for
- * UNREAD_DELAY_MS, the recipient is told once by email (not LINE: quota). "Once" is
+ * UNREAD_DELAY_MS, the recipient is told once (LINE if they use it, else
+ * email). The delay and "once" keep LINE pushes few (monthly quota). "Once" is
  * per unread streak: nothing more is sent for that chat until they've read
  * it (the job skips members notified since their lastReadAt), so later
  * messages don't repeat it; after they read, the next unread message

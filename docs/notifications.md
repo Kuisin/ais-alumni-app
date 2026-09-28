@@ -43,7 +43,7 @@ Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the d
 
 ## チャット / Chat
 
-1:1 messages and personal @mentions are emailed once if still unread after 5 minutes (not LINE, to save the quota); nothing more until the chat is read.
+1:1 messages and personal @mentions are sent once (LINE, or email) if still unread after 5 minutes; nothing more until the chat is read. The delay and once-per-streak keep LINE pushes within the monthly quota.
 
 | Kind | 日本語 (タイトル — 本文) | English (title — body) | Email always |
 |---|---|---|---|

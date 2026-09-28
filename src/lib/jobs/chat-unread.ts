@@ -18,7 +18,7 @@ import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
 
 /**
  * Every minute: 1:1 messages and personal @mentions unread for 5 minutes →
- * one email notice per unread streak (src/lib/chat-unread.ts).
+ * one LINE (or email) notice per unread streak (src/lib/chat-unread.ts).
  */
 export async function sendUnreadChatNotices(ctx: JobContext): Promise<JobStep> {
   const now = new Date();

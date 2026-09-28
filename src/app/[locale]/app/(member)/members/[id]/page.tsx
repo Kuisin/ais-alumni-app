@@ -13,19 +13,28 @@ import {
   parseSocialLinks,
   SOCIAL_KEYS,
 } from "@/components/profile/social-links";
+import { HiddenFields, ViewAsLinks } from "@/components/profile/visibility";
 import { Avatar } from "@/components/ui/avatar";
 import { Alert, Badge, Card } from "@/components/ui/card";
 import { HistoryBackLink } from "@/components/ui/history-back-link";
-import { type Locale, RoleKey } from "@/generated/prisma/enums";
-import { redirect } from "@/i18n/navigation";
+import { FollowStatus, type Locale, RoleKey } from "@/generated/prisma/enums";
+import { Link, redirect } from "@/i18n/navigation";
 import { roleLabelKey } from "@/lib/audience";
 import {
   canRequestFollow,
   getProfileForViewer,
+  type ProfileView,
+  projectPrivate,
+  projectPublic,
   sameFamily,
   toViewer,
 } from "@/lib/authz";
-import { loadConnections, photoFor } from "@/lib/avatar";
+import {
+  defaultAvatar,
+  loadConnections,
+  photoVisible,
+  storedAvatarUrl,
+} from "@/lib/avatar";
 import { directChatDenial } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import {
@@ -37,22 +46,61 @@ import {
 } from "@/lib/follows";
 import { displayName, otherNames } from "@/lib/format";
 import { visibleHistory } from "@/lib/history";
-import { requireActive } from "@/lib/session";
+import { followerFieldSet } from "@/lib/personal-fields";
+import {
+  type Audience,
+  hiddenPersonalFields,
+  isAudience,
+  photoReach,
+  previewAccess,
+  seenBy,
+} from "@/lib/profile-visibility";
+import { type CurrentUser, requireActive } from "@/lib/session";
 
-type Props = { params: Promise<{ locale: string; id: string }> };
+type Props = {
+  params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ as?: string }>;
+};
+
+/** My own profile as an audience would see it (「〇〇として見る」). */
+function previewView(me: CurrentUser, as: Audience): ProfileView {
+  return {
+    public: projectPublic(me),
+    private: projectPrivate(me, previewAccess(as)),
+    access: previewAccess(as),
+    hiddenFields: hiddenPersonalFields(
+      previewAccess(as),
+      followerFieldSet(me.followerFields),
+    ),
+    sharesWithFollowers: followerFieldSet(me.followerFields).size > 0,
+    relationship: {
+      follow: as === "followers" ? FollowStatus.ACCEPTED : null,
+      blocked: false,
+    },
+    isSelf: false,
+  };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("profile");
   return { title: t("title") };
 }
 
-export default async function MemberProfilePage({ params }: Props) {
+export default async function MemberProfilePage({
+  params,
+  searchParams,
+}: Props) {
   const { id } = await params;
+  const { as } = await searchParams;
   const me = await requireActive();
-  // My own profile (with its edit buttons) lives at /app/profile.
-  if (id === me.id)
+  // My own profile (with its edit buttons) lives at /app/profile; here only
+  // as a preview of what members / followers / family see.
+  const preview = id === me.id && isAudience(as) ? as : null;
+  if (id === me.id && !preview)
     redirect({ href: "/app/profile", locale: await getLocale() });
-  const view = await getProfileForViewer(me, id);
+  const view = preview
+    ? previewView(me, preview)
+    : await getProfileForViewer(me, id);
   if (!view) notFound();
   // 学歴・職歴: "followers only" entries need follower or family access.
   const [education, work] = await Promise.all([
@@ -69,11 +117,17 @@ export default async function MemberProfilePage({ params }: Props) {
     education: visibleHistory(education, view.access !== "none"),
     work: visibleHistory(work, view.access !== "none"),
   };
+  const hiddenHistory =
+    education.length +
+    work.length -
+    history.education.length -
+    history.work.length;
 
   const t = await getTranslations("profile");
   const tf = await getTranslations("follows");
   const tc = await getTranslations("common");
   const tr = await getTranslations("roles");
+  const tv = await getTranslations("profile.visibility");
   const locale = (await getLocale()) as Locale;
   const p = view.public;
   const name = displayName(p, locale);
@@ -82,36 +136,41 @@ export default async function MemberProfilePage({ params }: Props) {
   // Non-private columns needed to decide which relationship controls to show.
   const [counts, theirFollow] = await Promise.all([
     loadFollowCounts(id),
-    view.isSelf ? null : loadFollowStatus(id, me.id),
+    view.isSelf || preview ? null : loadFollowStatus(id, me.id),
   ]);
-  const [targetMeta, myBlock] = view.isSelf
-    ? [null, null]
-    : await Promise.all([
-        db.user.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            state: true,
-            familyId: true,
-            dateOfBirth: true,
-            managedById: true,
-            roles: { select: { role: true } },
-          },
-        }),
-        db.block.findUnique({
-          where: { blockerId_blockedId: { blockerId: me.id, blockedId: id } },
-          select: { id: true },
-        }),
-      ]);
-  if (!view.isSelf && !targetMeta) notFound();
+  const [targetMeta, myBlock] =
+    view.isSelf || preview
+      ? [null, null]
+      : await Promise.all([
+          db.user.findUnique({
+            where: { id },
+            select: {
+              id: true,
+              state: true,
+              familyId: true,
+              dateOfBirth: true,
+              managedById: true,
+              roles: { select: { role: true } },
+            },
+          }),
+          db.block.findUnique({
+            where: { blockerId_blockedId: { blockerId: me.id, blockedId: id } },
+            select: { id: true },
+          }),
+        ]);
+  if (!view.isSelf && !preview && !targetMeta) notFound();
   const birthDate = view.isSelf ? me.dateOfBirth : targetMeta?.dateOfBirth;
   const tb = await getTranslations("profile.birthDate");
   const lang = (await getLocale()) === "en" ? "en" : "ja";
   // 1:1 talk with mutual followers (like LINE friends).
   const canMessage =
-    !view.isSelf && (await directChatDenial(me.id, id)) === null;
+    !view.isSelf && !preview && (await directChatDenial(me.id, id)) === null;
 
-  const family = targetMeta ? sameFamily(me, targetMeta) : false;
+  const family = preview
+    ? preview === "family"
+    : targetMeta
+      ? sameFamily(me, targetMeta)
+      : false;
   let followState: FollowUiState | null = null;
   if (targetMeta && !family && !myBlock) {
     const rel = view.relationship;
@@ -130,12 +189,23 @@ export default async function MemberProfilePage({ params }: Props) {
   const canRequest = followState === "none" || followState === "followBack";
 
   const former = p.roles.find((r) => r.role === RoleKey.FORMER_STUDENT);
-  const photo = photoFor(await loadConnections(me.id), {
-    ...p,
-    familyId: targetMeta?.familyId ?? null,
-  });
+  const photoShown = preview
+    ? seenBy(photoReach(p.avatarPublic), preview)
+    : photoVisible(await loadConnections(me.id), {
+        ...p,
+        familyId: targetMeta?.familyId ?? null,
+      });
+  const photo =
+    (photoShown ? storedAvatarUrl(p.avatarUrl) : null) ??
+    defaultAvatar(p.gender);
   const priv = view.private;
   const social = priv ? parseSocialLinks(priv.socialLinks) : {};
+  // Named rather than silently left out (no values: only which fields).
+  const showBirthDate = view.isSelf || (me.isAdmin && !preview);
+  const hiddenLabels = [
+    ...(showBirthDate ? [] : [tb("title")]),
+    ...view.hiddenFields.map((f) => t(`followerFields.fields.${f}`)),
+  ];
   const hasContact = Boolean(
     priv &&
       (priv.email ||
@@ -146,13 +216,29 @@ export default async function MemberProfilePage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <div>
-        <HistoryBackLink fallback="/app/directory">
-          {tc("back")}
-        </HistoryBackLink>
-      </div>
+      {preview ? (
+        <Alert tone="info">
+          <p className="font-semibold">{tv(`previewTitle.${preview}`)}</p>
+          <p className="mt-1">{tv("previewHint")}</p>
+          <div className="mt-3">
+            <ViewAsLinks memberId={me.id} current={preview} />
+          </div>
+          <Link
+            href="/app/profile"
+            className="mt-3 inline-block font-medium underline"
+          >
+            {tv("backToProfile")}
+          </Link>
+        </Alert>
+      ) : (
+        <div>
+          <HistoryBackLink fallback="/app/directory">
+            {tc("back")}
+          </HistoryBackLink>
+        </div>
+      )}
       <Card className="relative">
-        {!view.isSelf && !myBlock ? (
+        {!view.isSelf && !preview && !myBlock ? (
           <div className="absolute top-2 right-2">
             <MemberMenu targetId={id} name={name} />
           </div>
@@ -160,7 +246,12 @@ export default async function MemberProfilePage({ params }: Props) {
         <div
           className={`flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left ${view.isSelf ? "sm:pr-48" : "sm:pr-12"}`}
         >
-          <Avatar src={photo} name={name} size={96} />
+          <div className="flex shrink-0 flex-col items-center gap-1">
+            <Avatar src={photo} name={name} size={96} />
+            {!photoShown && p.avatarUrl ? (
+              <p className="text-xs text-slate-500">{tv("photoHidden")}</p>
+            ) : null}
+          </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
             {altName ? <p className="text-slate-600">{altName}</p> : null}
@@ -240,12 +331,19 @@ export default async function MemberProfilePage({ params }: Props) {
         </Card>
       ) : null}
 
-      {history.education.length || history.work.length ? (
+      {education.length || work.length ? (
         <Card>
           <h2 className="mb-3 text-lg font-semibold">
             {t("sections.history")}
           </h2>
           <HistoryList education={history.education} work={history.work} />
+          {hiddenHistory > 0 ? (
+            <p
+              className={`text-sm text-slate-600 ${history.education.length || history.work.length ? "mt-3" : ""}`}
+            >
+              {tv("historyHidden", { count: hiddenHistory })}
+            </p>
+          ) : null}
         </Card>
       ) : null}
 
@@ -259,7 +357,7 @@ export default async function MemberProfilePage({ params }: Props) {
         {priv ? (
           <dl className="grid gap-3 sm:grid-cols-2">
             {/* Date of birth: only the member themselves and admins. */}
-            {view.isSelf || me.isAdmin ? (
+            {showBirthDate ? (
               <div>
                 <dt className="text-sm text-slate-500">{tb("title")}</dt>
                 <dd>
@@ -341,12 +439,13 @@ export default async function MemberProfilePage({ params }: Props) {
                 ? t("locked.familyOnly", { name })
                 : followState === "requested"
                   ? t("locked.requested")
-                  : canRequest
+                  : canRequest || preview
                     ? t("locked.body", { name })
                     : t("locked.unavailable")}
             </p>
           </Alert>
         )}
+        <HiddenFields labels={hiddenLabels} />
       </Card>
     </div>
   );

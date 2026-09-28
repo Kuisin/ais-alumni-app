@@ -30,6 +30,9 @@ export function Screen({
       style={styles.screen}
       contentContainerStyle={[styles.content, contentStyle]}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      // iOS: content (e.g. a form's button) can scroll above the keyboard.
+      automaticallyAdjustKeyboardInsets
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={
         onRefresh ? (

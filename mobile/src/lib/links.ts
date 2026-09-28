@@ -21,6 +21,7 @@ const RULES: Rule[] = [
   [/^\/app\/news$/, () => "/news"],
   [/^\/app\/news\/(?!new$|messages$)ID$/, (m) => `/news/${m[1]}`],
   [/^\/app\/chat$/, () => "/chat"],
+  [/^\/app\/chat\/new$/, () => "/chat/new"],
   [/^\/app\/chat\/(?!new$)ID$/, (m) => `/chat/${m[1]}`],
   [/^\/app\/chat\/ID\/info$/, (m) => `/chat/${m[1]}/info`],
   [/^\/app\/profile$/, () => "/me"],

@@ -243,12 +243,12 @@ function EmailCodeForm() {
     }
   };
 
-  const verify = async (email: string) => {
+  const verify = async (email: string, value = code) => {
     setPending(true);
     setError(null);
     try {
       const result = await api<SessionResult>("/auth/email/verify", {
-        body: { email, code, locale, device: signInDevice() },
+        body: { email, code: value, locale, device: signInDevice() },
       });
       await finishSignIn(result);
     } catch (e) {
@@ -291,7 +291,14 @@ function EmailCodeForm() {
         ref={codeRef}
         label={t("codeLabel")}
         value={code}
-        onChangeText={(v) => setCode(v.replace(/\D/g, "").slice(0, 6))}
+        onChangeText={(v) => {
+          const next = v.replace(/\D/g, "").slice(0, 6);
+          setCode(next);
+          // A complete code — typed, pasted or autofilled from the email —
+          // signs in (the number pad has no return key).
+          if (next.length === 6 && next !== code && !pending)
+            void verify(state.email, next);
+        }}
         keyboardType="number-pad"
         autoComplete="one-time-code"
         textContentType="oneTimeCode"

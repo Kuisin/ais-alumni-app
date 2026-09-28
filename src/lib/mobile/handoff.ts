@@ -19,6 +19,15 @@ import { encode } from "next-auth/jwt";
 
 /** Where the app receives the sign-in code. */
 export const APP_REDIRECT = "aisalumni://auth";
+
+/**
+ * Set by .../oauth/start and required by .../oauth/finish (same browser,
+ * same challenge): finish only hands out a code for a sign-in the app itself
+ * started — never for a website session that merely exists in the browser
+ * (a crafted finish link would otherwise mint a code for it).
+ */
+export const FLOW_COOKIE = "ais_mobile_oauth";
+export const FLOW_COOKIE_PATH = "/api/mobile/v1/auth/oauth";
 const CODE_TTL_MS = 2 * 60 * 1000;
 
 /**

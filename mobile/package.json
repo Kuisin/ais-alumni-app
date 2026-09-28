@@ -4,13 +4,15 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "start": "expo start --go",
+    "start:dev-client": "expo start --dev-client",
+    "ios": "expo start --go --ios",
+    "android": "expo start --go --android",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
-    "doctor": "expo-doctor"
+    "icons": "node scripts/make-icons.mjs",
+    "doctor": "npx --yes expo-doctor@latest"
   },
   "dependencies": {
     "@supabase/realtime-js": "^2.117.2",

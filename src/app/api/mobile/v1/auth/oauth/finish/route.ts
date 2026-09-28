@@ -1,7 +1,10 @@
+import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import {
   allowedAppRedirect,
   createHandoffCode,
+  FLOW_COOKIE,
+  FLOW_COOKIE_PATH,
   sessionCookieName,
   validChallenge,
 } from "@/lib/mobile/handoff";
@@ -19,7 +22,9 @@ export async function GET(request: Request) {
   if (!validChallenge(challenge) || !redirect)
     return new Response("Bad request", { status: 400 });
 
-  const session = await auth().catch(() => null);
+  // Only a sign-in that ../start began in this browser, for this challenge.
+  const started = (await cookies()).get(FLOW_COOKIE)?.value === challenge;
+  const session = started ? await auth().catch(() => null) : null;
   const userId = session?.user?.id;
   const target = new URL(redirect);
   if (userId)
@@ -28,9 +33,17 @@ export async function GET(request: Request) {
 
   const secure = url.protocol === "https:";
   const headers = new Headers({ Location: target.toString() });
-  headers.append(
-    "Set-Cookie",
-    `${sessionCookieName(secure)}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`,
-  );
+  if (started) {
+    // This browser's sign-in was only for the app: don't leave it signed in.
+    const flags = `Max-Age=0; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`;
+    headers.append(
+      "Set-Cookie",
+      `${sessionCookieName(secure)}=; Path=/; ${flags}`,
+    );
+    headers.append(
+      "Set-Cookie",
+      `${FLOW_COOKIE}=; Path=${FLOW_COOKIE_PATH}; ${flags}`,
+    );
+  }
   return new Response(null, { status: 302, headers });
 }

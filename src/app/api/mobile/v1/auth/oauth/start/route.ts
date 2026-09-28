@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { signIn } from "@/auth";
 import {
   allowedAppRedirect,
+  FLOW_COOKIE,
+  FLOW_COOKIE_PATH,
   sessionCookieName,
   validChallenge,
 } from "@/lib/mobile/handoff";
@@ -35,6 +37,14 @@ export async function GET(request: Request) {
   jar.set(sessionCookieName(secure), "", {
     path: "/",
     maxAge: 0,
+    httpOnly: true,
+    sameSite: "lax",
+    secure,
+  });
+  // Ties ../finish to this sign-in (see FLOW_COOKIE).
+  jar.set(FLOW_COOKIE, challenge, {
+    path: FLOW_COOKIE_PATH,
+    maxAge: 15 * 60,
     httpOnly: true,
     sameSite: "lax",
     secure,

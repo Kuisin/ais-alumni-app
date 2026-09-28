@@ -23,11 +23,18 @@ append `.md` to any docs URL). Router notes that matter here:
 
 ```bash
 pnpm install
-pnpm start                 # Metro; open in Expo Go or a development build
+pnpm start                 # Metro for Expo Go (`expo start --go`)
+pnpm start:dev-client      # Metro for a development build (eas.json "development")
+pnpm ios                   # Expo Go in the iOS Simulator (needs Xcode)
 pnpm typecheck             # tsc --noEmit
 pnpm lint                  # Biome (the repo's biome.json)
 npx expo export --platform ios --output-dir /tmp/x   # bundle check
+pnpm icons                 # regenerate app + website icons from the logo
 ```
+
+`expo-dev-client` is installed (for development builds), so a bare
+`expo start` serves a development-build bundle — Expo Go then fails with
+"Cannot find native module …". Use `pnpm start` (`--go`) for Expo Go.
 
 Point the app at a server with `EXPO_PUBLIC_API_URL` (default: production).
 For a local website: `EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:3000 pnpm start`.

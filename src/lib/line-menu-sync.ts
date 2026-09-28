@@ -100,24 +100,33 @@ export async function lineMenuBadges(
   );
 }
 
-/** Run `fn` over `items`, a few at a time. */
+/**
+ * Run `fn` over `items`, a few at a time, starting none after `deadline`
+ * (ms timestamp). Returns how many were left.
+ */
 async function eachLimit<T>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<void>,
-): Promise<void> {
+  deadline?: number,
+): Promise<number> {
   let next = 0;
+  const open = () =>
+    next < items.length && (deadline === undefined || Date.now() <= deadline);
   await Promise.all(
     Array.from({ length: Math.min(limit, items.length) }, async () => {
-      while (next < items.length) await fn(items[next++]);
+      while (open()) await fn(items[next++]);
     }),
   );
+  return items.length - next;
 }
 
 export type LineMenuSyncResult = {
   checked: number;
   changed: number;
   failed: number;
+  /** not tried because the deadline passed (next run) */
+  remaining: number;
   /** false when the menus aren't installed (nothing linked) */
   installed: boolean;
 };
@@ -128,9 +137,19 @@ export type LineMenuSyncResult = {
  * variant already matches (new menus, a newly linked LINE account).
  */
 export async function syncLineMenus(
-  opts: { where?: Prisma.UserWhereInput; force?: boolean } = {},
+  opts: {
+    where?: Prisma.UserWhereInput;
+    force?: boolean;
+    deadline?: number;
+  } = {},
 ): Promise<LineMenuSyncResult> {
-  const result = { checked: 0, changed: 0, failed: 0, installed: true };
+  const result = {
+    checked: 0,
+    changed: 0,
+    failed: 0,
+    remaining: 0,
+    installed: true,
+  };
   if (!lineConfigured()) return result;
   // Unfollowed: LINE can't link them; relink when they follow again.
   await db.user.updateMany({
@@ -162,30 +181,35 @@ export async function syncLineMenus(
     !RICH_MENU_VARIANTS.every((v) => ids.has(richMenuKey(v.locale, v.badges)))
   )
     return { ...result, installed: false };
-  await eachLimit(due, 5, async ({ user, key }) => {
-    const lineUserId = user.lineUserId as string;
-    try {
-      if (key === DEFAULT_RICH_MENU_KEY) {
-        // The default menu: unlink rather than link it (fails harmlessly
-        // when nothing is linked).
-        await lineRequest("DELETE", `/user/${lineUserId}/richmenu`).catch(
-          () => {},
-        );
-      } else {
-        const id = ids.get(key);
-        if (!id) throw new Error(`rich menu ${key} is not installed`);
-        await lineRequest("POST", `/user/${lineUserId}/richmenu/${id}`);
+  result.remaining = await eachLimit(
+    due,
+    5,
+    async ({ user, key }) => {
+      const lineUserId = user.lineUserId as string;
+      try {
+        if (key === DEFAULT_RICH_MENU_KEY) {
+          // The default menu: unlink rather than link it (fails harmlessly
+          // when nothing is linked).
+          await lineRequest("DELETE", `/user/${lineUserId}/richmenu`).catch(
+            () => {},
+          );
+        } else {
+          const id = ids.get(key);
+          if (!id) throw new Error(`rich menu ${key} is not installed`);
+          await lineRequest("POST", `/user/${lineUserId}/richmenu/${id}`);
+        }
+        await db.user.update({
+          where: { id: user.id },
+          data: { lineMenu: key },
+        });
+        result.changed++;
+      } catch (e) {
+        result.failed++;
+        console.error(`[line-menu-sync] ${user.id} → ${key} failed`, e);
       }
-      await db.user.update({
-        where: { id: user.id },
-        data: { lineMenu: key },
-      });
-      result.changed++;
-    } catch (e) {
-      result.failed++;
-      console.error(`[line-menu-sync] ${user.id} → ${key} failed`, e);
-    }
-  });
+    },
+    opts.deadline,
+  );
   return result;
 }
 

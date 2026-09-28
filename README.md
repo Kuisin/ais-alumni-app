@@ -71,6 +71,15 @@ One Supabase pg_cron job (`app-cron`, set up with `pnpm cron:setup`) calls
 runs one task now (every task is safe to rerun). Both need
 `Authorization: Bearer $CRON_SECRET`.
 
+- **Retries:** a failed task (or failed deliveries within it) is retried by the
+  next call, a minute later, until it succeeds; what already succeeded is
+  skipped (deliveries are logged as they go, notifications are deduped).
+- **Time limit:** each call stops starting new work after 4 minutes (Vercel
+  stops it at 5) and the next call continues from the saved progress.
+- **Overlap / crashes:** a task is claimed with a lease (`CronRun`), so calls
+  never run it twice at once; if a call is killed, the lease runs out
+  (~5.5 min) and the next call takes over.
+
 | Task | When (JST) | Purpose |
 |---|---|---|
 | `publish-news` | every minute | reserved news; response-deadline reminders |

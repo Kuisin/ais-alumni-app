@@ -5,8 +5,10 @@ import { daily, EVERY_MINUTE, lastSlot, yearly } from "./schedule";
 const jst = (s: string) => new Date(`${s}+09:00`);
 
 describe("lastSlot", () => {
-  it("every minute: always due (no slot)", () => {
-    expect(lastSlot(EVERY_MINUTE, jst("2026-09-28T12:00:00"))).toBeNull();
+  it("every minute: the current minute", () => {
+    expect(lastSlot(EVERY_MINUTE, jst("2026-09-28T12:00:42.5"))).toEqual(
+      jst("2026-09-28T12:00:00"),
+    );
   });
 
   it("daily: today's time once passed, else yesterday's (JST)", () => {

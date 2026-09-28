@@ -123,10 +123,11 @@ export async function syncMemberStatus(
   return changed;
 }
 
-/** Sync every member with a student, teacher or parent role. */
-export async function syncAllStatuses(
-  now: Date = new Date(),
-): Promise<{ checked: number; changed: number }> {
+/**
+ * Every member with a student, teacher or parent role, in id order (the
+ * daily sync-status job goes through them with syncMemberStatus).
+ */
+export async function statusSyncUserIds(): Promise<string[]> {
   const users = await db.user.findMany({
     where: {
       roles: {
@@ -136,10 +137,7 @@ export async function syncAllStatuses(
       },
     },
     select: { id: true },
+    orderBy: { id: "asc" },
   });
-  let changed = 0;
-  for (const u of users) {
-    if (await syncMemberStatus(u.id, db, now)) changed++;
-  }
-  return { checked: users.length, changed };
+  return users.map((u) => u.id);
 }

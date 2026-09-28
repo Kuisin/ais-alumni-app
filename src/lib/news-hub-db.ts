@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { NewsPollKind } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { parseJstLocal, toJstLocalInput } from "@/lib/format";
+import { deadlineFrom, leaseUntil } from "@/lib/jobs/budget";
 import { targetedRecipients } from "@/lib/news";
 import {
   type Asks,
@@ -17,7 +18,7 @@ import {
   tally,
   type Vote,
 } from "@/lib/news-hub";
-import { type NotifyUser, notifyMany } from "@/lib/notify";
+import { type NotifyUser, notifyBatch } from "@/lib/notify";
 import { signedFileUrl } from "@/lib/storage";
 import { statEvidence } from "@/lib/verification/evidence";
 
@@ -228,46 +229,78 @@ export async function responses(post: {
 
 /**
  * One reminder a day before the deadline to members who haven't answered
- * (no content, like every notification). Called by the publish-news cron.
+ * (no content, like every notification). Run every minute by the
+ * publish-news job. Each post is claimed with remindedAt plus a lease
+ * (remindingUntil); a reminder that fails, stops at `deadline` or whose
+ * call is killed is picked up again once the lease is out, and per-member
+ * dedupe sends only to those not reached yet.
  */
 export async function sendDeadlineReminders(
   now: Date = new Date(),
-): Promise<{ posts: number; recipients: number }> {
+  opts: { deadline?: number } = {},
+): Promise<{ posts: number; recipients: number; unfinished: number }> {
+  const deadline = opts.deadline ?? deadlineFrom();
   const candidates = await db.newsPost.findMany({
     where: {
       deadline: { gt: now },
-      remindedAt: null,
       closedAt: null,
       archivedAt: null,
       publishedAt: { lte: now },
+      OR: [
+        { remindedAt: null },
+        { remindedAt: { not: null }, remindingUntil: { lt: now } },
+      ],
     },
   });
   let posts = 0;
   let recipients = 0;
+  let unfinished = 0;
   for (const post of candidates) {
-    if (!reminderDue(post, now)) continue;
+    if (Date.now() > deadline) {
+      unfinished++;
+      continue;
+    }
+    const resuming = post.remindedAt !== null;
+    if (!resuming && !reminderDue(post, now)) continue;
     // Claim first so two runs can't both send.
-    const claimed = await db.newsPost.updateMany({
-      where: { id: post.id, remindedAt: null },
-      data: { remindedAt: now },
-    });
-    if (!claimed.count) continue;
-    const { asks, pending } = await responses(post);
-    if (!asksAnything(asks) || pending.length === 0) continue;
+    const claimed = await db.$executeRaw`
+      UPDATE "NewsPost"
+      SET "remindedAt" = COALESCE("remindedAt", ${now}),
+          "remindingUntil" = ${leaseUntil()}
+      WHERE id = ${post.id}
+        AND ("remindedAt" IS NULL OR "remindingUntil" < ${new Date()})`;
+    if (!claimed) continue;
+    let done = false;
     try {
-      await notifyMany(pending, {
-        kind: "NEWS_REMINDER",
-        refId: post.id,
-        dedupe: true,
-        path: `/app/news/${post.id}`,
-      });
-      posts++;
-      recipients += pending.length;
+      const { asks, pending } = await responses(post);
+      if (!asksAnything(asks) || pending.length === 0) done = true;
+      else {
+        const res = await notifyBatch(
+          pending,
+          {
+            kind: "NEWS_REMINDER",
+            refId: post.id,
+            dedupe: true,
+            path: `/app/news/${post.id}`,
+          },
+          { deadline },
+        );
+        done = res.failed.length === 0 && res.remaining.length === 0;
+        posts++;
+        recipients += res.sent.size;
+      }
     } catch (e) {
       console.error(`[news-hub] reminder ${post.id} failed`, e);
+    } finally {
+      // Finished → no lease; otherwise expire it so the next call retries.
+      await db.$executeRaw`
+        UPDATE "NewsPost"
+        SET "remindingUntil" = ${done ? null : new Date()}
+        WHERE id = ${post.id}`;
     }
+    if (!done) unfinished++;
   }
-  return { posts, recipients };
+  return { posts, recipients, unfinished };
 }
 
 export type HubView = Awaited<ReturnType<typeof loadHub>>;

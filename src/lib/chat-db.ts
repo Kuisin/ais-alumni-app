@@ -14,7 +14,7 @@ import {
   CLASS_REPS_CHAT_ENABLED,
   DIRECT_CHAT_ENABLED,
 } from "@/lib/features";
-import { NOTIFY_USER_SELECT, notifyMany } from "@/lib/notify";
+import { NOTIFY_USER_SELECT, notifyBatch } from "@/lib/notify";
 
 type Client = Prisma.TransactionClient | typeof db;
 
@@ -112,17 +112,19 @@ export async function syncChatMembership(
   return changed;
 }
 
-/** Daily: every member's groups (roles change with the school year). */
-export async function syncAllChatMemberships(): Promise<number> {
+/**
+ * Members whose groups the daily sync-status job refreshes (roles change
+ * with the school year), in id order, for syncChatMembership.
+ */
+export async function chatSyncUserIds(): Promise<string[]> {
   const users = await db.user.findMany({
     where: {
       OR: [{ state: AccountState.ACTIVE }, { chatMembers: { some: {} } }],
     },
     select: { id: true },
+    orderBy: { id: "asc" },
   });
-  let changed = 0;
-  for (const u of users) if (await syncChatMembership(u.id)) changed++;
-  return changed;
+  return users.map((u) => u.id);
 }
 
 /** Unread messages (not the member's own) across their groups. */
@@ -176,10 +178,14 @@ export const GROUP_SELECT = {
 /**
  * Daily digest: one LINE/email per member with unread messages from the
  * last day in groups they haven't muted. No content, only a count + link.
+ * `now` is the digest's time (the job's slot), so a retry sends the same
+ * day's digest; deduped per member and day, it reaches only those not
+ * reached yet. Stops starting new sends at `deadline`.
  */
 export async function sendChatDigest(
   now: Date = new Date(),
-): Promise<{ recipients: number }> {
+  opts: { deadline?: number } = {},
+): Promise<{ recipients: number; failed: number; remaining: number }> {
   const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const rows = await db.$queryRaw<{ userId: string; n: bigint }[]>`
     SELECT cm."userId", count(*) AS n
@@ -193,7 +199,7 @@ export async function sendChatDigest(
       AND NOT cm.muted
       AND u.state = 'ACTIVE'
     GROUP BY cm."userId"`;
-  if (rows.length === 0) return { recipients: 0 };
+  if (rows.length === 0) return { recipients: 0, failed: 0, remaining: 0 };
   const counts = new Map(rows.map((r) => [r.userId, Number(r.n)]));
   const users = await db.user.findMany({
     where: { id: { in: [...counts.keys()] } },
@@ -206,16 +212,30 @@ export async function sendChatDigest(
     const n = counts.get(u.id) ?? 0;
     byCount.set(n, [...(byCount.get(n) ?? []), u]);
   }
+  let recipients = 0;
+  let failed = 0;
+  let remaining = 0;
   for (const [count, group] of byCount) {
-    await notifyMany(group, {
-      kind: "CHAT_DIGEST",
-      refId: day,
-      dedupe: true,
-      path: "/app/chat",
-      params: { count },
-    });
+    if (opts.deadline !== undefined && Date.now() > opts.deadline) {
+      remaining += group.length;
+      continue;
+    }
+    const res = await notifyBatch(
+      group,
+      {
+        kind: "CHAT_DIGEST",
+        refId: day,
+        dedupe: true,
+        path: "/app/chat",
+        params: { count },
+      },
+      { deadline: opts.deadline },
+    );
+    recipients += res.sent.size;
+    failed += res.failed.length;
+    remaining += res.remaining.length;
   }
-  return { recipients: users.length };
+  return { recipients, failed, remaining };
 }
 
 export type DirectDenial =

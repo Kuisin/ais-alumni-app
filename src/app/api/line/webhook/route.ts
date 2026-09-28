@@ -2,9 +2,9 @@ import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { lineReply, verifyLineSignature } from "@/lib/line";
+import { syncLineMenuFor } from "@/lib/line-menu-sync";
 import { lineReplyKind } from "@/lib/line-reply";
 import { lineReplyFor } from "@/lib/line-reply-db";
-import { syncRichMenu } from "@/lib/line-richmenu";
 import { welcomeMessages } from "@/lib/line-welcome";
 import { publicUrl } from "@/lib/urls";
 
@@ -91,11 +91,8 @@ export async function POST(req: Request) {
       }
     }
     if (event.type === "follow") {
-      // The menu in the member's language (Japanese is the default).
-      const member = await db.user
-        .findFirst({ where: { lineUserId }, select: { locale: true } })
-        .catch(() => null);
-      if (member) await syncRichMenu(lineUserId, member.locale);
+      // The menu in the member's language, with their unread dots.
+      await syncLineMenuFor({ lineUserId });
       try {
         await sendWelcome(lineUserId, event);
       } catch (e) {

@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { LINE_POSTBACK } from "./line-reply";
 import {
+  DEFAULT_RICH_MENU_KEY,
+  lineMenuKeyFor,
+  NO_BADGES,
   RICH_MENU_ITEMS,
   RICH_MENU_REPLIES,
   RICH_MENU_SIZE,
+  RICH_MENU_VARIANTS,
   replyBounds,
+  richMenuAlias,
   richMenuBody,
+  richMenuKey,
   tileBounds,
 } from "./line-richmenu";
 
@@ -53,5 +59,44 @@ describe("LINE rich menu", () => {
       expect(first.uri).toMatch(/\/en\/app\/dashboard$/);
     for (const a of body.areas)
       expect(a.action.label.length).toBeLessThanOrEqual(20);
+  });
+});
+
+describe("LINE rich menu variants", () => {
+  it("one per language and unread state, with short, valid aliases", () => {
+    const keys = RICH_MENU_VARIANTS.map((v) => richMenuKey(v.locale, v.badges));
+    expect(new Set(keys).size).toBe(8);
+    expect(keys).toContain("ja");
+    expect(keys).toContain("en-chat-news");
+    for (const k of keys) expect(richMenuAlias(k)).toMatch(/^[a-z0-9-]{1,32}$/);
+    // The plain menus keep the aliases they had before variants.
+    expect(richMenuAlias(DEFAULT_RICH_MENU_KEY)).toBe("ais-menu-ja");
+    expect(richMenuAlias(richMenuKey("en", NO_BADGES))).toBe("ais-menu-en");
+  });
+
+  it("picks the member's language and dots; inactive members get none", () => {
+    const both = { chats: true, news: true };
+    expect(lineMenuKeyFor({ locale: "en", state: "ACTIVE" }, both)).toBe(
+      "en-chat-news",
+    );
+    expect(
+      lineMenuKeyFor(
+        { locale: "ja", state: "ACTIVE" },
+        { chats: false, news: true },
+      ),
+    ).toBe("ja-news");
+    expect(
+      lineMenuKeyFor({ locale: "ja", state: "PENDING_REVIEW" }, both),
+    ).toBe("ja");
+  });
+
+  it("variants differ only in name, not in buttons", () => {
+    const plain = richMenuBody("ja", labels, "Menu");
+    const dotted = richMenuBody("ja", labels, "Menu", {
+      chats: true,
+      news: false,
+    });
+    expect(dotted.areas).toEqual(plain.areas);
+    expect(dotted.name).not.toBe(plain.name);
   });
 });

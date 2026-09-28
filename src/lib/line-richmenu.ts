@@ -1,5 +1,4 @@
-import type { Locale } from "@/generated/prisma/enums";
-import { db } from "@/lib/db";
+import { AccountState, type Locale } from "@/generated/prisma/enums";
 import { lineConfigured, lineRequest } from "@/lib/line";
 import { LINE_POSTBACK } from "@/lib/line-reply";
 import { publicUrl } from "@/lib/urls";
@@ -8,11 +7,13 @@ import { publicUrl } from "@/lib/urls";
  * The Official Account's rich menu, shown under the chat instead of the
  * keyboard (selected: true): two buttons on top that ask for unread chats /
  * the news list — answered by a free reply (line-reply.ts), not a push — and a
- * 3 × 2 grid of app pages below. One menu per language
- * (aliases ais-menu-ja / ais-menu-en); Japanese is the default, members
- * who use English get theirs linked. Installed from 管理 → LINEメニュー
- * (installRichMenus); kept in step with the member's language
- * (syncRichMenu).
+ * 3 × 2 grid of app pages below. Each language comes in four variants: a
+ * red dot on 未読のチャット / チャット and on ニュース一覧 / ニュース when the
+ * member has something unread (aliases ais-menu-ja, ais-menu-ja-chat,
+ * ais-menu-ja-news, ais-menu-ja-chat-news, and the same for en). The plain
+ * Japanese menu is the default; everyone else gets theirs linked, kept in
+ * step by line-menu-sync.ts (Supabase pg_cron, every minute). Installed from
+ * 管理 → LINEメニュー (installRichMenus).
  */
 
 export const RICH_MENU_ITEMS = [
@@ -39,10 +40,43 @@ const COLS = 3;
 /** One row of reply buttons, then two rows of pages. */
 const ROWS = 3;
 
-export const RICH_MENU_ALIAS: Record<Locale, string> = {
-  ja: "ais-menu-ja",
-  en: "ais-menu-en",
-};
+/** Which of the member's things are unread (a red dot in the menu). */
+export type RichMenuBadges = { chats: boolean; news: boolean };
+
+export const NO_BADGES: RichMenuBadges = { chats: false, news: false };
+
+/** Every variant: two languages × unread chats × unread news. */
+export const RICH_MENU_VARIANTS: { locale: Locale; badges: RichMenuBadges }[] =
+  (["ja", "en"] as const).flatMap((locale) =>
+    [false, true].flatMap((chats) =>
+      [false, true].map((news) => ({ locale, badges: { chats, news } })),
+    ),
+  );
+
+/** Variant key ("ja", "ja-chat", "en-news", "en-chat-news" …). */
+export function richMenuKey(locale: Locale, badges: RichMenuBadges): string {
+  return [locale, badges.chats && "chat", badges.news && "news"]
+    .filter(Boolean)
+    .join("-");
+}
+
+/** The default menu (not linked per member): Japanese, nothing unread. */
+export const DEFAULT_RICH_MENU_KEY = richMenuKey("ja", NO_BADGES);
+
+/** The variant a member should see (members not yet active: no dots). */
+export function lineMenuKeyFor(
+  user: { locale: Locale | string; state: AccountState | string },
+  badges: RichMenuBadges,
+): string {
+  return richMenuKey(
+    user.locale === "en" ? "en" : "ja",
+    user.state === AccountState.ACTIVE ? badges : NO_BADGES,
+  );
+}
+
+export function richMenuAlias(key: string): string {
+  return `ais-menu-${key}`;
+}
 
 function rowBounds(row: number) {
   const y0 = Math.round((RICH_MENU_SIZE.height * row) / ROWS);
@@ -70,16 +104,17 @@ export function tileBounds(i: number) {
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
-/** The rich menu object (Messaging API) for one language. */
+/** The rich menu object (Messaging API) for one language / variant. */
 export function richMenuBody(
   locale: Locale,
   labels: Record<RichMenuKey, string>,
   chatBarText: string,
+  badges: RichMenuBadges = NO_BADGES,
 ) {
   return {
     size: RICH_MENU_SIZE,
     selected: true,
-    name: `AIS Alumni menu (${locale})`,
+    name: `AIS Alumni menu (${richMenuKey(locale, badges)})`,
     chatBarText,
     areas: [
       // The label also shows in the chat as the member's message.
@@ -116,19 +151,37 @@ async function aliasTarget(alias: string): Promise<string | null> {
   }
 }
 
+/** Installed menus by variant key (from the aliases, one request). */
+export async function richMenuIds(): Promise<Map<string, string>> {
+  const { aliases } = await lineRequest<{
+    aliases?: { richMenuAliasId: string; richMenuId: string }[];
+  }>("GET", "/richmenu/alias/list");
+  const ids = new Map<string, string>();
+  for (const a of aliases ?? [])
+    if (a.richMenuAliasId.startsWith("ais-menu-"))
+      ids.set(a.richMenuAliasId.slice("ais-menu-".length), a.richMenuId);
+  return ids;
+}
+
 /**
- * Create both menus, upload their images, point the aliases at them, make
- * Japanese the default, link English users, then delete older menus.
+ * Create every variant, upload its image, point its alias at it and make
+ * the plain Japanese menu the default. Then `relink` gives each member their
+ * variant (the new menus have new IDs), and older menus are deleted.
  */
 export async function installRichMenus(
-  build: (locale: Locale) => Promise<{
+  build: (
+    locale: Locale,
+    badges: RichMenuBadges,
+  ) => Promise<{
     body: ReturnType<typeof richMenuBody>;
     image: ArrayBuffer;
   }>,
-): Promise<{ ids: Record<Locale, string>; linkedEn: number; removed: number }> {
-  const ids = {} as Record<Locale, string>;
-  for (const locale of ["ja", "en"] as const) {
-    const { body, image } = await build(locale);
+  relink: () => Promise<number>,
+): Promise<{ ids: Record<string, string>; linked: number; removed: number }> {
+  const ids: Record<string, string> = {};
+  for (const { locale, badges } of RICH_MENU_VARIANTS) {
+    const key = richMenuKey(locale, badges);
+    const { body, image } = await build(locale, badges);
     await lineRequest("POST", "/richmenu/validate", body);
     const { richMenuId } = await lineRequest<{ richMenuId: string }>(
       "POST",
@@ -139,7 +192,7 @@ export async function installRichMenus(
       data: true,
       contentType: "image/png",
     });
-    const alias = RICH_MENU_ALIAS[locale];
+    const alias = richMenuAlias(key);
     if (await aliasTarget(alias))
       await lineRequest("POST", `/richmenu/alias/${alias}`, { richMenuId });
     else
@@ -147,21 +200,11 @@ export async function installRichMenus(
         richMenuAliasId: alias,
         richMenuId,
       });
-    ids[locale] = richMenuId;
+    ids[key] = richMenuId;
   }
-  await lineRequest("POST", `/user/all/richmenu/${ids.ja}`);
+  await lineRequest("POST", `/user/all/richmenu/${ids[DEFAULT_RICH_MENU_KEY]}`);
 
-  const enUsers = await db.user.findMany({
-    where: { locale: "en", lineUserId: { not: null } },
-    select: { lineUserId: true },
-  });
-  const userIds = enUsers.map((u) => u.lineUserId as string);
-  for (let i = 0; i < userIds.length; i += 500) {
-    await lineRequest("POST", "/richmenu/bulk/link", {
-      richMenuId: ids.en,
-      userIds: userIds.slice(i, i + 500),
-    });
-  }
+  const linked = await relink();
 
   const { richmenus } = await lineRequest<{
     richmenus: { richMenuId: string }[];
@@ -173,7 +216,7 @@ export async function installRichMenus(
     await lineRequest("DELETE", `/richmenu/${m.richMenuId}`).catch(() => {});
     removed++;
   }
-  return { ids, linkedEn: userIds.length, removed };
+  return { ids, linked, removed };
 }
 
 /** Current state for the admin page (null when not installed/configured). */
@@ -189,34 +232,11 @@ export async function richMenuStatus(): Promise<{
       defaultId: null,
     };
   const [ja, en, def] = await Promise.all([
-    aliasTarget(RICH_MENU_ALIAS.ja),
-    aliasTarget(RICH_MENU_ALIAS.en),
+    aliasTarget(richMenuAlias(richMenuKey("ja", NO_BADGES))),
+    aliasTarget(richMenuAlias(richMenuKey("en", NO_BADGES))),
     lineRequest<{ richMenuId: string }>("GET", "/user/all/richmenu")
       .then((r) => r.richMenuId ?? null)
       .catch(() => null),
   ]);
   return { configured: true, installed: { ja, en }, defaultId: def };
-}
-
-/**
- * Give this LINE user the menu in their language (English linked, Japanese
- * = the default). Best effort: never throws.
- */
-export async function syncRichMenu(
-  lineUserId: string | null | undefined,
-  locale: Locale,
-): Promise<void> {
-  if (!lineUserId || !lineConfigured()) return;
-  try {
-    if (locale === "en") {
-      const id = await aliasTarget(RICH_MENU_ALIAS.en);
-      if (id) await lineRequest("POST", `/user/${lineUserId}/richmenu/${id}`);
-    } else {
-      await lineRequest("DELETE", `/user/${lineUserId}/richmenu`).catch(
-        () => {},
-      );
-    }
-  } catch (e) {
-    console.error("[line-richmenu] sync failed", e);
-  }
 }

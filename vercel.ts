@@ -3,9 +3,9 @@ import type { VercelConfig } from "@vercel/config/v1";
 // Domains: ais.kai-lab.net → main (production), ais-dev.kai-lab.net → dev.
 // Everything runs in Tokyo: functions (hnd1), Supabase Postgres
 // (ap-northeast-1), Vercel Blob (hnd1) and Resend sending (ap-northeast-1).
-// Cron schedules are UTC. Hobby allows only daily crons: reserved ニュース
-// (/api/cron/publish-news, every 5 min) is called by Supabase pg_cron —
-// see scripts/setup-supabase-cron.ts.
+// Recurring tasks don't use Vercel Cron (Hobby allows only daily crons):
+// one Supabase pg_cron job calls /api/cron every minute — see src/lib/jobs
+// and scripts/setup-supabase-cron.ts.
 export const config: VercelConfig = {
   framework: "nextjs",
   // Generate explicitly: cached installs on Vercel skip the postinstall hook.
@@ -26,17 +26,4 @@ export const config: VercelConfig = {
   // Belt and braces: other branches have no env vars; exit 0 skips the build.
   ignoreCommand:
     'if [ "$VERCEL_GIT_COMMIT_REF" = "main" ] || [ "$VERCEL_GIT_COMMIT_REF" = "dev" ]; then exit 1; else exit 0; fi',
-  crons: [
-    // 09:00 JST daily: 7-day and 1-day event reminders (§10.3)
-    { path: "/api/cron/reminders", schedule: "0 0 * * *" },
-    // 09:00 JST on April 1: yearly "is your status still X?" prompt (§7)
-    { path: "/api/cron/stage-prompt", schedule: "0 0 1 4 *" },
-    // 00:05 JST daily: current/former, grades and graduation from 学年 and
-    // leave years (the school year rolls over on April 1)
-    { path: "/api/cron/sync-status", schedule: "5 15 * * *" },
-    // 20:00 JST daily: group-chat digest (unread count + link)
-    { path: "/api/cron/chat-digest", schedule: "0 11 * * *" },
-    // 03:00 JST daily: delete evidence 30 days after decision (§6.3)
-    { path: "/api/cron/cleanup-evidence", schedule: "0 18 * * *" },
-  ],
 };

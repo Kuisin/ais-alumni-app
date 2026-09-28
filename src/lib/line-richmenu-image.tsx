@@ -4,9 +4,11 @@ import { getTranslatorFor } from "@/i18n/translator";
 import { loadNotoSansJp } from "@/lib/og/font";
 import { OG_ICONS, type OgIconName } from "@/lib/og/icons";
 import {
+  NO_BADGES,
   RICH_MENU_ITEMS,
   RICH_MENU_REPLIES,
   RICH_MENU_SIZE,
+  type RichMenuBadges,
   type RichMenuKey,
   replyBounds,
   tileBounds,
@@ -14,6 +16,37 @@ import {
 
 const BRAND = "#1e3a8a";
 const BRAND_50 = "#eff4ff";
+const DOT = "#ef4444";
+
+/** Buttons and tiles that get the red dot, by what is unread. */
+const DOTTED: Record<keyof RichMenuBadges, RichMenuKey[]> = {
+  chats: ["chats", "chat"],
+  news: ["newsList", "news"],
+};
+
+function dotted(key: RichMenuKey, badges: RichMenuBadges): boolean {
+  return (Object.keys(DOTTED) as (keyof RichMenuBadges)[]).some(
+    (k) => badges[k] && DOTTED[k].includes(key),
+  );
+}
+
+/** The unread dot, on the icon's top-right corner (ring = background). */
+function Dot({ size, ring }: { size: number; ring: string }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        right: 0,
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        background: DOT,
+        border: `${Math.round(size / 7)}px solid ${ring}`,
+      }}
+    />
+  );
+}
 
 const ICONS: Record<RichMenuKey, OgIconName> = {
   chats: "bell-dot",
@@ -73,9 +106,13 @@ export async function richMenuLabels(
 
 /**
  * The 2500×1686 menu image: the two reply buttons across the top (brand
- * blue), then six page tiles (icon + label).
+ * blue), then six page tiles (icon + label). `badges` puts a red dot on the
+ * chat and news buttons when something is unread.
  */
-export async function richMenuImage(locale: Locale): Promise<ImageResponse> {
+export async function richMenuImage(
+  locale: Locale,
+  badges: RichMenuBadges = NO_BADGES,
+): Promise<ImageResponse> {
   const { labels } = await richMenuLabels(locale);
   const font = await loadNotoSansJp(Object.values(labels).join(""));
   return new ImageResponse(
@@ -108,7 +145,10 @@ export async function richMenuImage(locale: Locale): Promise<ImageResponse> {
               borderRight: i === 0 ? "4px solid #ffffff" : "none",
             }}
           >
-            <Icon name={ICONS[item.key]} size={150} color="#ffffff" />
+            <div style={{ display: "flex", position: "relative" }}>
+              <Icon name={ICONS[item.key]} size={150} color="#ffffff" />
+              {dotted(item.key, badges) ? <Dot size={70} ring={BRAND} /> : null}
+            </div>
             <div
               style={{
                 display: "flex",
@@ -147,6 +187,7 @@ export async function richMenuImage(locale: Locale): Promise<ImageResponse> {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                position: "relative",
                 width: 240,
                 height: 240,
                 borderRadius: 120,
@@ -154,6 +195,9 @@ export async function richMenuImage(locale: Locale): Promise<ImageResponse> {
               }}
             >
               <Icon name={ICONS[item.key]} size={136} />
+              {dotted(item.key, badges) ? (
+                <Dot size={84} ring="#ffffff" />
+              ) : null}
             </div>
             <div
               style={{

@@ -64,13 +64,31 @@ Feature branches are not deployed. `dev` currently shares the production databas
 9. After the first deploy, bootstrap an admin:
    `DATABASE_URL=<prod pooled url> SEED_ADMIN_EMAIL=you@example.com pnpm db:seed`.
 
-### Crons (UTC schedules in `vercel.ts`)
+### Recurring tasks (`src/lib/jobs`)
 
-| Path | When (JST) | Purpose |
+One Supabase pg_cron job (`app-cron`, set up with `pnpm cron:setup`) calls
+`GET /api/cron` every minute; it runs what is due. `GET /api/cron?task=<name>`
+runs one task now (every task is safe to rerun). Both need
+`Authorization: Bearer $CRON_SECRET`.
+
+- **Retries:** a failed task (or failed deliveries within it) is retried by the
+  next call, a minute later, until it succeeds; what already succeeded is
+  skipped (deliveries are logged as they go, notifications are deduped).
+- **Time limit:** each call stops starting new work after 4 minutes (Vercel
+  stops it at 5) and the next call continues from the saved progress.
+- **Overlap / crashes:** a task is claimed with a lease (`CronRun`), so calls
+  never run it twice at once; if a call is killed, the lease runs out
+  (~5.5 min) and the next call takes over.
+
+| Task | When (JST) | Purpose |
 |---|---|---|
-| `/api/cron/reminders` | daily 09:00 | 7-day / 1-day event reminders; scheduled news notifications |
-| `/api/cron/stage-prompt` | April 1, 09:00 | yearly "is your status still …?" prompt |
-| `/api/cron/cleanup-evidence` | daily 03:00 | delete proof uploads 30 days after decision |
+| `publish-news` | every minute | reserved news; response-deadline reminders |
+| `line-menus` | every minute | LINE rich menu unread dots |
+| `event-reminders` | daily 09:00 | 7-day / 1-day event reminders |
+| `chat-digest` | daily 20:00 | unread group-chat digest |
+| `sync-status` | daily 00:05 | current/former, grades, group chats |
+| `cleanup-evidence` | daily 03:00 | delete proof uploads 30 days after decision |
+| `stage-prompt` | April 1, 09:00 | yearly "is your status still …?" prompt |
 
 ## Assumptions for the spec's open questions
 

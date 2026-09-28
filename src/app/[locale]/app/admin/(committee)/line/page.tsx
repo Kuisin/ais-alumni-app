@@ -70,6 +70,14 @@ export default async function AdminLinePage() {
               height={843}
               className="h-auto w-full rounded-lg border border-slate-200"
             />
+            <a
+              href={`/api/line/richmenu/${locale}?chats=1&news=1`}
+              target="_blank"
+              rel="noopener"
+              className="text-sm text-brand-700 underline"
+            >
+              {t("previewDots")}
+            </a>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-700 sm:grid-cols-3">
               {RICH_MENU_REPLIES.map((i) => (
                 <li key={i.key}>

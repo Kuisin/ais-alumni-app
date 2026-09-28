@@ -87,14 +87,15 @@
       "installed": "Installed",
       "notDefault": "Installed (not the default)",
       "notInstalled": "Not installed",
-      "how": "Creates a Japanese and an English menu; Japanese is the default and members who use English get the English one. Press “Update” after changing labels or pages (old menus are deleted).",
+      "how": "Creates a Japanese and an English menu; Japanese is the default and members who use English get the English one. Members with unread chats or news see a red dot on those buttons (updated every minute). Press “Update” after changing labels or pages (old menus are deleted).",
       "install": "Install the menu",
       "update": "Update the menu",
       "installing": "Installing…",
-      "done": "Menu installed ({linked} English-language members got the English menu; {removed} old menus deleted).",
+      "done": "Menu installed ({linked} members got the menu for their language and unread items; {removed} old menus deleted).",
       "previewJa": "Japanese menu",
       "previewEn": "English menu",
       "previewAlt": "Rich menu image",
+      "previewDots": "With unread items",
       "errors": {
         "notConfigured": "LINE Messaging API credentials are not set.",
         "failed": "Couldn't install the menu on LINE."

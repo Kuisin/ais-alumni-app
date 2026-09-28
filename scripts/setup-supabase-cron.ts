@@ -1,15 +1,18 @@
-// Reserved ニュース: Supabase pg_cron calls /api/cron/publish-news every 5
-// minutes (Vercel Hobby only allows daily crons; GitHub Actions schedules
-// ran hours late). pg_net makes the request; CRON_SECRET is kept in Supabase
-// Vault, so it's never in a migration or the repo. Safe to re-run: it
-// updates the secret and replaces the job. --remove unschedules it.
+// The one Supabase pg_cron job: calls GET /api/cron every minute, which runs
+// every recurring task that is due (src/lib/jobs; Vercel Hobby only allows
+// daily crons, and GitHub Actions schedules ran hours late). pg_net makes
+// the request; CRON_SECRET is kept in Supabase Vault, so it's never in a
+// migration or the repo. Safe to re-run: it updates the secret, replaces the
+// job and removes the per-task jobs it replaced. --remove unschedules it.
 // Not a Prisma migration: pg_cron / pg_net only exist on Supabase.
 // Usage: DIRECT_URL=<prod direct url> CRON_SECRET=<prod secret> \
 //   pnpm cron:setup [--url https://ais.kai-lab.net] [--remove]
 import { Client } from "pg";
 
-const JOB = "publish-news";
-const SCHEDULE = "*/5 * * * *";
+const JOB = "app-cron";
+const SCHEDULE = "* * * * *";
+/** Jobs from before there was one endpoint. */
+const LEGACY_JOBS = ["publish-news", "line-menus"];
 const SECRET_NAME = "cron_secret";
 
 function arg(name: string): string | undefined {
@@ -25,12 +28,15 @@ async function main() {
   const db = new Client({ connectionString: url });
   await db.connect();
   try {
-    if (process.argv.includes("--remove")) {
-      await db.query(
+    const unschedule = async (name: string) => {
+      const r = await db.query(
         "select cron.unschedule($1) where exists (select 1 from cron.job where jobname = $1)",
-        [JOB],
+        [name],
       );
-      console.log(`Removed the ${JOB} job.`);
+      if (r.rowCount) console.log(`Removed the ${name} job.`);
+    };
+    if (process.argv.includes("--remove")) {
+      await unschedule(JOB);
       return;
     }
     if (!secret) throw new Error("Set CRON_SECRET (same as on Vercel).");
@@ -59,13 +65,14 @@ async function main() {
       ]);
     }
 
+    const endpoint = `${base}/api/cron`;
     const command = `select net.http_get(
-      url := ${literal(`${base}/api/cron/publish-news`)},
+      url := ${literal(endpoint)},
       headers := jsonb_build_object(
         'Authorization',
         'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = ${literal(SECRET_NAME)})
       ),
-      timeout_milliseconds := 120000
+      timeout_milliseconds := 300000
     )`;
     // Scheduling under an existing name replaces that job.
     await db.query("select cron.schedule($1, $2, $3)", [
@@ -73,9 +80,8 @@ async function main() {
       SCHEDULE,
       command,
     ]);
-    console.log(
-      `Scheduled ${JOB} (${SCHEDULE} UTC) → ${base}/api/cron/publish-news`,
-    );
+    console.log(`Scheduled ${JOB} (${SCHEDULE}) → ${endpoint}`);
+    for (const name of LEGACY_JOBS) await unschedule(name);
   } finally {
     await db.end();
   }

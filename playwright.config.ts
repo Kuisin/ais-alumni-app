@@ -31,7 +31,7 @@ export default defineConfig({
     command: `pnpm next start -p ${PORT}`,
     env: {
       EMAIL_DEV_MAILBOX: "1",
-      // Lets tests call /api/cron/* (e.g. sending reserved news).
+      // Lets tests call /api/cron?task=… (e.g. sending reserved news).
       CRON_SECRET: "e2e-cron-secret",
       // Chat v2 (18歳以上, DMs) is off on dev/main until released.
       CHAT_V2: "1",

@@ -42,7 +42,7 @@ test("reserved news is sent when due, only to the chosen audience", async ({
   for (const e of ["hanako@example.com", "admin@example.com"])
     await clearMailbox(e);
 
-  const res = await page.request.get("/api/cron/publish-news", {
+  const res = await page.request.get("/api/cron?task=publish-news", {
     headers: { Authorization: "Bearer e2e-cron-secret" },
   });
   expect(res.ok()).toBe(true);
@@ -114,7 +114,7 @@ test("reserved news is sent when due, only to the chosen audience", async ({
   expect(await mail("admin@example.com")).not.toContain(postId);
 
   // Calling again doesn't send twice.
-  const again = await page.request.get("/api/cron/publish-news", {
+  const again = await page.request.get("/api/cron?task=publish-news", {
     headers: { Authorization: "Bearer e2e-cron-secret" },
   });
   expect((await again.json()).posts).toBe(0);

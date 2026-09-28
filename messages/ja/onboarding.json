@@ -9,7 +9,7 @@
     "title": "LINEで最新情報を受け取る",
     "description": "LINE を連携して AIS Alumni Committee の公式アカウントを友だち追加すると、お知らせをメールではなく LINE で受け取れます。",
     "benefits": {
-      "reminders": "イベントの1週間前と前日にリマインダー",
+      "mentions": "チャットで自分あてのメンション",
       "news": "委員会からのニュース",
       "result": "会員登録の審査結果"
     },

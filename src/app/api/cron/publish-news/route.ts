@@ -6,7 +6,7 @@ export const maxDuration = 300;
 
 /**
  * Reserved ニュース: notifies posts whose reserved time has come. Called every
- * 10 minutes by GitHub Actions (.github/workflows/publish-news.yml; the Vercel
+ * 5 minutes by Supabase pg_cron (scripts/setup-supabase-cron.ts; the Vercel
  * Hobby plan only allows daily crons) and daily by the reminders cron as a
  * fallback. Safe to call often: each post is claimed once (notifiedAt).
  * Also sends the one reminder a day before a response deadline (remindedAt).

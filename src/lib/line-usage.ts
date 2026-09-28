@@ -17,6 +17,16 @@ export type LineQuota = {
   limit: number | null;
 };
 
+/** Kinds logged before the catalog's current names (Sept 2026). */
+const LEGACY_KINDS: Record<string, NotifyCategory> = {
+  VERIFICATION: "account",
+  FAMILY_LINK_REQUEST: "family",
+  NAME_REQUEST_RESULT: "account",
+  BIRTH_DATE_REQUEST_RESULT: "account",
+  GENDER_REQUEST_RESULT: "account",
+  RECORD_REQUEST_RESULT: "account",
+};
+
 /** Start of the current month in Japan time, as a UTC instant. */
 export function jstMonthStart(now: Date): Date {
   const jst = new Date(now.getTime() + 9 * 3600_000);
@@ -61,7 +71,7 @@ export async function lineSendsByCategory(
   const byCategory = new Map<NotifyCategory | "other", number>();
   for (const r of rows) {
     const spec = NOTIFY_KINDS[r.kind as NotifyKind];
-    const key = spec?.category ?? "other";
+    const key = spec?.category ?? LEGACY_KINDS[r.kind] ?? "other";
     byCategory.set(key, (byCategory.get(key) ?? 0) + r._count._all);
   }
   return [...byCategory]

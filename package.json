@@ -16,7 +16,8 @@
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "chat:sync": "tsx scripts/sync-chats.ts",
     "news:launch-welcome": "tsx scripts/launch-welcome.ts",
-    "news:cleanup-admin": "tsx scripts/cleanup-admin-news.ts"
+    "news:cleanup-admin": "tsx scripts/cleanup-admin-news.ts",
+    "cron:setup": "tsx scripts/setup-supabase-cron.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

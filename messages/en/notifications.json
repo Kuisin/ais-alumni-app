@@ -224,8 +224,8 @@
   "categoryHints": {
     "account": "Approval, security and the results of your requests. Can't be turned off.",
     "news": "New posts and response-deadline reminders",
-    "events": "A week and a day before events you're attending",
-    "chat": "Mentions (right away) and unread summaries (daily, 8 pm)",
+    "events": "A week and a day before events you're attending (by email)",
+    "chat": "Mentions (right away) and unread summaries (daily at 8 pm, by email)",
     "social": "Follow requests, acceptances and requests to vouch",
     "family": "Family confirmations and account handovers",
     "profile": "Yearly reminder to update your history",

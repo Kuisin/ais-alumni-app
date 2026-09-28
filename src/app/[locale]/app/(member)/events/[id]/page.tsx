@@ -4,7 +4,6 @@ import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 import { RsvpForm } from "@/components/events/rsvp-form";
 import { TicketCard } from "@/components/events/ticket-card";
-import { LineRsvpPrompt } from "@/components/line/line-rsvp-prompt";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
 import { BackLink } from "@/components/ui/back-link";
@@ -239,10 +238,6 @@ export default async function EventDetailPage({
             <MarkdownBody source={body.text} />
           </section>
         </Card>
-      ) : null}
-
-      {mine && mine.answer !== RsvpAnswer.NOT_GOING ? (
-        <LineRsvpPrompt user={user} returnTo={`/app/events/${event.id}`} />
       ) : null}
     </article>
   );

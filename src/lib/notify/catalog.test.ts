@@ -85,3 +85,18 @@ describe("link texts", () => {
     ).toEqual({ title: "旧", body: "旧本文" });
   });
 });
+
+describe("daily reminders are email only", () => {
+  it("chat digest and event reminders never use LINE", () => {
+    for (const k of [
+      "CHAT_DIGEST",
+      "EVENT_REMINDER_7D",
+      "EVENT_REMINDER_1D",
+    ] as const) {
+      expect(NOTIFY_KINDS[k]).toMatchObject({ emailOnly: true });
+    }
+    // Timely ones still go by LINE.
+    expect(NOTIFY_KINDS.CHAT_MENTION).not.toHaveProperty("emailOnly");
+    expect(NOTIFY_KINDS.NEWS).not.toHaveProperty("emailOnly");
+  });
+});

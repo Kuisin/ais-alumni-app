@@ -3,7 +3,11 @@ import { getTranslations } from "next-intl/server";
 import { LineUsageCard } from "@/components/admin/line-usage-card";
 import { RichMenuInstall } from "@/components/admin/rich-menu-install";
 import { Alert, Badge, Card, PageHeader } from "@/components/ui/card";
-import { RICH_MENU_ITEMS, richMenuStatus } from "@/lib/line-richmenu";
+import {
+  RICH_MENU_ITEMS,
+  RICH_MENU_REPLIES,
+  richMenuStatus,
+} from "@/lib/line-richmenu";
 import { richMenuLabels } from "@/lib/line-richmenu-image";
 
 export async function generateMetadata({
@@ -67,6 +71,14 @@ export default async function AdminLinePage() {
               className="h-auto w-full rounded-lg border border-slate-200"
             />
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-700 sm:grid-cols-3">
+              {RICH_MENU_REPLIES.map((i) => (
+                <li key={i.key}>
+                  {l.labels[i.key]}{" "}
+                  <span className="text-xs text-slate-500">
+                    {t("replyNote")}
+                  </span>
+                </li>
+              ))}
               {RICH_MENU_ITEMS.map((i) => (
                 <li key={i.key}>
                   {l.labels[i.key]}{" "}

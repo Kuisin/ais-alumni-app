@@ -102,6 +102,9 @@ model User {
   /// profile photo shown to every member; otherwise only to family and
   /// follow connections (src/lib/avatar.ts)
   avatarPublic          Boolean              @default(false)
+  /// parents only: leave me out of the member directory (src/lib/directory.ts);
+  /// ignored once the member has no parent role
+  hideFromDirectory     Boolean              @default(false)
   /// MALE | FEMALE | OTHER (default profile icon); null = not given
   gender                String?
   bio                   String?

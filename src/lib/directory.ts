@@ -29,6 +29,17 @@ export const DIRECTORY_PAGE_SIZE = 24;
 export const MIN_YEAR = 1950;
 export const MAX_YEAR = 2100;
 
+/** 区分 shown when none is chosen: everyone who left AIS (卒業生＋元在校生). */
+export const DEFAULT_DIRECTORY_ROLE: MemberFilterKey = RoleKey.FORMER_STUDENT;
+/** ?role= value for 「すべての区分」 (no role filter). */
+export const ALL_ROLES = "all";
+
+/** Parents may leave the directory (User.hideFromDirectory). */
+export const PARENT_ROLES: readonly RoleKey[] = [
+  RoleKey.CURRENT_PARENT,
+  RoleKey.FORMER_PARENT,
+];
+
 /** Public-tier columns for member cards (directory, follows, family lists). */
 export const PUBLIC_CARD_SELECT = {
   id: true,
@@ -63,7 +74,7 @@ export type PublicCard = Prisma.UserGetPayload<{
 
 export type DirectoryFilters = {
   q: string | null;
-  /** 区分 (卒業生 / 元在校生 split; FORMER_STUDENT = both) */
+  /** 区分 (卒業生 / 元在校生 split; FORMER_STUDENT = both); null = all */
   role: MemberFilterKey | null;
   yearFrom: number | null;
   yearTo: number | null;
@@ -105,9 +116,13 @@ export function parseDirectoryFilters(params: RawParams): DirectoryFilters {
   }
   const cursor = first(params.cursor);
   const cohort = first(params.cohort);
+  const role = first(params.role);
   return {
     q,
-    role: parseMemberFilter(first(params.role)),
+    role:
+      role === ALL_ROLES
+        ? null
+        : (parseMemberFilter(role) ?? DEFAULT_DIRECTORY_ROLE),
     yearFrom,
     yearTo,
     division: oneOf(Division, first(params.division)),
@@ -125,7 +140,7 @@ export function directoryQuery(
 ): string {
   const p = new URLSearchParams();
   if (f.q) p.set("q", f.q);
-  if (f.role) p.set("role", f.role);
+  if (f.role !== DEFAULT_DIRECTORY_ROLE) p.set("role", f.role ?? ALL_ROLES);
   if (f.yearFrom !== null) p.set("from", String(f.yearFrom));
   if (f.yearTo !== null) p.set("to", String(f.yearTo));
   if (f.division) p.set("division", f.division);
@@ -139,7 +154,7 @@ export function directoryQuery(
 export function hasActiveFilters(f: DirectoryFilters): boolean {
   return Boolean(
     f.q ||
-      f.role ||
+      f.role !== DEFAULT_DIRECTORY_ROLE ||
       f.yearFrom !== null ||
       f.yearTo !== null ||
       f.division ||
@@ -205,6 +220,16 @@ export function buildDirectoryWhere(
   if (f.stage) roleWhere.currentStage = f.stage;
   if (f.cohort) roleWhere.cohortId = f.cohort;
   if (Object.keys(roleWhere).length) and.push({ roles: { some: roleWhere } });
+
+  // Parents who chose to stay out of the directory (admins still see them).
+  if (!ctx.viewer.isAdmin) {
+    and.push({
+      NOT: {
+        hideFromDirectory: true,
+        roles: { some: { role: { in: [...PARENT_ROLES] } } },
+      },
+    });
+  }
 
   // Minors (§8): hidden unless the viewer is a teacher, an admin, or family.
   const v = ctx.viewer;

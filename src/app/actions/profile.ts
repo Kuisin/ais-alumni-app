@@ -16,6 +16,7 @@ import {
 import type { Prisma } from "@/generated/prisma/client";
 import { RoleKey } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { PARENT_ROLES } from "@/lib/directory";
 import { isPersonalField, PERSONAL_FIELDS } from "@/lib/personal-fields";
 import { AuthError, actionActive, type CurrentUser } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
@@ -137,6 +138,22 @@ export async function updateAvatarSettingsAction(
   await db.user.update({
     where: { id: me.id },
     data: { avatarPublic: formData.get("avatarPublic") === "on" },
+  });
+  refresh();
+  return { ok: true, message: "saved" };
+}
+
+/** Parents only: whether to be listed in the member directory. */
+export async function updateDirectorySettingsAction(
+  _prev: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const me = await member();
+  if (!me || !me.roles.some((r) => PARENT_ROLES.includes(r.role)))
+    return FORBIDDEN;
+  await db.user.update({
+    where: { id: me.id },
+    data: { hideFromDirectory: formData.get("listed") !== "on" },
   });
   refresh();
   return { ok: true, message: "saved" };

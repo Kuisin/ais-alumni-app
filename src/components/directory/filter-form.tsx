@@ -8,7 +8,12 @@ import { LifeStage } from "@/generated/prisma/enums";
 import { Link } from "@/i18n/navigation";
 import { MEMBER_FILTER_OPTIONS } from "@/lib/audience";
 import type { CohortOption } from "@/lib/cohorts";
-import { type DirectoryFilters, MAX_YEAR, MIN_YEAR } from "@/lib/directory";
+import {
+  ALL_ROLES,
+  type DirectoryFilters,
+  MAX_YEAR,
+  MIN_YEAR,
+} from "@/lib/directory";
 import { AIS_DIVISIONS } from "@/lib/school";
 
 /** GET form (SearchForm), so filtering also works without JavaScript (§10.1). */
@@ -21,9 +26,8 @@ export async function DirectoryFilterForm({
 }) {
   const t = await getTranslations("directory");
   const tr = await getTranslations("roles");
-  // Filters other than the name live in the collapsible panel.
+  // Filters other than the name and 区分 live in the collapsible panel.
   const activeCount = [
-    filters.role,
     filters.yearFrom !== null || filters.yearTo !== null,
     filters.division,
     filters.cohort,
@@ -55,6 +59,25 @@ export async function DirectoryFilterForm({
             {t("filters.apply")}
           </SearchButton>
         </div>
+        {/* 区分: former students unless chosen otherwise (DEFAULT_DIRECTORY_ROLE). */}
+        <div className="mt-3 sm:max-w-xs">
+          <Field id="dir-role" label={t("filters.role")}>
+            {(aria) => (
+              <Select
+                {...aria}
+                name="role"
+                defaultValue={filters.role ?? ALL_ROLES}
+              >
+                {MEMBER_FILTER_OPTIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {tr(`audience.${r}`)}
+                  </option>
+                ))}
+                <option value={ALL_ROLES}>{t("filters.anyRole")}</option>
+              </Select>
+            )}
+          </Field>
+        </div>
         <details className="group mt-3" open={activeCount > 0}>
           <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-2 text-sm font-medium text-brand-700 hover:bg-brand-50 [&::-webkit-details-marker]:hidden">
             <SlidersHorizontal aria-hidden="true" className="size-4" />
@@ -66,18 +89,6 @@ export async function DirectoryFilterForm({
             ) : null}
           </summary>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field id="dir-role" label={t("filters.role")}>
-              {(aria) => (
-                <Select {...aria} name="role" defaultValue={filters.role ?? ""}>
-                  <option value="">{t("filters.anyRole")}</option>
-                  {MEMBER_FILTER_OPTIONS.map((r) => (
-                    <option key={r} value={r}>
-                      {tr(`audience.${r}`)}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
             <fieldset className="space-y-1">
               <legend className="block text-sm font-medium text-slate-800">
                 {t("filters.yearRange")}

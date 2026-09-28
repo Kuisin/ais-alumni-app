@@ -107,10 +107,7 @@ export async function notifyMany(
   const recipients: { user: NotifyUser; channels: Channel[] }[] = [];
   for (const u of users) {
     if (skip.has(u.id) || !wantsKind(u.notifyOff, n.kind)) continue;
-    const channels = channelsFor(u, {
-      alwaysEmail: "alwaysEmail" in spec,
-      emailOnly: "emailOnly" in spec,
-    }).filter((ch) =>
+    const channels = channelsFor(u, { line: "line" in spec }).filter((ch) =>
       ch === "LINE" ? Boolean(u.lineUserId) : Boolean(u.primaryEmail),
     );
     if (channels.length) recipients.push({ user: u, channels });
@@ -212,15 +209,19 @@ export async function notifyMany(
   return result;
 }
 
-/** Estimated LINE push count for a set of users (admin preview, §11). */
-export function estimateLinePushes(users: RoutableUser[]): {
+/** Estimated LINE / email counts for sending `kind` to these users (§11). */
+export function estimateLinePushes(
+  users: RoutableUser[],
+  kind: NotifyKind,
+): {
   line: number;
   email: number;
 } {
   let line = 0;
   let email = 0;
+  const lineOk = "line" in NOTIFY_KINDS[kind];
   for (const u of users) {
-    const ch = channelsFor(u)[0];
+    const ch = channelsFor(u, { line: lineOk })[0];
     if (ch === "LINE") line++;
     else if (ch === "EMAIL") email++;
   }

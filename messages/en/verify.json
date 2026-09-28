@@ -145,7 +145,7 @@
   "review": {
     "title": "Check your answers",
     "files": "Documents",
-    "note": "After you send it, a committee member will review it. We'll let you know by email (and LINE, if linked).",
+    "note": "After you send it, a committee member will review it. We'll let you know by email.",
     "types": "You are",
     "children": "Children",
     "edit": "Review from the start",

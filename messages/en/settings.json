@@ -36,7 +36,7 @@
   },
   "line": {
     "title": "LINE",
-    "description": "Get event reminders and news on LINE.",
+    "description": "Get committee news and mentions on LINE. Event reminders and the daily unread-chat summary come by email.",
     "status": "Status",
     "linked": "Linked",
     "notLinked": "Not linked",

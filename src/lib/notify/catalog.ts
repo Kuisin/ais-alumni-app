@@ -40,6 +40,11 @@ type KindSpec = {
   emoji: string;
   /** Also email when LINE is the routed channel (important / security). */
   alwaysEmail?: boolean;
+  /**
+   * Email only, never LINE: daily, recurring reminders. LINE's monthly
+   * message allowance (free plan: 200) is kept for what's timely.
+   */
+  emailOnly?: boolean;
 };
 
 export const NOTIFY_KINDS = {
@@ -89,11 +94,11 @@ export const NOTIFY_KINDS = {
   NEWS_REMINDER: { category: "news", emoji: "⏰" },
   BROADCAST: { category: "news", emoji: "✉️" },
   // Events
-  EVENT_REMINDER_7D: { category: "events", emoji: "📅" },
-  EVENT_REMINDER_1D: { category: "events", emoji: "📅" },
+  EVENT_REMINDER_7D: { category: "events", emoji: "📅", emailOnly: true },
+  EVENT_REMINDER_1D: { category: "events", emoji: "📅", emailOnly: true },
   // Chat
   CHAT_MENTION: { category: "chat", emoji: "💬" },
-  CHAT_DIGEST: { category: "chat", emoji: "💬" },
+  CHAT_DIGEST: { category: "chat", emoji: "💬", emailOnly: true },
   // Follows & vouching
   FOLLOW_REQUEST: { category: "social", emoji: "👤" },
   FOLLOW_AUTO_ACCEPTED: { category: "social", emoji: "👤" },

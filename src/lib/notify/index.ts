@@ -109,6 +109,7 @@ export async function notifyMany(
     if (skip.has(u.id) || !wantsKind(u.notifyOff, n.kind)) continue;
     const channels = channelsFor(u, {
       alwaysEmail: "alwaysEmail" in spec,
+      emailOnly: "emailOnly" in spec,
     }).filter((ch) =>
       ch === "LINE" ? Boolean(u.lineUserId) : Boolean(u.primaryEmail),
     );

@@ -25,13 +25,9 @@
   },
   "banner": {
     "title": "Get updates on LINE",
-    "body": "Link LINE to get event reminders and news from the committee there instead of by email.",
-    "bodyNotFollowing": "Add the AIS Alumni Committee Official Account as a friend to get reminders and news on LINE.",
+    "body": "Link LINE to get committee news, application results and chat mentions there instead of by email.",
+    "bodyNotFollowing": "Add the AIS Alumni Committee Official Account as a friend to get news and updates on LINE.",
     "dismiss": "Not now"
-  },
-  "rsvpPrompt": {
-    "text": "Get the reminder on LINE?",
-    "link": "Link LINE"
   },
   "done": {
     "metaTitle": "LINE linking",
@@ -65,7 +61,7 @@
     "title": "[Welcome to AIS Alumni]",
     "about": "This account is run by the AIS Alumni Committee, a volunteer group of AIS graduates. It is not an official account of Aichi International School.",
     "receiveTitle": "■ What you'll get on LINE",
-    "receiveItems": "・The result of your membership application\n・Event invitations, with reminders one week and one day before\n・News from the committee\n・Follow and family-link requests\n・Results of AIS record corrections",
+    "receiveItems": "・The result of your membership application\n・News from the committee\n・Mentions in chats\n・Follow and family-link requests\n・Results of AIS record corrections\n(Event reminders and the unread-chat summary come by email.)",
     "linkedTitle": "■ Your account",
     "linked": "✅ Linked to your AIS Alumni account. Notifications will arrive here on LINE.",
     "notLinkedTitle": "■ Not linked to the app yet",

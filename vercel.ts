@@ -3,7 +3,9 @@ import type { VercelConfig } from "@vercel/config/v1";
 // Domains: ais.kai-lab.net → main (production), ais-dev.kai-lab.net → dev.
 // Everything runs in Tokyo: functions (hnd1), Supabase Postgres
 // (ap-northeast-1), Vercel Blob (hnd1) and Resend sending (ap-northeast-1).
-// Cron schedules are UTC.
+// Cron schedules are UTC. Hobby allows only daily crons: reserved ニュース
+// (/api/cron/publish-news, every 5 min) is called by Supabase pg_cron —
+// see scripts/setup-supabase-cron.ts.
 export const config: VercelConfig = {
   framework: "nextjs",
   // Generate explicitly: cached installs on Vercel skip the postinstall hook.

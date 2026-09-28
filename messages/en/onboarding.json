@@ -9,7 +9,7 @@
     "title": "Get updates on LINE",
     "description": "Link LINE and add the AIS Alumni Committee Official Account to get messages there instead of by email.",
     "benefits": {
-      "reminders": "Event reminders a week and a day before",
+      "mentions": "Mentions of you in chats",
       "news": "News from the committee",
       "result": "The result of your membership check"
     },

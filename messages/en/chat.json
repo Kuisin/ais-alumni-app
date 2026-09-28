@@ -44,7 +44,7 @@
     "delete": "Delete",
     "deleteConfirm": "Delete this message?",
     "deleteLabel": "Delete {name}'s message",
-    "digest": "Get a daily summary at 8 pm when there are unread messages",
+    "digest": "Get a daily email summary at 8 pm when there are unread messages",
     "adminView": "You're viewing as an admin (you can't post here)",
     "live": "Live",
     "polling": "Updating every few seconds",

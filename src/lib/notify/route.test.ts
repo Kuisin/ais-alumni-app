@@ -93,3 +93,15 @@ describe("deliverWithFallback", () => {
     expect(out).toEqual([]);
   });
 });
+
+describe("emailOnly kinds (daily reminders)", () => {
+  it("go by email even when LINE is linked", () => {
+    expect(channelsFor(u(), { emailOnly: true })).toEqual(["EMAIL"]);
+  });
+
+  it("are skipped, not sent by LINE, without an email address", () => {
+    expect(channelsFor(u({ primaryEmail: null }), { emailOnly: true })).toEqual(
+      [],
+    );
+  });
+});

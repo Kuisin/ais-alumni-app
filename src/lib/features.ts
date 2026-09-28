@@ -39,9 +39,9 @@ export const GRADUATE_CHATS_ENABLED =
 
 /**
  * The 「同窓会委員」 group chat (ChatGroupKind.ALUMNI_COMMITTEE): members with
- * the 同窓会委員 position, and admins. Off until the enum value reaches main
- * (CHAT_V5=1 turns it on for tests); turn on after that release.
+ * the 同窓会委員 position, and admins. On since the enum value reached main
+ * (release with #134).
  */
-const COMMITTEE_CHAT_RELEASED = false;
+const COMMITTEE_CHAT_RELEASED = true;
 export const COMMITTEE_CHAT_ENABLED =
   COMMITTEE_CHAT_RELEASED || process.env.CHAT_V5 === "1";

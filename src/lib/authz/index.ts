@@ -7,6 +7,7 @@ import {
   isPersonalField,
   type PersonalField,
 } from "@/lib/personal-fields";
+import { hiddenPersonalFields } from "@/lib/profile-visibility";
 import {
   canViewPrivate as canViewPrivateCore,
   canViewProfile,
@@ -139,6 +140,8 @@ export type ProfileView = {
    */
   private: PrivateProfile | null;
   access: PrivateAccess;
+  /** personal fields kept from the viewer (shown as 非公開, never the value) */
+  hiddenFields: PersonalField[];
   /** the member shares at least one field with followers */
   sharesWithFollowers: boolean;
   relationship: Relationship;
@@ -228,6 +231,10 @@ export async function getProfileForViewer(
     public: projectPublic(target),
     private: projectPrivate(target, access),
     access,
+    hiddenFields: hiddenPersonalFields(
+      access,
+      followerFieldSet(target.followerFields),
+    ),
     sharesWithFollowers: followerFieldSet(target.followerFields).size > 0,
     relationship: rel,
     isSelf: viewer.id === target.id,

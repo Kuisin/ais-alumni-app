@@ -156,16 +156,25 @@ export function ChatRoom({
         .filter((s) => s.name.toLowerCase().includes(q.query.toLowerCase()))
         .slice(0, 8)
     : [];
+  // Caret to restore right after a picked mention is committed. Done in a
+  // layout effect, before the next key is handled: a later frame could move
+  // the caret back under text typed in the meantime.
+  const pendingCaret = useRef<number | null>(null);
   function pickMention(s: RoomMember) {
     if (!q) return;
     const r = applyMention(text, q.start, caret, s.name);
+    pendingCaret.current = r.caret;
     setText(r.text);
     setCaret(-1);
-    requestAnimationFrame(() => {
-      input.current?.focus();
-      input.current?.setSelectionRange(r.caret, r.caret);
-    });
   }
+  useLayoutEffect(() => {
+    const at = pendingCaret.current;
+    const el = input.current;
+    if (at === null || !el || el.value !== text) return;
+    pendingCaret.current = null;
+    el.focus();
+    el.setSelectionRange(at, at);
+  }, [text]);
   // The unread line stays where it was when the talk was opened.
   const [divider] = useState(() => {
     if (!lastReadAt) return null;

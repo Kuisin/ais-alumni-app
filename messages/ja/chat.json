@@ -19,7 +19,8 @@
     "ADULTS": "元在校生（成人）",
     "CLASS_REPS": "学年代表",
     "GRADUATES": "卒業生",
-    "GRADUATES_ADULTS": "卒業生（成人）"
+    "GRADUATES_ADULTS": "卒業生（成人）",
+    "ALUMNI_COMMITTEE": "同窓会委員"
   },
   "groupHints": {
     "TEACHERS": "教職員の皆さん",
@@ -32,7 +33,8 @@
     "ADULTS": "元在校生（卒業生を含む）のうち、18歳を迎えた後の4月1日から参加",
     "CLASS_REPS": "各学年の学年代表",
     "GRADUATES": "AISを卒業した人",
-    "GRADUATES_ADULTS": "卒業生のうち、18歳を迎えた後の4月1日から参加"
+    "GRADUATES_ADULTS": "卒業生のうち、18歳を迎えた後の4月1日から参加",
+    "ALUMNI_COMMITTEE": "同窓会委員（役職）と管理者"
   },
   "room": {
     "back": "チャット一覧へ",

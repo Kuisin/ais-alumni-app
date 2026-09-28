@@ -67,7 +67,13 @@ export function desiredGroups(
     didGraduate?: boolean | null;
   }[],
   childCohortIds: readonly string[],
-  opts: { adult?: boolean; rep?: boolean; graduates?: boolean } = {},
+  opts: {
+    adult?: boolean;
+    rep?: boolean;
+    graduates?: boolean;
+    /** 同窓会委員 (position) or admin, with the committee chat enabled */
+    committee?: boolean;
+  } = {},
 ): GroupSpec[] {
   const out = new Map<string, GroupSpec>();
   const add = (kind: ChatGroupKind, cohortId: string | null = null) =>
@@ -95,11 +101,13 @@ export function desiredGroups(
     if (opts.adult) add(ChatGroupKind.GRADUATES_ADULTS);
   }
   if (opts.rep) add(ChatGroupKind.CLASS_REPS);
+  if (opts.committee) add(ChatGroupKind.ALUMNI_COMMITTEE);
   return [...out.values()];
 }
 
 /** Display order in the list: type groups first, then classes. */
 export const KIND_ORDER: ChatGroupKind[] = [
+  ChatGroupKind.ALUMNI_COMMITTEE,
   ChatGroupKind.TEACHERS,
   ChatGroupKind.CURRENT_STUDENTS,
   ChatGroupKind.GRADUATES_ADULTS,

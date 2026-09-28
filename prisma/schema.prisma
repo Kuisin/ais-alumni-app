@@ -428,31 +428,37 @@ model Block {
 }
 
 model Event {
-  id              String         @id @default(cuid())
-  titleJa         String?
-  titleEn         String?
-  bodyJa          String?
-  bodyEn          String?
-  startsAt        DateTime
-  endsAt          DateTime?
-  location        String?
-  mapUrl          String?
-  capacity        Int?
-  rsvpDeadline    DateTime?
+  id               String         @id @default(cuid())
+  titleJa          String?
+  titleEn          String?
+  bodyJa           String?
+  bodyEn           String?
+  startsAt         DateTime
+  endsAt           DateTime?
+  location         String?
+  mapUrl           String?
+  capacity         Int?
+  rsvpDeadline     DateTime?
   // Added: RSVPs closed early by the organiser (null = open until the deadline)
-  rsvpClosedAt    DateTime?
-  targetRoles     RoleKey[] // empty = all members
+  rsvpClosedAt     DateTime?
+  targetRoles      RoleKey[] // empty = all members
   // Added: preferred over targetRoles when non-empty
-  targetAudiences AudienceKey[]  @default([])
+  targetAudiences  AudienceKey[]  @default([])
   // Added: who it's for, same conditions as ニュース (src/lib/news-audience.ts)
-  audience        Json?
-  createdById     String
-  createdBy       User           @relation(fields: [createdById], references: [id])
-  rsvps           Rsvp[]
-  staff           EventStaff[]
-  checkIns        EventCheckIn[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  audience         Json?
+  // Added: as NewsPost — the role it was created as (shown to members), and
+  // a 同窓会委員's event is hidden until another 同窓会委員 approves it
+  senderRole       SenderRole?
+  approvalRequired Boolean        @default(false)
+  approvedAt       DateTime?
+  approvedById     String?
+  createdById      String
+  createdBy        User           @relation(fields: [createdById], references: [id])
+  rsvps            Rsvp[]
+  staff            EventStaff[]
+  checkIns         EventCheckIn[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@index([startsAt])
 }

@@ -2,6 +2,7 @@ import { Archive, ArchiveRestore, Eye } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
+  approveNewsAction,
   deleteNewsAction,
   setNewsArchivedAction,
   setNewsClosedAction,
@@ -147,6 +148,7 @@ export default async function AdminNewsEditPage({
             <ApprovalPanel
               post={post}
               canApprove={approver && post.createdById !== user.id}
+              action={approveNewsAction}
               locale={locale}
             />
           ) : null}

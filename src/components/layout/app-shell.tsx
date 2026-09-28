@@ -328,8 +328,14 @@ export async function AppShell({
               },
             ]
           : []),
+        // News and events: admins, teachers, 同窓会委員 and 学年代表.
         ...(a.news
           ? [
+              {
+                href: "/app/admin/events",
+                label: t("adminNav.events"),
+                icon: <CalendarDays className={ICON} />,
+              },
               {
                 href: "/app/admin/news",
                 label: t("adminNav.news"),
@@ -339,11 +345,6 @@ export async function AppShell({
           : []),
         ...(a.admin
           ? [
-              {
-                href: "/app/admin/events",
-                label: t("adminNav.events"),
-                icon: <CalendarDays className={ICON} />,
-              },
               {
                 href: "/app/admin/line",
                 label: t("adminNav.line"),

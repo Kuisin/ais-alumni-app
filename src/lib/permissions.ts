@@ -226,7 +226,7 @@ export type StaffAccess = {
   broadcast: boolean;
   /** the current-teachers page */
   teachers: boolean;
-  /** ニュース: all posts (admins) or the member's own */
+  /** ニュース and events: all (admins) or the member's own */
   news: boolean;
 };
 

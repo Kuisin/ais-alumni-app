@@ -9,6 +9,7 @@ import {
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import {
+  approveEventAction,
   deleteEventAction,
   setEventRsvpClosedAction,
 } from "@/app/actions/admin-content";
@@ -16,11 +17,13 @@ import { CloseControl, EventView } from "@/components/admin/content-views";
 import { NotificationOpensCard } from "@/components/admin/notification-opens-card";
 import { EventForm } from "@/components/events/event-form";
 import { EventStaffPanel } from "@/components/events/event-staff-panel";
+import { ApprovalPanel } from "@/components/news/approval-panel";
 import { BackLink } from "@/components/ui/back-link";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { EditableCard, ViewEdit } from "@/components/ui/view-edit";
 import { Link } from "@/i18n/navigation";
+import { getNewsApprover } from "@/lib/broadcasts";
 import { loadCohortOptions } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
 import { checkInPath } from "@/lib/event-tickets";
@@ -32,7 +35,7 @@ import {
   toJstLocalInput,
 } from "@/lib/format";
 import { specFromPost } from "@/lib/news-audience";
-import { requireAdmin } from "@/lib/session";
+import { requireNewsAuthor } from "@/lib/session";
 
 export async function generateMetadata({
   params,
@@ -50,8 +53,9 @@ export default async function AdminEventPage({
 }: PageProps<"/[locale]/app/admin/events/[id]">) {
   const { id, locale: rawLocale } = await params;
   const locale = asLocale(rawLocale);
-  const created = (await searchParams).created === "1";
-  await requireAdmin();
+  const sp = await searchParams;
+  const created = sp.created === "1";
+  const { user, scope } = await requireNewsAuthor();
   if (id.length > 64) notFound();
   const event = await db.event.findUnique({
     where: { id },
@@ -72,6 +76,11 @@ export default async function AdminEventPage({
     },
   });
   if (!event) notFound();
+  // Teachers, 同窓会委員 and 学年代表 manage only their own events; other
+  // 同窓会委員 may open a 同窓会委員's event to approve it (view only).
+  const canEdit = user.isAdmin || event.createdById === user.id;
+  const approver = await getNewsApprover(user);
+  if (!canEdit && !(approver && event.approvalRequired)) notFound();
   const audience = specFromPost(event);
   const [cohorts, audienceMembers] = await Promise.all([
     loadCohortOptions(locale === "en" ? "en" : "ja"),
@@ -94,6 +103,42 @@ export default async function AdminEventPage({
     (a, b) => ANSWER_ORDER[a.answer] - ANSWER_ORDER[b.answer],
   );
   const title = localized(event.titleJa, event.titleEn, locale).text;
+  const approval = event.approvalRequired ? (
+    <ApprovalPanel
+      post={event}
+      canApprove={approver && event.createdById !== user.id}
+      action={approveEventAction}
+      locale={locale}
+    />
+  ) : null;
+
+  // Another 同窓会委員 checking an event before approving it.
+  if (!canEdit)
+    return (
+      <>
+        <BackLink href="/app/admin/events">{t("events.backToList")}</BackLink>
+        <div className="mt-1">
+          <PageHeader
+            title={title}
+            description={formatDateTime(event.startsAt, locale)}
+          />
+        </div>
+        {sp.approved === "1" ? (
+          <div className="mb-4">
+            <Alert tone="success">{t("approval.done")}</Alert>
+          </div>
+        ) : null}
+        <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-6 xl:space-y-0">
+          <aside className="xl:col-start-2 xl:row-start-1">{approval}</aside>
+          <Card className="min-w-0 xl:col-start-1 xl:row-start-1">
+            <h2 className="mb-3 text-lg font-semibold">
+              {t("events.details")}
+            </h2>
+            <EventView event={event} audience={audience} locale={locale} />
+          </Card>
+        </div>
+      </>
+    );
 
   return (
     <>
@@ -113,9 +158,12 @@ export default async function AdminEventPage({
           }
         />
       </div>
-      {created ? (
-        <div className="mb-4">
-          <Alert tone="success">{t("events.created")}</Alert>
+      {created || sp.approved === "1" ? (
+        <div className="mb-4 space-y-3">
+          {created ? <Alert tone="success">{t("events.created")}</Alert> : null}
+          {sp.approved === "1" ? (
+            <Alert tone="success">{t("approval.done")}</Alert>
+          ) : null}
         </div>
       ) : null}
 
@@ -125,6 +173,7 @@ export default async function AdminEventPage({
           aria-labelledby="attendees"
           className="xl:sticky xl:top-20 xl:col-start-2 xl:row-start-1"
         >
+          {approval ? <div className="mb-4">{approval}</div> : null}
           <Card>
             <h2 id="attendees" className="mb-3 text-lg font-semibold">
               {t("attendees.title")}
@@ -286,6 +335,7 @@ export default async function AdminEventPage({
                   })),
                 }}
                 cohorts={cohorts}
+                scope={scope}
                 deleteAction={{
                   action: deleteEventAction,
                   message: `${t("events.deleteConfirm")}\n${t("events.deleteHint")}`,

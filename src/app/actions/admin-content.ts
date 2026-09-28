@@ -34,18 +34,13 @@ import {
   scopedAudience,
   senderRoleFor,
 } from "@/lib/permissions";
-import {
-  AuthError,
-  actionActive,
-  actionAdmin,
-  actionNewsAuthor,
-} from "@/lib/session";
+import { AuthError, actionActive, actionNewsAuthor } from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
 /**
  * Admin editors for events and news (§10.3, §10.4). Every action re-checks
- * rights (actionAdmin(), or newsEditor() for ニュース, which current
- * teachers and 学年代表 may also post) and every mutation is audited.
+ * rights (newsEditor() / eventEditor(): admins, and current teachers,
+ * 同窓会委員 and 学年代表 for their own) and every mutation is audited.
  */
 
 export type AdminFormState = {
@@ -84,14 +79,6 @@ function str(fd: FormData, name: string): string {
   return typeof v === "string" ? v : "";
 }
 
-async function adminOrNull() {
-  try {
-    return await actionAdmin();
-  } catch {
-    return null;
-  }
-}
-
 /**
  * A ニュース author allowed to change post `id` (or create one without an
  * id): admins may change any post, other authors only their own.
@@ -104,6 +91,23 @@ async function newsEditorOrNull(id?: string) {
     select: { createdById: true },
   });
   return post?.createdById === a.user.id ? a : null;
+}
+
+/** The same for events: admins change any event, other authors their own. */
+async function eventEditorOrNull(id?: string) {
+  const a = await actionNewsAuthor().catch(() => null);
+  if (!a || !id || a.user.isAdmin) return a;
+  const event = await db.event.findUnique({
+    where: { id },
+    select: { createdById: true },
+  });
+  return event?.createdById === a.user.id ? a : null;
+}
+
+async function eventEditor(id: string) {
+  const a = await eventEditorOrNull(id);
+  if (!a) throw new AuthError("forbidden");
+  return a;
 }
 
 async function newsEditor(id: string) {
@@ -219,10 +223,13 @@ export async function saveEventAction(
   _prev: AdminFormState,
   fd: FormData,
 ): Promise<AdminFormState> {
-  const admin = await adminOrNull();
-  if (!admin) return { error: "forbidden" };
-
   const id = str(fd, "id") || null;
+  if (id && !Id.safeParse(id).success) return { error: "notFound" };
+  // Same authors and rules as ニュース (current teachers, 同窓会委員, 学年代表).
+  const editor = await eventEditorOrNull(id ?? undefined);
+  if (!editor) return { error: "forbidden" };
+  const admin = editor.user;
+
   const parsed = EventSchema.safeParse({
     titleJa: str(fd, "titleJa"),
     titleEn: str(fd, "titleEn"),
@@ -239,9 +246,19 @@ export async function saveEventAction(
   if (!parsed.success)
     return { error: "validation", fieldErrors: toFieldErrors(parsed.error) };
   // Same conditions as ニュース; older columns kept filled for older code.
-  const { audience, ...eventFields } = parsed.data;
+  const { audience: chosen, ...eventFields } = parsed.data;
+  const audience = scopedAudience(editor.scope, chosen);
+  if (!audience)
+    return {
+      error: "validation",
+      fieldErrors: { audience: "invalidAudience" },
+    };
   const data = {
     ...eventFields,
+    // A 同窓会委員's event (new or edited) waits for approval.
+    ...(needsApproval(editor.scope)
+      ? { approvalRequired: true, approvedAt: null, approvedById: null }
+      : {}),
     audience: audience as Prisma.InputJsonValue,
     ...legacyColumns(audience),
   };
@@ -253,7 +270,6 @@ export async function saveEventAction(
   };
 
   if (id) {
-    if (!Id.safeParse(id).success) return { error: "notFound" };
     const updated = await db.event.updateMany({ where: { id }, data });
     if (updated.count === 0) return { error: "notFound" };
     await audit(admin.id, "event.update", { type: "Event", id }, summary);
@@ -262,7 +278,11 @@ export async function saveEventAction(
   }
 
   const event = await db.event.create({
-    data: { ...data, createdById: admin.id },
+    data: {
+      ...data,
+      createdById: admin.id,
+      senderRole: senderRoleFor(editor.scope),
+    },
   });
   await audit(
     admin.id,
@@ -275,8 +295,8 @@ export async function saveEventAction(
 }
 
 export async function deleteEventAction(fd: FormData): Promise<void> {
-  const admin = await actionAdmin();
   const id = Id.parse(str(fd, "id"));
+  const { user: admin } = await eventEditor(id);
   const event = await db.event.findUnique({
     where: { id },
     select: {
@@ -657,6 +677,29 @@ export async function approveNewsAction(fd: FormData): Promise<void> {
   return go(`/app/admin/news/${id}${approved > 0 ? "?approved=1" : ""}`);
 }
 
+/** Approve a 同窓会委員's event (as approveNewsAction). */
+export async function approveEventAction(fd: FormData): Promise<void> {
+  const user = await actionActive();
+  if (!(await getNewsApprover(user))) throw new AuthError("forbidden");
+  const id = Id.parse(str(fd, "id"));
+  const approved = await db.event.updateMany({
+    where: {
+      id,
+      approvalRequired: true,
+      approvedAt: null,
+      createdById: { not: user.id },
+    },
+    data: { approvedAt: new Date(), approvedById: user.id },
+  });
+  if (approved.count > 0) {
+    await audit(user.id, "event.approve", { type: "Event", id });
+    revalidateEvents();
+  }
+  return go(
+    `/app/admin/events/${id}${approved.count > 0 ? "?approved=1" : ""}`,
+  );
+}
+
 // ─── ニュース audience helpers (editor) ─────────────────────────────────────
 
 /** How many ACTIVE members an audience reaches (live preview while editing). */
@@ -709,8 +752,8 @@ export async function searchAudienceMembersAction(
 
 /** Close RSVPs early (or reopen them until the deadline). */
 export async function setEventRsvpClosedAction(fd: FormData): Promise<void> {
-  const admin = await actionAdmin();
   const id = Id.parse(str(fd, "id"));
+  const { user: admin } = await eventEditor(id);
   const close = str(fd, "close") === "1";
   await db.event.update({
     where: { id },

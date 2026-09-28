@@ -1,4 +1,5 @@
 import { AccountState, RsvpAnswer } from "@/generated/prisma/enums";
+import { eventApprovedWhere } from "@/lib/approval";
 import { db } from "@/lib/db";
 import { reminderWindows, type Window } from "@/lib/events";
 import { localized } from "@/lib/format";
@@ -24,7 +25,10 @@ async function remind(
   ctx: JobContext,
 ): Promise<Tally> {
   const events = await db.event.findMany({
-    where: { startsAt: { gte: window.from, lt: window.to } },
+    where: {
+      startsAt: { gte: window.from, lt: window.to },
+      AND: [eventApprovedWhere],
+    },
     select: {
       id: true,
       titleJa: true,

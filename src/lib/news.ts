@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { AccountState } from "@/generated/prisma/enums";
+import { awaitingApproval } from "@/lib/approval";
 import { audienceWhere, type Targeted } from "@/lib/audience";
 import { db } from "@/lib/db";
 import { deadlineFrom, leaseUntil } from "@/lib/jobs/budget";
@@ -23,13 +24,7 @@ export const approvedWhere: Prisma.NewsPostWhereInput = {
   OR: [{ approvalRequired: false }, { approvedAt: { not: null } }],
 };
 
-/** A 同窓会委員's post nobody has approved yet: hidden, never notified. */
-export function awaitingApproval(post: {
-  approvalRequired: boolean;
-  approvedAt: Date | null;
-}): boolean {
-  return post.approvalRequired && !post.approvedAt;
-}
+export { awaitingApproval } from "@/lib/approval";
 
 /**
  * Published = publishedAt set, not in the future, not archived, and (for a

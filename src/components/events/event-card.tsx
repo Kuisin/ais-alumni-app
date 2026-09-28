@@ -1,6 +1,7 @@
 import { Calendar, ChevronRight, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FallbackTag } from "@/components/news/fallback-tag";
+import { SenderTag } from "@/components/news/news-card";
 import { Badge } from "@/components/ui/card";
 import { LinkPendingIcon } from "@/components/ui/link-pending";
 import { Link } from "@/i18n/navigation";
@@ -26,9 +27,12 @@ const ANSWER_TONE = {
 export function EventCard({
   event,
   locale,
+  sender,
 }: {
   event: EventCardData;
   locale: "ja" | "en";
+  /** the role it comes from (「教職員」…), never the author's name */
+  sender?: string;
 }) {
   const t = useTranslations("events");
   const title = localized(event.titleJa, event.titleEn, locale);
@@ -55,6 +59,7 @@ export function EventCard({
               {event.location}
             </span>
           ) : null}
+          {sender ? <SenderTag sender={sender} /> : null}
           {event.myAnswer ? (
             <Badge tone={ANSWER_TONE[event.myAnswer]}>
               {t("myAnswer", { answer: t(`answer.${event.myAnswer}`) })}

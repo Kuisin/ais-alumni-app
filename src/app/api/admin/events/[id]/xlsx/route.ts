@@ -1,19 +1,29 @@
 import { AccountState } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
+import { db } from "@/lib/db";
 import { eventWorkbook } from "@/lib/event-xlsx";
 import { getCurrentUser } from "@/lib/session";
 
-/** Event detail and attendees as an Excel workbook, admin only. */
+/** Event detail and attendees as an Excel workbook, admins and the author. */
 export async function GET(
   request: Request,
   ctx: RouteContext<"/api/admin/events/[id]/xlsx">,
 ) {
   const user = await getCurrentUser();
-  if (!user || user.state !== AccountState.ACTIVE || !user.isAdmin) {
+  if (!user || user.state !== AccountState.ACTIVE) {
     return new Response("Forbidden", { status: 403 });
   }
   const { id } = await ctx.params;
   if (id.length > 64) return new Response("Not found", { status: 404 });
+  // Admins, or the author of the event (teacher / 同窓会委員 / 学年代表).
+  if (!user.isAdmin) {
+    const event = await db.event.findUnique({
+      where: { id },
+      select: { createdById: true },
+    });
+    if (event?.createdById !== user.id)
+      return new Response("Forbidden", { status: 403 });
+  }
   const lang = new URL(request.url).searchParams.get("lang");
   const locale = lang === "en" || lang === "ja" ? lang : user.locale;
 

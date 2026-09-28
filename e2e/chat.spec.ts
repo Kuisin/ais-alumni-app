@@ -336,6 +336,8 @@ test("members report someone from the chat details; admins review it", async ({
   await expect(pb.getByText(rude)).toBeVisible();
   const talkUrl = pb.url();
 
+  const detail = `They keep insulting me (${stamp}).`;
+
   // A opens the talk's details: members, and the report form.
   const pa = await browser.newPage();
   await signInWithEmail(pa, a.email);
@@ -344,7 +346,7 @@ test("members report someone from the chat details; admins review it", async ({
   await pa.getByText("Report a problem").click();
   await expect(pa.getByLabel("Who")).toHaveValue(b.id);
   await pa.getByLabel("Reason").selectOption("HARASSMENT");
-  await pa.getByLabel("What happened").fill("They keep insulting me.");
+  await pa.getByLabel("What happened").fill(detail);
   await pa.getByRole("button", { name: "Send report" }).click();
   await expect(pa.getByText(/Your report \(#\w+\) was sent/)).toBeVisible();
 
@@ -352,16 +354,14 @@ test("members report someone from the chat details; admins review it", async ({
   const admin = await browser.newPage();
   await signInWithEmail(admin, "admin@example.com");
   await admin.goto("/en/app/admin/chat");
-  const card = admin
-    .getByRole("listitem")
-    .filter({ hasText: "They keep insulting me." });
+  const card = admin.getByRole("listitem").filter({ hasText: detail });
   await expect(card.getByText("Harassment or bullying")).toBeVisible();
   await expect(card.getByRole("link", { name: `B${stamp}, Rp` })).toBeVisible();
   await card.getByText("1 attached message").click();
   await expect(card.getByText(rude)).toBeVisible();
   await card.getByRole("button", { name: "Mark done" }).click();
   await expect(
-    admin.getByRole("listitem").filter({ hasText: "They keep insulting me." }),
+    admin.getByRole("listitem").filter({ hasText: detail }),
   ).toHaveCount(0);
 });
 

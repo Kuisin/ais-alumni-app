@@ -12,7 +12,18 @@ export const config: VercelConfig = {
   buildCommand: "prisma generate && prisma migrate deploy && next build",
   regions: ["hnd1"],
   // Deploy only main (production, ais.kai-lab.net) and dev (ais-dev.kai-lab.net).
-  // Other branches have no env vars; exit 0 tells Vercel to skip the build.
+  // Other branches get no deployment at all — not even a cancelled one, which
+  // would still count toward Hobby's 100 deployments a day. "**" (not "*")
+  // so branch names with a slash (feat/…) match too; a branch deploys when
+  // any matching rule is true.
+  git: {
+    deploymentEnabled: {
+      "**": false,
+      main: true,
+      dev: true,
+    },
+  },
+  // Belt and braces: other branches have no env vars; exit 0 skips the build.
   ignoreCommand:
     'if [ "$VERCEL_GIT_COMMIT_REF" = "main" ] || [ "$VERCEL_GIT_COMMIT_REF" = "dev" ]; then exit 1; else exit 0; fi',
   crons: [

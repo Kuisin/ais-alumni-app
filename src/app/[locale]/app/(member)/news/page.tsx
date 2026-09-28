@@ -15,6 +15,7 @@ import { MESSAGES_ENABLED } from "@/lib/features";
 import { NEWS_PAGE_SIZE } from "@/lib/news";
 import { awaitingResponse } from "@/lib/news-hub-db";
 import { visibleNews } from "@/lib/news-visibility";
+import { senderLabels } from "@/lib/sender";
 import { type CurrentUser, requireActive } from "@/lib/session";
 
 export async function generateMetadata({
@@ -111,6 +112,10 @@ async function NewsTab({
       requireConfirm: true,
       deadline: true,
       closedAt: true,
+      senderRole: true,
+      audience: true,
+      targetAudiences: true,
+      targetRoles: true,
     },
   });
   const rows = pageIds
@@ -122,7 +127,7 @@ async function NewsTab({
   const adminView = new Set(
     visible.filter((p) => p.adminView).map((p) => p.id),
   );
-  const [read, awaiting] = await Promise.all([
+  const [read, awaiting, senders] = await Promise.all([
     readNewsIds(
       user.id,
       posts.map((p) => p.id),
@@ -131,6 +136,7 @@ async function NewsTab({
       user.id,
       posts.filter((p) => !adminView.has(p.id)),
     ),
+    senderLabels(posts, locale),
   ]);
   // Same rule as the unread count: posts from before the member joined
   // are never "unread".
@@ -154,6 +160,7 @@ async function NewsTab({
                 post={p}
                 locale={locale}
                 unread={isUnread(p)}
+                sender={senders.get(p.id)}
                 needsAnswer={awaiting.has(p.id)}
                 adminView={adminView.has(p.id)}
               />

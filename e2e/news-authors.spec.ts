@@ -54,6 +54,10 @@ test("学年代表 post ニュース to their own 学年 only", async ({ page })
   await draftFromNewsList(page, title);
   // Only their 学年 is offered: no 「全員」, groups or individual members.
   await expect(page.getByText("Your 学年", { exact: true })).toBeVisible();
+  // Members see the role, not the name.
+  await expect(
+    page.getByText("You're posting as Class rep (Class 5).", { exact: false }),
+  ).toBeVisible();
   await expect(
     page.getByRole("checkbox", { name: /^Class 5\b/ }),
   ).toBeChecked();
@@ -172,7 +176,13 @@ test("同窓会委員 post to anyone once another 同窓会委員 approves", asy
   await expect(p.getByText(/^Approved by /)).toBeVisible();
 
   await r.reload();
-  await expect(r.getByText(title)).toBeVisible();
+  const card = r.getByRole("link", { name: new RegExp(title) });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("From: Alumni committee member")).toBeVisible();
+  await card.click();
+  await expect(r.getByText("From: Alumni committee member")).toBeVisible();
+  await expect(r.getByText(/Author A\d+|A\d+, Author/)).toHaveCount(0);
+  await r.goto("/en/app/news");
 
   // Editing it again needs a new approval.
   await a.goto(postUrl);

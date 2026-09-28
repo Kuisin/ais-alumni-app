@@ -3,6 +3,7 @@ import {
   type AudienceKey,
   PositionKey,
   RoleKey,
+  SenderRole,
 } from "@/generated/prisma/enums";
 import { type AudienceSpec, isEveryone } from "@/lib/news-audience";
 
@@ -191,6 +192,16 @@ function holdsCommittee(h: Holder): boolean {
       p.position === PositionKey.ALUMNI_COMMITTEE &&
       positionEligible(p.position, h.roles, h.currentTeacher),
   );
+}
+
+/** The role a post made under this scope is shown as (never the name). */
+export function senderRoleFor(scope: NewsScope): SenderRole {
+  return {
+    ANY: SenderRole.ADMIN,
+    TEACHER: SenderRole.TEACHER,
+    COMMITTEE: SenderRole.ALUMNI_COMMITTEE,
+    COHORT: SenderRole.STUDENT_LEADER,
+  }[scope.kind];
 }
 
 /** Whether posts saved under this scope wait for a 同窓会委員's approval. */

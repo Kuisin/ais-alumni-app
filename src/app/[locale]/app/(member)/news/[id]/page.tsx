@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
+import { SenderTag } from "@/components/news/news-card";
 import {
   Comments,
   ConfirmCard,
@@ -26,6 +27,7 @@ import {
 import { isOpen } from "@/lib/news-hub";
 import { loadHub } from "@/lib/news-hub-db";
 import { newsViewer } from "@/lib/news-visibility";
+import { senderLabel } from "@/lib/sender";
 import { getCurrentUser, requireActive } from "@/lib/session";
 import { signedFileUrl } from "@/lib/storage";
 
@@ -97,6 +99,7 @@ export default async function NewsDetailPage({
               {formatDate(post.publishedAt, locale)}
             </time>
           </span>
+          <SenderTag sender={await senderLabel(post, locale)} />
         </div>
         <h1 className="mt-1 text-2xl font-bold tracking-tight break-words">
           {title.text || t("untitled")}

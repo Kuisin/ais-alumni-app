@@ -537,6 +537,9 @@ model NewsPost {
   // Added: posted by a 同窓会委員 — hidden and not notified until another
   // 同窓会委員 (or an admin) approves it; the author's edits reset approval
   approvalRequired Boolean          @default(false)
+  // Added: the role the author posted as, shown to members instead of their
+  // name. null = older posts (all by admins → ADMIN)
+  senderRole       SenderRole?
   approvedAt       DateTime?
   approvedById     String?
   createdById      String
@@ -681,6 +684,18 @@ model RecordChangeRequest {
 // Added: positions that grant extra permissions (src/lib/permissions.ts).
 // TEACHER_MANAGER (teacher) may notify all members or chosen roles;
 // STUDENT_LEADER (student) may notify their own 学年 (cohortId).
+/// The role a ニュース post / event was sent as (shown to members)
+enum SenderRole {
+  /// AIS同窓会委員会 (an admin)
+  ADMIN
+  /// 現職の教職員
+  TEACHER
+  /// 同窓会委員
+  ALUMNI_COMMITTEE
+  /// 学年代表 (their 学年 = the post's audience)
+  STUDENT_LEADER
+}
+
 enum PositionKey {
   TEACHER_MANAGER
   STUDENT_LEADER

@@ -1,4 +1,4 @@
-import { Calendar, ChevronRight } from "lucide-react";
+import { Calendar, ChevronRight, Megaphone } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
@@ -26,6 +26,7 @@ export function NewsCard({
   unread = false,
   needsAnswer = false,
   adminView = false,
+  sender,
 }: {
   post: NewsCardData;
   locale: "ja" | "en";
@@ -36,6 +37,8 @@ export function NewsCard({
   needsAnswer?: boolean;
   /** shown to an admin outside the audience (view only) */
   adminView?: boolean;
+  /** the role it was sent as (「教職員」…), never the author's name */
+  sender?: string;
 }) {
   const t = useTranslations("news");
   const title = localized(post.titleJa, post.titleEn, locale);
@@ -68,6 +71,7 @@ export function NewsCard({
               </time>
             </span>
           ) : null}
+          {sender ? <SenderTag sender={sender} /> : null}
         </div>
         <h3
           className={cn(
@@ -89,5 +93,16 @@ export function NewsCard({
         />
       </LinkPendingIcon>
     </Link>
+  );
+}
+
+/** 「発信：教職員」 — who a post / event comes from, as a role. */
+export function SenderTag({ sender }: { sender: string }) {
+  const t = useTranslations("news.sender");
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <Megaphone aria-hidden="true" className="size-4 shrink-0" />
+      {t("from", { role: sender })}
+    </span>
   );
 }

@@ -29,7 +29,11 @@ import {
   scheduleInputSchema,
 } from "@/lib/news-hub";
 import { checkNewAttachments, type HubInput, saveHub } from "@/lib/news-hub-db";
-import { needsApproval, scopedAudience } from "@/lib/permissions";
+import {
+  needsApproval,
+  scopedAudience,
+  senderRoleFor,
+} from "@/lib/permissions";
 import {
   AuthError,
   actionActive,
@@ -512,7 +516,13 @@ export async function saveNewsAction(
     postId = id;
   } else {
     const post = await db.newsPost.create({
-      data: { ...data, coverUrl: coverUrl ?? null, createdById: admin.id },
+      data: {
+        ...data,
+        coverUrl: coverUrl ?? null,
+        createdById: admin.id,
+        // Kept on later edits (an admin fixing a teacher's post, say).
+        senderRole: senderRoleFor(editor.scope),
+      },
     });
     await audit(
       admin.id,

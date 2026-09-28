@@ -9,6 +9,7 @@ import {
   positionEligible,
   rightFor,
   scopedAudience,
+  senderRoleFor,
   staffAccess,
   withinLimit,
 } from "./permissions";
@@ -247,5 +248,16 @@ describe("同窓会委員 (ALUMNI_COMMITTEE)", () => {
         state: "DEACTIVATED",
       }),
     ).toBe(false);
+  });
+});
+
+describe("sender role", () => {
+  it("shows the role the post was made as", () => {
+    expect(senderRoleFor({ kind: "ANY" })).toBe("ADMIN");
+    expect(senderRoleFor({ kind: "TEACHER" })).toBe("TEACHER");
+    expect(senderRoleFor({ kind: "COMMITTEE" })).toBe("ALUMNI_COMMITTEE");
+    expect(senderRoleFor({ kind: "COHORT", cohortIds: ["c"] })).toBe(
+      "STUDENT_LEADER",
+    );
   });
 });

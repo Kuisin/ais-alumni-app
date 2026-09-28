@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type AudienceViewer,
+  adminOnlyView,
   audienceSpecSchema,
   EVERYONE,
   groupsOfMember,
@@ -23,6 +24,23 @@ describe("ニュース audience", () => {
     const onlyTeachers = { ...EVERYONE, groups: ["TEACHER_CURRENT" as const] };
     expect(matchesAudience(onlyTeachers, viewer({ isAdmin: true }))).toBe(true);
     expect(matchesAudience(onlyTeachers, viewer({}))).toBe(false);
+  });
+
+  it("marks posts admins see only as admins (view only)", () => {
+    const onlyTeachers = { ...EVERYONE, groups: ["TEACHER_CURRENT" as const] };
+    expect(adminOnlyView(onlyTeachers, viewer({ isAdmin: true }))).toBe(true);
+    // An admin who is a current teacher is really in the audience.
+    expect(
+      adminOnlyView(
+        onlyTeachers,
+        viewer({
+          isAdmin: true,
+          roles: [{ role: "TEACHER", teacherStatus: "CURRENT" }],
+        }),
+      ),
+    ).toBe(false);
+    expect(adminOnlyView(EVERYONE, viewer({ isAdmin: true }))).toBe(false);
+    expect(adminOnlyView(onlyTeachers, viewer({}))).toBe(false);
   });
 
   it("splits teachers and former students", () => {

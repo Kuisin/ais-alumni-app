@@ -97,11 +97,14 @@ export function ConfirmCard({
   confirmedAt,
   count,
   open,
+  readOnly = false,
 }: {
   postId: string;
   confirmedAt: string | null;
   count: number;
   open: boolean;
+  /** shown to an admin outside the audience: no answer */
+  readOnly?: boolean;
 }) {
   const t = useTranslations("news.hub.confirm");
   const fmt = useFormat();
@@ -115,7 +118,7 @@ export function ConfirmCard({
             <CircleCheck aria-hidden="true" className="size-5" />
             {t("done", { time: fmt(confirmedAt) })}
           </p>
-          {open ? (
+          {open && !readOnly ? (
             <Button
               variant="ghost"
               disabled={pending}
@@ -125,7 +128,7 @@ export function ConfirmCard({
             </Button>
           ) : null}
         </div>
-      ) : (
+      ) : readOnly ? null : (
         <>
           <p className="text-sm text-slate-600">{t("hint")}</p>
           <Button

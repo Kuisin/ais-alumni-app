@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { publishedWhere } from "@/lib/news";
 import {
   type AudienceViewer,
+  adminOnlyView,
   matchesAudience,
   specFromPost,
 } from "@/lib/news-audience";
@@ -63,7 +64,12 @@ export const visibleNews = cache(
         targetRoles: true,
       },
     });
-    return posts.filter((p) => matchesAudience(specFromPost(p), viewer));
+    return posts
+      .filter((p) => matchesAudience(specFromPost(p), viewer))
+      .map((p) => ({
+        ...p,
+        adminView: adminOnlyView(specFromPost(p), viewer),
+      }));
   },
 );
 

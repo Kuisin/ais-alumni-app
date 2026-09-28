@@ -66,7 +66,15 @@ export default async function DashboardPage({
         .then(async (rows) => (await filterByAudience(user, rows)).slice(0, 3)),
       visibleNews(user, now).then((v) =>
         db.newsPost.findMany({
-          where: { id: { in: v.slice(0, 3).map((p) => p.id) } },
+          // The member's own news (not posts shown only to admins).
+          where: {
+            id: {
+              in: v
+                .filter((p) => !p.adminView)
+                .slice(0, 3)
+                .map((p) => p.id),
+            },
+          },
           orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
           select: {
             id: true,

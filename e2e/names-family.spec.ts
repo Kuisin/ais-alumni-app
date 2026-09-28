@@ -221,3 +221,36 @@ test("chat details list the members; rows and member cards open profiles", async
   await page.mouse.click(box.x + box.width - 8, box.y + box.height - 8);
   await expect(page).toHaveURL(new RegExp(`/en/app/members/${b.id}$`));
 });
+
+test("admins see news outside their audience as view only", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const title = `Parents only ${stamp}`;
+  const [admin] = await sql<{ id: string }>(
+    `SELECT id FROM "User" WHERE "primaryEmail" = 'admin@example.com'`,
+  );
+  const postId = `np${stamp}`;
+  // For current parents only (the seeded admin is not one), with a confirmation.
+  await sql(
+    `INSERT INTO "NewsPost" (id, "titleJa", "titleEn", "bodyJa", "targetRoles", "targetAudiences", "publishedAt", "requireConfirm", "createdById", "updatedAt")
+     VALUES ($1, $2, $2, 'body', '{}', '{CURRENT_PARENT}', now(), true, $3, now())`,
+    [postId, title, admin.id],
+  );
+  const page = await browser.newPage();
+  await signInWithEmail(page, "admin@example.com");
+  await page.goto("/en/app/news");
+  const card = page.getByRole("link", { name: new RegExp(title) });
+  await expect(card.getByText("Admin view", { exact: true })).toBeVisible();
+  await card.click();
+  await expect(page.getByText("You're viewing this as an admin")).toBeVisible();
+  // No answer, no read receipt.
+  await expect(page.getByText("Confirmation", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Got it" })).toHaveCount(0);
+  const [r] = await sql<{ n: number }>(
+    `SELECT count(*)::int AS n FROM "NewsRead" WHERE "postId" = $1`,
+    [postId],
+  );
+  expect(r.n).toBe(0);
+  await sql(`DELETE FROM "NewsPost" WHERE id = $1`, [postId]);
+});

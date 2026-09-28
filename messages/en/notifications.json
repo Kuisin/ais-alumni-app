@@ -116,7 +116,7 @@
     },
     "CHAT_MENTION": {
       "title": "You were mentioned",
-      "body": "{name} mentioned you in a chat.",
+      "body": "{name} mentioned you in a chat (unread).",
       "detail": "Please open the app to read it.",
       "cta": "Open chat"
     },
@@ -209,6 +209,12 @@
       "body": "{name} asked to change their gender.",
       "detail": "Review it in admin mode.",
       "cta": "Review"
+    },
+    "CHAT_DIRECT": {
+      "title": "You have a new message",
+      "body": "{name} sent you a direct message.",
+      "detail": "Open the app to read it.",
+      "cta": "Open the chat"
     }
   },
   "categories": {
@@ -225,7 +231,7 @@
     "account": "Approval, security and the results of your requests. Can't be turned off.",
     "news": "New posts and response-deadline reminders",
     "events": "A week and a day before events you're attending (by email)",
-    "chat": "Mentions (right away) and unread summaries (daily at 8 pm, by email)",
+    "chat": "1:1 messages and mentions (once, by LINE or email, if unread for 5 minutes) and group unread summaries (daily at 8 pm, by email)",
     "social": "Follow requests, acceptances and requests to vouch",
     "family": "Family confirmations and account handovers",
     "profile": "Yearly reminder to update your history",

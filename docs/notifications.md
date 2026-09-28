@@ -43,9 +43,12 @@ Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the d
 
 ## チャット / Chat
 
+1:1 messages and personal @mentions are sent once (LINE, or email) if still unread after 5 minutes; nothing more until the chat is read. The delay and once-per-streak keep LINE pushes within the monthly quota.
+
 | Kind | 日本語 (タイトル — 本文) | English (title — body) | Email always |
 |---|---|---|---|
-| `CHAT_MENTION` 💬 | **メンションされました** — {name}さんがチャットであなたをメンションしました。 | **You were mentioned** — {name} mentioned you in a chat. |  |
+| `CHAT_DIRECT` 💬 | **新しいメッセージがあります** — {name}さんから1対1のメッセージが届いています。 | **You have a new message** — {name} sent you a direct message. |  |
+| `CHAT_MENTION` 💬 | **メンションされました** — {name}さんがチャットであなたをメンションしました（未読）。 | **You were mentioned** — {name} mentioned you in a chat (unread). |  |
 | `CHAT_DIGEST` 💬 | **未読のチャットがあります** — グループチャットに未読のメッセージが{count}件あります。 | **You have unread chat messages** — You have {count, plural, one {# unread message} other {# unread messages}} in your group chats. |  |
 
 ## フォロー・知り合い確認 / Follows & vouching

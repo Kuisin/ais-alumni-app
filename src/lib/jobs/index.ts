@@ -2,6 +2,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { sendChatDigest } from "@/lib/chat-db";
 import { db } from "@/lib/db";
 import { deadlineFrom, leaseUntil } from "@/lib/jobs/budget";
+import { sendUnreadChatNotices } from "@/lib/jobs/chat-unread";
 import { cleanupEvidence } from "@/lib/jobs/cleanup-evidence";
 import {
   type JobContext,
@@ -51,6 +52,8 @@ export const JOBS = {
       return { done: res.remaining === 0, result: res };
     },
   },
+  // 1:1 messages and @mentions unread for 5 minutes: one notice per streak.
+  "chat-unread": { schedule: EVERY_MINUTE, run: sendUnreadChatNotices },
   // 7-day / 1-day event reminders (§10.3).
   "event-reminders": { schedule: daily("09:00"), run: sendEventReminders },
   // Unread group-chat digest (count and link only).

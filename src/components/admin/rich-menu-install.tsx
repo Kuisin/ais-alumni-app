@@ -25,7 +25,7 @@ export function RichMenuInstall({ installed }: { installed: boolean }) {
       {state.ok ? (
         <Alert tone="success">
           {t("done", {
-            linked: state.linkedEn ?? 0,
+            linked: state.linked ?? 0,
             removed: state.removed ?? 0,
           })}
         </Alert>

@@ -4,7 +4,8 @@ import type { VercelConfig } from "@vercel/config/v1";
 // Everything runs in Tokyo: functions (hnd1), Supabase Postgres
 // (ap-northeast-1), Vercel Blob (hnd1) and Resend sending (ap-northeast-1).
 // Cron schedules are UTC. Hobby allows only daily crons: reserved ニュース
-// (/api/cron/publish-news, every 5 min) is called by Supabase pg_cron —
+// (/api/cron/publish-news, every 5 min) and the LINE menu unread dots
+// (/api/cron/line-menus, every minute) are called by Supabase pg_cron —
 // see scripts/setup-supabase-cron.ts.
 export const config: VercelConfig = {
   framework: "nextjs",

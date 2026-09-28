@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { audit } from "@/lib/audit";
 import { lineConfigured } from "@/lib/line";
+import { syncLineMenus } from "@/lib/line-menu-sync";
 import { installRichMenus, richMenuBody } from "@/lib/line-richmenu";
 import { richMenuImage, richMenuLabels } from "@/lib/line-richmenu-image";
 import { actionAdmin } from "@/lib/session";
@@ -11,7 +12,7 @@ export type RichMenuState = {
   ok?: boolean;
   error?: "notConfigured" | "failed";
   detail?: string;
-  linkedEn?: number;
+  linked?: number;
   removed?: number;
 };
 
@@ -23,18 +24,22 @@ export async function installRichMenuAction(
   const me = await actionAdmin();
   if (!lineConfigured()) return { error: "notConfigured" };
   try {
-    const res = await installRichMenus(async (locale) => {
-      const { labels, chatBar } = await richMenuLabels(locale);
-      const image = await (await richMenuImage(locale)).arrayBuffer();
-      return { body: richMenuBody(locale, labels, chatBar), image };
-    });
+    const res = await installRichMenus(
+      async (locale, badges) => {
+        const { labels, chatBar } = await richMenuLabels(locale);
+        const image = await (await richMenuImage(locale, badges)).arrayBuffer();
+        return { body: richMenuBody(locale, labels, chatBar, badges), image };
+      },
+      // New menus have new IDs: relink every member's variant.
+      async () => (await syncLineMenus({ force: true })).changed,
+    );
     await audit(me.id, "line.richmenu.install", undefined, {
       ids: res.ids,
-      linkedEn: res.linkedEn,
+      linked: res.linked,
       removed: res.removed,
     });
     revalidatePath("/[locale]/app/admin/line", "page");
-    return { ok: true, linkedEn: res.linkedEn, removed: res.removed };
+    return { ok: true, linked: res.linked, removed: res.removed };
   } catch (e) {
     console.error("[line-richmenu] install failed", e);
     return {

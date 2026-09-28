@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NEWS_POSTBACK } from "./line-news-reply";
+import { LINE_POSTBACK } from "./line-reply";
 import {
   RICH_MENU_ITEMS,
   RICH_MENU_REPLIES,
@@ -40,12 +40,12 @@ describe("LINE rich menu", () => {
     expect(body.areas).toHaveLength(8);
     expect(body.areas[0].action).toMatchObject({
       type: "postback",
-      data: NEWS_POSTBACK.unread,
-      displayText: "unread-label",
+      data: LINE_POSTBACK.chats,
+      displayText: "chats-label",
     });
     expect(body.areas[1].action).toMatchObject({
       type: "postback",
-      data: NEWS_POSTBACK.list,
+      data: LINE_POSTBACK.news,
     });
     const first = body.areas[2].action;
     expect(first.type).toBe("uri");

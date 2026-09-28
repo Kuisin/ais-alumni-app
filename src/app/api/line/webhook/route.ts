@@ -2,8 +2,8 @@ import { getTranslatorFor } from "@/i18n/translator";
 import { db } from "@/lib/db";
 import { displayName } from "@/lib/format";
 import { lineReply, verifyLineSignature } from "@/lib/line";
-import { newsReplyKind } from "@/lib/line-news-reply";
-import { newsReplyFor } from "@/lib/line-news-reply-db";
+import { lineReplyKind } from "@/lib/line-reply";
+import { lineReplyFor } from "@/lib/line-reply-db";
 import { syncRichMenu } from "@/lib/line-richmenu";
 import { welcomeMessages } from "@/lib/line-welcome";
 import { publicUrl } from "@/lib/urls";
@@ -13,9 +13,9 @@ import { publicUrl } from "@/lib/urls";
  * Tracks friendship (follow / unfollow) so notifications route to LINE only
  * for members who can actually receive pushes (§5.4), and replies to a
  * follow with the welcome message (src/lib/line-welcome.ts). The rich
- * menu's 未読のお知らせ / ニュース一覧 buttons (postbacks) and the same words
- * typed in the chat get the member's news as a reply — replies are free,
- * unlike pushes (src/lib/line-news-reply.ts). Other messages get no reply.
+ * menu's 未読のチャット / ニュース一覧 buttons (postbacks) and the same words
+ * typed in the chat get the member's unread chats or news as a reply —
+ * replies are free, unlike pushes (src/lib/line-reply.ts). Other messages get no reply.
  */
 
 type LineEvent = {
@@ -104,15 +104,15 @@ export async function POST(req: Request) {
       }
     }
     if (event.type === "postback" || event.type === "message")
-      await replyWithNews(lineUserId, event);
+      await replyFromMenu(lineUserId, event);
   }
   return new Response(null, { status: 200 });
 }
 
-/** 未読のお知らせ / ニュース一覧: reply with the member's news (free). */
-async function replyWithNews(lineUserId: string, event: LineEvent) {
+/** 未読のチャット / ニュース一覧: reply with the member's chats or news (free). */
+async function replyFromMenu(lineUserId: string, event: LineEvent) {
   if (!event.replyToken) return;
-  const kind = newsReplyKind({
+  const kind = lineReplyKind({
     postback: event.type === "postback" ? event.postback?.data : null,
     text:
       event.type === "message" && event.message?.type === "text"
@@ -121,7 +121,7 @@ async function replyWithNews(lineUserId: string, event: LineEvent) {
   });
   if (!kind) return;
   try {
-    await lineReply(event.replyToken, [await newsReplyFor(lineUserId, kind)]);
+    await lineReply(event.replyToken, await lineReplyFor(lineUserId, kind));
   } catch (e) {
     // Acknowledge anyway: LINE would retry, and the reply token is spent.
     console.error("[line-webhook] news reply failed", e);

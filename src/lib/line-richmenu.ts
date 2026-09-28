@@ -1,13 +1,13 @@
 import type { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { lineConfigured, lineRequest } from "@/lib/line";
-import { NEWS_POSTBACK } from "@/lib/line-news-reply";
+import { LINE_POSTBACK } from "@/lib/line-reply";
 import { publicUrl } from "@/lib/urls";
 
 /**
  * The Official Account's rich menu, shown under the chat instead of the
- * keyboard (selected: true): two buttons on top that ask for 未読 / the news
- * list — answered by a free reply (line-news-reply.ts), not a push — and a
+ * keyboard (selected: true): two buttons on top that ask for unread chats /
+ * the news list — answered by a free reply (line-reply.ts), not a push — and a
  * 3 × 2 grid of app pages below. One menu per language
  * (aliases ais-menu-ja / ais-menu-en); Japanese is the default, members
  * who use English get theirs linked. Installed from 管理 → LINEメニュー
@@ -26,8 +26,8 @@ export const RICH_MENU_ITEMS = [
 
 /** Top row: buttons that post back and get a reply in the chat. */
 export const RICH_MENU_REPLIES = [
-  { key: "unread", data: NEWS_POSTBACK.unread },
-  { key: "newsList", data: NEWS_POSTBACK.list },
+  { key: "chats", data: LINE_POSTBACK.chats },
+  { key: "newsList", data: LINE_POSTBACK.news },
 ] as const;
 
 export type RichMenuPageKey = (typeof RICH_MENU_ITEMS)[number]["key"];

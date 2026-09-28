@@ -1,17 +1,21 @@
-import { Mail, Newspaper } from "lucide-react";
+import { Mail, Newspaper, Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { MessageRow } from "@/components/news/message-row";
 import { NewsCard } from "@/components/news/news-card";
 import { Pager, parsePage } from "@/components/news/pager";
+import { buttonClass } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
+import { Link } from "@/i18n/navigation";
 import { listMessages, readNewsIds, unreadCounts } from "@/lib/announcements";
+import { getNewsScope } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { MESSAGES_ENABLED } from "@/lib/features";
 import { NEWS_PAGE_SIZE } from "@/lib/news";
 import { awaitingResponse } from "@/lib/news-hub-db";
 import { visibleNews } from "@/lib/news-visibility";
+import { senderLabels } from "@/lib/sender";
 import { type CurrentUser, requireActive } from "@/lib/session";
 
 export async function generateMetadata({
@@ -32,11 +36,25 @@ export default async function NewsPage({
   const tab = MESSAGES_ENABLED && sp.tab === "messages" ? "messages" : "news";
   const user = await requireActive();
   const t = await getTranslations("news");
-  const unread = await unreadCounts(user);
+  const [unread, newsScope] = await Promise.all([
+    unreadCounts(user),
+    getNewsScope(user),
+  ]);
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
+          newsScope ? (
+            <Link href="/app/news/new" className={buttonClass("primary")}>
+              <Plus aria-hidden="true" className="size-4" />
+              {t("create")}
+            </Link>
+          ) : null
+        }
+      />
       {MESSAGES_ENABLED ? (
         <Tabs
           label={t("tabs.label")}
@@ -94,6 +112,10 @@ async function NewsTab({
       requireConfirm: true,
       deadline: true,
       closedAt: true,
+      senderRole: true,
+      audience: true,
+      targetAudiences: true,
+      targetRoles: true,
     },
   });
   const rows = pageIds
@@ -105,7 +127,7 @@ async function NewsTab({
   const adminView = new Set(
     visible.filter((p) => p.adminView).map((p) => p.id),
   );
-  const [read, awaiting] = await Promise.all([
+  const [read, awaiting, senders] = await Promise.all([
     readNewsIds(
       user.id,
       posts.map((p) => p.id),
@@ -114,6 +136,7 @@ async function NewsTab({
       user.id,
       posts.filter((p) => !adminView.has(p.id)),
     ),
+    senderLabels(posts, locale),
   ]);
   // Same rule as the unread count: posts from before the member joined
   // are never "unread".
@@ -137,6 +160,7 @@ async function NewsTab({
                 post={p}
                 locale={locale}
                 unread={isUnread(p)}
+                sender={senders.get(p.id)}
                 needsAnswer={awaiting.has(p.id)}
                 adminView={adminView.has(p.id)}
               />

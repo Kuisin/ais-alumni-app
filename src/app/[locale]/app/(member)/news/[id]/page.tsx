@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { cache } from "react";
 import { FallbackTag } from "@/components/news/fallback-tag";
 import { MarkdownBody } from "@/components/news/markdown-body";
+import { SenderTag } from "@/components/news/news-card";
 import {
   Comments,
   ConfirmCard,
@@ -17,6 +18,7 @@ import { markNewsRead } from "@/lib/announcements";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDate, formatDateTime, localized } from "@/lib/format";
+import { isLive } from "@/lib/news";
 import {
   adminOnlyView,
   matchesAudience,
@@ -25,6 +27,7 @@ import {
 import { isOpen } from "@/lib/news-hub";
 import { loadHub } from "@/lib/news-hub-db";
 import { newsViewer } from "@/lib/news-visibility";
+import { senderLabel } from "@/lib/sender";
 import { getCurrentUser, requireActive } from "@/lib/session";
 import { signedFileUrl } from "@/lib/storage";
 
@@ -33,8 +36,7 @@ const loadPost = cache(async (id: string) => {
   const user = await getCurrentUser();
   if (!user || id.length > 64) return null;
   const post = await db.newsPost.findUnique({ where: { id } });
-  if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
-    return null;
+  if (!post || !isLive(post)) return null;
   const viewer = await newsViewer(user);
   const spec = specFromPost(post);
   if (!matchesAudience(spec, viewer)) return null;
@@ -97,6 +99,7 @@ export default async function NewsDetailPage({
               {formatDate(post.publishedAt, locale)}
             </time>
           </span>
+          <SenderTag sender={await senderLabel(post, locale)} />
         </div>
         <h1 className="mt-1 text-2xl font-bold tracking-tight break-words">
           {title.text || t("untitled")}

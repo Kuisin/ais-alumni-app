@@ -8,14 +8,16 @@ import { NewsStatusBadges } from "@/components/news/status-badges";
 import { buttonClass } from "@/components/ui/button";
 import { Alert, Badge, EmptyState, PageHeader } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
+import type { Prisma } from "@/generated/prisma/client";
 import { Link } from "@/i18n/navigation";
 import { newsReadStats } from "@/lib/announcements";
+import { getNewsApprover } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
 import { asLocale } from "@/lib/events";
 import { formatDateTime, localized } from "@/lib/format";
 import { newsStatus } from "@/lib/news";
 import { specFromPost } from "@/lib/news-audience";
-import { requireAdmin } from "@/lib/session";
+import { requireNewsAuthor } from "@/lib/session";
 
 export async function generateMetadata({
   params,
@@ -34,16 +36,23 @@ export default async function AdminNewsPage({
   const locale = asLocale((await params).locale);
   const sp = await searchParams;
   const page = parsePage(sp.page);
-  await requireAdmin();
+  const { user } = await requireNewsAuthor();
   const t = await getTranslations("adminContent");
 
+  // Admins see every post; other authors their own, and 同窓会委員 also the
+  // 同窓会委員 posts they may approve.
+  const mine: Prisma.NewsPostWhereInput = user.isAdmin
+    ? {}
+    : (await getNewsApprover(user))
+      ? { OR: [{ createdById: user.id }, { approvalRequired: true }] }
+      : { createdById: user.id };
   const archived = sp.archived === "1";
   const archivedCount = await db.newsPost.count({
-    where: { archivedAt: { not: null } },
+    where: { ...mine, archivedAt: { not: null } },
   });
   // Drafts (publishedAt null) first, then newest publish date.
   const rows = await db.newsPost.findMany({
-    where: { archivedAt: archived ? { not: null } : null },
+    where: { ...mine, archivedAt: archived ? { not: null } : null },
     orderBy: [
       { publishedAt: { sort: "desc", nulls: "first" } },
       { createdAt: "desc" },
@@ -61,6 +70,8 @@ export default async function AdminNewsPage({
       targetRoles: true,
       targetAudiences: true,
       audience: true,
+      approvalRequired: true,
+      approvedAt: true,
     },
   });
   const posts = rows.slice(0, PAGE_SIZE);
@@ -73,9 +84,11 @@ export default async function AdminNewsPage({
     <>
       <PageHeader
         title={t("news.title")}
-        description={t("news.description")}
+        description={
+          user.isAdmin ? t("news.description") : t("news.descriptionOwn")
+        }
         actions={
-          <Link href="/app/admin/news/new" className={buttonClass("primary")}>
+          <Link href="/app/news/new" className={buttonClass("primary")}>
             <Plus aria-hidden="true" className="size-4" />
             {t("news.new")}
           </Link>
@@ -109,10 +122,7 @@ export default async function AdminNewsPage({
             icon={<Newspaper />}
             hint={t("news.emptyHint")}
             action={
-              <Link
-                href="/app/admin/news/new"
-                className={buttonClass("secondary")}
-              >
+              <Link href="/app/news/new" className={buttonClass("secondary")}>
                 <Plus aria-hidden="true" className="size-4" />
                 {t("news.new")}
               </Link>

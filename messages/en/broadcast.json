@@ -35,7 +35,8 @@
   "positions": {
     "TEACHER_MANAGER": "Teacher manager",
     "STUDENT_LEADER": "Class representative",
-    "TEACHER_REGISTRAR": "Teacher registrar"
+    "TEACHER_REGISTRAR": "Teacher registrar",
+    "ALUMNI_COMMITTEE": "Alumni committee member"
   },
   "fieldErrors": {
     "required": "This field is required.",

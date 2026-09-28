@@ -46,7 +46,10 @@ test("admin creates, edits and deletes an event", async ({ page }) => {
 test("admin saves and deletes a news draft", async ({ page }) => {
   const title = `E2E news ${Date.now()}`;
   await signInWithEmail(page, "admin@example.com");
-  await page.goto("/en/app/admin/news/new");
+  // Admins start a post from the member news list.
+  await page.goto("/en/app/news");
+  await page.getByRole("link", { name: "New post" }).click();
+  await expect(page).toHaveURL(/\/en\/app\/news\/new$/);
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel("Body (Japanese)").fill("Draft body");
   await page.getByRole("radio", { name: /^Save as draft/ }).check();
@@ -80,7 +83,7 @@ test("admin schedules a news post for graduates", async ({ page }) => {
     .toISOString()
     .slice(0, 16);
   await signInWithEmail(page, "admin@example.com");
-  await page.goto("/en/app/admin/news/new");
+  await page.goto("/en/app/news/new");
   await page.getByLabel("Title (Japanese)").fill(title);
   await page.getByLabel("Body (Japanese)").fill("Scheduled body");
   await page

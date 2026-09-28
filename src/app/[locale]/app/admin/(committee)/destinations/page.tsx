@@ -241,10 +241,7 @@ export default async function DestinationsPage({
             icon={<GraduationCap />}
             hint={t("noHistoryHint")}
             action={
-              <Link
-                href="/app/admin/news/new"
-                className={buttonClass("secondary")}
-              >
+              <Link href="/app/news/new" className={buttonClass("secondary")}>
                 <Megaphone aria-hidden="true" className="size-4" />
                 {t("askMembers")}
               </Link>

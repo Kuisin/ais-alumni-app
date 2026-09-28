@@ -127,7 +127,8 @@
       "scheduled": "Scheduled",
       "published": "Published",
       "notified": "Notified",
-      "pinned": "Pinned"
+      "pinned": "Pinned",
+      "awaitingApproval": "Awaiting approval"
     },
     "description": "Write, publish and notify members about news. Drafts are not visible to members.",
     "emptyHint": "Create a post and publish it to show it in members' news list.",
@@ -148,7 +149,8 @@
     "notifyOn": "Notified by LINE and email",
     "notifyOff": "In the app only",
     "pinned": "Pinned",
-    "files": "{count, plural, one {# attachment} other {# attachments}}"
+    "files": "{count, plural, one {# attachment} other {# attachments}}",
+    "descriptionOwn": "News posts you have written. Admins can see every post."
   },
   "notify": {
     "title": "Publish & notify",
@@ -256,7 +258,10 @@
     "membersSelected": "{count, plural, one {# member} other {# members}} selected",
     "summaryCohorts": "{count, plural, one {# class} other {# classes}}",
     "summaryParents": "incl. parents",
-    "summaryUsers": "{count, plural, one {# member} other {# members}}"
+    "summaryUsers": "{count, plural, one {# member} other {# members}}",
+    "ownCohortLegend": "Your 学年",
+    "ownCohortHint": "As 学年代表 you can send news to the students and former students of your own 学年.",
+    "teachersAlways": "Current teachers always receive the news you send."
   },
   "staff": {
     "title": "Check-in staff",
@@ -369,5 +374,15 @@
       "email": "Email",
       "phone": "Phone"
     }
+  },
+  "approval": {
+    "title": "Approval",
+    "ask": "This post by a 同窓会委員 needs approval before members can see it. Check the content, then approve.",
+    "approve": "Approve",
+    "waiting": "Waiting for another 同窓会委員 to approve. Members can't see it and no notification goes out until then.",
+    "approved": "Approved by {name} on {date}.",
+    "done": "Post approved.",
+    "formHint": "As a 同窓会委員, your post is shown to members (and notified) only after another 同窓会委員 approves it. Editing it later needs a new approval.",
+    "submit": "Save and request approval"
   }
 }

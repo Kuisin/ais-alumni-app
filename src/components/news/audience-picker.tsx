@@ -17,6 +17,7 @@ import {
   EVERYONE,
   isEveryone,
 } from "@/lib/news-audience";
+import type { NewsScope } from "@/lib/permissions";
 
 export type AudienceMember = { id: string; name: string; kanji: string | null };
 
@@ -32,14 +33,19 @@ type CohortView = "all" | "graduated" | "current";
  * 学年 (optionally with their parents) and individually chosen members. The
  * choice is serialized as JSON (AudienceSpec) into the hidden `audience`
  * input, and the number of members reached is shown live.
+ *
+ * Narrowed by the author's scope: current teachers always include current
+ * teachers; 学年代表 choose only among their own 学年 (checked on save too).
  */
 export function AudiencePicker({
   cohorts,
+  scope = { kind: "ANY" },
   initialSpec,
   initialMembers,
   error,
 }: {
   cohorts: readonly CohortOption[];
+  scope?: NewsScope;
   initialSpec: AudienceSpec;
   /** names for the individually chosen members in `initialSpec.userIds` */
   initialMembers: readonly AudienceMember[];
@@ -47,9 +53,22 @@ export function AudiencePicker({
 }) {
   const t = useTranslations("adminContent");
   const uid = useId();
-  const [custom, setCustom] = useState(!isEveryone(initialSpec));
-  const [groups, setGroups] = useState<AudienceGroup[]>(initialSpec.groups);
-  const [cohortIds, setCohortIds] = useState<string[]>(initialSpec.cohortIds);
+  const ownCohorts = scope.kind === "COHORT" ? scope.cohortIds : null;
+  const teacher = scope.kind === "TEACHER";
+  const [custom, setCustom] = useState(
+    ownCohorts !== null || !isEveryone(initialSpec),
+  );
+  const [groups, setGroups] = useState<AudienceGroup[]>(() =>
+    teacher && !initialSpec.groups.includes("TEACHER_CURRENT")
+      ? ["TEACHER_CURRENT", ...initialSpec.groups]
+      : initialSpec.groups,
+  );
+  const [cohortIds, setCohortIds] = useState<string[]>(() => {
+    if (!ownCohorts) return initialSpec.cohortIds;
+    // 学年代表: their own 学年, all of them for a new post.
+    const own = initialSpec.cohortIds.filter((c) => ownCohorts.includes(c));
+    return own.length ? own : [...ownCohorts];
+  });
   const [includeParents, setIncludeParents] = useState(
     initialSpec.includeParents,
   );
@@ -94,9 +113,64 @@ export function AudiencePicker({
   const toggle = <T,>(list: T[], v: T, on: boolean) =>
     on ? (list.includes(v) ? list : [...list, v]) : list.filter((x) => x !== v);
 
+  const countLine = (
+    <p
+      aria-live="polite"
+      className="flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-2 text-sm font-medium text-brand-800"
+    >
+      <Users aria-hidden="true" className="size-4 shrink-0" />
+      {count === null
+        ? t("audience.counting")
+        : count === "error"
+          ? t("audience.countError")
+          : t("audience.count", { count })}
+    </p>
+  );
+  const errorLine = error ? (
+    <p role="alert" className="text-sm text-red-700">
+      {error}
+    </p>
+  ) : null;
+
+  // 学年代表: only their own 学年 (students and former students in it).
+  if (ownCohorts) {
+    const own = cohorts.filter((c) => ownCohorts.includes(c.id));
+    return (
+      <div className="space-y-4">
+        <input type="hidden" name="audience" value={json} />
+        <fieldset className="min-w-0 space-y-2">
+          <legend className={SUBLEGEND}>{t("audience.ownCohortLegend")}</legend>
+          <p className="text-sm text-slate-500">
+            {t("audience.ownCohortHint")}
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {own.map((c) => (
+              <label key={c.id} className={CHOICE_CARD}>
+                <input
+                  type="checkbox"
+                  checked={cohortIds.includes(c.id)}
+                  onChange={(e) =>
+                    setCohortIds((l) => toggle(l, c.id, e.target.checked))
+                  }
+                  className={CHECKBOX}
+                />
+                <span className="text-sm">{c.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {errorLine}
+        {countLine}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <input type="hidden" name="audience" value={json} />
+      {teacher ? (
+        <p className="text-sm text-slate-600">{t("audience.teachersAlways")}</p>
+      ) : null}
 
       <fieldset className="min-w-0 space-y-2">
         <legend className="sr-only">{t("audience.mode")}</legend>
@@ -146,6 +220,8 @@ export function AudiencePicker({
                   <input
                     type="checkbox"
                     checked={groups.includes(g)}
+                    // A teacher's post always reaches current teachers.
+                    disabled={teacher && g === "TEACHER_CURRENT"}
                     onChange={(e) =>
                       setGroups((l) => toggle(l, g, e.target.checked))
                     }
@@ -181,23 +257,8 @@ export function AudiencePicker({
         </div>
       ) : null}
 
-      {error ? (
-        <p role="alert" className="text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-
-      <p
-        aria-live="polite"
-        className="flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-2 text-sm font-medium text-brand-800"
-      >
-        <Users aria-hidden="true" className="size-4 shrink-0" />
-        {count === null
-          ? t("audience.counting")
-          : count === "error"
-            ? t("audience.countError")
-            : t("audience.count", { count })}
-      </p>
+      {errorLine}
+      {countLine}
     </div>
   );
 }

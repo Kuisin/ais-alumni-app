@@ -4,6 +4,7 @@
   "empty": "ニュースはまだありません。",
   "pinned": "固定",
   "untitled": "（タイトルなし）",
+  "create": "ニュースを作成",
   "backToList": "ニュース一覧へ",
   "pager": {
     "label": "ページ",
@@ -114,5 +115,14 @@
     "badge": "管理者として表示",
     "title": "管理者として表示しています",
     "body": "このニュースの対象ではないため、既読や確認・投票・日程調整の回答は記録されません（閲覧のみ）。"
+  },
+  "sender": {
+    "from": "発信：{role}",
+    "postingAs": "{role}として投稿します。会員にはお名前ではなく、この立場が表示されます。",
+    "ADMIN": "AIS同窓会委員会",
+    "TEACHER": "教職員",
+    "ALUMNI_COMMITTEE": "同窓会委員",
+    "STUDENT_LEADER": "学年代表",
+    "STUDENT_LEADER_COHORT": "学年代表（{cohort}）"
   }
 }

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { NewsPollKind, NewsVote } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { isLive } from "@/lib/news";
 import {
   adminOnlyView,
   matchesAudience,
@@ -20,7 +21,12 @@ import {
   REACTIONS,
 } from "@/lib/news-hub";
 import { newsViewer } from "@/lib/news-visibility";
-import { actionActive, actionAdmin, type CurrentUser } from "@/lib/session";
+import {
+  actionActive,
+  actionAdmin,
+  actionNewsAuthor,
+  type CurrentUser,
+} from "@/lib/session";
 import { putPrivate } from "@/lib/storage";
 import { safeFileName, sniffMatches } from "@/lib/verification/evidence";
 
@@ -35,8 +41,7 @@ async function openPost(postId: unknown) {
   const id = Id.safeParse(postId);
   if (!user || !id.success) return null;
   const post = await db.newsPost.findUnique({ where: { id: id.data } });
-  if (!post?.publishedAt || post.publishedAt > new Date() || post.archivedAt)
-    return null;
+  if (!post || !isLive(post)) return null;
   const viewer = await newsViewer(user);
   const spec = specFromPost(post);
   if (!matchesAudience(spec, viewer)) return null;
@@ -236,8 +241,8 @@ export type UploadNewsFileResult =
 export async function uploadNewsFileAction(
   fd: FormData,
 ): Promise<UploadNewsFileResult> {
-  const admin = await actionAdmin().catch(() => null);
-  if (!admin) return { ok: false, error: "forbidden" };
+  const author = await actionNewsAuthor().catch(() => null);
+  if (!author) return { ok: false, error: "forbidden" };
   const file = fd.get("file");
   if (!(file instanceof File)) return { ok: false, error: "generic" };
   if (file.size <= 0 || file.size > ATTACHMENT_MAX_BYTES)

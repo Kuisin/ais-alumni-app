@@ -35,6 +35,7 @@ import { useCloseOnSave } from "@/components/ui/view-edit";
 import type { CohortOption } from "@/lib/cohorts";
 import type { NewsStatus } from "@/lib/news";
 import { type AudienceSpec, EVERYONE } from "@/lib/news-audience";
+import type { NewsScope } from "@/lib/permissions";
 import { type AudienceMember, AudiencePicker } from "./audience-picker";
 import { type Delivery, DeliveryField } from "./delivery-field";
 import {
@@ -94,12 +95,15 @@ export function NewsForm({
   cancelHref,
   deleteAction,
   useBlob,
+  scope = { kind: "ANY" },
 }: {
   values: NewsFormValues;
   /** attachments go straight to Vercel Blob when it's configured */
   useBlob: boolean;
   /** existing 学年 for the audience picker */
   cohorts: readonly CohortOption[];
+  /** who the author may send to (admins: anyone) */
+  scope?: NewsScope;
   /** shows a cancel link in the action bar (from `sm`) */
   cancelHref?: string;
   /** shows a delete button in the action bar */
@@ -131,15 +135,18 @@ export function NewsForm({
   }
   const [notify, setNotify] = useState(values.notifyOnPublish);
   const submitLabel =
-    delivery === "NOW"
-      ? notify
-        ? t("delivery.submitConfirm")
-        : t("delivery.submitPublish")
-      : delivery === "SCHEDULE"
-        ? t("delivery.submitSchedule")
-        : delivery === "DRAFT"
-          ? t("delivery.submitDraft")
-          : tc("save");
+    // 同窓会委員: nothing goes out until another 同窓会委員 approves.
+    scope.kind === "COMMITTEE" && delivery !== "DRAFT"
+      ? t("approval.submit")
+      : delivery === "NOW"
+        ? notify
+          ? t("delivery.submitConfirm")
+          : t("delivery.submitPublish")
+        : delivery === "SCHEDULE"
+          ? t("delivery.submitSchedule")
+          : delivery === "DRAFT"
+            ? t("delivery.submitDraft")
+            : tc("save");
 
   return (
     <>
@@ -154,6 +161,9 @@ export function NewsForm({
           </Alert>
         ) : null}
         {state.ok ? <Alert tone="success">{tc("saved")}</Alert> : null}
+        {scope.kind === "COMMITTEE" ? (
+          <Alert tone="info">{t("approval.formHint")}</Alert>
+        ) : null}
 
         <FormSection
           icon={<Type />}
@@ -304,6 +314,7 @@ export function NewsForm({
         <FormSection icon={<Users />} title={t("sections.audience")}>
           <AudiencePicker
             cohorts={cohorts}
+            scope={scope}
             initialSpec={values.audience}
             initialMembers={values.audienceMembers}
             error={err("audience")}

@@ -18,6 +18,7 @@ import { asLocale } from "@/lib/events";
 import { displayName } from "@/lib/format";
 import { awaitingResponse } from "@/lib/news-hub-db";
 import { filterByAudience, visibleNews } from "@/lib/news-visibility";
+import { senderLabels } from "@/lib/sender";
 import { requireActive } from "@/lib/session";
 import { setupProgress } from "@/lib/setup";
 import { loadSetupChecklist } from "@/lib/setup-db";
@@ -87,6 +88,10 @@ export default async function DashboardPage({
             requireConfirm: true,
             deadline: true,
             closedAt: true,
+            senderRole: true,
+            audience: true,
+            targetAudiences: true,
+            targetRoles: true,
           },
         }),
       ),
@@ -125,12 +130,13 @@ export default async function DashboardPage({
       }),
       unreadCounts(user),
     ]);
-  const [readNews, awaiting] = await Promise.all([
+  const [readNews, awaiting, senders] = await Promise.all([
     readNewsIds(
       user.id,
       news.map((p) => p.id),
     ),
     awaitingResponse(user.id, news),
+    senderLabels(news, locale),
   ]);
 
   const setup = await loadSetupChecklist(user);
@@ -242,6 +248,7 @@ export default async function DashboardPage({
                     post={p}
                     locale={locale}
                     excerpt={false}
+                    sender={senders.get(p.id)}
                     needsAnswer={awaiting.has(p.id)}
                     unread={
                       !readNews.has(p.id) &&

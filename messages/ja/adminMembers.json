@@ -213,17 +213,20 @@
     "names": {
       "TEACHER_MANAGER": "教職員・管理者",
       "STUDENT_LEADER": "学年代表",
-      "TEACHER_REGISTRAR": "教職員登録担当"
+      "TEACHER_REGISTRAR": "教職員登録担当",
+      "ALUMNI_COMMITTEE": "同窓会委員"
     },
     "descriptions": {
       "TEACHER_MANAGER": "すべての会員、選択した立場、または任意の学年にお知らせを送れます（1日20件まで）。",
       "STUDENT_LEADER": "自分の学年の代表です。「学年代表」チャットに参加し、学年の会員の窓口になります。学年ごとの管理は「学年」ページからもできます。",
-      "TEACHER_REGISTRAR": "会員を現職の教職員として登録したり、元教職員に変更したりできます（管理モードの「教職員」）。現職の教職員はお子さんのプロフィールを見られるため、信頼できる方に付与してください。"
+      "TEACHER_REGISTRAR": "会員を現職の教職員として登録したり、元教職員に変更したりできます（管理モードの「教職員」）。現職の教職員はお子さんのプロフィールを見られるため、信頼できる方に付与してください。",
+      "ALUMNI_COMMITTEE": "すべての会員にニュースを送れます。ほかの同窓会委員（または管理者）が承認すると公開されます。"
     },
     "requires": {
       "TEACHER_MANAGER": "教職員の立場が必要です。",
       "STUDENT_LEADER": "在校生または卒業生の立場が必要です。",
-      "TEACHER_REGISTRAR": ""
+      "TEACHER_REGISTRAR": "",
+      "ALUMNI_COMMITTEE": "在校生・卒業生または保護者の立場が必要です。"
     },
     "granted": "役職を任命しました。",
     "removed": "役職を解除しました。",

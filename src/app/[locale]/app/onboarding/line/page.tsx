@@ -46,7 +46,7 @@ export default async function OnboardingLinePage({
       <PageHeader title={t("line.title")} description={t("line.description")} />
       <Card className="space-y-5">
         <ul className="space-y-2 text-sm text-slate-700">
-          {(["news", "mentions", "result"] as const).map((key) => (
+          {(["news", "mentions"] as const).map((key) => (
             <li key={key} className="flex gap-2">
               <span
                 aria-hidden="true"

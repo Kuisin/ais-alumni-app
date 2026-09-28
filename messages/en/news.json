@@ -29,7 +29,7 @@
   "messages": {
     "title": "Messages for you",
     "empty": "No messages for you yet.",
-    "emptyHint": "Messages sent to you by the committee, teachers and class representatives appear here. We let you know on LINE or by email when a new one arrives.",
+    "emptyHint": "Messages sent to you by the committee, teachers and class representatives appear here. We email you when a new one arrives.",
     "from": "From",
     "sentAt": "Sent",
     "sentTo": "To",

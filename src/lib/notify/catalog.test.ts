@@ -86,17 +86,11 @@ describe("link texts", () => {
   });
 });
 
-describe("daily reminders are email only", () => {
-  it("chat digest and event reminders never use LINE", () => {
-    for (const k of [
-      "CHAT_DIGEST",
-      "EVENT_REMINDER_7D",
-      "EVENT_REMINDER_1D",
-    ] as const) {
-      expect(NOTIFY_KINDS[k]).toMatchObject({ emailOnly: true });
-    }
-    // Timely ones still go by LINE.
-    expect(NOTIFY_KINDS.CHAT_MENTION).not.toHaveProperty("emailOnly");
-    expect(NOTIFY_KINDS.NEWS).not.toHaveProperty("emailOnly");
+describe("LINE is only for chat mentions and ニュース", () => {
+  it("no other kind may use LINE", () => {
+    const lineKinds = (Object.keys(NOTIFY_KINDS) as NotifyKind[]).filter(
+      (k) => "line" in NOTIFY_KINDS[k],
+    );
+    expect(lineKinds.sort()).toEqual(["CHAT_MENTION", "NEWS"]);
   });
 });

@@ -5,7 +5,9 @@ import { z } from "zod";
 import { OtpPurpose, RoleKey } from "@/generated/prisma/enums";
 import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { db } from "@/lib/db";
+import { isCurrentTeacher } from "@/lib/school";
 import { isSchoolEmail } from "@/lib/school-email";
+import { schoolEmailTaken } from "@/lib/school-email-db";
 import { actionActive, type CurrentUser } from "@/lib/session";
 import type { SchoolEmailResult } from "./verify";
 
@@ -32,6 +34,8 @@ export async function sendMySchoolEmailCodeAction(
   );
   if (!parsed.success) return { ok: false, error: "invalidEmail" };
   if (!isSchoolEmail(parsed.data)) return { ok: false, error: "wrongDomain" };
+  if (await schoolEmailTaken(parsed.data, user.id))
+    return { ok: false, error: "taken" };
   const res = await issueOtp({
     email: parsed.data,
     purpose: OtpPurpose.SCHOOL_EMAIL,
@@ -63,6 +67,8 @@ export async function verifyMySchoolEmailCodeAction(
   if (!e.success) return { ok: false, error: "invalidEmail" };
   if (!isSchoolEmail(e.data)) return { ok: false, error: "wrongDomain" };
   if (!c.success) return { ok: false, error: "invalid" };
+  if (await schoolEmailTaken(e.data, user.id))
+    return { ok: false, error: "taken" };
   const res = await verifyOtp({
     email: e.data,
     purpose: OtpPurpose.SCHOOL_EMAIL,
@@ -74,18 +80,25 @@ export async function verifyMySchoolEmailCodeAction(
       ok: false,
       error: res.error === "too_many_attempts" ? "tooManyAttempts" : res.error,
     };
-  await db.userRole.updateMany({
-    where: { userId: user.id, role: RoleKey.TEACHER },
-    data: { schoolEmail: normalizeEmail(e.data), schoolEmailVerified: true },
-  });
+  try {
+    await db.userRole.updateMany({
+      where: { userId: user.id, role: RoleKey.TEACHER },
+      data: { schoolEmail: normalizeEmail(e.data), schoolEmailVerified: true },
+    });
+  } catch {
+    // Unique: claimed by someone else in the meantime.
+    return { ok: false, error: "taken" };
+  }
   refresh();
   return { ok: true };
 }
 
-/** Remove the school address. */
+/** Remove the school address (former teachers only: current ones need it). */
 export async function removeMySchoolEmailAction(): Promise<void> {
   const user = await teacher();
   if (!user) return;
+  const role = user.roles.find((r) => r.role === RoleKey.TEACHER);
+  if (role && isCurrentTeacher(role.yearsTo)) return;
   await db.userRole.updateMany({
     where: { userId: user.id, role: RoleKey.TEACHER },
     data: { schoolEmail: null, schoolEmailVerified: false },

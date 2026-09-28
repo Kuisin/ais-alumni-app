@@ -18,7 +18,9 @@ import { isGender } from "@/lib/gender";
 import { MergeKeepsManagedError, mergeUsers } from "@/lib/merge";
 import { nameColumns, nameFormInput, nameFormSchema } from "@/lib/names";
 import { NOTIFY_USER_SELECT, notify } from "@/lib/notify";
+import { isCurrentTeacher } from "@/lib/school";
 import { isSchoolEmail } from "@/lib/school-email";
+import { schoolEmailTaken } from "@/lib/school-email-db";
 import { AuthError, actionAdmin } from "@/lib/session";
 import { canTransition } from "@/lib/state-machine";
 import { syncMemberStatus } from "@/lib/status-sync";
@@ -264,6 +266,21 @@ export async function saveMemberRoleAction(
     const isStudent =
       d.role === RoleKey.CURRENT_STUDENT || d.role === RoleKey.FORMER_STUDENT;
     const isTeacher = d.role === RoleKey.TEACHER;
+    // Current teachers need their school address; one member per address.
+    if (isTeacher && isCurrentTeacher(d.yearsTo) && !d.schoolEmail)
+      return {
+        error: tc("errors.validation"),
+        fieldErrors: { schoolEmail: "schoolEmailRequired" },
+      };
+    if (
+      isTeacher &&
+      d.schoolEmail &&
+      (await schoolEmailTaken(d.schoolEmail, d.userId))
+    )
+      return {
+        error: tc("errors.validation"),
+        fieldErrors: { schoolEmail: "schoolEmailTaken" },
+      };
     const existing = await db.userRole.findUnique({
       where: { userId_role: { userId: d.userId, role: d.role } },
     });

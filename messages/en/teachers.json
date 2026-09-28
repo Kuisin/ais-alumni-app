@@ -16,6 +16,7 @@
     "remove": "Move to former",
     "none": "No current teachers yet.",
     "removeConfirm": "Remove this teacher's registration?",
-    "schoolEmail": "School email verified"
+    "schoolEmail": "School email verified",
+    "schoolEmailMissing": "School email not confirmed"
   }
 }

@@ -11,6 +11,9 @@ test("member requests an AIS record correction and an admin approves it", async 
 
   // Withdraw a pending request left over from an earlier run, if any.
   const withdraw = member.getByRole("button", { name: "Withdraw request" });
+  const request = member.getByText("Request a correction").first();
+  // The page streams in after a skeleton: wait until one of them shows.
+  await expect(withdraw.or(request)).toBeVisible();
   if (await withdraw.isVisible()) {
     await withdraw.click();
     await expect(withdraw).toHaveCount(0);

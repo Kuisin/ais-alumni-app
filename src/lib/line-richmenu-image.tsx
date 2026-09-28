@@ -16,7 +16,7 @@ const BRAND = "#1e3a8a";
 const BRAND_50 = "#eff4ff";
 
 const ICONS: Record<RichMenuKey, OgIconName> = {
-  unread: "bell-dot",
+  chats: "bell-dot",
   newsList: "list",
   dashboard: "house",
   news: "newspaper",

@@ -1,5 +1,7 @@
 // Must load before anything formats messages.
 import "@/lib/intl-polyfills";
+// Before the first render: sees the notification tap that launched the app.
+import "@/lib/push-core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -9,6 +11,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { stackScreenOptions } from "@/lib/navigation";
+import { PushProvider } from "@/lib/push";
 import { queryClient } from "@/lib/query";
 import { RealtimeProvider } from "@/lib/realtime";
 
@@ -47,30 +50,35 @@ function Root() {
 
   return (
     <I18nProvider locale={locale}>
-      <RealtimeProvider config={active ? (me?.realtime ?? null) : null}>
-        <StatusBar style="dark" />
-        <Stack screenOptions={stackScreenOptions}>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Protected guard={status === "signedOut"}>
-            <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-          </Stack.Protected>
-          <Stack.Protected guard={status === "unreachable"}>
-            <Stack.Screen name="offline" options={{ headerShown: false }} />
-          </Stack.Protected>
-          <Stack.Protected guard={signedIn && !active}>
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-          </Stack.Protected>
-          <Stack.Protected guard={active}>
-            <Stack.Screen name="(member)" options={{ headerShown: false }} />
-          </Stack.Protected>
-          <Stack.Protected guard={signedIn}>
-            <Stack.Screen
-              name="web"
-              options={{ presentation: "fullScreenModal" }}
-            />
-          </Stack.Protected>
-        </Stack>
-      </RealtimeProvider>
+      <PushProvider>
+        <RealtimeProvider config={active ? (me?.realtime ?? null) : null}>
+          <StatusBar style="dark" />
+          <Stack screenOptions={stackScreenOptions}>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Protected guard={status === "signedOut"}>
+              <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+            </Stack.Protected>
+            <Stack.Protected guard={status === "unreachable"}>
+              <Stack.Screen name="offline" options={{ headerShown: false }} />
+            </Stack.Protected>
+            <Stack.Protected guard={signedIn && !active}>
+              <Stack.Screen
+                name="onboarding"
+                options={{ headerShown: false }}
+              />
+            </Stack.Protected>
+            <Stack.Protected guard={active}>
+              <Stack.Screen name="(member)" options={{ headerShown: false }} />
+            </Stack.Protected>
+            <Stack.Protected guard={signedIn}>
+              <Stack.Screen
+                name="web"
+                options={{ presentation: "fullScreenModal" }}
+              />
+            </Stack.Protected>
+          </Stack>
+        </RealtimeProvider>
+      </PushProvider>
     </I18nProvider>
   );
 }

@@ -8,6 +8,7 @@ import { LineBanner } from "@/features/home/line-banner";
 import { HomeSection, MessagesBanner, TodoList } from "@/features/home/parts";
 import { SetupChecklist } from "@/features/home/setup-checklist";
 import { NewsCard } from "@/features/news/news-card";
+import { PushPrompt } from "@/features/notifications/push-prompt";
 import { useAuth, useMe } from "@/lib/auth";
 import { hrefFor } from "@/lib/links";
 import { EmptyState, ErrorState, Loading, Screen, Text } from "@/ui";
@@ -52,6 +53,8 @@ function HomeBody({ home }: { home: Home }) {
   return (
     <>
       <TodoList todo={home.todo} />
+
+      <PushPrompt />
 
       {/* Waiting on me first; the setup checklist after. */}
       {home.setup.complete ? (

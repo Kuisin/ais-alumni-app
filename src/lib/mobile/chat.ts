@@ -45,6 +45,7 @@ import type {
   StartDirectResult,
 } from "@/lib/mobile/contract/chat";
 import { ApiError, type Locale, notFound } from "@/lib/mobile/http";
+import { chatNotifyLevel } from "@/lib/mobile/notifications";
 import { channelTopic } from "@/lib/realtime";
 import type { CurrentUser } from "@/lib/session";
 
@@ -214,6 +215,7 @@ export async function chatRoom(
     reads: reads ?? [],
     lastReadAt: me?.lastReadAt.toISOString() ?? null,
     muted: me?.muted ?? false,
+    notifyLevel: me ? chatNotifyLevel(me) : "mentions",
     stopped,
   };
 }
@@ -398,6 +400,7 @@ export async function chatInfo(
     members,
     member: Boolean(me),
     muted: me?.muted ?? false,
+    notifyLevel: me ? chatNotifyLevel(me) : "mentions",
   };
 }
 

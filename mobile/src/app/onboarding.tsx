@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslations } from "use-intl";
+import { PushPrompt } from "@/features/notifications/push-prompt";
 import { useAuth } from "@/lib/auth";
 import { webHref } from "@/lib/links";
 import { Button, Card, colors, Screen, space, Text } from "@/ui";
@@ -68,6 +69,9 @@ export default function OnboardingScreen() {
             />
           ) : null}
         </Card>
+        {state === "PENDING_REVIEW" || state === "NEEDS_INFO" ? (
+          <PushPrompt variant="onboarding" />
+        ) : null}
         <View style={styles.actions}>
           <Button variant="ghost" label={t("refresh")} onPress={refreshMe} />
           <Button variant="ghost" label={tc("signOut")} onPress={signOut} />

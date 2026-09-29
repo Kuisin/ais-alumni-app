@@ -86,8 +86,14 @@ export type Me = {
   onboardingPath: string | null;
   /** admin-mode sections (website) this member may use */
   access: StaffAccess;
-  /** counts for the tab bar */
-  badges: { news: number; messages: number; chat: number; follows: number };
+  /** counts for the tab bar; inbox = unread in the notification list */
+  badges: {
+    news: number;
+    messages: number;
+    chat: number;
+    follows: number;
+    inbox: number;
+  };
   /** Supabase Realtime (signal-only broadcast channels); null = poll */
   realtime: { url: string; key: string; topics: string[] } | null;
   features: { messages: boolean };

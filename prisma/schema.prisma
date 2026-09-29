@@ -188,6 +188,7 @@ model User {
   education            EducationEntry[]
   work                 WorkEntry[]
   mobileSessions       MobileSession[]
+  pushDevices          PushDevice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -603,9 +604,12 @@ model NotificationReceipt {
   link         NotificationLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
   userId       String
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// LINE | EMAIL
+  /// LINE | EMAIL | PUSH
   channels     String[]
   sentAt       DateTime         @default(now())
+  /// seen in the app's notification list ("mark as read"); openedAt is set
+  /// only when the member actually opened it
+  seenAt       DateTime?
   openedAt     DateTime?
   lastOpenedAt DateTime?
   opens        Int              @default(0)
@@ -641,7 +645,7 @@ model NotificationLog {
   id      String   @id @default(cuid())
   userId  String
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channel String // LINE | EMAIL
+  channel String // LINE | EMAIL | PUSH
   kind    String // EVENT_REMINDER_7D | EVENT_REMINDER_1D | NEWS | VERIFICATION | STAGE_PROMPT | ...
   refId   String?
   sentAt  DateTime @default(now())
@@ -926,6 +930,9 @@ model ChatMember {
   lastReadAt DateTime  @default(now())
   /// no daily digest for this group
   muted      Boolean   @default(false)
+  /// app push for every message in this group (default: only 1:1 messages
+  /// and personal mentions are pushed; src/lib/push/chat.ts)
+  pushAll    Boolean   @default(false)
 
   @@id([groupId, userId])
   @@index([userId])
@@ -1257,21 +1264,59 @@ model CronRun {
 // bearer token in the device keychain; only its SHA-256 is stored here
 // (src/lib/mobile/tokens.ts). Deleted when the member signs out on the device.
 model MobileSession {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash  String   @unique
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String      @unique
   /// "ios" | "android" | "web"
   platform   String?
   /// e.g. "iPhone 16" — for the member's list of signed-in devices
   deviceName String?
   /// the Google / LINE sign-in code this session came from: each code
   /// starts one session at most (src/lib/mobile/handoff.ts)
-  handoffJti String?  @unique
-  createdAt  DateTime @default(now())
+  handoffJti String?     @unique
+  createdAt  DateTime    @default(now())
   /// refreshed at most once a day; each refresh also extends expiresAt
-  lastUsedAt DateTime @default(now())
+  lastUsedAt DateTime    @default(now())
   expiresAt  DateTime
+  pushDevice PushDevice?
 
   @@index([userId])
+}
+
+// Added: push notifications to the native app (src/lib/push). One row per
+// signed-in device that allowed notifications: its Expo push token. Removed
+// with the device session (sign-out), so a signed-out phone gets nothing.
+model PushDevice {
+  id         String        @id @default(cuid())
+  sessionId  String        @unique
+  session    MobileSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ExponentPushToken[…]; a phone signed in to another account takes it over
+  token      String        @unique
+  /// "ios" | "android"
+  platform   String?
+  /// app notifications switched off on this device (the app's settings)
+  enabled    Boolean       @default(true)
+  /// Expo reported the token dead (DeviceNotRegistered): not used again
+  failedAt   DateTime?
+  lastSentAt DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  tickets    PushTicket[]
+
+  @@index([userId])
+}
+
+// Added: Expo push tickets waiting for their delivery receipt (checked by
+// the push-receipts job ~15 minutes after sending; dead tokens are retired).
+model PushTicket {
+  /// Expo's ticket (receipt) id
+  id        String     @id
+  deviceId  String
+  device    PushDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@index([createdAt])
 }

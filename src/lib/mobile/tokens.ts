@@ -142,3 +142,11 @@ export async function revokeMobileSession(token: string): Promise<void> {
     where: { tokenHash: hashMobileToken(token) },
   });
 }
+
+/** The device session making this request (its bearer token), or null. */
+export async function sessionFromRequest(
+  request: Request,
+): Promise<{ id: string; userId: string } | null> {
+  const token = bearerToken(request.headers.get("authorization"));
+  return token ? mobileSessionFor(token) : null;
+}

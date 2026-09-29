@@ -16,10 +16,12 @@ import {
   MoreSection,
   NotifySection,
 } from "@/features/me/settings-sections";
+import { PushSection } from "@/features/notifications/push-section";
 import { QueryState, Screen, Text } from "@/ui";
 
 /**
- * 設定 (the website's /app/settings): 言語 and 通知 natively, LINE status,
+ * 設定 (the website's /app/settings): 言語, アプリの通知 (app only) and 通知
+ * natively, LINE status,
  * the devices signed in to the app, 管理モード for staff, and the rest
  * (sign-in methods, email, data download) on the website's settings page —
  * as are deactivating and deleting the account (危険な操作, last).
@@ -51,6 +53,7 @@ export default function SettingsScreen() {
               {t("description")}
             </Text>
             <LanguageSection settings={s} />
+            <PushSection />
             <NotifySection settings={s} />
             <LineSection settings={s} />
             <DevicesSection />

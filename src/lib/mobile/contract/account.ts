@@ -149,8 +149,9 @@ export type MyProfile = {
 // ---- GET /settings ----
 
 export type NotifyVia = "AUTO" | "EMAIL_ONLY";
-/** "LINE" | "EMAIL" | "NONE" (neither set up) */
-export type NotifyRoute = "LINE" | "EMAIL" | "NONE";
+/** "PUSH" (a phone signed in to the app with notifications on) | "LINE" |
+ *  "EMAIL" | "NONE" (none of them set up) */
+export type NotifyRoute = "PUSH" | "LINE" | "EMAIL" | "NONE";
 export type StaffArea = "admin" | "broadcast" | "teachers" | "news";
 
 export type MySettings = {
@@ -159,7 +160,7 @@ export type MySettings = {
   notify: {
     /** the member's choice (設定 → 通知) */
     via: NotifyVia;
-    /** where news and mentions go right now (chooseChannel) */
+    /** where news and mentions go right now (the app, else chooseChannel) */
     route: NotifyRoute;
     /**
      * Every category, in the website's order (notifications.categories.<key>).

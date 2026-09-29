@@ -107,6 +107,14 @@ const TARGETS = [
     bg: null,
   },
   { file: "mobile/assets/images/favicon.png", size: 48, radius: 0.22 },
+  // Android notification (status bar) icon: all white on transparent.
+  {
+    file: "mobile/assets/images/notification-icon.png",
+    size: 96,
+    glyph: 0.9,
+    bg: null,
+    tassel: WHITE,
+  },
   // Website (PWA manifest + apple-touch icon): full-bleed, safe for maskable.
   { file: "public/icons/icon-192.png", size: 192, opaque: true },
   { file: "public/icons/icon-512.png", size: 512, opaque: true },

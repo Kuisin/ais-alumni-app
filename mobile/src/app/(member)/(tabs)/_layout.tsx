@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react-native";
 import { useTranslations } from "use-intl";
+import { InboxBell } from "@/features/notifications/inbox-bell";
 import { useMe } from "@/lib/auth";
 import { colors, font } from "@/ui/theme";
 
@@ -36,6 +37,7 @@ export default function TabLayout() {
         name="home"
         options={{
           title: t("dashboard"),
+          headerRight: () => <InboxBell />,
           tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
         }}
       />

@@ -4,6 +4,8 @@ Generated from `src/lib/notify/catalog.ts` and `messages/*/notifications.json`.
 
 Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the detail, the committee note (if any) and a footer. Links are per-member short links `/n/<member code>/<token>`: opening one records that member's read receipt (shown to admins as 「通知の開封」 on news, events and messages). Members can turn off every category except アカウント.
 
+App (`src/lib/push`): members signed in to the native app with notifications on get every kind as an app notification (`emoji title / body`) instead of LINE / email. Kinds marked *Email always*, and anything carrying a committee note, are emailed as well. If the push can't be sent, LINE / email take over. Tapping a notification opens the page in the app and counts as opening its link. The app's お知らせ list shows every notification sent with a link, whatever the channel. Chat notices are the exception: they appear in the chat tab instead.
+
 
 ## アカウント・申請結果 / Account & your requests
 
@@ -45,11 +47,14 @@ Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the d
 
 1:1 messages and personal @mentions are sent once (LINE, or email) if still unread after 5 minutes; nothing more until the chat is read. The delay and once-per-streak keep LINE pushes within the monthly quota.
 
+In the app they're pushed right away instead, never with the message text, and a new message replaces the previous notification from that chat. Each group has a notification level (チャットの詳細 → 通知): *mentions* (the default: mentions plus the daily summary), *every message* (`CHAT_GROUP`, app only), or *off* (mentions only, no daily summary). Pushes are not shown while the member has that chat open.
+
 | Kind | 日本語 (タイトル — 本文) | English (title — body) | Email always |
 |---|---|---|---|
 | `CHAT_DIRECT` 💬 | **新しいメッセージがあります** — {name}さんから1対1のメッセージが届いています。 | **You have a new message** — {name} sent you a direct message. |  |
 | `CHAT_MENTION` 💬 | **メンションされました** — {name}さんがチャットであなたをメンションしました（未読）。 | **You were mentioned** — {name} mentioned you in a chat (unread). |  |
 | `CHAT_DIGEST` 💬 | **未読のチャットがあります** — グループチャットに未読のメッセージが{count}件あります。 | **You have unread chat messages** — You have {count, plural, one {# unread message} other {# unread messages}} in your group chats. |  |
+| `CHAT_GROUP` 💬 | **グループに新しいメッセージ** — {name}さんが「{group}」に投稿しました。 | **New message in a group** — {name} posted in {group}. |  |
 
 ## フォロー・知り合い確認 / Follows & vouching
 

@@ -1,5 +1,6 @@
 # Every tab, a detail screen and a website screen in the web view.
-appId: host.exp.Exponent
+# APP_ID: host.exp.Exponent (Expo Go) or net.kailab.aisalumni (a build)
+appId: ${APP_ID}
 ---
 - openLink: ${APP_URL}/--/home
 - extendedWaitUntil:

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NotifyChannel } from "@/generated/prisma/enums";
 import {
+  afterPushFailed,
   type Channel,
   channelsFor,
   chooseChannel,
@@ -100,5 +101,49 @@ describe("every other kind goes by email", () => {
 
   it("is skipped, not sent by LINE, without an email address", () => {
     expect(channelsFor(u({ primaryEmail: null }))).toEqual([]);
+  });
+});
+
+describe("app notifications (PUSH)", () => {
+  it("go to the app instead of LINE or email", () => {
+    expect(channelsFor(u({ push: true }), { line: true })).toEqual(["PUSH"]);
+    expect(channelsFor(u({ push: true }))).toEqual(["PUSH"]);
+    expect(
+      channelsFor(u({ push: true, lineUserId: null, primaryEmail: null })),
+    ).toEqual(["PUSH"]);
+  });
+  it("email too for alwaysEmail kinds, when there is an email", () => {
+    expect(channelsFor(u({ push: true }), { alwaysEmail: true })).toEqual([
+      "PUSH",
+      "EMAIL",
+    ]);
+    expect(
+      channelsFor(u({ push: true, primaryEmail: null }), { alwaysEmail: true }),
+    ).toEqual(["PUSH"]);
+  });
+  it("app-only sends reach nobody without the app", () => {
+    expect(channelsFor(u(), { pushOnly: true, line: true })).toEqual([]);
+    expect(channelsFor(u({ push: true }), { pushOnly: true })).toEqual([
+      "PUSH",
+    ]);
+  });
+  it("members without the app are routed as before", () => {
+    expect(channelsFor(u({ push: false }), { line: true })).toEqual(["LINE"]);
+    expect(channelsFor(u({ push: false }))).toEqual(["EMAIL"]);
+  });
+  it("a push that reached no device falls back to LINE / email", () => {
+    expect(afterPushFailed(u(), ["PUSH"], { line: true })).toEqual(["LINE"]);
+    expect(afterPushFailed(u(), ["PUSH"], {})).toEqual(["EMAIL"]);
+    // alwaysEmail: email was routed anyway — not twice
+    expect(
+      afterPushFailed(u(), ["PUSH", "EMAIL"], { alwaysEmail: true }),
+    ).toEqual(["EMAIL"]);
+    expect(
+      afterPushFailed(u(), ["PUSH", "EMAIL"], {
+        line: true,
+        alwaysEmail: true,
+      }),
+    ).toEqual(["LINE", "EMAIL"]);
+    expect(afterPushFailed(u(), ["PUSH"], { pushOnly: true })).toEqual([]);
   });
 });

@@ -3,10 +3,18 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 /**
  * AIS Alumni — the native app for the website at ais.kai-lab.net. The
  * server it talks to is EXPO_PUBLIC_API_URL (set per build profile in
- * eas.json; defaults to production in src/lib/config.ts).
+ * eas.json; otherwise src/lib/config.ts: staging in development, production
+ * in release builds).
  */
 const IDENTIFIER = "net.kailab.aisalumni";
 const BRAND = "#1e3a8a";
+/**
+ * The EAS project (push notification tokens and credentials): set
+ * EAS_PROJECT_ID after `npx eas-cli@latest init`, or paste the id here.
+ * Without it, push notifications only work against a local server with
+ * EXPO_PUSH_OUTBOX=1 (development builds; see AGENTS.md).
+ */
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID?.trim() || undefined;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -88,7 +96,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-web-browser",
     "expo-localization",
     "expo-image",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/images/notification-icon.png",
+        color: BRAND,
+        defaultChannel: "news",
+      },
+    ],
+    // Native project fixes for building with Xcode 27 / from paths with
+    // spaces (see each file).
+    "./plugins/ios-scene-lifecycle",
+    "./plugins/ios-paths-with-spaces",
   ],
+  extra: {
+    ...config.extra,
+    eas: { ...config.extra?.eas, projectId: EAS_PROJECT_ID },
+  },
   experiments: {
     typedRoutes: true,
     reactCompiler: true,

@@ -116,6 +116,27 @@ The web build can't show web views (native only) and runs with web
 security off; check native-only behavior (web view, sign-in with LINE /
 Google, keychain) in Expo Go or a development build.
 
+## Testing on the iOS Simulator (Xcode)
+
+```bash
+UDID=$(mobile/scripts/sim-setup.sh)      # simulator + Expo Go, prompts pre-approved
+cd mobile && EXPO_PUBLIC_API_URL=http://localhost:3187 pnpm start   # Expo Go mode, :8081
+xcrun simctl openurl $UDID exp://127.0.0.1:8081
+```
+
+UI automation with [Maestro](https://maestro.dev) (needs Java 17+):
+`UDID=$UDID APP_URL=exp://127.0.0.1:8081 mobile/maestro/signin.sh hanako@example.com`
+signs in through the UI (code from the local dev mailbox), then
+`maestro --device $UDID test -e APP_URL=exp://127.0.0.1:8081 mobile/maestro/tour.yaml`
+visits every tab and the web view. Selectors: tabs are "Name, tab, n of 6";
+cards are one pressable (match `.*title.*`); the header back button has id
+`BackButton`; Maestro's `back` is Android-only.
+
+Things only a native run shows (all hit while building this): Hermes has no
+`Intl.PluralRules` (polyfilled in src/lib/intl-polyfills.ts — without it
+plural messages show their key), keyboards covering buttons, and Expo Go
+failing on development-build bundles.
+
 ## Builds and release (EAS)
 
 `eas.json` has `development` (dev client, ais-dev), `preview` (internal,

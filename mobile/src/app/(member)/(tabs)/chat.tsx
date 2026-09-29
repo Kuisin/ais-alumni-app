@@ -1,12 +1,6 @@
-import { useTranslations } from "use-intl";
-import { EmptyState, Screen } from "@/ui";
+import { ChatListScreen } from "@/features/chat/chat-list";
 
-// Placeholder — replaced by the chat feature.
-export default function Placeholder() {
-  const t = useTranslations("common");
-  return (
-    <Screen>
-      <EmptyState title={t("notReady")} />
-    </Screen>
-  );
+/** チャット: talks and group chats (the website's /app/chat). */
+export default function ChatTab() {
+  return <ChatListScreen />;
 }

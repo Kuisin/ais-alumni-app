@@ -7,7 +7,7 @@ type Tone = "brand" | "amber" | "slate" | "red" | "green";
 const TONES: Record<Tone, { bg: string; fg: string }> = {
   brand: { bg: colors.brand100, fg: colors.brand800 },
   amber: { bg: colors.amber100, fg: colors.amber900 },
-  slate: { bg: colors.slate100, fg: colors.slate700 },
+  slate: { bg: colors.slate200, fg: colors.slate700 },
   red: { bg: colors.red100, fg: colors.red700 },
   green: { bg: colors.green100, fg: colors.green700 },
 };

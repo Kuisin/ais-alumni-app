@@ -6,5 +6,7 @@ export const stackScreenOptions = {
   headerTitleStyle: { color: colors.text, fontWeight: font.weight.semibold },
   headerStyle: { backgroundColor: colors.surface },
   headerShadowVisible: true,
+  // Back arrow only: the screen below may be a route group with no title.
+  headerBackButtonDisplayMode: "minimal",
   contentStyle: { backgroundColor: colors.background },
 } as const;

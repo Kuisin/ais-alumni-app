@@ -1,3 +1,5 @@
+// Must load before anything formats messages.
+import "@/lib/intl-polyfills";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -37,6 +39,11 @@ function Root() {
   useEffect(() => {
     if (status !== "loading") SplashScreen.hideAsync().catch(() => {});
   }, [status]);
+
+  // Keep the splash screen until the session is known: the navigator (and
+  // its guards) then first renders with the real state, so a link that
+  // opened the app (e.g. /events/…) lands there instead of the anchor.
+  if (status === "loading") return null;
 
   return (
     <I18nProvider locale={locale}>

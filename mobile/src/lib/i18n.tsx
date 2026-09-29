@@ -19,6 +19,7 @@ import enProfile from "@messages/en/profile.json";
 import enRecords from "@messages/en/records.json";
 import enRoles from "@messages/en/roles.json";
 import enSettings from "@messages/en/settings.json";
+import enSetup from "@messages/en/setup.json";
 import enSupport from "@messages/en/support.json";
 import jaAuth from "@messages/ja/auth.json";
 import jaChat from "@messages/ja/chat.json";
@@ -40,6 +41,7 @@ import jaProfile from "@messages/ja/profile.json";
 import jaRecords from "@messages/ja/records.json";
 import jaRoles from "@messages/ja/roles.json";
 import jaSettings from "@messages/ja/settings.json";
+import jaSetup from "@messages/ja/setup.json";
 import jaSupport from "@messages/ja/support.json";
 import type { ReactNode } from "react";
 import { type AbstractIntlMessages, IntlProvider } from "use-intl";
@@ -69,6 +71,7 @@ const JA = {
   chat: jaChat,
   notifications: jaNotifications,
   settings: jaSettings,
+  setup: jaSetup,
   support: jaSupport,
   line: jaLine,
   cohorts: jaCohorts,
@@ -92,6 +95,7 @@ const EN = {
   chat: enChat,
   notifications: enNotifications,
   settings: enSettings,
+  setup: enSetup,
   support: enSupport,
   line: enLine,
   cohorts: enCohorts,

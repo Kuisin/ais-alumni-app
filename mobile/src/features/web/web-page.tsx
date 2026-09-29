@@ -7,8 +7,11 @@ import WebView, { type WebViewNavigation } from "react-native-webview";
 import { useTranslations } from "use-intl";
 import { useAuth } from "@/lib/auth";
 import { API_URL } from "@/lib/config";
-import { nativeHref, sitePath } from "@/lib/links";
+import { nativeHref, siteUrl } from "@/lib/links";
 import { Button, colors, Loading, space, Text } from "@/ui";
+
+/** Other sites that stay inside the web view (see shouldLoad). */
+const IN_WEB_VIEW = /^https:\/\/access\.line\.me\//i;
 
 type Props = {
   /** website path, e.g. "/app/family" */
@@ -53,20 +56,22 @@ export function WebPage({ path, onTitle }: Props) {
       void Linking.openURL(url).catch(() => {});
       return false;
     }
-    const p = sitePath(url, API_URL);
-    if (p === null) {
-      if (req.isTopFrame === false) return true; // embeds
+    const site = siteUrl(url, API_URL);
+    if (site === null) {
+      // Embeds, and LINE Login (linking LINE in the website's settings),
+      // whose callback needs this web view's session. Other sites: browser.
+      if (req.isTopFrame === false || IN_WEB_VIEW.test(url)) return true;
       void WebBrowser.openBrowserAsync(url);
       return false;
     }
     if (!loaded.current || req.isTopFrame === false) return true;
-    if (p === "/" || p === "/app") {
+    if (site.path === "/" || site.path === "/app") {
       // Signed out on the website (or the session ended): back to the app.
       void refreshMe();
       leaveFor(null);
       return false;
     }
-    const native = nativeHref(p);
+    const native = nativeHref(site.path, site.query);
     if (native) {
       leaveFor(native);
       return false;
@@ -102,6 +107,11 @@ export function WebPage({ path, onTitle }: Props) {
       }}
       incognito
       sharedCookiesEnabled={false}
+      // Staff check-in scans tickets with the camera (getUserMedia) and
+      // plays it inline; same-site requests are granted without an extra
+      // prompt (the OS camera permission still applies).
+      allowsInlineMediaPlayback
+      mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
       applicationNameForUserAgent="AISAlumniApp/1"
       allowsBackForwardNavigationGestures
       pullToRefreshEnabled

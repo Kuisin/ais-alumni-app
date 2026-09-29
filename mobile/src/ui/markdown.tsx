@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { Fragment } from "react";
 import { StyleSheet, View } from "react-native";
 import { API_URL } from "@/lib/config";
-import { hrefFor, sitePath } from "@/lib/links";
+import { hrefFor, siteUrl } from "@/lib/links";
 import { type Inline, parseBlocks, parseInline } from "@/lib/markdown";
 import { Text } from "./text";
 import { colors, font, space } from "./theme";
@@ -25,9 +25,8 @@ export function useOpenLink(): (url: string) => void {
       void Linking.openURL(url).catch(() => {});
       return;
     }
-    const path = sitePath(url, API_URL);
-    if (path !== null) {
-      router.push(hrefFor(path) as Href);
+    if (siteUrl(url, API_URL)) {
+      router.push(hrefFor(url) as Href);
       return;
     }
     void WebBrowser.openBrowserAsync(url);

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "./text";
-import { space } from "./theme";
+import { space, TOUCH } from "./theme";
 
 /** A titled block on a page, with an optional "more" link. */
 export function Section({
@@ -26,7 +26,11 @@ export function Section({
           {title}
         </Text>
         {action && onAction ? (
-          <Pressable accessibilityRole="link" onPress={onAction} hitSlop={8}>
+          <Pressable
+            accessibilityRole="link"
+            onPress={onAction}
+            style={styles.action}
+          >
             <Text variant="small" tone="brand" weight="semibold">
               {action}
             </Text>
@@ -42,4 +46,5 @@ const styles = StyleSheet.create({
   section: { gap: space.sm },
   header: { flexDirection: "row", alignItems: "center", gap: space.sm },
   title: { flex: 1 },
+  action: { minHeight: TOUCH, justifyContent: "center", paddingLeft: space.sm },
 });

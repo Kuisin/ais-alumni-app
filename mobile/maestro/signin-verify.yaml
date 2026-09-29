@@ -1,0 +1,10 @@
+# Email sign-in, step 2: a complete code signs in by itself.
+appId: host.exp.Exponent
+---
+- tapOn:
+    text: "(6-digit code|6桁のコード)"
+    index: 1
+- inputText: ${CODE}
+- extendedWaitUntil:
+    visible: "(Home|ホーム), tab.*"
+    timeout: 30000

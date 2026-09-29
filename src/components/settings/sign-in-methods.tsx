@@ -23,9 +23,12 @@ export type MethodRow = {
 export function SignInMethods({
   rows,
   email,
+  embedded = false,
 }: {
   rows: MethodRow[];
   email: string | null;
+  /** inside the native app's web view (src/lib/embed.ts) */
+  embedded?: boolean;
 }) {
   const t = useTranslations("settings.methods");
   const tc = useTranslations("common");
@@ -66,7 +69,12 @@ export function SignInMethods({
               ) : null}
             </div>
 
-            {row.method === "google" && !row.linked && row.ready ? (
+            {/* Google refuses sign-in inside apps' web views. */}
+            {row.method === "google" && !row.linked && row.ready && embedded ? (
+              <p className="w-full text-sm text-slate-600">
+                {t("googleInApp")}
+              </p>
+            ) : row.method === "google" && !row.linked && row.ready ? (
               <form action={linkGoogleAction}>
                 <SubmitButton variant="secondary" pendingText={tc("loading")}>
                   {t("addGoogle")}

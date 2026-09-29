@@ -1,57 +1,46 @@
-import { useRouter } from "expo-router";
-import { LogOut, ShieldCheck } from "lucide-react-native";
-import { useTranslations } from "use-intl";
+import { useState } from "react";
+import { AccountMenu, SignOutRow } from "@/features/me/account-menu";
+import { PROFILE_KEY, useProfile, useRefetchOnFocus } from "@/features/me/api";
+import { AppInfo } from "@/features/me/app-info";
+import { ProfileHeader } from "@/features/me/profile-header";
+import { ProfileSections } from "@/features/me/profile-sections";
 import { useAuth, useMe } from "@/lib/auth";
-import { webHref } from "@/lib/links";
-import {
-  Avatar,
-  colors,
-  ListGroup,
-  ListRow,
-  Screen,
-  Separator,
-  Text,
-} from "@/ui";
+import { ErrorState, Loading, Screen } from "@/ui";
 
-// Placeholder — replaced by the me/settings feature.
+/**
+ * マイページ: my profile as others see it (the website's /app/profile,
+ * read-only — each section opens its website form) and the account menu
+ * (家族, フォローリクエスト, 招待, 設定, お問い合わせ, 管理モード, ログアウト).
+ */
 export default function MeTab() {
-  const t = useTranslations("common");
-  const router = useRouter();
   const me = useMe();
-  const { signOut } = useAuth();
-  const staff = Object.values(me.access).some(Boolean);
+  const { refreshMe } = useAuth();
+  const profile = useProfile();
+  useRefetchOnFocus(PROFILE_KEY);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([profile.refetch(), refreshMe()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
-    <Screen>
-      <ListGroup>
-        <ListRow
-          leading={<Avatar uri={me.user.avatar} size={48} />}
-          title={me.user.name}
-          subtitle={me.user.otherName ?? me.user.email}
-          onPress={() => router.push(webHref("/app/profile"))}
-        />
-      </ListGroup>
-      <ListGroup>
-        {staff ? (
-          <>
-            <ListRow
-              leading={<ShieldCheck color={colors.slate600} size={20} />}
-              title={t("nav.adminMode")}
-              onPress={() => router.push(webHref("/app/admin"))}
-            />
-            <Separator />
-          </>
-        ) : null}
-        <ListRow
-          leading={<LogOut color={colors.red700} size={20} />}
-          title={t("signOut")}
-          destructive
-          chevron={false}
-          onPress={signOut}
-        />
-      </ListGroup>
-      <Text variant="caption" tone="subtle" center>
-        {t("footer")}
-      </Text>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
+      <ProfileHeader me={me} profile={profile.data} />
+      <AccountMenu />
+      {profile.data ? (
+        <ProfileSections profile={profile.data} />
+      ) : profile.isError ? (
+        <ErrorState error={profile.error} onRetry={() => profile.refetch()} />
+      ) : (
+        <Loading inline />
+      )}
+      <SignOutRow />
+      <AppInfo />
     </Screen>
   );
 }

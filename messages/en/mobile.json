@@ -30,7 +30,43 @@
   "home": {},
   "news": {},
   "events": {},
-  "chat": {},
+  "chat": {
+    "composerHint": "Tap Send to send. Type @ to mention someone.",
+    "actionsHint": "Long press for options",
+    "notifications": "Notifications"
+  },
   "people": {},
-  "me": {}
+  "me": {
+    "editHint": "You edit your profile on website screens inside the app.",
+    "signOutConfirm": {
+      "title": "Sign out?",
+      "body": "You'll be signed out of the app on this device."
+    },
+    "version": "Version {version}",
+    "devices": {
+      "title": "Signed-in devices",
+      "description": "Devices where the app is signed in to your account. Sign out any you don't recognize.",
+      "current": "This device",
+      "unknown": "Unknown device",
+      "platform": {
+        "ios": "iOS",
+        "android": "Android",
+        "web": "Web"
+      },
+      "used": "Last used {date}",
+      "since": "Signed in {date}",
+      "signOut": "Sign out",
+      "signOutTitle": "Sign out of “{device}”?",
+      "signOutBody": "The app on that device will ask you to sign in again.",
+      "signOutOthers": "Sign out of all other devices",
+      "signOutOthersTitle": "Sign out of all other devices?",
+      "signOutOthersBody": "Every device except this one will need to sign in again.",
+      "noOthers": "You're not signed in on any other device."
+    },
+    "more": {
+      "title": "More settings",
+      "description": "These settings are changed on the website's screens.",
+      "all": "Open all settings"
+    }
+  }
 }

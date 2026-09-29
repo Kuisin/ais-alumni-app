@@ -62,6 +62,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: BRAND,
     },
     predictiveBackGestureEnabled: false,
+    // Web view: ticket scanning at check-in, and "take photo" on uploads.
+    permissions: ["android.permission.CAMERA"],
   },
   locales: {
     ja: "./locales/ja.json",

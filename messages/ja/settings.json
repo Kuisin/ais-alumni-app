@@ -27,12 +27,16 @@
     "channel": {
       "LINE": "LINE",
       "EMAIL": "メール",
-      "NONE": "なし（LINE・メールとも未設定）"
+      "NONE": "なし（LINE・メールとも未設定）",
+      "PUSH": "アプリ"
     },
     "save": "通知設定を保存",
     "categories": "受け取る通知",
     "editChannel": "通知方法を変更",
-    "editCategories": "受け取る通知を選ぶ"
+    "editCategories": "受け取る通知を選ぶ",
+    "app": "📱 通知はアプリ（{devices}）にお届けしています。アプリの通知がオンの間は、LINE・メールの代わりにアプリへお送りします（セキュリティのお知らせや申請の結果はメールにも届きます）。アプリの設定で通知をオフにすると、下の設定どおり LINE・メールでお送りします。",
+    "appIos": "iPhone",
+    "appAndroid": "Android"
   },
   "line": {
     "title": "LINE",
@@ -63,7 +67,8 @@
     "removed": "ログイン方法を解除しました。",
     "addGoogle": "Googleログインを追加",
     "addLineHint": "LINEは上の「LINE」の項目から連携できます。",
-    "notReadyHint": "この方法はまだ準備中です。使えるようになり次第お知らせします。"
+    "notReadyHint": "この方法はまだ準備中です。使えるようになり次第お知らせします。",
+    "googleInApp": "Google ログインの追加はアプリ内ではできません（Google の制限）。ブラウザでウェブサイトを開いて追加してください。"
   },
   "email": {
     "title": "メールアドレス",

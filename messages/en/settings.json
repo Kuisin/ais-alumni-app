@@ -27,12 +27,16 @@
     "channel": {
       "LINE": "LINE",
       "EMAIL": "Email",
-      "NONE": "Nowhere (no LINE or email)"
+      "NONE": "Nowhere (no LINE or email)",
+      "PUSH": "The app"
     },
     "save": "Save notification setting",
     "categories": "Notifications to receive",
     "editChannel": "Change how",
-    "editCategories": "Choose notifications"
+    "editCategories": "Choose notifications",
+    "app": "📱 Notifications go to the app ({devices}). While app notifications are on, we send them there instead of LINE or email (security notices and application results are emailed too). Turn them off in the app's settings to get LINE or email as set below.",
+    "appIos": "iPhone",
+    "appAndroid": "Android"
   },
   "line": {
     "title": "LINE",
@@ -63,7 +67,8 @@
     "removed": "Sign-in method removed.",
     "addGoogle": "Add Google sign-in",
     "addLineHint": "Link LINE in the LINE section above.",
-    "notReadyHint": "This method isn't ready yet. We'll let you know when it is."
+    "notReadyHint": "This method isn't ready yet. We'll let you know when it is.",
+    "googleInApp": "Google can't be added inside the app (a Google restriction). Open the website in your browser to add it."
   },
   "email": {
     "title": "Email address",

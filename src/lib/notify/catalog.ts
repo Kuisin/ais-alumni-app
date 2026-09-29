@@ -17,6 +17,10 @@
  * Categories let members turn groups of notifications off (Settings);
  * `account` (application result, security, account status, results of
  * their own requests) can't be turned off.
+ *
+ * Members who turned on notifications in the app (src/lib/push) get every
+ * kind there instead of LINE / email (src/lib/notify/route.ts); `alwaysEmail`
+ * kinds — and anything carrying a committee note — also go by email.
  */
 
 export const NOTIFY_CATEGORIES = [
@@ -45,6 +49,8 @@ type KindSpec = {
    * allowance (free plan: 200) lasts.
    */
   line?: true;
+  /** Also by email for members who get notifications in the app. */
+  alwaysEmail?: true;
 };
 
 export const NOTIFY_KINDS = {
@@ -52,28 +58,34 @@ export const NOTIFY_KINDS = {
   VERIFICATION_APPROVED: {
     category: "account",
     emoji: "🎉",
+    alwaysEmail: true,
   },
   VERIFICATION_REJECTED: {
     category: "account",
     emoji: "📋",
+    alwaysEmail: true,
   },
   VERIFICATION_NEEDS_INFO: {
     category: "account",
     emoji: "📝",
+    alwaysEmail: true,
   },
   SECURITY_METHOD_ADDED: {
     category: "account",
     emoji: "🔐",
+    alwaysEmail: true,
   },
   SECURITY_METHOD_REMOVED: {
     category: "account",
     emoji: "🔐",
+    alwaysEmail: true,
   },
   ACCOUNT_DEACTIVATED_SELF: {
     category: "account",
     emoji: "👋",
+    alwaysEmail: true,
   },
-  ACCOUNT_DEACTIVATED: { category: "account", emoji: "⏸️" },
+  ACCOUNT_DEACTIVATED: { category: "account", emoji: "⏸️", alwaysEmail: true },
   ACCOUNT_REACTIVATED: { category: "account", emoji: "▶️" },
   NAME_REQUEST_APPROVED: { category: "account", emoji: "✅" },
   NAME_REQUEST_REJECTED: { category: "account", emoji: "📋" },
@@ -93,9 +105,12 @@ export const NOTIFY_KINDS = {
   // Chat
   // LINE (or email): 1:1 messages / mentions still unread after 5 minutes,
   // once per unread streak — few pushes, but people hear about them.
+  // In the app they're pushed right away instead (src/lib/push/chat.ts).
   CHAT_DIRECT: { category: "chat", emoji: "💬", line: true },
   CHAT_MENTION: { category: "chat", emoji: "💬", line: true },
   CHAT_DIGEST: { category: "chat", emoji: "💬" },
+  // App only: every message in a group the member chose to follow closely.
+  CHAT_GROUP: { category: "chat", emoji: "💬" },
   // Follows & vouching
   FOLLOW_REQUEST: { category: "social", emoji: "👤" },
   FOLLOW_AUTO_ACCEPTED: { category: "social", emoji: "👤" },
@@ -107,11 +122,24 @@ export const NOTIFY_KINDS = {
   FAMILY_HANDOVER_DONE: { category: "family", emoji: "🔑" },
   // Profile
   STAGE_PROMPT: { category: "profile", emoji: "🎓" },
-  // Admin work
-  NAME_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
-  BIRTH_DATE_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
-  GENDER_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
-  RECORD_REQUEST_ADMIN: { category: "admin", emoji: "🗂️" },
+  // Admin work: sent the moment it happens (src/lib/notify/staff.ts), and
+  // always by email too, so it reaches committee members at their desk even
+  // when they use the app.
+  VERIFICATION_SUBMITTED_ADMIN: {
+    category: "admin",
+    emoji: "🆕",
+    alwaysEmail: true,
+  },
+  NEWS_APPROVAL_ADMIN: { category: "admin", emoji: "📰", alwaysEmail: true },
+  EVENT_APPROVAL_ADMIN: { category: "admin", emoji: "📅", alwaysEmail: true },
+  NAME_REQUEST_ADMIN: { category: "admin", emoji: "🗂️", alwaysEmail: true },
+  BIRTH_DATE_REQUEST_ADMIN: {
+    category: "admin",
+    emoji: "🗂️",
+    alwaysEmail: true,
+  },
+  GENDER_REQUEST_ADMIN: { category: "admin", emoji: "🗂️", alwaysEmail: true },
+  RECORD_REQUEST_ADMIN: { category: "admin", emoji: "🗂️", alwaysEmail: true },
 } as const satisfies Record<string, KindSpec>;
 
 export type NotifyKind = keyof typeof NOTIFY_KINDS;

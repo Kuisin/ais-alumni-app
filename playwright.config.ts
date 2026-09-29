@@ -39,6 +39,9 @@ export default defineConfig({
       CHAT_V4: "1",
       // 同窓会委員 group chat (new enum value, off until released).
       CHAT_V5: "1",
+      // App notifications go to .data/dev-push instead of Expo; development
+      // tokens are accepted (e2e/mobile-push.spec.ts).
+      EXPO_PUSH_OUTBOX: "1",
       APP_URL: `http://localhost:${PORT}`,
       AUTH_URL: `http://localhost:${PORT}`,
     },

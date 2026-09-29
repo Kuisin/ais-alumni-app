@@ -165,6 +165,7 @@
     "recipients": "Recipients",
     "linePushes": "LINE messages",
     "emails": "Emails",
+    "appPushes": "App notifications",
     "unreachable": "No contact method",
     "quotaHint": "LINE messages count against the monthly message quota of the official account. Each member is notified only once for this post.",
     "confirm": "Send to {count, plural, one {# member} other {# members}}",

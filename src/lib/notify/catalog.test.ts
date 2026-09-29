@@ -14,6 +14,7 @@ const PARAMS = {
   stage: "Working",
   from: "Committee",
   years: "2008–2016",
+  group: "第5期",
 };
 
 describe("notification catalog", () => {
@@ -92,5 +93,18 @@ describe("LINE is only for ニュース and unread 1:1 / mention notices", () =>
       (k) => "line" in NOTIFY_KINDS[k],
     );
     expect(lineKinds.sort()).toEqual(["CHAT_DIRECT", "CHAT_MENTION", "NEWS"]);
+  });
+});
+
+describe("admin work is always emailed", () => {
+  it("every admin kind has alwaysEmail (it reaches app users by email too)", () => {
+    const admin = (Object.keys(NOTIFY_KINDS) as NotifyKind[]).filter(
+      (k) => NOTIFY_KINDS[k].category === "admin",
+    );
+    expect(admin).toContain("VERIFICATION_SUBMITTED_ADMIN");
+    expect(admin).toContain("NEWS_APPROVAL_ADMIN");
+    expect(admin).toContain("EVENT_APPROVAL_ADMIN");
+    for (const k of admin)
+      expect("alwaysEmail" in NOTIFY_KINDS[k], k).toBe(true);
   });
 });

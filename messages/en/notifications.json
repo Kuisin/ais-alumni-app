@@ -126,6 +126,12 @@
       "detail": "We send this at 8 pm only when there are unread messages. You can turn it off per group in the chat menu.",
       "cta": "Open chat"
     },
+    "CHAT_GROUP": {
+      "title": "New message in a group",
+      "body": "{name} posted in {group}.",
+      "detail": "Open the app to read it.",
+      "cta": "Open the chat"
+    },
     "FOLLOW_REQUEST": {
       "title": "New follow request",
       "body": "{name} wants to follow you.",
@@ -173,6 +179,24 @@
       "body": "A new school year has started. Your current status is “{stage}”.",
       "detail": "If you've changed school or job, update your history so classmates can find you.",
       "cta": "Update history"
+    },
+    "VERIFICATION_SUBMITTED_ADMIN": {
+      "title": "New membership application",
+      "body": "{name} applied for membership.",
+      "detail": "Review the application in admin mode.",
+      "cta": "Review"
+    },
+    "NEWS_APPROVAL_ADMIN": {
+      "title": "News post awaiting approval",
+      "body": "{name}'s news post “{title}” is awaiting approval.",
+      "detail": "Check it and approve it if it's fine. Members won't see it until it's approved.",
+      "cta": "Open the post"
+    },
+    "EVENT_APPROVAL_ADMIN": {
+      "title": "Event awaiting approval",
+      "body": "{name}'s event “{title}” is awaiting approval.",
+      "detail": "Check it and approve it if it's fine. Members won't see it until it's approved.",
+      "cta": "Open the event"
     },
     "NAME_REQUEST_ADMIN": {
       "title": "New name change request",
@@ -266,7 +290,13 @@
     "showAll": "Show all ({count} more)",
     "channel": {
       "LINE": "LINE",
-      "EMAIL": "Email"
+      "EMAIL": "Email",
+      "PUSH": "App"
     }
+  },
+  "push": {
+    "testTitle": "Test notification",
+    "testBody": "Notifications reach this device.",
+    "channelDefault": "Notifications"
   }
 }

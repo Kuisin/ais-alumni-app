@@ -4,6 +4,8 @@ Generated from `src/lib/notify/catalog.ts` and `messages/*/notifications.json`.
 
 Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the detail, the committee note (if any) and a footer. Links are per-member short links `/n/<member code>/<token>`: opening one records that member's read receipt (shown to admins as 「通知の開封」 on news, events and messages). Members can turn off every category except アカウント.
 
+App (`src/lib/push`): members signed in to the native app with notifications on get every kind as an app notification (`emoji title / body`) instead of LINE / email. Kinds marked *Email always*, and anything carrying a committee note, are emailed as well. If the push can't be sent, LINE / email take over. Tapping a notification opens the page in the app and counts as opening its link. The app's お知らせ list shows every notification sent with a link, whatever the channel. Chat notices are the exception: they appear in the chat tab instead.
+
 
 ## アカウント・申請結果 / Account & your requests
 
@@ -45,11 +47,14 @@ Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the d
 
 1:1 messages and personal @mentions are sent once (LINE, or email) if still unread after 5 minutes; nothing more until the chat is read. The delay and once-per-streak keep LINE pushes within the monthly quota.
 
+In the app they're pushed right away instead, never with the message text, and a new message replaces the previous notification from that chat. Each group has a notification level (チャットの詳細 → 通知): *mentions* (the default: mentions plus the daily summary), *every message* (`CHAT_GROUP`, app only), or *off* (mentions only, no daily summary). Pushes are not shown while the member has that chat open.
+
 | Kind | 日本語 (タイトル — 本文) | English (title — body) | Email always |
 |---|---|---|---|
 | `CHAT_DIRECT` 💬 | **新しいメッセージがあります** — {name}さんから1対1のメッセージが届いています。 | **You have a new message** — {name} sent you a direct message. |  |
 | `CHAT_MENTION` 💬 | **メンションされました** — {name}さんがチャットであなたをメンションしました（未読）。 | **You were mentioned** — {name} mentioned you in a chat (unread). |  |
 | `CHAT_DIGEST` 💬 | **未読のチャットがあります** — グループチャットに未読のメッセージが{count}件あります。 | **You have unread chat messages** — You have {count, plural, one {# unread message} other {# unread messages}} in your group chats. |  |
+| `CHAT_GROUP` 💬 | **グループに新しいメッセージ** — {name}さんが「{group}」に投稿しました。 | **New message in a group** — {name} posted in {group}. |  |
 
 ## フォロー・知り合い確認 / Follows & vouching
 
@@ -76,9 +81,14 @@ Rules: LINE shows `emoji title / body / button ▶ short link`; email adds the d
 
 ## 管理（委員会の作業） / Admin work
 
+Sent the moment it happens, and always by email (members using the app get the app notification too). New applications go to admins; a 同窓会委員's post or event waiting for approval goes to the other 同窓会委員 and admins, once it's ready (not a draft) and each time an approved one is edited. Support requests and chat reports email admins separately (not in this catalog).
+
 | Kind | 日本語 (タイトル — 本文) | English (title — body) | Email always |
 |---|---|---|---|
-| `NAME_REQUEST_ADMIN` 🗂️ | **氏名の変更申請があります** — {name}さんから氏名の変更申請がありました。 | **New name change request** — {name} asked to change their name. |  |
-| `BIRTH_DATE_REQUEST_ADMIN` 🗂️ | **生年月日の変更申請があります** — {name}さんから生年月日の登録・変更申請がありました。 | **New date of birth request** — {name} asked to add or correct their date of birth. |  |
-| `GENDER_REQUEST_ADMIN` 🗂️ | **性別の変更申請があります** — {name}さんから性別の変更申請がありました。 | **New gender change request** — {name} asked to change their gender. |  |
-| `RECORD_REQUEST_ADMIN` 🗂️ | **在籍記録の修正申請があります** — {name}さんから在籍記録の修正申請がありました。 | **New record correction request** — {name} asked to correct their AIS record. |  |
+| `VERIFICATION_SUBMITTED_ADMIN` 🆕 | **新しい会員登録の申請があります** — {name}さんから会員登録の申請がありました。 | **New membership application** — {name} applied for membership. | ✓ |
+| `NEWS_APPROVAL_ADMIN` 📰 | **ニュースの承認依頼があります** — {name}さんのニュース「{title}」が承認待ちです。 | **News post awaiting approval** — {name}'s news post “{title}” is awaiting approval. | ✓ |
+| `EVENT_APPROVAL_ADMIN` 📅 | **イベントの承認依頼があります** — {name}さんのイベント「{title}」が承認待ちです。 | **Event awaiting approval** — {name}'s event “{title}” is awaiting approval. | ✓ |
+| `NAME_REQUEST_ADMIN` 🗂️ | **氏名の変更申請があります** — {name}さんから氏名の変更申請がありました。 | **New name change request** — {name} asked to change their name. | ✓ |
+| `BIRTH_DATE_REQUEST_ADMIN` 🗂️ | **生年月日の変更申請があります** — {name}さんから生年月日の登録・変更申請がありました。 | **New date of birth request** — {name} asked to add or correct their date of birth. | ✓ |
+| `GENDER_REQUEST_ADMIN` 🗂️ | **性別の変更申請があります** — {name}さんから性別の変更申請がありました。 | **New gender change request** — {name} asked to change their gender. | ✓ |
+| `RECORD_REQUEST_ADMIN` 🗂️ | **在籍記録の修正申請があります** — {name}さんから在籍記録の修正申請がありました。 | **New record correction request** — {name} asked to correct their AIS record. | ✓ |

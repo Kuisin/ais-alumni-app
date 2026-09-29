@@ -23,6 +23,15 @@ server console and written to `.data/dev-mail/<address>.txt`. Without
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit), `pnpm build && pnpm test:e2e` (Playwright smoke tests).
 
+## App (iOS, Android, web)
+
+The Expo app lives in [Kuisin/ais-alumni-v2](https://github.com/Kuisin/ais-alumni-v2) (web: ais-alumni.kai-lab.net). This site is its
+backend: a JSON API under `/api/mobile/v1` (bearer tokens, `MobileSession`;
+contract types in `src/lib/mobile/contract`, copied to the app with its
+`pnpm sync:server`), and a signed-in web view for the screens the app
+doesn't have natively (onboarding, admin mode, family, invites, editing).
+The API allows cross-origin calls from the web app (`next.config.ts`).
+
 ## Branches & environments
 
 | Branch | Deploys to | Who merges |
@@ -105,6 +114,7 @@ Other deviations from the spec sketch are commented in `prisma/schema.prisma`. F
 
 - `src/lib/authz/` — `canViewPrivate` and the other access rules (pure core, unit-tested) plus `getProfileForViewer`, the only projection used to display another member's data.
 - `src/lib/state-machine.ts` — account states and the screen each state lands on.
-- `src/lib/notify/` — LINE-vs-email routing (§11), batching, and the notification log.
+- `src/lib/notify/` — app / LINE / email routing (§11), batching, and the notification log (`docs/notifications.md`).
+- `src/lib/push/` — app notifications through the Expo push service: devices, sending, delivery receipts, chat pushes.
 - `src/lib/session.ts` — page guards (`requireActive`, `requireAdmin`, …) and server-action guards (`actionActive`, `actionAdmin`, …).
 - `messages/<locale>/<namespace>.json` — all UI strings.

@@ -35,7 +35,7 @@ export async function NotificationOpensCard({
   if (total === 0) return null;
   const name = (r: NotificationReceiptRow) =>
     `${displayName(r.user, locale)} · ${r.channels
-      .map((c) => t(`channel.${c === "LINE" ? "LINE" : "EMAIL"}`))
+      .map((c) => t(`channel.${c === "LINE" || c === "PUSH" ? c : "EMAIL"}`))
       .join("/")}`;
   const more = (n: number) => t("showAll", { count: n - 20 });
 

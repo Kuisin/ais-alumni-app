@@ -51,7 +51,6 @@
     "lastNameKanji": "Last name (姓)",
     "firstNameKanji": "First name (名)",
     "cohort": "学年 (class)",
-    "cohortFilter": "Show classes",
     "teacherStatus": "Status",
     "joinedYear": "Year you joined AIS",
     "leftYearStudent": "Year you left AIS",
@@ -162,11 +161,6 @@
   "submit": "Submit application",
   "submitting": "Submitting…",
   "cohortNotListed": "Not listed / not sure",
-  "cohortFilter": {
-    "graduated": "Graduated",
-    "current": "At AIS",
-    "all": "All"
-  },
   "stepTitles": {
     "type": "Who are you?",
     "basics": "Your name and birthday",

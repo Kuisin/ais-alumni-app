@@ -23,19 +23,14 @@ server console and written to `.data/dev-mail/<address>.txt`. Without
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit), `pnpm build && pnpm test:e2e` (Playwright smoke tests).
 
-## Native app (`mobile/`)
+## App (iOS, Android, web)
 
-An Expo (React Native) app for iOS and Android lives in `mobile/` — its own
-pnpm workspace, so installing the website never pulls in React Native. The
-website is its backend: a JSON API under `/api/mobile/v1` (bearer tokens,
-`MobileSession`), and a signed-in web view for the screens the app doesn't
-have natively (onboarding, admin mode, family, invites, editing). Details,
-conventions and local testing: [`mobile/AGENTS.md`](mobile/AGENTS.md).
-
-```bash
-cd mobile && pnpm install
-EXPO_PUBLIC_API_URL=http://<LAN-IP>:3000 pnpm start   # Expo Go / dev build
-```
+The Expo app lives in [Kuisin/ais-alumni-v2](https://github.com/Kuisin/ais-alumni-v2) (web: ais-alumni.kai-lab.net). This site is its
+backend: a JSON API under `/api/mobile/v1` (bearer tokens, `MobileSession`;
+contract types in `src/lib/mobile/contract`, copied to the app with its
+`pnpm sync:server`), and a signed-in web view for the screens the app
+doesn't have natively (onboarding, admin mode, family, invites, editing).
+The API allows cross-origin calls from the web app (`next.config.ts`).
 
 ## Branches & environments
 

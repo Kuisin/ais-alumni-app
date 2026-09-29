@@ -1,6 +1,0 @@
-# The native app is its own pnpm workspace (own lockfile), separate from the
-# website at the repository root: installing the site (CI, Vercel) never
-# pulls in React Native, and the app gets the React version its Expo SDK
-# expects. It still reads the website's messages/ (see metro.config.js).
-packages:
-  - "."

@@ -1260,7 +1260,7 @@ model CronRun {
   updatedAt   DateTime  @updatedAt
 }
 
-// Added: sign-ins from the native app (mobile/). The app keeps a random
+// Added: sign-ins from the app (Kuisin/ais-alumni-v2). The app keeps a random
 // bearer token in the device keychain; only its SHA-256 is stored here
 // (src/lib/mobile/tokens.ts). Deleted when the member signs out on the device.
 model MobileSession {

@@ -10,7 +10,7 @@ import path from "node:path";
  *
  * Local development and tests: with EXPO_PUSH_OUTBOX=1 nothing is sent;
  * each message is appended to .data/dev-push/<token>.jsonl (like the email
- * dev mailbox), and mobile/scripts/sim-push.mjs can deliver them to an iOS
+ * dev mailbox), and the app repo's scripts/sim-push.mjs can deliver them to an iOS
  * Simulator.
  */
 

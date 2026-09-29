@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { z } from "zod";
 import { ChatGroupKind, PositionKey, RoleKey } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
@@ -23,6 +24,7 @@ import {
   openDirectChat,
 } from "@/lib/chat-db";
 import { db } from "@/lib/db";
+import { pushChatMessage } from "@/lib/push/chat";
 import { broadcast, channelTopic, realtimePublic } from "@/lib/realtime";
 import { actionActive, type CurrentUser } from "@/lib/session";
 
@@ -218,8 +220,16 @@ export async function sendChatMessageAction(
       payload: { id: message.id },
     },
   ]);
-  // Mentions and 1:1 messages are notified if still unread after 5
-  // minutes (the chat-unread job), not right away.
+  // Members with the app get a push right away (after the response);
+  // everyone else is told about mentions and 1:1 messages if still unread
+  // after 5 minutes (the chat-unread job).
+  after(() =>
+    pushChatMessage({
+      groupId: g.groupId,
+      senderId: g.user.id,
+      mentionUserIds: mentioned,
+    }),
+  );
   return { ok: true, message };
 }
 

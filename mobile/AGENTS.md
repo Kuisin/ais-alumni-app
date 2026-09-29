@@ -36,8 +36,14 @@ pnpm icons                 # regenerate app + website icons from the logo
 `expo start` serves a development-build bundle — Expo Go then fails with
 "Cannot find native module …". Use `pnpm start` (`--go`) for Expo Go.
 
-Point the app at a server with `EXPO_PUBLIC_API_URL` (default: production).
-For a local website: `EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:3000 pnpm start`.
+Point the app at a server with `EXPO_PUBLIC_API_URL`. Without it, Metro
+(Expo Go, development builds) uses the staging site ais-dev.kai-lab.net —
+which shares the production database — and release builds production
+(`src/lib/config.ts`; eas.json sets it per profile). For a local website:
+`EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:3000 pnpm start`. A phone on the
+same Wi-Fi opens `exp://<Mac's LAN IP>:8081` in Expo Go; without an EAS
+project id in the config Expo Go needs no sign-in (with one, run
+`npx expo login` first).
 
 ## How it fits together
 
@@ -61,6 +67,19 @@ For a local website: `EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:3000 pnpm start`.
   natively leave the web view (`src/lib/links.ts`).
 - **Realtime** (`src/lib/realtime.tsx`): the website's signal-only Supabase
   Broadcast channels; topics come from `/me` (and room responses).
+- **Notifications** (`src/lib/push-core.ts`, `src/lib/push.tsx`; server:
+  `../src/lib/push`, `../docs/notifications.md`): with notifications on,
+  the device's Expo push token is registered (`PUT /push`) and the server
+  sends every notification there instead of LINE / email. push-core runs
+  without React (imported first by the root layout): it keeps a chat's
+  banner quiet while that chat is open, runs the quick actions (chat reply /
+  mark read, follow request accept / decline) and queues taps until the app
+  can navigate. push.tsx registers the token, names the Android channels and
+  actions, opens tapped notifications (recording the read receipt) and keeps
+  the icon badge equal to the tab bar's. The お知らせ list is
+  `src/app/(member)/notifications.tsx`; settings, the Home prompt and chat
+  levels are in `src/features/notifications`. Push needs a development or
+  store build — Expo Go can't receive it.
 - **Strings** (`src/lib/i18n.tsx`): the website's `../messages/<locale>/*.json`
   through use-intl (next-intl's core), so both say the same thing. App-only
   strings: `../messages/<locale>/mobile.json`.
@@ -135,6 +154,21 @@ visits every tab and the web view. Selectors: tabs are "Name, tab, n of 6";
 cards are one pressable (match `.*title.*`); the header back button has id
 `BackButton`; Maestro's `back` is Android-only.
 
+**Development build** (native modules, push notifications, LINE / Google
+sign-in): `npx expo run:ios` (needs CocoaPods). `plugins/` fixes the
+generated project for Xcode 27 (the UIScene life cycle iOS 27 requires) and
+for folders whose path has spaces. Then `pnpm start:dev-client` and open the
+app from its icon, or pick the server in its launcher. Maestro against it:
+add `APP_ID=net.kailab.aisalumni` and
+`APP_URL="aisalumni://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081"`.
+
+**Push notifications locally**: run the website with `EXPO_PUSH_OUTBOX=1`,
+which writes pushes to `.data/dev-push/` and accepts the development tokens
+a build without an EAS project registers, then
+`UDID=$UDID node mobile/scripts/sim-push.mjs` delivers them to the
+Simulator as APNs would (taps, badges, categories). Turn notifications on in
+the app (Home card or 設定 → アプリの通知) and send a test from settings.
+
 Things only a native run shows (all hit while building this): Hermes has no
 `Intl.PluralRules` (polyfilled in src/lib/intl-polyfills.ts — without it
 plural messages show their key), keyboards covering buttons, and Expo Go
@@ -149,3 +183,9 @@ ais-dev) and `production` (ais.kai-lab.net) profiles. First time:
 Google / LINE sign-in need the `aisalumni://` scheme, so they work in
 development / preview / production builds, not in Expo Go against a
 deployed server (Expo Go works with email codes, or with a local server).
+
+Push notifications need the EAS project id (`EAS_PROJECT_ID`, or paste it
+into app.config.ts) and credentials: `npx eas-cli@latest credentials` sets up
+the APNs key (paid Apple Developer account) and the FCM v1 service account
+(Firebase project, for Android). If "enhanced push security" is on, set
+`EXPO_ACCESS_TOKEN` on the website (Vercel env).

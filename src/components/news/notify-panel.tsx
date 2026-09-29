@@ -9,6 +9,7 @@ import { Link } from "@/i18n/navigation";
 import { formatDateTime } from "@/lib/format";
 import { type NewsStatus, targetedRecipients } from "@/lib/news";
 import { estimateLinePushes } from "@/lib/notify";
+import { membersWithPush } from "@/lib/push/devices";
 
 /**
  * "Publish & notify" (§10.4, §11). Step 1 is a link to ?notify=1; step 2
@@ -84,8 +85,12 @@ export async function NotifyPanel({
   }
 
   const users = await targetedRecipients(post);
-  const est = estimateLinePushes(users, "NEWS");
-  const unreachable = users.length - est.line - est.email;
+  const est = estimateLinePushes(
+    users,
+    "NEWS",
+    await membersWithPush(users.map((u) => u.id)),
+  );
+  const unreachable = users.length - est.line - est.email - est.app;
 
   return (
     <Card className="border-amber-300">
@@ -98,7 +103,7 @@ export async function NotifyPanel({
           <Alert tone="warning">{t("notify.willPublishNow")}</Alert>
         </div>
       ) : null}
-      <dl className="mb-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 xl:grid-cols-2">
+      <dl className="mb-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5 xl:grid-cols-2">
         <div className="rounded-lg bg-slate-50 p-3">
           <dt className="text-slate-600">{t("notify.recipients")}</dt>
           <dd className="text-xl font-semibold">{users.length}</dd>
@@ -110,6 +115,10 @@ export async function NotifyPanel({
         <div className="rounded-lg bg-slate-50 p-3">
           <dt className="text-slate-600">{t("notify.emails")}</dt>
           <dd className="text-xl font-semibold">{est.email}</dd>
+        </div>
+        <div className="rounded-lg bg-slate-50 p-3">
+          <dt className="text-slate-600">{t("notify.appPushes")}</dt>
+          <dd className="text-xl font-semibold">{est.app}</dd>
         </div>
         <div className="rounded-lg bg-slate-50 p-3">
           <dt className="text-slate-600">{t("notify.unreachable")}</dt>

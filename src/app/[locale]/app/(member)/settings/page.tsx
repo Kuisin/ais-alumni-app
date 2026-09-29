@@ -31,6 +31,7 @@ import { isEmbedded } from "@/lib/embed";
 import { parseLinkOutcome } from "@/lib/line-link";
 import { chooseChannel } from "@/lib/notify";
 import { NOTIFY_CATEGORIES } from "@/lib/notify/catalog";
+import { pushDevicesOf } from "@/lib/push/devices";
 import { requireActive } from "@/lib/session";
 import { ssoReady } from "@/lib/sso";
 
@@ -86,6 +87,8 @@ export default async function SettingsPage({
   ];
 
   const channel = chooseChannel(user) ?? "NONE";
+  // Phones getting notifications in the app (they replace LINE / email).
+  const appDevices = await pushDevicesOf(user.id);
   const lineLinked = Boolean(user.lineUserId);
   const lineOutcome = parseLinkOutcome(one(sp.line));
 
@@ -163,6 +166,23 @@ export default async function SettingsPage({
           title={t("notifications.title")}
           description={t("notifications.description")}
         >
+          {appDevices.length ? (
+            <Alert tone="info">
+              {t("notifications.app", {
+                devices: appDevices
+                  .map(
+                    (d) =>
+                      d.deviceName ??
+                      t(
+                        d.platform === "android"
+                          ? "notifications.appAndroid"
+                          : "notifications.appIos",
+                      ),
+                  )
+                  .join(user.locale === "ja" ? "、" : ", "),
+              })}
+            </Alert>
+          ) : null}
           <ViewEdit
             editLabel={t("notifications.editChannel")}
             view={

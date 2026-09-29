@@ -175,6 +175,11 @@ export type ChatRoom = {
   /** no daily digest for this talk */
   muted: boolean;
   /**
+   * Group chats' app notifications (contract/notifications.ts
+   * ChatNotifyLevel): every message, mentions (+ daily summary), or off.
+   */
+  notifyLevel: "all" | "mentions" | "off";
+  /**
    * A 1:1 talk that can't go on: a block (chat.room.blockedNotice) or the
    * member types' rules (chat.room.restrictedNotice). Null = it can.
    */
@@ -252,6 +257,8 @@ export type ChatInfo = {
   /** a member of the talk (not an admin looking in): may mute and report */
   member: boolean;
   muted: boolean;
+  /** see ChatRoom.notifyLevel */
+  notifyLevel: "all" | "mentions" | "off";
 };
 
 // ---- POST /chat/:id/report ----

@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { MESSAGES_ENABLED } from "@/lib/features";
 import { displayName, otherNames } from "@/lib/format";
 import type { Me, StaffAccess } from "@/lib/mobile/contract/core";
+import { inboxUnread } from "@/lib/mobile/notifications";
 import { channelTopic, realtimePublic } from "@/lib/realtime";
 import type { CurrentUser } from "@/lib/session";
 import { homePathFor } from "@/lib/state-machine";
@@ -25,7 +26,7 @@ const NO_ACCESS: StaffAccess = {
  */
 export async function meFor(user: CurrentUser): Promise<Me> {
   const active = user.state === AccountState.ACTIVE;
-  const [access, unread, chat, follows, groups] = active
+  const [access, unread, chat, follows, groups, inbox] = active
     ? await Promise.all([
         getStaffAccess(user),
         unreadCounts(user),
@@ -37,8 +38,9 @@ export async function meFor(user: CurrentUser): Promise<Me> {
           where: { userId: user.id },
           select: { groupId: true },
         }),
+        inboxUnread(user.id),
       ])
-    : [NO_ACCESS, { news: 0, messages: 0 }, 0, 0, []];
+    : [NO_ACCESS, { news: 0, messages: 0 }, 0, 0, [], 0];
   const pub = active ? realtimePublic() : null;
   return {
     user: {
@@ -55,7 +57,7 @@ export async function meFor(user: CurrentUser): Promise<Me> {
     },
     onboardingPath: active ? null : homePathFor(user),
     access,
-    badges: { ...unread, chat, follows },
+    badges: { ...unread, chat, follows, inbox },
     realtime: pub
       ? {
           ...pub,

@@ -21,6 +21,7 @@ import {
 import { sendStagePrompt } from "@/lib/jobs/stage-prompt";
 import { syncStatus } from "@/lib/jobs/sync-status";
 import { syncLineMenus } from "@/lib/line-menu-sync";
+import { checkPushReceipts } from "@/lib/push/receipts";
 
 /**
  * Every recurring task. One Supabase pg_cron job calls GET /api/cron every
@@ -54,6 +55,8 @@ export const JOBS = {
   },
   // 1:1 messages and @mentions unread for 5 minutes: one notice per streak.
   "chat-unread": { schedule: EVERY_MINUTE, run: sendUnreadChatNotices },
+  // App push delivery receipts: retire tokens that no longer work.
+  "push-receipts": { schedule: EVERY_MINUTE, run: checkPushReceipts },
   // 7-day / 1-day event reminders (§10.3).
   "event-reminders": { schedule: daily("09:00"), run: sendEventReminders },
   // Unread group-chat digest (count and link only).

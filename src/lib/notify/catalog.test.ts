@@ -14,6 +14,7 @@ const PARAMS = {
   stage: "Working",
   from: "Committee",
   years: "2008–2016",
+  group: "第5期",
 };
 
 describe("notification catalog", () => {

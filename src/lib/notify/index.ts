@@ -3,6 +3,10 @@ import type { Locale } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { linePush } from "@/lib/line";
+import { badgeCountsFor } from "@/lib/push/badges";
+import { type PushTarget, pushTargetsFor } from "@/lib/push/devices";
+import { type PushOptions, pushMessageFor } from "@/lib/push/message";
+import { deliverPushes } from "@/lib/push/send";
 import { NOTIFY_KINDS, type NotifyKind, wantsKind } from "./catalog";
 import { renderEmail } from "./email-template";
 import {
@@ -19,10 +23,12 @@ import {
   renderNotification,
 } from "./render";
 import {
+  afterPushFailed,
   type Channel,
   channelsFor,
   deliverWithFallback,
   type RoutableUser,
+  type RouteOptions,
 } from "./route";
 
 const LOCALES: Locale[] = ["ja", "en"];
@@ -52,8 +58,20 @@ export type Notification = {
   params?:
     | NotifyParams
     | ((locale: Locale) => NotifyParams | Promise<NotifyParams>);
-  /** Committee note etc. — email only, never on LINE. */
+  /** Committee note etc. — email only, never on LINE or in the app. */
   note?: string | null;
+  /**
+   * Only to members who get notifications in the app, and only there
+   * (immediate chat pushes; the chat-unread job covers everyone else).
+   */
+  pushOnly?: boolean;
+  /**
+   * false: no short link or read receipts (chat pushes — a link per
+   * message would be noise); the app still opens `path`.
+   */
+  link?: boolean;
+  /** App push extras (grouping, replacing, lifetime). */
+  push?: PushOptions;
 };
 
 async function alreadySent(
@@ -92,7 +110,10 @@ async function inBatches<T>(
  * members who turned the category off are skipped; texts are rendered once
  * per language with one short link for everyone, and every recipient gets
  * their own URL (/n/<their code>/<token>) so their open is recorded as a
- * read receipt. LINE pushes go one per member (the push quota counts
+ * read receipt. Members who turned on notifications in the app get an
+ * app push instead (src/lib/push; email too for `alwaysEmail` kinds and
+ * committee notes); if it reaches none of their devices, they get LINE /
+ * email as usual. LINE pushes go one per member (the push quota counts
  * recipients either way). Failures are logged, not thrown; recurring tasks
  * use notifyBatch to retry them.
  */
@@ -137,11 +158,30 @@ export async function notifyBatch(
     remaining: [],
   };
   const spec = NOTIFY_KINDS[n.kind];
+  const route: RouteOptions = {
+    line: "line" in spec,
+    alwaysEmail: "alwaysEmail" in spec || Boolean(n.note),
+    pushOnly: n.pushOnly,
+  };
+  const wanted = users.filter(
+    (u) => !skip.has(u.id) && wantsKind(u.notifyOff, n.kind),
+  );
+  // App devices of everyone this could go to (members with none are absent).
+  const devices = await pushTargetsFor(wanted.map((u) => u.id)).catch((e) => {
+    console.error("[notify] push devices failed", e);
+    return new Map<string, PushTarget[]>();
+  });
   const recipients: { user: NotifyUser; channels: Channel[] }[] = [];
-  for (const u of users) {
-    if (skip.has(u.id) || !wantsKind(u.notifyOff, n.kind)) continue;
-    const channels = channelsFor(u, { line: "line" in spec }).filter((ch) =>
-      ch === "LINE" ? Boolean(u.lineUserId) : Boolean(u.primaryEmail),
+  for (const u of wanted) {
+    const channels = channelsFor(
+      { ...u, push: devices.has(u.id) },
+      route,
+    ).filter((ch) =>
+      ch === "PUSH"
+        ? true
+        : ch === "LINE"
+          ? Boolean(u.lineUserId)
+          : Boolean(u.primaryEmail),
     );
     if (channels.length) recipients.push({ user: u, channels });
     else result.sent.set(u.id, []);
@@ -156,31 +196,77 @@ export async function notifyBatch(
       typeof n.params === "function" ? await n.params(locale) : n.params;
     rendered[locale] = await renderNotification(n.kind, locale, params);
   }
-  const link = n.path
-    ? await (n.dedupe ? findOrCreateNotificationLink : createNotificationLink)({
-        kind: n.kind,
-        category: spec.category,
-        texts: {
-          ja: { title: rendered.ja.title, body: rendered.ja.body },
-          en: { title: rendered.en.title, body: rendered.en.body },
-        },
-        refId: n.refId,
-        path: n.path,
-      })
-    : null;
+  const link =
+    n.path && n.link !== false
+      ? await (n.dedupe
+          ? findOrCreateNotificationLink
+          : createNotificationLink)({
+          kind: n.kind,
+          category: spec.category,
+          texts: {
+            ja: { title: rendered.ja.title, body: rendered.ja.body },
+            en: { title: rendered.en.title, body: rendered.en.body },
+          },
+          refId: n.refId,
+          path: n.path,
+        })
+      : null;
 
   for (let i = 0; i < recipients.length; i += CHUNK) {
     if (opts.deadline !== undefined && Date.now() > opts.deadline) {
       result.remaining = recipients.slice(i).map((r) => r.user.id);
       break;
     }
+    const chunk = recipients.slice(i, i + CHUNK);
     const logs: { userId: string; channel: Channel }[] = [];
     const receipts: { linkId: string; userId: string; channels: Channel[] }[] =
       [];
-    await inBatches(
-      recipients.slice(i, i + CHUNK),
-      8,
-      async ({ user: u, channels }) => {
+
+    // App pushes for the whole chunk in one request.
+    const pushUsers = chunk
+      .filter((r) => r.channels[0] === "PUSH")
+      .map((r) => r.user);
+    let pushed = new Set<string>();
+    if (pushUsers.length) {
+      const badges = await badgeCountsFor(pushUsers.map((u) => u.id)).catch(
+        (e) => {
+          console.error("[notify] badges failed", e);
+          return new Map<string, number>();
+        },
+      );
+      pushed = await deliverPushes(
+        pushUsers.map((u) => {
+          const text = rendered[u.locale];
+          const { to: _to, ...message } = pushMessageFor({
+            token: "",
+            kind: n.kind,
+            category: spec.category,
+            emoji: text.emoji,
+            title: text.title,
+            body: text.body,
+            path: n.path,
+            receipt: link?.token,
+            refId: n.refId,
+            badge: badges.get(u.id),
+            options: n.push,
+          });
+          return { userId: u.id, targets: devices.get(u.id) ?? [], message };
+        }),
+      );
+    }
+
+    await inBatches(chunk, 8, async ({ user: u, channels }) => {
+      const sent: Channel[] = [];
+      let rest = channels;
+      if (channels[0] === "PUSH") {
+        if (pushed.has(u.id)) {
+          sent.push("PUSH");
+          rest = channels.slice(1);
+        } else {
+          rest = afterPushFailed(u, channels, route);
+        }
+      }
+      if (rest.length) {
         const text = rendered[u.locale];
         let url: string | null = null;
         if (link) {
@@ -194,34 +280,36 @@ export async function notifyBatch(
         }
         // A failed LINE push (e.g. the month's allowance is used up) falls
         // back to email.
-        const sent = await deliverWithFallback(
-          channels,
-          Boolean(u.primaryEmail),
-          async (ch) => {
-            if (ch === "LINE" && u.lineUserId) {
-              await linePush(u.lineUserId, [
-                { type: "text", text: lineText(text, url) },
-              ]);
-            } else if (ch === "EMAIL" && u.primaryEmail) {
-              const mail = await renderEmail({
-                rendered: text,
-                locale: u.locale,
-                recipientName: u.nameRomaji ?? u.nameKanji ?? null,
-                url,
-                note: n.note,
-              });
-              await sendEmail({ to: u.primaryEmail, ...mail });
-            }
-          },
-          (ch, e) => console.error(`[notify] ${ch} to ${u.id} failed`, e),
+        sent.push(
+          ...(await deliverWithFallback(
+            rest,
+            Boolean(u.primaryEmail),
+            async (ch) => {
+              if (ch === "LINE" && u.lineUserId) {
+                await linePush(u.lineUserId, [
+                  { type: "text", text: lineText(text, url) },
+                ]);
+              } else if (ch === "EMAIL" && u.primaryEmail) {
+                const mail = await renderEmail({
+                  rendered: text,
+                  locale: u.locale,
+                  recipientName: u.nameRomaji ?? u.nameKanji ?? null,
+                  url,
+                  note: n.note,
+                });
+                await sendEmail({ to: u.primaryEmail, ...mail });
+              }
+            },
+            (ch, e) => console.error(`[notify] ${ch} to ${u.id} failed`, e),
+          )),
         );
-        for (const ch of sent) logs.push({ userId: u.id, channel: ch });
-        if (link && sent.length)
-          receipts.push({ linkId: link.id, userId: u.id, channels: sent });
-        if (sent.length) result.sent.set(u.id, sent);
-        else result.failed.push(u.id);
-      },
-    );
+      }
+      for (const ch of sent) logs.push({ userId: u.id, channel: ch });
+      if (link && sent.length)
+        receipts.push({ linkId: link.id, userId: u.id, channels: sent });
+      if (sent.length) result.sent.set(u.id, sent);
+      else result.failed.push(u.id);
+    });
     if (receipts.length) {
       await db.notificationReceipt.createMany({
         data: receipts,
@@ -242,23 +330,34 @@ export async function notifyBatch(
   return result;
 }
 
-/** Estimated LINE / email counts for sending `kind` to these users (§11). */
+/**
+ * Estimated LINE / email / app counts for sending `kind` to these users
+ * (§11). `push`: members who get notifications in the app
+ * (membersWithPush in src/lib/push/devices.ts) — they use no LINE message.
+ */
 export function estimateLinePushes(
-  users: RoutableUser[],
+  users: (RoutableUser & { id?: string })[],
   kind: NotifyKind,
+  push: ReadonlySet<string> = new Set(),
 ): {
   line: number;
   email: number;
+  app: number;
 } {
   let line = 0;
   let email = 0;
+  let app = 0;
   const lineOk = "line" in NOTIFY_KINDS[kind];
   for (const u of users) {
-    const ch = channelsFor(u, { line: lineOk })[0];
-    if (ch === "LINE") line++;
+    const ch = channelsFor(
+      { ...u, push: Boolean(u.id && push.has(u.id)) },
+      { line: lineOk },
+    )[0];
+    if (ch === "PUSH") app++;
+    else if (ch === "LINE") line++;
     else if (ch === "EMAIL") email++;
   }
-  return { line, email };
+  return { line, email, app };
 }
 
 export const NOTIFY_USER_SELECT = {

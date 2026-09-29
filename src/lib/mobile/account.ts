@@ -48,6 +48,7 @@ import {
   personalReach,
   photoReach,
 } from "@/lib/profile-visibility";
+import { pushTargetsFor } from "@/lib/push/devices";
 import type { CurrentUser } from "@/lib/session";
 import { ssoReady } from "@/lib/sso";
 
@@ -318,14 +319,20 @@ export function notifyOffFor(on: readonly string[]): string[] {
 }
 
 export async function loadMySettings(user: CurrentUser): Promise<MySettings> {
-  const access = await getStaffAccess(user);
+  const [access, push] = await Promise.all([
+    getStaffAccess(user),
+    pushTargetsFor([user.id]),
+  ]);
   const teacher = user.roles.find((r) => r.role === RoleKey.TEACHER) ?? null;
   return {
     locale: user.locale === "en" ? "en" : "ja",
     email: user.primaryEmail,
     notify: {
       via: user.notifyVia === NotifyChannel.EMAIL_ONLY ? "EMAIL_ONLY" : "AUTO",
-      route: chooseChannel(user) ?? "NONE",
+      // A phone with app notifications on gets them instead (notifyBatch).
+      route: push.get(user.id)?.length
+        ? "PUSH"
+        : (chooseChannel(user) ?? "NONE"),
       categories: notifyCategories(user.notifyOff),
     },
     line: {

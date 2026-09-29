@@ -31,6 +31,10 @@ fi
 PLIST="$HOME/Library/Developer/CoreSimulator/Devices/$UDID/data/Library/Preferences/com.apple.launchservices.schemeapproval.plist"
 /usr/libexec/PlistBuddy -c "Delete :com.apple.CoreSimulator.CoreSimulatorBridge-->exp" "$PLIST" >/dev/null 2>&1 || true
 /usr/libexec/PlistBuddy -c "Add :com.apple.CoreSimulator.CoreSimulatorBridge-->exp string host.exp.Exponent" "$PLIST" >/dev/null
+# The same for aisalumni:// links into a development build.
+/usr/libexec/PlistBuddy -c "Delete :com.apple.CoreSimulator.CoreSimulatorBridge-->aisalumni" "$PLIST" >/dev/null 2>&1 || true
+/usr/libexec/PlistBuddy -c "Add :com.apple.CoreSimulator.CoreSimulatorBridge-->aisalumni string net.kailab.aisalumni" "$PLIST" >/dev/null
+xcrun simctl spawn "$UDID" defaults write net.kailab.aisalumni EXDevMenuIsOnboardingFinished -bool YES
 for key in EXDevMenuIsOnboardingFinished ExpoGoOnboardingFinished EXHomeIsNuxFinishedDefaultsKey EXKernelDisableNuxDefaultsKey; do
   xcrun simctl spawn "$UDID" defaults write host.exp.Exponent "$key" -bool YES
 done

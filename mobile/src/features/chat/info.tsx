@@ -1,8 +1,9 @@
 import type { ChatInfo, ChatInfoMember } from "@contract/chat";
+import type { ChatNotifyLevel } from "@contract/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronRight, Flag, Search, Users } from "lucide-react-native";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -13,13 +14,19 @@ import {
   View,
 } from "react-native";
 import { useTranslations } from "use-intl";
+import { ChoiceRow } from "@/features/me/rows";
+import { useChatNotifyLevel } from "@/features/notifications/api";
 import { hrefFor } from "@/lib/links";
+import { usePush } from "@/lib/push";
 import {
   Avatar,
+  Button,
   Card,
   colors,
+  ListGroup,
   QueryState,
   ScreenView,
+  Separator,
   space,
   Text,
   TOUCH,
@@ -31,8 +38,8 @@ import { toKatakana } from "./mentions";
 
 /**
  * トークの詳細 (the website's /app/chat/[id]/info): what the talk is, its
- * members (search; tap for a profile where the member may see it), the
- * daily digest switch and 「問題を報告する」 for members of the talk.
+ * members (search; tap for a profile where the member may see it), its
+ * notifications and 「問題を報告する」 for members of the talk.
  */
 export function ChatInfoScreen() {
   const t = useTranslations("chat.info");
@@ -214,51 +221,22 @@ function MemberRow({
   );
 }
 
-/** The digest switch and the report entry (members of the talk only). */
+/**
+ * Notifications and the report entry (members of the talk only). Groups:
+ * the notification level (every message / mentions / off — see
+ * ChatNotifyLevel); 1:1 talks, which always notify: the daily digest.
+ */
 function MemberSettings({ info }: { info: ChatInfo }) {
   const t = useTranslations("chat");
   const tm = useTranslations("mobile");
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const [muted, setMuted] = useState(info.muted);
-  const [saving, setSaving] = useState(false);
-
-  const toggle = async (digest: boolean) => {
-    const next = !digest;
-    setMuted(next);
-    setSaving(true);
-    try {
-      await chatApi.mute(info.id, next);
-      void queryClient.invalidateQueries({ queryKey: infoKey(info.id) });
-      void queryClient.invalidateQueries({ queryKey: roomKey(info.id) });
-    } catch {
-      setMuted(!next);
-      showError(tm("errors.generic"));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <View style={styles.settings}>
       <Text variant="subheading" accessibilityRole="header">
         {tm("chat.notifications")}
       </Text>
-      <View style={styles.box}>
-        <View style={styles.switchRow}>
-          <Text variant="small" style={styles.flex}>
-            {t("room.digest")}
-          </Text>
-          <Switch
-            value={!muted}
-            onValueChange={toggle}
-            disabled={saving}
-            accessibilityLabel={t("room.digest")}
-            trackColor={{ true: colors.brand600, false: colors.slate300 }}
-            thumbColor={colors.white}
-          />
-        </View>
-      </View>
+      {info.direct ? <DigestSwitch info={info} /> : <LevelChoice info={info} />}
       <Pressable
         accessibilityRole="button"
         onPress={() =>
@@ -280,6 +258,104 @@ function MemberSettings({ info }: { info: ChatInfo }) {
         <ChevronRight size={16} color={colors.slate400} />
       </Pressable>
     </View>
+  );
+}
+
+function DigestSwitch({ info }: { info: ChatInfo }) {
+  const t = useTranslations("chat");
+  const tm = useTranslations("mobile");
+  const queryClient = useQueryClient();
+  const [muted, setMuted] = useState(info.muted);
+  const [saving, setSaving] = useState(false);
+
+  const toggle = async (digest: boolean) => {
+    const next = !digest;
+    setMuted(next);
+    setSaving(true);
+    try {
+      await chatApi.mute(info.id, next);
+      void queryClient.invalidateQueries({ queryKey: infoKey(info.id) });
+      void queryClient.invalidateQueries({ queryKey: roomKey(info.id) });
+    } catch {
+      setMuted(!next);
+      showError(tm("errors.generic"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View style={styles.box}>
+      <View style={styles.switchRow}>
+        <Text variant="small" style={styles.flex}>
+          {t("room.digest")}
+        </Text>
+        <Switch
+          value={!muted}
+          onValueChange={toggle}
+          disabled={saving}
+          accessibilityLabel={t("room.digest")}
+          trackColor={{ true: colors.brand600, false: colors.slate300 }}
+          thumbColor={colors.white}
+        />
+      </View>
+    </View>
+  );
+}
+
+const LEVELS: ChatNotifyLevel[] = ["all", "mentions", "off"];
+
+function LevelChoice({ info }: { info: ChatInfo }) {
+  const t = useTranslations("mobile.chat.levels");
+  const tm = useTranslations("mobile");
+  const router = useRouter();
+  const push = usePush();
+  const save = useChatNotifyLevel(info.id);
+  const shown = save.isPending ? save.variables : info.notifyLevel;
+
+  const choose = (level: ChatNotifyLevel) => {
+    if (save.isPending || level === info.notifyLevel) return;
+    save.mutate(level, {
+      onError: () => showError(tm("errors.generic")),
+    });
+  };
+
+  return (
+    <>
+      <View
+        accessibilityRole="radiogroup"
+        accessibilityLabel={tm("chat.notifications")}
+      >
+        <ListGroup>
+          {LEVELS.map((level, i) => (
+            <Fragment key={level}>
+              {i ? <Separator /> : null}
+              <ChoiceRow
+                title={t(level)}
+                hint={t(`${level}Hint`)}
+                selected={shown === level}
+                busy={save.isPending && save.variables === level}
+                disabled={save.isPending}
+                onPress={() => choose(level)}
+              />
+            </Fragment>
+          ))}
+        </ListGroup>
+      </View>
+      {push.blocker === null && !push.enabled ? (
+        <View style={styles.pushOff}>
+          <Text variant="small" tone="muted" style={styles.flex}>
+            {t("pushOff")}
+          </Text>
+          <Button
+            variant="ghost"
+            compact
+            label={t("openSettings")}
+            onPress={() => router.push("/settings")}
+          />
+        </View>
+      ) : null}
+    </>
   );
 }
 
@@ -389,5 +465,6 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.lg,
   },
+  pushOff: { flexDirection: "row", alignItems: "center", gap: space.sm },
   flex: { flex: 1 },
 });

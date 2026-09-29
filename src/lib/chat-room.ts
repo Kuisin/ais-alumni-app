@@ -49,7 +49,7 @@ export async function loadChatGroup(
     }),
     db.chatMember.findUnique({
       where: { groupId_userId: { groupId: id, userId: viewer.id } },
-      select: { lastReadAt: true, muted: true },
+      select: { lastReadAt: true, muted: true, pushAll: true },
     }),
   ]);
   if (!group) return null;

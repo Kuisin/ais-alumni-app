@@ -126,6 +126,12 @@
       "detail": "We send this at 8 pm only when there are unread messages. You can turn it off per group in the chat menu.",
       "cta": "Open chat"
     },
+    "CHAT_GROUP": {
+      "title": "New message in a group",
+      "body": "{name} posted in {group}.",
+      "detail": "Open the app to read it.",
+      "cta": "Open the chat"
+    },
     "FOLLOW_REQUEST": {
       "title": "New follow request",
       "body": "{name} wants to follow you.",
@@ -266,7 +272,13 @@
     "showAll": "Show all ({count} more)",
     "channel": {
       "LINE": "LINE",
-      "EMAIL": "Email"
+      "EMAIL": "Email",
+      "PUSH": "App"
     }
+  },
+  "push": {
+    "testTitle": "Test notification",
+    "testBody": "Notifications reach this device.",
+    "channelDefault": "Notifications"
   }
 }

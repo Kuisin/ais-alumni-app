@@ -165,6 +165,7 @@
     "recipients": "送信対象",
     "linePushes": "LINEメッセージ数",
     "emails": "メール",
+    "appPushes": "アプリ通知数",
     "unreachable": "連絡手段なし",
     "quotaHint": "LINEメッセージは公式アカウントの月間送信数にカウントされます。このニュースの通知は各会員に1回のみ送信されます。",
     "confirm": "{count}名に送信する",

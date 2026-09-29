@@ -14,12 +14,15 @@ import { redirect } from "@/i18n/navigation";
 import { issueOtp, normalizeEmail, verifyOtp } from "@/lib/auth/otp";
 import { ensureCohort } from "@/lib/cohorts-db";
 import { db } from "@/lib/db";
+import { displayName } from "@/lib/format";
 import { consumeInvite, INVITE_COOKIE } from "@/lib/invites";
 import {
   parentRole,
   studentRoleFields,
   teacherFields,
 } from "@/lib/member-status";
+import { notifyMany } from "@/lib/notify";
+import { activeAdmins } from "@/lib/notify/staff";
 import {
   childrenCurrent,
   findManagedMatches,
@@ -174,6 +177,8 @@ export async function submitVerificationAction(
       errors: { "teacher.schoolEmail": "schoolEmailUnverified" },
     };
 
+  // Parents alone aren't reviewed: they follow their children's approval.
+  const followsChildren = data.types.every((x) => x === "PARENT");
   let requestId: string;
   let childLinksToConfirm: string[] = [];
   let settled: ParentOutcome | null = null;
@@ -206,8 +211,6 @@ export async function submitVerificationAction(
       await saveRoles(tx, user, data, schoolEmailVerified);
 
       const answers: StoredAnswers = { version: 2, ...omitEvidence(data) };
-      // Parents alone aren't reviewed: they follow their children's approval.
-      const followsChildren = data.types.every((x) => x === "PARENT");
       const request = await tx.verificationRequest.upsert({
         where: { userId: user.id },
         create: {
@@ -284,6 +287,19 @@ export async function submitVerificationAction(
   await createVouchesForRequest(requestId).catch((e) =>
     console.error("[verify] vouches failed", e),
   );
+  // Admins hear about every application that waits for review (new or
+  // resubmitted), right away; parent-only ones follow their children.
+  if (!followsChildren)
+    await activeAdmins()
+      .then((admins) =>
+        notifyMany(admins, {
+          kind: "VERIFICATION_SUBMITTED_ADMIN",
+          refId: requestId,
+          path: `/app/admin/verification/${requestId}`,
+          params: { name: displayName(data) },
+        }),
+      )
+      .catch((e) => console.error("[verify] admin notify failed", e));
 
   return redirect({
     href: "/app/onboarding/status",

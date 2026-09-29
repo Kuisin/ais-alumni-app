@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { Client } from "pg";
 import { signInWithEmail, uniqueEmail } from "./helpers";
 
 // Requires a migrated database seeded with SEED_ADMIN_EMAIL=admin@example.com.
@@ -132,6 +133,8 @@ test("email sign-up → verification → admin approval → member dashboard", a
   );
   await member.goto("/en/app/directory");
   await expect(member).toHaveURL(/\/en\/app\/onboarding\/status/);
+  // Admins were emailed about the application right away.
+  expect(await adminEmailsAbout(email)).toBeGreaterThan(0);
 
   // 4. Admin approves.
   const admin = await browser.newPage();
@@ -179,3 +182,23 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await member.goto("/en/app/directory?q=Hanako");
   await expect(member.getByText("Suzuki, Hanako").first()).toBeVisible();
 });
+
+/** Emails to admin@example.com about this applicant's application. */
+async function adminEmailsAbout(applicant: string): Promise<number> {
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const { rows } = await db.query(
+      `SELECT count(*)::int AS n FROM "NotificationLog" l
+         JOIN "User" a ON a.id = l."userId"
+         JOIN "VerificationRequest" r ON r.id = l."refId"
+         JOIN "User" u ON u.id = r."userId"
+       WHERE l.kind = 'VERIFICATION_SUBMITTED_ADMIN' AND l.channel = 'EMAIL'
+         AND a."primaryEmail" = $1 AND u."primaryEmail" = $2`,
+      [ADMIN, applicant],
+    );
+    return rows[0].n;
+  } finally {
+    await db.end();
+  }
+}

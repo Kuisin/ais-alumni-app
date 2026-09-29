@@ -3,7 +3,7 @@ import type { ExpoMessage } from "./expo";
 
 /**
  * What an app push carries (pure; src/lib/push/message.test.ts). The app
- * (mobile/src/lib/push.tsx) opens `path` — natively where it can — and
+ * (the app's src/lib/push.tsx) opens `path` — natively where it can — and
  * reports `receipt` (the notification's short-link token) so the open counts
  * as a read receipt, like opening the LINE / email link.
  *
@@ -33,7 +33,7 @@ export type PushOptions = {
   ttl?: number;
 };
 
-/** Interactive actions the app registers (mobile/src/lib/push.tsx). */
+/** Interactive actions the app registers (the app's src/lib/push.tsx). */
 export const PUSH_CATEGORY_IDS = {
   chat: "chat_message",
   followRequest: "follow_request",

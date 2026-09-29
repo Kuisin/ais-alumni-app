@@ -81,9 +81,14 @@ In the app they're pushed right away instead, never with the message text, and a
 
 ## 管理（委員会の作業） / Admin work
 
+Sent the moment it happens, and always by email (members using the app get the app notification too). New applications go to admins; a 同窓会委員's post or event waiting for approval goes to the other 同窓会委員 and admins, once it's ready (not a draft) and each time an approved one is edited. Support requests and chat reports email admins separately (not in this catalog).
+
 | Kind | 日本語 (タイトル — 本文) | English (title — body) | Email always |
 |---|---|---|---|
-| `NAME_REQUEST_ADMIN` 🗂️ | **氏名の変更申請があります** — {name}さんから氏名の変更申請がありました。 | **New name change request** — {name} asked to change their name. |  |
-| `BIRTH_DATE_REQUEST_ADMIN` 🗂️ | **生年月日の変更申請があります** — {name}さんから生年月日の登録・変更申請がありました。 | **New date of birth request** — {name} asked to add or correct their date of birth. |  |
-| `GENDER_REQUEST_ADMIN` 🗂️ | **性別の変更申請があります** — {name}さんから性別の変更申請がありました。 | **New gender change request** — {name} asked to change their gender. |  |
-| `RECORD_REQUEST_ADMIN` 🗂️ | **在籍記録の修正申請があります** — {name}さんから在籍記録の修正申請がありました。 | **New record correction request** — {name} asked to correct their AIS record. |  |
+| `VERIFICATION_SUBMITTED_ADMIN` 🆕 | **新しい会員登録の申請があります** — {name}さんから会員登録の申請がありました。 | **New membership application** — {name} applied for membership. | ✓ |
+| `NEWS_APPROVAL_ADMIN` 📰 | **ニュースの承認依頼があります** — {name}さんのニュース「{title}」が承認待ちです。 | **News post awaiting approval** — {name}'s news post “{title}” is awaiting approval. | ✓ |
+| `EVENT_APPROVAL_ADMIN` 📅 | **イベントの承認依頼があります** — {name}さんのイベント「{title}」が承認待ちです。 | **Event awaiting approval** — {name}'s event “{title}” is awaiting approval. | ✓ |
+| `NAME_REQUEST_ADMIN` 🗂️ | **氏名の変更申請があります** — {name}さんから氏名の変更申請がありました。 | **New name change request** — {name} asked to change their name. | ✓ |
+| `BIRTH_DATE_REQUEST_ADMIN` 🗂️ | **生年月日の変更申請があります** — {name}さんから生年月日の登録・変更申請がありました。 | **New date of birth request** — {name} asked to add or correct their date of birth. | ✓ |
+| `GENDER_REQUEST_ADMIN` 🗂️ | **性別の変更申請があります** — {name}さんから性別の変更申請がありました。 | **New gender change request** — {name} asked to change their gender. | ✓ |
+| `RECORD_REQUEST_ADMIN` 🗂️ | **在籍記録の修正申請があります** — {name}さんから在籍記録の修正申請がありました。 | **New record correction request** — {name} asked to correct their AIS record. | ✓ |

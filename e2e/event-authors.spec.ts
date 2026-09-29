@@ -1,6 +1,15 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { Client } from "pg";
 import { createActiveGraduate, signInWithEmail } from "./helpers";
+
+/** The latest email to this address (dev mailbox). */
+const mail = (email: string) =>
+  readFile(
+    path.join(process.cwd(), ".data", "dev-mail", `${email}.txt`),
+    "utf8",
+  ).catch(() => "");
 
 async function sql(text: string, values: unknown[]) {
   const db = new Client({ connectionString: process.env.DATABASE_URL });
@@ -95,6 +104,9 @@ test("同窓会委員 events show once another 同窓会委員 approves", async 
   await expect(a.getByText(/Waiting for another 同窓会委員/)).toBeVisible();
   const eventUrl = a.url().replace(/\?.*$/, "");
   const eventId = eventUrl.split("/").pop();
+  // The other 同窓会委員 is emailed right away; the author isn't.
+  await expect.poll(() => mail(peer.email)).toContain(title);
+  expect(await mail(author.email)).not.toContain(title);
 
   // Hidden from members until approved.
   const r = await browser.newPage();

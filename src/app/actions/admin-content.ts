@@ -9,7 +9,7 @@ import { redirect } from "@/i18n/navigation";
 import { audit } from "@/lib/audit";
 import { getNewsApprover } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
-import { parseJstLocal } from "@/lib/format";
+import { displayName, parseJstLocal } from "@/lib/format";
 import { toKatakana } from "@/lib/names";
 import {
   awaitingApproval,
@@ -29,12 +29,19 @@ import {
   scheduleInputSchema,
 } from "@/lib/news-hub";
 import { checkNewAttachments, type HubInput, saveHub } from "@/lib/news-hub-db";
+import { type NotifyKind, notifyMany } from "@/lib/notify";
+import { contentApprovers } from "@/lib/notify/staff";
 import {
   needsApproval,
   scopedAudience,
   senderRoleFor,
 } from "@/lib/permissions";
-import { AuthError, actionActive, actionNewsAuthor } from "@/lib/session";
+import {
+  AuthError,
+  actionActive,
+  actionNewsAuthor,
+  type CurrentUser,
+} from "@/lib/session";
 import { deletePrivate, putPrivate } from "@/lib/storage";
 
 /**
@@ -212,6 +219,27 @@ const EventSchema = z
     }
   });
 
+/**
+ * A 同窓会委員's post or event has just started waiting for approval: tell
+ * the members who may approve it (not the author), right away.
+ */
+async function notifyApprovers(
+  kind: Extract<NotifyKind, "NEWS_APPROVAL_ADMIN" | "EVENT_APPROVAL_ADMIN">,
+  author: Pick<CurrentUser, "id" | "nameRomaji" | "nameKanji">,
+  target: { id: string; path: string; title: string | null },
+): Promise<void> {
+  await contentApprovers(author.id)
+    .then((approvers) =>
+      notifyMany(approvers, {
+        kind,
+        refId: target.id,
+        path: target.path,
+        params: { name: displayName(author), title: target.title ?? "—" },
+      }),
+    )
+    .catch((e) => console.error(`[${kind}] notify failed`, e));
+}
+
 function revalidateEvents() {
   revalidatePath("/[locale]/app/admin/events", "layout");
   revalidatePath("/[locale]/app/events", "layout");
@@ -270,9 +298,20 @@ export async function saveEventAction(
   };
 
   if (id) {
+    const before = await db.event.findUnique({
+      where: { id },
+      select: { approvalRequired: true, approvedAt: true },
+    });
     const updated = await db.event.updateMany({ where: { id }, data });
-    if (updated.count === 0) return { error: "notFound" };
+    if (!before || updated.count === 0) return { error: "notFound" };
     await audit(admin.id, "event.update", { type: "Event", id }, summary);
+    // Approved (or never needing it) before this edit: ask again.
+    if (needsApproval(editor.scope) && !awaitingApproval(before))
+      await notifyApprovers("EVENT_APPROVAL_ADMIN", admin, {
+        id,
+        path: `/app/admin/events/${id}`,
+        title: summary.title,
+      });
     revalidateEvents();
     return { ok: true };
   }
@@ -290,6 +329,12 @@ export async function saveEventAction(
     { type: "Event", id: event.id },
     summary,
   );
+  if (needsApproval(editor.scope))
+    await notifyApprovers("EVENT_APPROVAL_ADMIN", admin, {
+      id: event.id,
+      path: `/app/admin/events/${event.id}`,
+      title: summary.title,
+    });
   revalidateEvents();
   return go(`/app/admin/events/${event.id}?created=1`);
 }
@@ -491,11 +536,21 @@ export async function saveNewsAction(
   }
   const removeCover = fd.get("removeCover") === "on";
 
-  let existing: { coverUrl: string | null } | null = null;
+  let existing: {
+    coverUrl: string | null;
+    publishedAt: Date | null;
+    approvalRequired: boolean;
+    approvedAt: Date | null;
+  } | null = null;
   if (id) {
     existing = await db.newsPost.findUnique({
       where: { id },
-      select: { coverUrl: true },
+      select: {
+        coverUrl: true,
+        publishedAt: true,
+        approvalRequired: true,
+        approvedAt: true,
+      },
     });
     if (!existing) return { error: "notFound" };
   }
@@ -554,6 +609,20 @@ export async function saveNewsAction(
   }
   const removedFiles = await db.$transaction((tx) => saveHub(tx, postId, hub));
   for (const key of removedFiles) await removeFile(key);
+  // Approvers hear about a 同窓会委員's post once it's ready (not a draft),
+  // unless it was already waiting for them.
+  const ready =
+    (publishedAt === undefined ? existing?.publishedAt : publishedAt) != null;
+  const wasWaiting =
+    existing !== null &&
+    existing.publishedAt !== null &&
+    awaitingApproval(existing);
+  if (needsApproval(editor.scope) && ready && !wasWaiting)
+    await notifyApprovers("NEWS_APPROVAL_ADMIN", admin, {
+      id: postId,
+      path: `/app/admin/news/${postId}`,
+      title: summary.title,
+    });
   revalidateNews();
 
   // Send now: continue to the confirm step (recipient count) before sending

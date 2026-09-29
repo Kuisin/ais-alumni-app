@@ -474,7 +474,6 @@ function NewChild({
         onChange={(v) => onChange({ cohortNumber: v })}
         errors={errors}
         cohorts={cohorts}
-        defaultFilter="current"
         required
       />
       <div className="grid gap-3 sm:grid-cols-2">

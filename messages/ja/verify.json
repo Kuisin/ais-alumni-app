@@ -51,7 +51,6 @@
     "lastNameKanji": "姓",
     "firstNameKanji": "名",
     "cohort": "学年",
-    "cohortFilter": "表示する学年",
     "teacherStatus": "ステータス",
     "joinedYear": "AISに入った年",
     "leftYearStudent": "AISを離れた年",
@@ -162,11 +161,6 @@
   "submit": "申請を送信",
   "submitting": "送信中…",
   "cohortNotListed": "一覧にない・わからない",
-  "cohortFilter": {
-    "graduated": "卒業済み",
-    "current": "在校中",
-    "all": "すべて"
-  },
   "stepTitles": {
     "type": "あなたはどなたですか？",
     "basics": "お名前と生年月日",

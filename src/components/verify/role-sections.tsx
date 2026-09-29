@@ -80,7 +80,6 @@ export function StudentSection({
         onChange={(v) => set({ cohortNumber: v })}
         errors={errors}
         cohorts={cohorts}
-        defaultFilter="all"
         required
       />
       <YearsRow>

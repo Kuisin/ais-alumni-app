@@ -9,7 +9,7 @@ import {
   readJson,
 } from "@/lib/mobile/http";
 import { meFor } from "@/lib/mobile/me";
-import { createMobileSession } from "@/lib/mobile/tokens";
+import { createMobileSession, HandoffReplayError } from "@/lib/mobile/tokens";
 
 const Body = z.object({
   code: z.string().max(1000),
@@ -17,16 +17,26 @@ const Body = z.object({
   device: DeviceSchema,
 });
 
-/** Google / LINE sign-in, step 3: the app trades the code for a session. */
+/**
+ * Google / LINE sign-in, step 3: the app trades the code for a session.
+ * A code works once; using it again also ends the session it started.
+ */
 export const POST = publicRoute(async (request): Promise<SessionResult> => {
   const body = await readJson(request, Body);
-  const userId = redeemHandoffCode(body.code, body.verifier);
-  if (!userId) throw new ApiError(400, "invalid_code");
+  const redeemed = redeemHandoffCode(body.code, body.verifier);
+  if (!redeemed) throw new ApiError(400, "invalid_code");
   const user = await db.user.findUnique({
-    where: { id: userId },
+    where: { id: redeemed.userId },
     include: { roles: true },
   });
   if (!user) throw new ApiError(400, "invalid_code");
-  const token = await createMobileSession(user.id, body.device);
+  let token: string;
+  try {
+    token = await createMobileSession(user.id, body.device, redeemed.jti);
+  } catch (e) {
+    if (e instanceof HandoffReplayError)
+      throw new ApiError(400, "invalid_code");
+    throw e;
+  }
   return { token, me: await meFor(user) };
 });

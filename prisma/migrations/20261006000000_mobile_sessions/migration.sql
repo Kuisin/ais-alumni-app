@@ -7,6 +7,7 @@ CREATE TABLE "MobileSession" (
     "tokenHash" TEXT NOT NULL,
     "platform" TEXT,
     "deviceName" TEXT,
+    "handoffJti" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "lastUsedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expiresAt" TIMESTAMP(3) NOT NULL,
@@ -16,6 +17,9 @@ CREATE TABLE "MobileSession" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "MobileSession_tokenHash_key" ON "MobileSession"("tokenHash");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MobileSession_handoffJti_key" ON "MobileSession"("handoffJti");
 
 -- CreateIndex
 CREATE INDEX "MobileSession_userId_idx" ON "MobileSession"("userId");

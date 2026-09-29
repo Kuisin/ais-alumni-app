@@ -47,14 +47,17 @@ For a local website: `EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:3000 pnpm start`.
   `aisalumni://auth?code=…` → `/auth/oauth/exchange`). The result is a
   bearer token (keychain, `expo-secure-store`); the server stores only its
   hash (`MobileSession`). `getCurrentUser()` on the server accepts it, so all
-  existing authorization code applies unchanged.
+  existing authorization code applies unchanged. The mobile API accepts
+  only this header, never the website's cookie (no CSRF); each Google /
+  LINE code works once, and `finish` only answers a sign-in `start` began in
+  the same browser.
 - **Account state** (`GET /me`): not-yet-approved accounts see
   `src/app/onboarding.tsx`, which opens the website's onboarding screens in
   the web view; ACTIVE members get the tabs under `src/app/(member)`.
 - **Web view** (`src/app/web.tsx`, `/web?path=/app/…`): loads
-  `/api/mobile/v1/web?next=…` with the bearer token, which sets a normal
-  website session cookie (private cookie jar) and the `ais_app` embed
-  cookie, so the site hides its own navigation. Links to pages the app has
+  `/api/mobile/v1/web?next=…` with the bearer token, which sets a website
+  session cookie (private cookie jar, 12 h, ended with the device session)
+  and the `ais_app` embed cookie, so the site hides its own navigation. Links to pages the app has
   natively leave the web view (`src/lib/links.ts`).
 - **Realtime** (`src/lib/realtime.tsx`): the website's signal-only Supabase
   Broadcast channels; topics come from `/me` (and room responses).

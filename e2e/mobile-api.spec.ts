@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import {
   clearMailbox,
@@ -62,6 +63,21 @@ test.describe("native app API", () => {
     await expect(page.locator("header")).toHaveCount(0);
     await expect(page.locator("footer")).toHaveCount(0);
 
+    // The website cookie alone opens nothing in the app's API: pages on the
+    // same site can't make the member's browser call it (CSRF).
+    const forged = await page.request.post(`${API}/follows/requests/x/accept`, {
+      headers: { "Content-Type": "text/plain" },
+      data: "",
+    });
+    expect(forged.status()).toBe(401);
+    expect(
+      (
+        await page.request.get(`${API}/web?next=/app/settings`, {
+          maxRedirects: 0,
+        })
+      ).status(),
+    ).toBe(401);
+
     // A crafted "finish" link can't turn that website session into a code
     // for someone else's app: only a sign-in the app itself started counts.
     const finish = await page.request.get(
@@ -77,6 +93,53 @@ test.describe("native app API", () => {
     expect((await request.get(`${API}/me`, { headers: auth })).status()).toBe(
       401,
     );
+    // The web view's website session ended with the device session.
+    await page.goto(location);
+    await expect(page).toHaveURL(/\/app\?next=/);
+  });
+
+  test("a Google / LINE sign-in code works once", async ({ page, request }) => {
+    const { email } = await createActiveGraduate("Mobile Replay", "1990-05-01");
+    const { token } = await signIn(request, email);
+    // The browser's half of the flow: signed in on the website (as Auth.js
+    // leaves it) with the cookie that .../oauth/start sets.
+    await page.request.get(`${API}/web?next=/app/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` },
+      maxRedirects: 0,
+    });
+    const verifier = `${"v".repeat(40)}-._~`;
+    const challenge = createHash("sha256").update(verifier).digest("base64url");
+    await page.context().addCookies([
+      {
+        name: "ais_mobile_oauth",
+        value: challenge,
+        domain: "localhost",
+        path: "/api/mobile/v1/auth/oauth",
+      },
+    ]);
+    const finish = await page.request.get(
+      `${API}/auth/oauth/finish?challenge=${challenge}&redirect=aisalumni://auth`,
+      { maxRedirects: 0 },
+    );
+    const code = new URL(finish.headers().location).searchParams.get("code");
+    expect(code).toBeTruthy();
+
+    const first = await request.post(`${API}/auth/oauth/exchange`, {
+      data: { code, verifier },
+    });
+    expect(first.ok()).toBe(true);
+    const started = { Authorization: `Bearer ${(await first.json()).token}` };
+    expect(
+      (await request.get(`${API}/me`, { headers: started })).status(),
+    ).toBe(200);
+    const again = await request.post(`${API}/auth/oauth/exchange`, {
+      data: { code, verifier },
+    });
+    expect(again.status()).toBe(400);
+    // A reused code may have leaked: the session it started ends too.
+    expect(
+      (await request.get(`${API}/me`, { headers: started })).status(),
+    ).toBe(401);
   });
 
   test("a new email account starts in onboarding", async ({ request }) => {

@@ -32,18 +32,19 @@ export async function GET(request: Request) {
   else target.searchParams.set("error", "signin_failed");
 
   const secure = url.protocol === "https:";
+  const flags = `Max-Age=0; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`;
   const headers = new Headers({ Location: target.toString() });
-  if (started) {
-    // This browser's sign-in was only for the app: don't leave it signed in.
-    const flags = `Max-Age=0; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`;
+  // The flow is over either way.
+  headers.append(
+    "Set-Cookie",
+    `${FLOW_COOKIE}=; Path=${FLOW_COOKIE_PATH}; ${flags}`,
+  );
+  // This browser's sign-in was only for the app: don't leave it signed in
+  // (only for a flow the app started — never sign anyone else out).
+  if (started)
     headers.append(
       "Set-Cookie",
       `${sessionCookieName(secure)}=; Path=/; ${flags}`,
     );
-    headers.append(
-      "Set-Cookie",
-      `${FLOW_COOKIE}=; Path=${FLOW_COOKIE_PATH}; ${flags}`,
-    );
-  }
   return new Response(null, { status: 302, headers });
 }

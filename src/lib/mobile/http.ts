@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { AccountState } from "@/generated/prisma/enums";
 import type { ApiErrorBody } from "@/lib/mobile/contract/core";
+import { bearerToken } from "@/lib/mobile/tokens";
 import { AuthError, type CurrentUser, getCurrentUser } from "@/lib/session";
 
 /**
  * JSON API for the native app (/api/mobile/v1/*, mobile/). Every route is
- * wrapped in mobileRoute(): it resolves the member from the bearer token
- * (getCurrentUser), checks their account state, and turns thrown errors
+ * wrapped in mobileRoute(): it requires the bearer token (never the
+ * website's cookie), resolves the member (getCurrentUser), checks their
+ * account state, and turns thrown errors
  * into `{ error: "<code>" }` JSON with a matching status. Authorization
  * beyond "signed in" / "ACTIVE" stays in the shared lib code (src/lib/authz,
  * news-visibility, …) that the web pages use too — never re-implemented here.
@@ -55,6 +57,10 @@ export function mobileRoute<P = Record<string, never>>(
     context: { params: Promise<P> },
   ): Promise<Response> => {
     try {
+      // The app's bearer token only — never the website's cookie, which a
+      // page on the same site could make the member's browser send (CSRF).
+      if (!bearerToken(request.headers.get("authorization")))
+        throw new ApiError(401, "unauthenticated");
       const user = await getCurrentUser();
       if (!user) throw new ApiError(401, "unauthenticated");
       if (access === "active" && user.state !== AccountState.ACTIVE)

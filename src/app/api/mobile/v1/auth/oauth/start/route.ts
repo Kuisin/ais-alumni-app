@@ -3,6 +3,7 @@ import { signIn } from "@/auth";
 import {
   allowedAppRedirect,
   FLOW_COOKIE,
+  FLOW_COOKIE_MAX_AGE,
   FLOW_COOKIE_PATH,
   sessionCookieName,
   validChallenge,
@@ -29,6 +30,12 @@ export async function GET(request: Request) {
     return new Response("Bad request", { status: 400 });
   if (!ssoReady(provider))
     return new Response("Sign-in method not available", { status: 404 });
+  // Only the app opens this (a direct navigation): not a link or form on
+  // another page, which could otherwise sign the member out of the
+  // website below.
+  const site = request.headers.get("sec-fetch-site");
+  if (site === "cross-site" || site === "same-site")
+    return new Response("Forbidden", { status: 403 });
 
   const secure = url.protocol === "https:";
   const jar = await cookies();
@@ -44,13 +51,14 @@ export async function GET(request: Request) {
   // Ties ../finish to this sign-in (see FLOW_COOKIE).
   jar.set(FLOW_COOKIE, challenge, {
     path: FLOW_COOKIE_PATH,
-    maxAge: 15 * 60,
+    maxAge: FLOW_COOKIE_MAX_AGE,
     httpOnly: true,
     sameSite: "lax",
     secure,
   });
   // Language for a new account (the adapter reads NEXT_LOCALE).
-  jar.set("NEXT_LOCALE", locale, { path: "/", sameSite: "lax", secure });
+  if (!jar.get("NEXT_LOCALE"))
+    jar.set("NEXT_LOCALE", locale, { path: "/", sameSite: "lax", secure });
   const finish = `/api/mobile/v1/auth/oauth/finish?${new URLSearchParams({ challenge, redirect })}`;
   // Redirects to the provider (throws NEXT_REDIRECT).
   await signIn(provider, { redirectTo: finish });

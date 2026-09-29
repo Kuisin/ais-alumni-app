@@ -7,6 +7,7 @@ import { appAdapter, resolveUserId } from "@/lib/auth/adapter";
 import { userForSignInCode } from "@/lib/auth/email-sign-in";
 import { db } from "@/lib/db";
 import { fetchLineFriendship } from "@/lib/line";
+import { mobileSessionActive } from "@/lib/mobile/tokens";
 import { notifySignInMethodAdded } from "@/lib/security-notice";
 
 const otpCredentials = z.object({
@@ -72,6 +73,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user?.id) token.sub = user.id;
       else if (token.sub) token.sub = await resolveUserId(token.sub);
+      // A session made for the native app's web view ends with the app's
+      // device session (sign-out, "sign out other devices"; see
+      // webSessionCookie in src/lib/mobile/handoff.ts).
+      if (
+        typeof token.msid === "string" &&
+        !(await mobileSessionActive(token.msid))
+      )
+        return null;
       return token;
     },
     async session({ session, token }) {

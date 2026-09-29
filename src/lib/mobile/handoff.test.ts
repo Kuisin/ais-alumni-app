@@ -11,7 +11,7 @@ import {
 } from "./handoff";
 import { bearerToken, hashMobileToken } from "./tokens";
 
-const verifier = "v".repeat(43) + "-._~AZaz09";
+const verifier = `${"v".repeat(43)}-._~AZaz09`;
 const challenge = challengeFor(verifier);
 
 describe("allowedAppRedirect", () => {
@@ -53,7 +53,16 @@ describe("handoff codes", () => {
   it("round-trips with the matching verifier", () => {
     expect(validChallenge(challenge)).toBe(true);
     const code = createHandoffCode("user_1", challenge);
-    expect(redeemHandoffCode(code, verifier)).toBe("user_1");
+    expect(redeemHandoffCode(code, verifier)).toEqual({
+      userId: "user_1",
+      jti: expect.stringMatching(/^[A-Za-z0-9_-]{22}$/),
+    });
+  });
+  it("gives every code its own one-time id", () => {
+    const a = redeemHandoffCode(createHandoffCode("u", challenge), verifier);
+    const b = redeemHandoffCode(createHandoffCode("u", challenge), verifier);
+    expect(a?.jti).toBeTruthy();
+    expect(a?.jti).not.toBe(b?.jti);
   });
   it("rejects another verifier", () => {
     const code = createHandoffCode("user_1", challenge);
@@ -63,7 +72,9 @@ describe("handoff codes", () => {
   it("expires after two minutes", () => {
     const now = Date.now();
     const code = createHandoffCode("user_1", challenge, now);
-    expect(redeemHandoffCode(code, verifier, now + 119_000)).toBe("user_1");
+    expect(redeemHandoffCode(code, verifier, now + 119_000)?.userId).toBe(
+      "user_1",
+    );
     expect(redeemHandoffCode(code, verifier, now + 121_000)).toBeNull();
   });
   it("rejects tampered codes", () => {

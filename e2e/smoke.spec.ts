@@ -84,9 +84,8 @@ test("email sign-up → verification → admin approval → member dashboard", a
   await member.getByLabel("Gender").selectOption("OTHER");
   await member.getByRole("button", { name: "Next" }).click();
 
-  // 学年: every class is offered (created on first use); the Graduated /
-  // At AIS toggle filters the list. 第3期 finished 6th grade in 2014.
-  await member.getByText("Graduated", { exact: true }).click();
+  // 学年: every class is offered (created on first use), graduated or
+  // not. 第3期 finished 6th grade in 2014.
   await member
     .getByRole("combobox", { name: /学年/ })
     .selectOption({ label: "Class 3 (graduated 2014)" });

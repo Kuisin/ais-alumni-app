@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { useState } from "react";
 import { Field, Input, Select } from "@/components/ui/field";
 import type { CohortChoice } from "@/lib/cohorts";
 import { MIN_YEAR, maxYear } from "@/lib/verification/schema";
@@ -181,8 +180,9 @@ export function GroupError({ errors, path }: { errors: Errors; path: string }) {
 }
 
 /**
- * 学年 picker: a 卒業済み / 在校中 / all toggle filters the list. Optional:
- * "not listed / not sure" leaves it empty for the committee to fill in.
+ * 学年 picker: every 学年, newest first (each label says whether it has
+ * graduated). Optional: "not listed / not sure" leaves it empty for the
+ * committee to fill in.
  */
 export function CohortPicker({
   path,
@@ -190,7 +190,6 @@ export function CohortPicker({
   onChange,
   errors,
   cohorts,
-  defaultFilter,
   required = false,
 }: {
   path: string;
@@ -198,45 +197,13 @@ export function CohortPicker({
   onChange: (v: string) => void;
   errors: Errors;
   cohorts: CohortChoice[];
-  defaultFilter: "graduated" | "current" | "all";
   required?: boolean;
 }) {
   const t = useTranslations("verify");
   const error = useError(errors, path);
   const selected = cohorts.find((c) => c.value === value);
-  const [filter, setFilter] = useState<"graduated" | "current" | "all">(
-    selected ? (selected.graduated ? "graduated" : "current") : defaultFilter,
-  );
-  const shown = cohorts.filter(
-    (c) =>
-      filter === "all" ||
-      (filter === "graduated") === c.graduated ||
-      c.value === value,
-  );
   return (
     <div className="space-y-2">
-      <fieldset>
-        <legend className="text-sm font-medium text-slate-800">
-          {t("fields.cohortFilter")}
-        </legend>
-        <div className="mt-1 flex flex-wrap gap-2">
-          {(["graduated", "current", "all"] as const).map((f) => (
-            <label
-              key={f}
-              className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm ${filter === f ? "border-brand-700 bg-brand-50 font-medium" : "border-slate-300"}`}
-            >
-              <input
-                type="radio"
-                className="sr-only"
-                name={`${path}-filter`}
-                checked={filter === f}
-                onChange={() => setFilter(f)}
-              />
-              {t(`cohortFilter.${f}`)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
       <Field
         id={fieldId(path)}
         label={
@@ -259,7 +226,7 @@ export function CohortPicker({
             <option value="">
               {required ? t("select") : t("cohortNotListed")}
             </option>
-            {shown.map((c) => (
+            {cohorts.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
               </option>

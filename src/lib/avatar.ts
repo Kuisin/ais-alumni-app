@@ -6,8 +6,9 @@ import { signedFileUrl } from "@/lib/storage";
 /**
  * Profile photos. A member's photo is shown to themselves, admins, their
  * family and people they're connected with (an accepted follow either
- * way); to every member only if they turn on 「写真を全員に公開」
- * (User.avatarPublic). Everyone else — and members without a photo — get
+ * way), and to someone they asked to follow while the request is open —
+ * they reached out, so the person deciding sees who's asking; to every
+ * member only if they turn on 「写真を全員に公開」 (User.avatarPublic). Everyone else — and members without a photo — get
  * the default icon for their gender.
  */
 
@@ -38,6 +39,8 @@ export type Connections = {
   familyId: string | null;
   /** accepted follows in either direction */
   connected: ReadonlySet<string>;
+  /** members with an open follow request to the viewer */
+  requesters: ReadonlySet<string>;
 };
 
 /** The viewer's family and follow connections (once per request). */
@@ -50,10 +53,15 @@ export const loadConnections = cache(
       }),
       db.follow.findMany({
         where: {
-          status: FollowStatus.ACCEPTED,
-          OR: [{ followerId: viewerId }, { followeeId: viewerId }],
+          OR: [
+            {
+              status: FollowStatus.ACCEPTED,
+              OR: [{ followerId: viewerId }, { followeeId: viewerId }],
+            },
+            { status: FollowStatus.REQUESTED, followeeId: viewerId },
+          ],
         },
-        select: { followerId: true, followeeId: true },
+        select: { followerId: true, followeeId: true, status: true },
       }),
     ]);
     return {
@@ -61,9 +69,16 @@ export const loadConnections = cache(
       admin: me?.isAdmin ?? false,
       familyId: me?.familyId ?? null,
       connected: new Set(
-        follows.map((f) =>
-          f.followerId === viewerId ? f.followeeId : f.followerId,
-        ),
+        follows
+          .filter((f) => f.status === FollowStatus.ACCEPTED)
+          .map((f) =>
+            f.followerId === viewerId ? f.followeeId : f.followerId,
+          ),
+      ),
+      requesters: new Set(
+        follows
+          .filter((f) => f.status === FollowStatus.REQUESTED)
+          .map((f) => f.followerId),
       ),
     };
   },
@@ -73,7 +88,7 @@ export const loadConnections = cache(
 export function photoVisible(c: Connections, t: AvatarTarget): boolean {
   if (t.id === c.viewerId || c.admin || t.avatarPublic) return true;
   if (c.familyId !== null && t.familyId === c.familyId) return true;
-  return c.connected.has(t.id);
+  return c.connected.has(t.id) || c.requesters.has(t.id);
 }
 
 /** Stored avatar value → URL (private storage key or absolute URL). */

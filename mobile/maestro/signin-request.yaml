@@ -1,0 +1,17 @@
+# Email sign-in, step 1: ask for a code (run maestro/signin.sh, which reads
+# the code from the local dev mailbox and runs step 2).
+appId: host.exp.Exponent
+---
+- launchApp
+- openLink: ${APP_URL}
+- extendedWaitUntil:
+    visible: "(Email me a sign-in code|ログイン用コードをメールで受け取る)"
+    timeout: 60000
+- tapOn:
+    text: "(Email address|メールアドレス)"
+    index: 1
+- inputText: ${EMAIL}
+- tapOn: "(Email me a sign-in code|ログイン用コードをメールで受け取る)"
+- extendedWaitUntil:
+    visible: "(Send a new code|コードを再送信)"
+    timeout: 20000

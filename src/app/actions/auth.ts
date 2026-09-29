@@ -5,8 +5,8 @@ import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { signIn } from "@/auth";
 import { OtpPurpose } from "@/generated/prisma/enums";
-import { issueOtp, normalizeEmail, OTP_MAX_ATTEMPTS } from "@/lib/auth/otp";
-import { db } from "@/lib/db";
+import { diagnoseSignInCode } from "@/lib/auth/email-sign-in";
+import { issueOtp, normalizeEmail } from "@/lib/auth/otp";
 import { safeNextPath } from "@/lib/next-path";
 import { ssoReady } from "@/lib/sso";
 
@@ -47,24 +47,6 @@ async function currentLocale(): Promise<"ja" | "en"> {
   return (await getLocale()) === "en" ? "en" : "ja";
 }
 
-/**
- * Explain why a code was rejected without consuming anything: looks at the
- * newest outstanding code for the address (read-only).
- */
-async function diagnoseCode(
-  email: string,
-): Promise<NonNullable<OtpFormState["error"]>> {
-  const row = await db.otpCode.findFirst({
-    where: { email, purpose: OtpPurpose.SIGN_IN, consumedAt: null },
-    orderBy: { createdAt: "desc" },
-    select: { expiresAt: true, attempts: true },
-  });
-  if (!row) return "invalid";
-  if (row.expiresAt < new Date()) return "expired";
-  if (row.attempts >= OTP_MAX_ATTEMPTS) return "too_many_attempts";
-  return "invalid";
-}
-
 async function requestSignInCode(
   formData: FormData,
   resend: boolean,
@@ -102,7 +84,7 @@ async function verifySignInCode(formData: FormData): Promise<OtpFormState> {
   const normalized = normalizeEmail(parsed.data.email);
 
   // Cheap pre-check so expired / locked codes get a precise message.
-  const pre = await diagnoseCode(normalized);
+  const pre = await diagnoseSignInCode(normalized);
   if (pre === "expired" || pre === "too_many_attempts")
     return { step: "code", email, error: pre };
 
@@ -117,7 +99,11 @@ async function verifySignInCode(formData: FormData): Promise<OtpFormState> {
     });
   } catch (e) {
     if (e instanceof AuthError) {
-      return { step: "code", email, error: await diagnoseCode(normalized) };
+      return {
+        step: "code",
+        email,
+        error: await diagnoseSignInCode(normalized),
+      };
     }
     throw e; // redirect
   }

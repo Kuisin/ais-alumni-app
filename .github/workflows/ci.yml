@@ -28,3 +28,25 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+
+  # The native app (mobile/, its own pnpm workspace): types and a real
+  # Metro bundle for both platforms. Lint runs in `checks` (repo-wide Biome).
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: mobile/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: npx expo export --platform ios --platform android --output-dir /tmp/expo-export
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"

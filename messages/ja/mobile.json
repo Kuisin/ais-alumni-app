@@ -1,0 +1,72 @@
+{
+  "errors": {
+    "network": "サーバーに接続できません。通信環境をご確認ください。",
+    "generic": "エラーが発生しました。もう一度お試しください。",
+    "retry": "再試行",
+    "unreachable": {
+      "title": "接続できません",
+      "body": "サーバーに接続できませんでした。通信環境を確認して、もう一度お試しください。"
+    }
+  },
+  "signIn": {
+    "providerFailed": "ログインを完了できませんでした。もう一度お試しいただくか、メールのコードでログインしてください。"
+  },
+  "onboarding": {
+    "signedInAs": "{name} としてログイン中",
+    "continueTitle": "会員登録を続けてください",
+    "continueBody": "登録の手続きはウェブサイトの画面で行います。手続きが終わると、この画面は自動的に切り替わります。",
+    "continue": "手続きを続ける",
+    "viewStatus": "申請の詳細を見る",
+    "refresh": "状態を更新",
+    "contact": "お問い合わせ"
+  },
+  "web": {
+    "title": "AIS 同窓会",
+    "close": "閉じる",
+    "openInBrowser": "ブラウザで開く",
+    "loadFailed": "ページを読み込めませんでした。",
+    "reload": "再読み込み"
+  },
+  "home": {},
+  "news": {},
+  "events": {},
+  "chat": {
+    "composerHint": "「送信」で送信します。@で相手をメンションできます。",
+    "actionsHint": "長押しでメニューを開きます",
+    "notifications": "通知"
+  },
+  "people": {},
+  "me": {
+    "editHint": "プロフィールの編集はウェブサイトの画面で行います。",
+    "signOutConfirm": {
+      "title": "ログアウトしますか？",
+      "body": "この端末のアプリからログアウトします。"
+    },
+    "version": "バージョン {version}",
+    "devices": {
+      "title": "ログイン中の端末",
+      "description": "このアカウントでアプリにログインしている端末です。心当たりのない端末はログアウトしてください。",
+      "current": "この端末",
+      "unknown": "不明な端末",
+      "platform": {
+        "ios": "iOS",
+        "android": "Android",
+        "web": "ウェブ"
+      },
+      "used": "最終利用：{date}",
+      "since": "ログイン：{date}",
+      "signOut": "ログアウト",
+      "signOutTitle": "「{device}」からログアウトしますか？",
+      "signOutBody": "その端末でアプリを使うには、もう一度ログインが必要になります。",
+      "signOutOthers": "ほかのすべての端末からログアウト",
+      "signOutOthersTitle": "ほかのすべての端末からログアウトしますか？",
+      "signOutOthersBody": "この端末以外では、もう一度ログインが必要になります。",
+      "noOthers": "ほかの端末ではログインしていません。"
+    },
+    "more": {
+      "title": "その他の設定",
+      "description": "次の設定はウェブサイトの画面で変更します。",
+      "all": "すべての設定を開く"
+    }
+  }
+}

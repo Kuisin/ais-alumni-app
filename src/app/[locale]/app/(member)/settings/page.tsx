@@ -27,6 +27,7 @@ import {
 } from "@/lib/account";
 import { getStaffAccess } from "@/lib/broadcasts";
 import { db } from "@/lib/db";
+import { isEmbedded } from "@/lib/embed";
 import { parseLinkOutcome } from "@/lib/line-link";
 import { chooseChannel } from "@/lib/notify";
 import { NOTIFY_CATEGORIES } from "@/lib/notify/catalog";
@@ -259,7 +260,11 @@ export default async function SettingsPage({
           title={t("methods.title")}
           description={t("methods.description")}
         >
-          <SignInMethods rows={rows} email={user.primaryEmail} />
+          <SignInMethods
+            rows={rows}
+            email={user.primaryEmail}
+            embedded={await isEmbedded()}
+          />
         </SettingsSection>
 
         <EditableCard

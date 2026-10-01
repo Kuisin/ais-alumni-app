@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/layout/app-shell";
+import { DeleteAccount } from "@/components/settings/danger-zone";
 import { SupportDialog } from "@/components/support/support-dialog";
 import { requireUser } from "@/lib/session";
 
@@ -32,6 +33,10 @@ export default async function OnboardingLayout({
         <aside className="mt-10 flex flex-col items-center gap-2 border-t border-slate-200 pt-6 text-center">
           <p className="text-sm text-slate-600">{t("dialog.help")}</p>
           <SupportDialog defaults={defaults} />
+          {/* An applicant can delete their account too (APPI). */}
+          <div className="w-full">
+            <DeleteAccount quiet />
+          </div>
         </aside>
       </div>
     </AppShell>

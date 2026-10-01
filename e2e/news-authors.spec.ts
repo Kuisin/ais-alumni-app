@@ -62,7 +62,7 @@ test("学年代表 post ニュース to their own 学年 only", async ({ page })
   await signInWithEmail(page, rep.email);
   await draftFromNewsList(page, title);
   // Only their 学年 is offered: no 「全員」, groups or individual members.
-  await expect(page.getByText("Your 学年", { exact: true })).toBeVisible();
+  await expect(page.getByText("Your class", { exact: true })).toBeVisible();
   // Members see the role, not the name.
   await expect(
     page.getByText("You're posting as Class rep (Class 5).", { exact: false }),
@@ -152,14 +152,16 @@ test("同窓会委員 post to anyone once another 同窓会委員 approves", asy
   await signInWithEmail(a, author.email);
   await draftFromNewsList(a, title);
   await expect(
-    a.getByText(/only after another 同窓会委員 approves it/),
+    a.getByText(/only after another committee member approves it/),
   ).toBeVisible();
   await a.getByRole("radio", { name: /^Send now/ }).check();
   await a
     .getByRole("button", { name: "Save and request approval", exact: true })
     .click();
   await expect(a).toHaveURL(/\/en\/app\/admin\/news\/[^/?]+\?created=1/);
-  await expect(a.getByText(/Waiting for another 同窓会委員/)).toBeVisible();
+  await expect(
+    a.getByText(/Waiting for another alumni committee member/),
+  ).toBeVisible();
   await expect(a.getByRole("button", { name: "Approve" })).toHaveCount(0);
   const postUrl = a.url().replace(/\?.*$/, "");
   // The other 同窓会委員 is emailed right away; the author isn't.
@@ -209,7 +211,9 @@ test("同窓会委員 post to anyone once another 同窓会委員 approves", asy
   await a.getByRole("button", { name: "Edit", exact: true }).click();
   await a.getByLabel("Body (Japanese)").fill("Edited body");
   await a.getByRole("button", { name: "Save and request approval" }).click();
-  await expect(a.getByText(/Waiting for another 同窓会委員/)).toBeVisible();
+  await expect(
+    a.getByText(/Waiting for another alumni committee member/),
+  ).toBeVisible();
   // Approved before, so the approvers are asked again.
   await expect.poll(() => mail(peer.email)).toContain(title);
   await r.reload();

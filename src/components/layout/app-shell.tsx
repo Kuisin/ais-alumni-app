@@ -509,6 +509,9 @@ export async function AppShell({
         <Link href="/privacy" className="inline-block py-2 underline">
           {t("privacy")}
         </Link>
+        <Link href="/terms" className="inline-block py-2 underline">
+          {t("terms")}
+        </Link>
         <Link href="/support" className="inline-block py-2 underline">
           {t("support")}
         </Link>

@@ -28,16 +28,16 @@ test("学年代表 are chosen per 学年, from that 学年's students", async ({
   await page.goto("/en/app/admin/cohorts");
   const card = page
     .locator("li")
-    .filter({ has: page.getByText("第5期", { exact: true }) })
+    .filter({ has: page.getByText("Class 5", { exact: true }) })
     .first();
   // View first: 編集 opens the years, reps and delete.
   await card.getByRole("button", { name: "Edit" }).click();
-  const search = card.getByPlaceholder(/^Search this 学年/);
+  const search = card.getByPlaceholder(/^Search this class/);
 
   // Someone from another 学年 isn't offered.
   await search.fill(`S${stamp}`);
   await expect(
-    card.getByText("No matching members in this 学年."),
+    card.getByText("No matching members in this class."),
   ).toBeVisible();
 
   await search.fill(`F${stamp}`);
@@ -91,7 +91,7 @@ test("学年代表 can be assigned from the member's 役職 panel (own 学年 on
     .last();
   // View first: Assign opens the form (then Assign saves).
   await panel.getByRole("button", { name: "Assign" }).click();
-  const select = panel.getByLabel("学年 (class)");
+  const select = panel.getByLabel("Class", { exact: true });
   // Only their own 学年 is offered (plus the empty choice).
   await expect(select.locator("option")).toHaveCount(2);
   await select.selectOption({ index: 1 });

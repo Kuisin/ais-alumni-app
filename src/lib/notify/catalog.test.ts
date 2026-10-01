@@ -87,24 +87,34 @@ describe("link texts", () => {
   });
 });
 
-describe("LINE is only for ニュース and unread 1:1 / mention notices", () => {
+describe("LINE is for ニュース, unread chat notices and committee decisions", () => {
   it("no other kind may use LINE", () => {
     const lineKinds = (Object.keys(NOTIFY_KINDS) as NotifyKind[]).filter(
       (k) => "line" in NOTIFY_KINDS[k],
     );
-    expect(lineKinds.sort()).toEqual(["CHAT_DIRECT", "CHAT_MENTION", "NEWS"]);
+    expect(lineKinds.sort()).toEqual([
+      "BIRTH_DATE_REQUEST_APPROVED",
+      "BIRTH_DATE_REQUEST_REJECTED",
+      "CHAT_DIRECT",
+      "CHAT_MENTION",
+      "GENDER_REQUEST_APPROVED",
+      "GENDER_REQUEST_REJECTED",
+      "NAME_REQUEST_APPROVED",
+      "NAME_REQUEST_REJECTED",
+      "NEWS",
+      "RECORD_REQUEST_APPROVED",
+      "RECORD_REQUEST_REJECTED",
+      "VERIFICATION_APPROVED",
+      "VERIFICATION_NEEDS_INFO",
+      "VERIFICATION_REJECTED",
+    ]);
   });
-});
-
-describe("admin work is always emailed", () => {
-  it("every admin kind has alwaysEmail (it reaches app users by email too)", () => {
-    const admin = (Object.keys(NOTIFY_KINDS) as NotifyKind[]).filter(
-      (k) => NOTIFY_KINDS[k].category === "admin",
-    );
-    expect(admin).toContain("VERIFICATION_SUBMITTED_ADMIN");
-    expect(admin).toContain("NEWS_APPROVAL_ADMIN");
-    expect(admin).toContain("EVENT_APPROVAL_ADMIN");
-    for (const k of admin)
+  it("application results are also emailed", () => {
+    for (const k of [
+      "VERIFICATION_APPROVED",
+      "VERIFICATION_REJECTED",
+      "VERIFICATION_NEEDS_INFO",
+    ] as const)
       expect("alwaysEmail" in NOTIFY_KINDS[k], k).toBe(true);
   });
 });

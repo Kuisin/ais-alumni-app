@@ -35,7 +35,8 @@
     "followBack": "フォローバック",
     "requestedHint": "（リクエストを取り消す）",
     "unfollowConfirm": "{name}さんのフォローを外しますか？連絡先をもう一度見るには、改めてリクエストが必要です。",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "report": "問題を報告する"
   },
   "status": {
     "requestSent": "フォローリクエストを送りました。",

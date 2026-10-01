@@ -53,7 +53,7 @@ async function addNewChild(parent: Page, lastName: string) {
   await romaji.getByRole("textbox", { name: /First name/ }).fill("Kid");
   await parent.getByLabel(/Child’s date of birth/).fill("2019-05-05");
   await parent
-    .getByRole("combobox", { name: /学年/ })
+    .getByRole("combobox", { name: /^Class/ })
     .selectOption({ index: 1 });
   // The class names by year help to check the 学年.
   const years = parent.getByRole("table", { name: /classes by year/ });

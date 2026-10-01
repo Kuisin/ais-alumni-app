@@ -27,7 +27,7 @@ async function parentWithApprovedChild(
   await romaji.getByRole("textbox", { name: /First name/ }).fill("Kid");
   await parent.getByLabel(/Child’s date of birth/).fill(childDob);
   await parent
-    .getByRole("combobox", { name: /学年/ })
+    .getByRole("combobox", { name: /^Class/ })
     .selectOption({ index: 1 });
   await parent.getByLabel(/Year your child joined AIS/).fill("2023");
   await parent.getByRole("button", { name: "Next" }).click();
@@ -124,7 +124,9 @@ test("a student signing up after a parent registered them is caught and merged",
   await expect(
     kid.getByText("It looks like a parent has already registered you."),
   ).toBeVisible();
-  await kid.getByRole("combobox", { name: /学年/ }).selectOption({ index: 1 });
+  await kid
+    .getByRole("combobox", { name: /^Class/ })
+    .selectOption({ index: 1 });
   await kid.getByLabel("Year you joined AIS").fill("2023");
   await kid.getByRole("button", { name: "Next" }).click();
   await kid.getByRole("button", { name: "Submit application" }).click();

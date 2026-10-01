@@ -23,6 +23,12 @@ import {
   directStopReason,
   openDirectChat,
 } from "@/lib/chat-db";
+import {
+  type ChatReactionView,
+  reactionsByMessage,
+  type ToggleReactionError,
+  toggleReaction,
+} from "@/lib/chat-reactions";
 import { db } from "@/lib/db";
 import { pushChatMessage } from "@/lib/push/chat";
 import { broadcast, channelTopic, realtimePublic } from "@/lib/realtime";
@@ -45,6 +51,8 @@ export type ChatMessageView = {
   mentionUserIds: string[];
   /** @全員 */
   mentionAll: boolean;
+  /** emoji reactions, by first use (none on deleted messages) */
+  reactions: ChatReactionView[];
 };
 
 const Id = z.string().min(1).max(64);
@@ -105,7 +113,11 @@ type MessageRow = {
   };
 };
 
-function toView(m: MessageRow, conn: Connections): ChatMessageView {
+function toView(
+  m: MessageRow,
+  conn: Connections,
+  reactions: ChatReactionView[] = [],
+): ChatMessageView {
   return {
     id: m.id,
     userId: m.userId,
@@ -118,7 +130,23 @@ function toView(m: MessageRow, conn: Connections): ChatMessageView {
     deleted: m.deletedAt !== null,
     mentionUserIds: m.deletedAt ? [] : m.mentionUserIds,
     mentionAll: m.deletedAt ? false : m.mentionAll,
+    reactions: m.deletedAt ? [] : reactions,
   };
+}
+
+/** Views of these rows with their reactions (one query for the page). */
+async function toViews(
+  rows: MessageRow[],
+  meId: string,
+): Promise<ChatMessageView[]> {
+  const [conn, reactions] = await Promise.all([
+    loadConnections(meId),
+    reactionsByMessage(
+      rows.filter((r) => !r.deletedAt).map((r) => r.id),
+      meId,
+    ),
+  ]);
+  return rows.map((r) => toView(r, conn, reactions.get(r.id)));
 }
 
 /**
@@ -249,8 +277,7 @@ export async function chatMessagesAction(
       take: 200,
       select: MESSAGE_SELECT,
     });
-    const conn = await loadConnections(g.user.id);
-    return rows.map((r) => toView(r, conn));
+    return toViews(rows, g.user.id);
   }
   const rows = await db.chatMessage.findMany({
     where: {
@@ -261,8 +288,7 @@ export async function chatMessagesAction(
     take: CHAT_PAGE_SIZE,
     select: MESSAGE_SELECT,
   });
-  const conn = await loadConnections(g.user.id);
-  return rows.reverse().map((r) => toView(r, conn));
+  return toViews(rows.reverse(), g.user.id);
 }
 
 /** The member has seen everything up to now. */
@@ -330,6 +356,60 @@ export async function startDirectChatAction(
   const denial = await directChatDenial(user.id, id.data);
   if (denial) return { ok: false, error: denial };
   return { ok: true, groupId: await openDirectChat(user.id, id.data) };
+}
+
+export type ToggleReactionResult =
+  | { ok: true; reactions: ChatReactionView[] }
+  | { ok: false; error: ToggleReactionError };
+
+/**
+ * Add or remove the member's emoji reaction on a message. Whoever can open
+ * the talk may react (as in the app), except in a stopped 1:1 talk.
+ */
+export async function toggleChatReactionAction(
+  groupId: string,
+  messageId: string,
+  emoji: string,
+): Promise<ToggleReactionResult> {
+  const g = await openGroup(groupId);
+  const id = Id.safeParse(messageId);
+  if (!g || !id.success) return { ok: false, error: "forbidden" };
+  if (g.direct && (await directStopped(g.groupId, g.user.id)))
+    return { ok: false, error: "forbidden" };
+  const r = await toggleReaction(
+    g.groupId,
+    id.data,
+    g.user.id,
+    String(emoji ?? "").slice(0, 64),
+  );
+  if (!r.ok) return r;
+  // A signal only; open rooms reload this message's reactions.
+  await broadcast([
+    {
+      topic: channelTopic("chat", g.groupId),
+      event: "reaction",
+      payload: { id: id.data },
+    },
+  ]);
+  const reactions = await reactionsByMessage([id.data], g.user.id);
+  return { ok: true, reactions: reactions.get(id.data) ?? [] };
+}
+
+/** One message's reactions (after a "reaction" signal). */
+export async function chatReactionsAction(
+  groupId: string,
+  messageId: string,
+): Promise<ChatReactionView[] | null> {
+  const g = await openGroup(groupId);
+  const id = Id.safeParse(messageId);
+  if (!g || !id.success) return null;
+  const m = await db.chatMessage.findUnique({
+    where: { id: id.data },
+    select: { groupId: true, deletedAt: true },
+  });
+  if (!m || m.groupId !== g.groupId) return null;
+  if (m.deletedAt) return [];
+  return (await reactionsByMessage([id.data], g.user.id)).get(id.data) ?? [];
 }
 
 /** Authors delete their own messages; admins may delete any (moderation). */

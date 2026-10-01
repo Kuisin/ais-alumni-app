@@ -17,7 +17,7 @@ test("invite a classmate: one-time link, pre-filled sign-up, shown to admins", a
   await hanako.goto("/en/app/invite");
   await hanako.getByRole("radio", { name: "Student / graduate" }).check();
   await hanako
-    .getByLabel("Their 学年 (class)")
+    .getByLabel("Their class")
     .selectOption({ label: "Class 3 (graduated 2014)" });
   await hanako.getByLabel("Their name (optional)").fill(lastName);
   await hanako.getByRole("button", { name: "Create invitation link" }).click();
@@ -54,7 +54,9 @@ test("invite a classmate: one-time link, pre-filled sign-up, shown to admins", a
   await member.getByLabel("Date of birth").fill("1996-05-05");
   await member.getByLabel("Gender").selectOption("OTHER");
   await member.getByRole("button", { name: "Next" }).click();
-  await expect(member.getByRole("combobox", { name: /学年/ })).toHaveValue("3");
+  await expect(member.getByRole("combobox", { name: /^Class/ })).toHaveValue(
+    "3",
+  );
   await member.getByLabel("Year you joined AIS").fill("2008");
   await member.getByRole("button", { name: "Next" }).click();
   await member.getByLabel("Diploma file").setInputFiles({
@@ -106,7 +108,7 @@ test("year-group link: up to 10 people, one open link per 学年", async ({
       .check();
     await hanako.getByRole("radio", { name: "Student / graduate" }).check();
     await hanako
-      .getByLabel("Their 学年 (class)")
+      .getByLabel("Their class")
       .selectOption({ label: "Class 4 (graduated 2015)" });
     // No name for a year-group link.
     await expect(hanako.getByLabel("Their name (optional)")).toHaveCount(0);

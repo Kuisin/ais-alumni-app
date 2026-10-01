@@ -41,7 +41,7 @@ test("admin appoints a class representative who notifies their class", async ({
 
   // Represent 第6期 (ken's class) for this test.
   await leader
-    .getByLabel("学年 (class)")
+    .getByLabel("Class", { exact: true })
     .selectOption({ label: "Class 6 (graduated 2017)" });
   await leader.getByRole("button", { name: "Assign" }).click();
   await expect(
@@ -55,7 +55,7 @@ test("admin appoints a class representative who notifies their class", async ({
   const adminNav = member.getByRole("navigation", { name: "Admin menu" });
   await expect(adminNav.getByRole("link")).toHaveCount(1);
   await expect(
-    member.getByRole("combobox", { name: "学年 (class)" }),
+    member.getByRole("combobox", { name: "Class", exact: true }),
   ).toContainText("Class 6");
   const title = `Class reunion ${Date.now()}`;
   await member.getByLabel("Title").fill(title);

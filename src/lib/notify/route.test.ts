@@ -94,6 +94,25 @@ describe("deliverWithFallback", () => {
   });
 });
 
+describe("LINE kinds that are also emailed (alwaysEmail)", () => {
+  it("go on LINE and by email — a committee note never goes on LINE", () => {
+    expect(channelsFor(u(), { line: true, alwaysEmail: true })).toEqual([
+      "LINE",
+      "EMAIL",
+    ]);
+  });
+  it("only on LINE without an email address", () => {
+    expect(
+      channelsFor(u({ primaryEmail: null }), { line: true, alwaysEmail: true }),
+    ).toEqual(["LINE"]);
+  });
+  it("only by email for members who don't get LINE messages", () => {
+    expect(
+      channelsFor(u({ lineUserId: null }), { line: true, alwaysEmail: true }),
+    ).toEqual(["EMAIL"]);
+  });
+});
+
 describe("every other kind goes by email", () => {
   it("even when LINE is linked and followed", () => {
     expect(channelsFor(u())).toEqual(["EMAIL"]);

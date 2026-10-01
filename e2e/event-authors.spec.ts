@@ -101,7 +101,9 @@ test("同窓会委員 events show once another 同窓会委員 approves", async 
     .getByRole("button", { name: "Save and request approval", exact: true })
     .click();
   await expect(a).toHaveURL(/\/en\/app\/admin\/events\/[^/?]+\?created=1/);
-  await expect(a.getByText(/Waiting for another 同窓会委員/)).toBeVisible();
+  await expect(
+    a.getByText(/Waiting for another alumni committee member/),
+  ).toBeVisible();
   const eventUrl = a.url().replace(/\?.*$/, "");
   const eventId = eventUrl.split("/").pop();
   // The other 同窓会委員 is emailed right away; the author isn't.

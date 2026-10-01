@@ -179,6 +179,11 @@ export default async function LandingPage({
 
           <p className="border-t border-slate-100 pt-4 text-xs text-slate-600">
             {t.rich("signIn.privacy", {
+              terms: (chunks) => (
+                <Link href="/terms" className="text-brand-700 underline">
+                  {chunks}
+                </Link>
+              ),
               link: (chunks) => (
                 <Link href="/privacy" className="text-brand-700 underline">
                   {chunks}

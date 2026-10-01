@@ -32,6 +32,49 @@ test.describe("landing & i18n", () => {
   });
 });
 
+test("terms of use: public, linked from sign-in and the footer", async ({
+  page,
+}) => {
+  await page.goto("/en/app");
+  await page.getByRole("link", { name: "terms of use", exact: true }).click();
+  await expect(page).toHaveURL(/\/en\/terms$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Terms of use" }),
+  ).toBeVisible();
+  await page.goto("/ja");
+  await page
+    .getByRole("contentinfo")
+    .getByRole("link", { name: "利用規約" })
+    .click();
+  await expect(page).toHaveURL(/\/ja\/terms$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "利用規約" }),
+  ).toBeVisible();
+});
+
+test("an applicant can delete their account before approval", async ({
+  page,
+}) => {
+  const email = uniqueEmail("leaver");
+  await signInWithEmail(page, email);
+  await expect(page).toHaveURL(/\/en\/app\/onboarding\/line/);
+  await page.getByRole("button", { name: "Delete my account…" }).click();
+  await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+  await page.getByRole("button", { name: "Permanently delete" }).click();
+  await expect(page).toHaveURL(/\/en$/);
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const { rowCount } = await db.query(
+      'SELECT 1 FROM "User" WHERE "primaryEmail" = $1',
+      [email],
+    );
+    expect(rowCount).toBe(0);
+  } finally {
+    await db.end();
+  }
+});
+
 test.describe("OAuth providers", () => {
   test("Google button starts the Google OAuth flow", async ({ page }) => {
     await page.goto("/en/app");
@@ -88,7 +131,7 @@ test("email sign-up → verification → admin approval → member dashboard", a
   // 学年: every class is offered (created on first use), graduated or
   // not. 第3期 finished 6th grade in 2014.
   await member
-    .getByRole("combobox", { name: /学年/ })
+    .getByRole("combobox", { name: /^Class/ })
     .selectOption({ label: "Class 3 (graduated 2014)" });
   await member.getByLabel("Year you joined AIS").fill("2008");
   // Status is worked out automatically and previewed.
@@ -156,7 +199,7 @@ test("email sign-up → verification → admin approval → member dashboard", a
 
   // The member's 学年 was created automatically.
   await admin.goto("/en/app/admin/cohorts");
-  await expect(admin.getByText("第3期").first()).toBeVisible();
+  await expect(admin.getByText("Class 3", { exact: true }).first()).toBeVisible();
 
   // 5. Member now reaches the dashboard and directory.
   await member.goto("/en/app/dashboard");

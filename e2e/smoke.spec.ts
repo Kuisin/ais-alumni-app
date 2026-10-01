@@ -199,7 +199,9 @@ test("email sign-up → verification → admin approval → member dashboard", a
 
   // The member's 学年 was created automatically.
   await admin.goto("/en/app/admin/cohorts");
-  await expect(admin.getByText("Class 3", { exact: true }).first()).toBeVisible();
+  await expect(
+    admin.getByText("Class 3", { exact: true }).first(),
+  ).toBeVisible();
 
   // 5. Member now reaches the dashboard and directory.
   await member.goto("/en/app/dashboard");

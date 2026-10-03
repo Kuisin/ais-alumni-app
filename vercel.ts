@@ -9,7 +9,9 @@ import type { VercelConfig } from "@vercel/config/v1";
 export const config: VercelConfig = {
   framework: "nextjs",
   // Generate explicitly: cached installs on Vercel skip the postinstall hook.
-  buildCommand: "prisma generate && prisma migrate deploy && next build",
+  // No `prisma migrate deploy`: the schema and its migrations belong to
+  // Kuisin/ais-alumni-v2, whose build applies them (same database).
+  buildCommand: "prisma generate && next build",
   regions: ["hnd1"],
   // Deploy only main (production, ais.kai-lab.net) and dev (ais-dev.kai-lab.net).
   // Other branches get no deployment at all — not even a cancelled one, which

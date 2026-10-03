@@ -27,7 +27,7 @@ const RealtimeContext = createContext<Ctx>({
   on: () => () => {},
 });
 
-const EVENTS = ["message", "delete", "read", "refresh"] as const;
+const EVENTS = ["message", "delete", "read", "reaction", "refresh"] as const;
 
 /**
  * One Supabase Realtime connection per tab (signal-only Broadcast channels,

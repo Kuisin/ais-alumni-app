@@ -499,3 +499,83 @@ test("同窓会委員 group: committee members and admins", async ({ browser }) 
     0,
   );
 });
+
+test("emoji reactions: quick row, any emoji, seen by others, removed again", async ({
+  browser,
+}) => {
+  const stamp = Date.now();
+  const grad = await createActiveGraduate(`React G${stamp}`, "1991-04-04");
+  const other = await browser.newPage();
+  await signInWithEmail(other, grad.email);
+  await other.goto("/en/app/chat");
+  await expect(other.getByRole("link", { name: GROUP })).toBeVisible();
+
+  const hanako = await browser.newPage();
+  await signInWithEmail(hanako, "hanako@example.com");
+  await hanako.goto("/en/app/chat");
+  await hanako.getByRole("link", { name: GROUP }).click();
+  const hello = `React to this ${stamp}`;
+  await hanako.getByLabel("Message", { exact: true }).fill(hello);
+  await hanako.getByRole("button", { name: "Send" }).click();
+  await expect(hanako.getByText(hello)).toBeVisible();
+
+  // The other member taps the bubble and picks 👍 from the quick row.
+  await other.getByRole("link", { name: GROUP }).click();
+  await other.getByRole("button", { name: hello }).click();
+  await other.getByRole("button", { name: "React with 👍" }).click();
+  // The chips under that message (earlier runs leave their own behind).
+  const chipsOf = (page: import("@playwright/test").Page) =>
+    page
+      .locator("li")
+      .filter({ hasText: hello })
+      .getByRole("list", { name: "Reactions" });
+  const chips = chipsOf(other);
+  await expect(
+    chips.getByRole("button", { name: /^👍 1, you reacted/ }),
+  ).toBeVisible();
+
+  // …and any other emoji from the searchable picker.
+  await other.getByRole("button", { name: hello }).click();
+  await other.getByRole("button", { name: "More emoji" }).click();
+  const picker = other.getByRole("dialog", { name: "Choose an emoji" });
+  await picker.getByPlaceholder("Search emoji").fill("rocket");
+  await picker.getByRole("button", { name: "rocket", exact: true }).click();
+  await expect(picker).toHaveCount(0);
+  await expect(
+    chips.getByRole("button", { name: /^🚀 1, you reacted/ }),
+  ).toBeVisible();
+
+  // Hanako sees both, with who reacted, and adds her own 👍.
+  await hanako.reload();
+  const hers = chipsOf(hanako);
+  const thumb = hers.getByRole("button", { name: /^👍 1 — G\d+, React$/ });
+  await expect(thumb).toBeVisible();
+  await expect(hers.getByRole("button", { name: /^🚀 1 —/ })).toBeVisible();
+  await thumb.click();
+  await expect(
+    hers.getByRole("button", { name: /^👍 2, you reacted/ }),
+  ).toBeVisible();
+
+  // Tapping your own chip takes the reaction back; the last one removes it.
+  await chips.getByRole("button", { name: /^🚀 1, you reacted/ }).click();
+  await expect(chips.getByRole("button", { name: /^🚀/ })).toHaveCount(0);
+  await other.reload();
+  await expect(
+    chipsOf(other).getByRole("button", { name: /^👍 2, you reacted/ }),
+  ).toBeVisible();
+
+  // What was stored: one 👍 each, and the 🚀 is gone.
+  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  await db.connect();
+  try {
+    const { rows } = await db.query(
+      `SELECT r.emoji FROM "ChatReaction" r
+       JOIN "ChatMessage" m ON m.id = r."messageId"
+       WHERE m.body = $1 ORDER BY r.emoji`,
+      [hello],
+    );
+    expect(rows.map((r) => r.emoji)).toEqual(["👍", "👍"]);
+  } finally {
+    await db.end();
+  }
+});

@@ -44,6 +44,7 @@ export const AUDIT_CATEGORIES = [
   "company",
   "self",
   "user",
+  "donation",
 ] as const;
 
 /** Admin-facing link for a target, when there is a page for it. */

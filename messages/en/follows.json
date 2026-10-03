@@ -35,7 +35,8 @@
     "followBack": "Follow back",
     "requestedHint": " (cancel request)",
     "unfollowConfirm": "Unfollow {name}? To see their contact details again, you'll need to send a new request.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "report": "Report a problem"
   },
   "status": {
     "requestSent": "Follow request sent.",

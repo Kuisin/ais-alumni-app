@@ -8,34 +8,34 @@ import { getCurrentUser } from "@/lib/session";
 
 export async function generateMetadata({
   params,
-}: PageProps<"/[locale]/privacy">): Promise<Metadata> {
+}: PageProps<"/[locale]/terms">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "landing" });
-  return { title: t("privacy.title") };
+  return { title: t("terms.title") };
 }
 
 const SECTIONS = [
-  "collected",
-  "purpose",
-  "visibility",
-  "line",
-  "analytics",
-  "evidence",
-  "retention",
-  "rights",
+  "eligibility",
+  "account",
+  "conduct",
+  "zeroTolerance",
+  "content",
+  "termination",
+  "disclaimer",
+  "changes",
   "contact",
 ] as const;
 
 /**
- * APPI privacy policy (§4, §15). Public page, bilingual via messages/landing;
- * ends with the way to contact the committee (お問い合わせ).
+ * Terms of use (利用規約). Public page, bilingual via messages/landing;
+ * agreed to on the sign-in page. The same text as the app's /terms.
  */
-export default async function PrivacyPage({
+export default async function TermsPage({
   params,
-}: PageProps<"/[locale]/privacy">) {
+}: PageProps<"/[locale]/terms">) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("landing.privacy");
+  const t = await getTranslations("landing.terms");
   const ts = await getTranslations("support");
   const user = await getCurrentUser();
 
@@ -54,10 +54,10 @@ export default async function PrivacyPage({
             return (
               <section
                 key={key}
-                aria-labelledby={`privacy-${key}`}
+                aria-labelledby={`terms-${key}`}
                 className="space-y-2"
               >
-                <h2 id={`privacy-${key}`} className="text-lg font-semibold">
+                <h2 id={`terms-${key}`} className="text-lg font-semibold">
                   {t(`${key}.title`)}
                 </h2>
                 {t.has(`${key}.body`) ? (
@@ -75,7 +75,7 @@ export default async function PrivacyPage({
           })}
         </Card>
         <Link
-          href="/support?type=QUESTION&topic=PRIVACY"
+          href="/support"
           className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50"
         >
           <LifeBuoy aria-hidden="true" className="size-4" />

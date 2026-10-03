@@ -44,7 +44,11 @@ export function DeactivateAccount() {
   );
 }
 
-export function DeleteAccount() {
+/**
+ * `quiet`: a plain text trigger and the warning inside the form — for the
+ * onboarding footer, where an applicant can delete their account too.
+ */
+export function DeleteAccount({ quiet = false }: { quiet?: boolean }) {
   const t = useTranslations("settings.delete");
   const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
@@ -55,14 +59,28 @@ export function DeleteAccount() {
   );
   const confirmWord = t("confirmWord");
   if (!open) {
-    return (
+    return quiet ? (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="min-h-11 px-2 text-sm text-slate-600 underline hover:text-red-700"
+      >
+        {t("button")}
+      </button>
+    ) : (
       <Button variant="danger" onClick={() => setOpen(true)}>
         {t("button")}
       </Button>
     );
   }
   return (
-    <form action={action} className="space-y-3 rounded-lg bg-red-50 p-3">
+    <form
+      action={action}
+      className="space-y-3 rounded-lg bg-red-50 p-3 text-left"
+    >
+      {quiet ? (
+        <p className="text-sm text-red-900">{t("description")}</p>
+      ) : null}
       <Field
         id="delete-word"
         label={t("typeToConfirm", { word: confirmWord })}

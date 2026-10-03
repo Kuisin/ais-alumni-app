@@ -57,7 +57,7 @@ Feature branches are not deployed. `dev` currently shares the production databas
    `DATABASE_URL` to the Supavisor **transaction** pooler (port 6543) and
    `DIRECT_URL` to the **session** pooler / direct connection (port 5432, used by migrations).
 2. **Project** — import the repo in Vercel. `vercel.ts` pins functions to
-   `hnd1` (Tokyo), runs `prisma migrate deploy` before `next build`, and registers the crons.
+   `hnd1` (Tokyo) and builds with `prisma generate && next build`. Migrations are applied by Kuisin/ais-alumni-v2's build (it owns the schema), not here.
 3. **Domain** — add `ais.kai-lab.net` in Project → Domains and create the DNS
    record Vercel shows (CNAME `ais` → `cname.vercel-dns.com` at kai-lab.net's DNS).
 4. **Blob** — create a *private* Blob store in region Tokyo (`hnd1`) and connect it to the project (`BLOB_READ_WRITE_TOKEN`).

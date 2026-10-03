@@ -10,6 +10,7 @@ import {
   SendHorizontal,
   Trash2,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Fragment,
@@ -23,11 +24,13 @@ import {
 import {
   type ChatMessageView,
   chatMessagesAction,
+  chatReactionsAction,
   chatReadStateAction,
   deleteChatMessageAction,
   markChatReadAction,
   sendChatMessageAction,
   setChatMutedAction,
+  toggleChatReactionAction,
 } from "@/app/actions/chat";
 import {
   useRealtime,
@@ -45,6 +48,13 @@ import {
   splitMentions,
 } from "@/lib/chat";
 import { MemberTags } from "./member-tags";
+import { ReactionBar, ReactionChips, toggledReactions } from "./reactions";
+
+// Every emoji (a 200 KB list): loaded when the picker is first opened.
+const EmojiPicker = dynamic(
+  () => import("./emoji-picker").then((m) => m.EmojiPicker),
+  { ssr: false },
+);
 
 const POLL_MS = 5000;
 /** Picker id of @全員, and its label in every language (for matching). */
@@ -84,6 +94,8 @@ export type RoomMember = {
  * bubbles (own in green on the right), 既読 marks, date pills and a composer
  * pinned to the bottom. New messages arrive over Supabase Realtime (or by
  * polling every few seconds without it); what's on screen is marked read.
+ * Selecting a message offers emoji reactions (a quick row, or any emoji),
+ * shown as chips under the bubble.
  */
 export function ChatRoom({
   groupId,
@@ -134,9 +146,14 @@ export function ChatRoom({
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(initialMuted);
   const [selected, setSelected] = useState<string | null>(null);
+  /** message the emoji picker is open for */
+  const [picking, setPicking] = useState<string | null>(null);
+  const [reactError, setReactError] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const canPost = member && !stopped;
+  // Whoever can open the talk may react, unless the 1:1 talk has stopped.
+  const canReact = !stopped;
   const input = useRef<HTMLTextAreaElement>(null);
   const [caret, setCaret] = useState(-1);
   const [activeSuggestion, setActiveSuggestion] = useState(0);
@@ -144,6 +161,7 @@ export function ChatRoom({
   const others = members.filter((m) => m.id !== me);
   const partner = direct ? others[0] : undefined;
   const namesById = new Map(members.map((m) => [m.id, m.name]));
+  const myName = namesById.get(me) ?? "";
   // @mention picker: 全員 (group chats) and the other members.
   const q = caret >= 0 ? mentionQuery(text, caret) : null;
   const suggestions: (RoomMember & { id: string })[] = q
@@ -292,6 +310,48 @@ export function ChatRoom({
       list.map((m) => (m.id === p.id ? { ...m, body: "", deleted: true } : m)),
     ),
   );
+
+  // Reactions: a signal names the message; reload just its reactions.
+  const setReactions = useCallback(
+    (id: string, reactions: ChatMessageView["reactions"]) =>
+      setMessages((list) =>
+        list.map((m) => (m.id === id ? { ...m, reactions } : m)),
+      ),
+    [],
+  );
+  useRealtime(topic, "reaction", (p) => {
+    const id = typeof p.id === "string" ? p.id : null;
+    if (!id) return;
+    void chatReactionsAction(groupId, id)
+      .catch(() => null)
+      .then((r) => {
+        if (r) setReactions(id, r);
+      });
+  });
+
+  // Add or remove the member's reaction: shown at once, then replaced by
+  // the server's answer (or put back when it refuses).
+  async function react(m: ChatMessageView, emoji: string) {
+    setSelected(null);
+    setPicking(null);
+    setReactError(null);
+    const before = m.reactions;
+    setReactions(m.id, toggledReactions(before, emoji, myName));
+    const r = await toggleChatReactionAction(groupId, m.id, emoji).catch(
+      () => null,
+    );
+    if (r?.ok) setReactions(m.id, r.reactions);
+    else {
+      setReactions(m.id, before);
+      setReactError(
+        tc(
+          `reactions.errors.${
+            r && r.error !== "forbidden" ? r.error : "generic"
+          }`,
+        ),
+      );
+    }
+  }
 
   // Without Realtime: poll for new messages and 既読.
   useEffect(() => {
@@ -627,6 +687,21 @@ export function ChatRoom({
                           </time>
                         </span>
                       </div>
+                      {!m.deleted ? (
+                        <ReactionChips
+                          reactions={m.reactions}
+                          mine={mine}
+                          disabled={!canReact}
+                          onToggle={(emoji) => void react(m, emoji)}
+                        />
+                      ) : null}
+                      {selected === m.id && !m.deleted && canReact ? (
+                        <ReactionBar
+                          reactions={m.reactions}
+                          onToggle={(emoji) => void react(m, emoji)}
+                          onMore={() => setPicking(m.id)}
+                        />
+                      ) : null}
                       {selected === m.id && !m.deleted ? (
                         <div className="mt-1 flex gap-1">
                           <button
@@ -661,6 +736,21 @@ export function ChatRoom({
           </ol>
         )}
       </div>
+
+      {reactError ? (
+        <p role="alert" className="bg-white px-4 pt-2 text-sm text-red-700">
+          {reactError}
+        </p>
+      ) : null}
+      {picking ? (
+        <EmojiPicker
+          onClose={() => setPicking(null)}
+          onPick={(emoji) => {
+            const m = messages.find((x) => x.id === picking);
+            if (m) void react(m, emoji);
+          }}
+        />
+      ) : null}
 
       {/* Composer */}
       {canPost ? (
